@@ -22,7 +22,7 @@ namespace ExtraWeaponCustomization.JSON
 
                     new AmmopackRefill(),
                     new AutoAim(),
-                    new AutoBurst(),
+                    new AutoTrigger(),
                     new EnforceFireRate(),
                     new Explosive(),
                     new FireRateAccel(),
