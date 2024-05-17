@@ -25,7 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public static StackType ToStackType(this string type)
         {
-            return Enum.TryParse(type, true, out StackType result) ? result : StackType.Invalid;
+            return Enum.TryParse(type.Replace(" ", ""), true, out StackType result) ? result : StackType.Invalid;
         }
     }
 }

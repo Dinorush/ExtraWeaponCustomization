@@ -16,7 +16,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
     {
         public static TriggerType ToTriggerType(this string type)
         {
-            return Enum.TryParse(type, true, out TriggerType result) ? result : TriggerType.Invalid;
+            return Enum.TryParse(type.Replace(" ", ""), true, out TriggerType result) ? result : TriggerType.Invalid;
         }
     }
 }
