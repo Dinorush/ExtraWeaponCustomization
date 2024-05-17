@@ -34,7 +34,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             get { return _accelTime; }
             set { _accelTime = Math.Max(0.001f, value); }
         }
-        private float _decelTime = 0f;
+        private float _decelTime = 0.001f;
         public float DecelTime
         {
             get { return _decelTime; }
