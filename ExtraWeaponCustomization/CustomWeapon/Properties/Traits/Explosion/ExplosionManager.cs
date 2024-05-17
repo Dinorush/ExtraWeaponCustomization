@@ -1,0 +1,202 @@
+﻿using Agents;
+using AK;
+using CharacterDestruction;
+using Enemies;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion.EEC_Explosion;
+using ExtraWeaponCustomization.Utils;
+using FluffyUnderware.DevTools.Extensions;
+using Player;
+using SNetwork;
+using System;
+using System.Linq;
+using UnityEngine;
+
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion
+{
+    public static class ExplosionManager
+    {
+        public static readonly Color FlashColor = new(1, 0.2f, 0, 1);
+
+        internal static ExplosionFXSync FXSync { get; private set; } = new();
+        internal static ExplosionDamageSync DamageSync { get; private set; } = new();
+
+        private static float _lastSoundTime = 0f;
+        private static int _soundShotOverride = 0;
+        public const float MaxRadius = 1024f;
+        public const float MaxStagger = 16384f; // 2^14
+
+        internal static void Init()
+        {
+            DamageSync.Setup();
+            FXSync.Setup();
+            ExplosionEffectPooling.Initialize();
+        }
+
+        public static void DoExplosion(Vector3 position, PlayerAgent source, float falloffMod, Explosive eBase)
+        {
+            ExplosionFXData fxData = new() { position = position };
+            fxData.radius.Set(eBase.Radius, MaxRadius);
+            FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
+            DoExplosionDamage(position, source, falloffMod, eBase);
+        }
+    
+        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius)
+        {
+            // Sound
+            _soundShotOverride++;
+            if (_soundShotOverride > Configuration.ExplosionSFXShotOverride || Clock.Time - _lastSoundTime > Configuration.ExplosionSFXCooldown)
+            {
+                CellSound.Post(EVENTS.STICKYMINEEXPLODE, position);
+                _soundShotOverride = 0;
+                _lastSoundTime = Clock.Time;
+            }
+
+            // Lighting
+            ExplosionEffectPooling.TryDoEffect(new ExplosionEffectData()
+            {
+                position = position,
+                flashColor = FlashColor,
+                intensity = 5.0f,
+                range = radius,
+                duration = 0.05f
+            });
+        }
+
+        internal static void DoExplosionDamage(Vector3 position, PlayerAgent source, float falloffMod, Explosive explosiveBase)
+        {
+            var colliders = Physics.OverlapSphere(position, explosiveBase.Radius, LayerManager.MASK_EXPLOSION_TARGETS);
+            if (colliders.Count < 1)
+                return;
+
+            DamageUtil.IncrementSearchID();
+            var searchID = DamageUtil.SearchID;
+
+            // Loop over colliders in order of distance to make sure we do the most possible damage and hit the correct limb.
+            // Not 100% consistent with expectations, but good enough.
+            foreach (Collider collider in colliders.OrderBy(
+                    t => t.GetComponent<IDamageable>() != null ?
+                        Vector3.SqrMagnitude(position - t.GetComponent<IDamageable>().DamageTargetPos)
+                      : float.MaxValue)
+                )
+            {
+                IDamageable? limb = collider.GetComponent<IDamageable>();
+                if (limb == null)
+                    continue;
+
+                Vector3 targetPosition = limb.DamageTargetPos;
+
+                IDamageable? damBase = limb.GetBaseDamagable();
+                if (damBase == null)
+                    continue;
+
+                if (damBase.TempSearchID == searchID)
+                    continue;
+
+                float distance = Vector3.Distance(position, targetPosition);
+                // Ensure there is nothing between the explosion and this target
+                if (Physics.Linecast(position, targetPosition, out RaycastHit hit, LayerManager.MASK_EXPLOSION_BLOCKERS))
+                {
+                    if (hit.collider == null)
+                        continue;
+
+                    if (hit.collider.gameObject == null)
+                        continue;
+
+                    if (hit.collider.gameObject.GetInstanceID() != collider.gameObject.GetInstanceID())
+                        continue;
+                }
+
+                damBase.TempSearchID = searchID;
+                
+                SendExplosionDamage(limb, position, distance, source, falloffMod, explosiveBase);
+            }
+        }
+
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, float distance, PlayerAgent source, float falloffMod, Explosive eBase)
+        {
+            // 0.001f to account for rounding error
+            float damage = falloffMod * distance.Map(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage) + 0.001f;
+            if (damageable.GetBaseAgent()?.Type == AgentType.Player)
+            {
+                GuiManager.CrosshairLayer.PopFriendlyTarget();
+                // Seems like the damageable is always the base, but just in case
+                Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
+                damage *= playerBase.m_playerData.friendlyFireMulti;
+                // Only damage and direction are used AFAIK, but again, just in case...
+                playerBase.BulletDamage(damage, source, position, playerBase.DamageTargetPos - position, Vector3.zero);
+                return;
+            }
+
+            Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
+            if (limb == null || limb.m_base.IsImortal) return;
+
+            ExplosionDamageData data = default;
+            data.target.Set(limb.m_base.Owner);
+            data.source.Set(source);
+            data.limbID = (byte)(eBase.DamageLimb ? limb.m_limbID : 0);
+            data.localPosition.Set(position - limb.m_base.Owner.Position, 10f);
+            data.staggerMult.Set(eBase.StaggerMult, MaxStagger);
+
+            float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
+            float weakspotMulti = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot
+                                  ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionMult, 1f) : 1f;
+            float precDamage = damage * weakspotMulti * armorMulti;
+
+            // Clamp damage for bubbles
+            if (limb.TryCast<Dam_EnemyDamageLimb_Custom>() != null)
+                precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
+
+            data.damage.Set(precDamage, limb.m_base.DamageMax);
+
+            if (source.IsLocallyOwned == true)
+                limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), limb.DamageTargetPos, armorMulti < 1f);
+
+            DamageSync.Send(data, SNet.IsMaster ? null : SNet.Master, SNet_ChannelType.GameNonCritical);
+        }
+
+        internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult)
+        {
+            Dam_EnemyDamageBase damBase = target.Damage;
+            Dam_EnemyDamageLimb? limb = limbID > 0 ? damBase.DamageLimbs[limbID] : null;
+            if (!damBase.Owner.Alive || damBase.IsImortal) return;
+
+            ES_HitreactType hitreact = staggerMult > 0 ? ES_HitreactType.Light : ES_HitreactType.None;
+            bool tryForceHitreact = false;
+            bool willKill = damBase.WillDamageKill(damage);
+            CD_DestructionSeverity severity;
+            if (willKill)
+            {
+                tryForceHitreact = true;
+                hitreact = ES_HitreactType.Heavy;
+                severity = CD_DestructionSeverity.Death;
+            }
+            else
+            {
+                severity = CD_DestructionSeverity.Severe;
+            }
+
+            Vector3 direction = Vector3.up;
+            if (limb != null && (willKill || limb.DoDamage(damage)))
+                damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
+            
+            Vector3 position = localPos + target.Position;
+            damBase.ProcessReceivedDamage(damage, source, position, Vector3.up * 1000f, hitreact, tryForceHitreact, limbID, staggerMult);
+        }
+    }
+
+    public struct ExplosionDamageData
+    {
+        public pEnemyAgent target;
+        public pPlayerAgent source;
+        public byte limbID;
+        public LowResVector3 localPosition;
+        public UFloat16 damage;
+        public UFloat16 staggerMult;
+    }
+
+    public struct ExplosionFXData
+    {
+        public Vector3 position;
+        public UFloat16 radius;
+    }
+}
