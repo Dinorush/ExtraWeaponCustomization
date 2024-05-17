@@ -24,7 +24,7 @@ namespace ExtraWeaponCustomization.JSON
 
                 string property = reader.GetString()!;
                 reader.Read();
-                instance?.DeserializeProperty(property.ToLowerInvariant(), ref reader);
+                instance?.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
             }
 
             throw new JsonException("Expected EndObject token");
@@ -57,6 +57,7 @@ namespace ExtraWeaponCustomization.JSON
                 reader.Read();
                 string? name = reader.GetString();
                 if (name == null) return null;
+                name = name.Replace(" ", "");
 
                 Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
                 if (type == null) return null;
