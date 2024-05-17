@@ -1,17 +1,15 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
-    public sealed class AutoBurst : IWeaponProperty<WeaponPostSetupContext>
+    public sealed class AutoTrigger : IWeaponProperty<WeaponPostSetupContext>
     {
-        public readonly static string Name = typeof(AutoBurst).Name;
+        public readonly static string Name = typeof(AutoTrigger).Name;
         public bool AllowStack { get; } = false;
 
         public void Invoke(WeaponPostSetupContext context) {
-            if (context.Weapon.m_archeType.m_archetypeData.FireMode == eWeaponFireMode.Burst)
-                context.Weapon.m_archeType.m_triggerNeedsPress = false;
+            context.Weapon.m_archeType.m_triggerNeedsPress = false;
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
