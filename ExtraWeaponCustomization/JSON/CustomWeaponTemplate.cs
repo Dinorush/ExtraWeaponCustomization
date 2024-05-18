@@ -25,7 +25,7 @@ namespace ExtraWeaponCustomization.JSON
                     new AutoTrigger(),
                     new EnforceFireRate(),
                     new Explosive(),
-                    new FireRateAccel(),
+                    new Accelerate(),
                     new HoldBurst(),
                     new ReserveClip()
                 }

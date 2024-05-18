@@ -4,6 +4,7 @@ using GTFO.API.Utilities;
 using MTFO.API;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon
 {
@@ -37,7 +38,16 @@ namespace ExtraWeaponCustomization.CustomWeapon
             EWCLogger.Warning($"LiveEdit File Changed: {e.FullPath}");
             LiveEdit.TryReadFileContent(e.FullPath, (content) =>
             {
-                List<CustomWeaponData>? dataList = EWCJson.Deserialize<List<CustomWeaponData>>(content);
+                List<CustomWeaponData>? dataList = null;
+                try
+                {
+                    dataList = EWCJson.Deserialize<List<CustomWeaponData>>(content);
+                }
+                catch(JsonException ex)
+                {
+                    EWCLogger.Error("Error parsing custom weapon json " + e.FullPath);
+                    EWCLogger.Error(ex.Message);
+                }
 
                 if (dataList == null) return;
 
@@ -46,24 +56,36 @@ namespace ExtraWeaponCustomization.CustomWeapon
             });
         }
 
-        public CustomWeaponData? GetCustomWeaponData(uint RecoilID) => customData.ContainsKey(RecoilID) ? customData[RecoilID] : null;
+        public CustomWeaponData? GetCustomWeaponData(uint ArchetypeID) => customData.ContainsKey(ArchetypeID) ? customData[ArchetypeID] : null;
         
         private CustomWeaponManager()
         {
             DEFINITION_PATH = Path.Combine(MTFOPathAPI.CustomPath, EntryPoint.MODNAME);
             if (!Directory.Exists(DEFINITION_PATH))
             {
+                EWCLogger.Log("No directory detected. Creating " + DEFINITION_PATH + "/Template.json");
                 Directory.CreateDirectory(DEFINITION_PATH);
                 var file = File.CreateText(Path.Combine(DEFINITION_PATH, "Template.json"));
                 file.WriteLine(EWCJson.Serialize(new List<CustomWeaponData>() { CustomWeaponTemplate.CreateTemplate() }));
                 file.Flush();
                 file.Close();
             }
+            else
+                EWCLogger.Log("Directory detected. " + DEFINITION_PATH);
 
             foreach (string confFile in Directory.EnumerateFiles(DEFINITION_PATH, "*.json", SearchOption.AllDirectories))
             {
                 string content = File.ReadAllText(confFile);
-                List<CustomWeaponData>? dataList = EWCJson.Deserialize<List<CustomWeaponData>>(content);
+                List<CustomWeaponData>? dataList = null;
+                try
+                {
+                    dataList = EWCJson.Deserialize<List<CustomWeaponData>>(content);
+                }
+                catch (JsonException ex)
+                {
+                    EWCLogger.Error("Error parsing custom weapon json " + confFile);
+                    EWCLogger.Error(ex.Message);
+                }
 
                 if (dataList == null) continue;
 

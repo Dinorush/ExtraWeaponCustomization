@@ -1,5 +1,4 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using System.Text.Json;
 

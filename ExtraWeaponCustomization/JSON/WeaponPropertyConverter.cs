@@ -1,7 +1,4 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.Utils;
 using System;
 using System.Text.Json;
 
@@ -15,6 +12,7 @@ namespace ExtraWeaponCustomization.JSON
         public override IWeaponProperty? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             IWeaponProperty? instance = CreatePropertyInstance(reader);
+            if (instance == null) return null;
 
             while (reader.Read())
             {
@@ -24,11 +22,11 @@ namespace ExtraWeaponCustomization.JSON
 
                 string property = reader.GetString()!;
                 reader.Read();
-                instance?.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
             }
 
             throw new JsonException("Expected EndObject token");
-        }
+            }
 
         // Literally the only reason this class exists, so it doesn't write the backing fields.
         public override void Write(Utf8JsonWriter writer, IWeaponProperty value, JsonSerializerOptions options)
@@ -45,8 +43,7 @@ namespace ExtraWeaponCustomization.JSON
                 // Our classes do not contain any objects within themselves. For now, just returning early if any are found.
                 if (reader.TokenType == JsonTokenType.EndObject || reader.TokenType == JsonTokenType.StartObject)
                 {
-                    EWCLogger.Error("Found { or } before finding name field in weapon property.");
-                    return null;
+                    throw new JsonException("Weapon property does not contain Name field.");
                 }
 
                 if (reader.TokenType != JsonTokenType.PropertyName) continue;
@@ -56,11 +53,11 @@ namespace ExtraWeaponCustomization.JSON
 
                 reader.Read();
                 string? name = reader.GetString();
-                if (name == null) return null;
+                if (name == null) throw new JsonException("Name field cannot be empty in weapon property.");
                 name = name.Replace(" ", "");
 
                 Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
-                if (type == null) return null;
+                if (type == null) throw new JsonException("Unable to find corresponding weapon property for \"" + name + "\"");
 
                 return (IWeaponProperty?)Activator.CreateInstance(type);
             }
