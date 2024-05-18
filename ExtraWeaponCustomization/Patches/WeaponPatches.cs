@@ -13,9 +13,9 @@ namespace ExtraWeaponCustomization.Patches
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetOwner))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void SetupCallback(BulletWeapon __instance)
+        private static void SetupCallback(BulletWeapon __instance, PlayerAgent agent)
         {
-            if (__instance.Owner == null) return;
+            if (agent == null) return;
 
             CustomWeaponData? data = CustomWeaponManager.Current.GetCustomWeaponData(__instance.ArchetypeID);
             if (data == null) return;
@@ -32,12 +32,30 @@ namespace ExtraWeaponCustomization.Patches
         [HarmonyPrefix]
         private static void HitCallback(ref WeaponHitData weaponRayData, bool doDamage, float additionalDis, uint damageSearchID, bool allowDirectionalBonus)
         {
+            // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
+            if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null) return;
+
             CustomWeaponComponent? cwc = weaponRayData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
+            IDamageable? damageable = WeaponTriggerContext.GetDamageableFromData(weaponRayData);
+            IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
+            if (damageSearchID != 0 && damBase != null && damBase.TempSearchID == damageSearchID) return;
+
             cwc.Invoke(new WeaponPreHitContext(ref weaponRayData, additionalDis, cwc.Weapon));
-            if (doDamage && WeaponPreHitEnemyContext.GetDamageableFromData(weaponRayData)?.GetBaseAgent()?.Type == Agents.AgentType.Enemy)
-                cwc.Invoke(new WeaponPreHitEnemyContext(ref weaponRayData, additionalDis, cwc.Weapon));
+            if (doDamage && damageable?.GetBaseAgent()?.Type == Agents.AgentType.Enemy)
+            {
+                WeaponDamageContext damageContext = new(weaponRayData.damage, damageable, cwc.Weapon);
+                cwc.Invoke(damageContext);
+                weaponRayData.damage = damageContext.Damage;
+
+                cwc.Invoke(new WeaponPreHitEnemyContext(
+                    weaponRayData.Falloff(additionalDis),
+                    damageable,
+                    cwc.Weapon,
+                    TriggerType.OnHitBullet
+                    ));
+            }
         }
     }
 }
