@@ -1,31 +1,42 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
-using System;
+﻿using System;
 using Player;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
-    public sealed class AmmoMod : IWeaponProperty<WeaponTriggerContext>
+    public sealed class AmmoMod :
+        IWeaponProperty<WeaponTriggerContext>
     {
         public readonly static string Name = typeof(AmmoMod).Name;
         public bool AllowStack { get; } = true;
 
-        public int ClipChange { get; set; } = 0;
-        public int ReserveChange { get; set; } = 0;
+        public float ClipChange { get; set; } = 0;
+        public float ReserveChange { get; set; } = 0;
         public bool PullFromReserve { get; set; } = false;
         public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
 
+        private float _clipBuffer = 0;
+        private float _reserveBuffer = 0;
+
         public void Invoke(WeaponTriggerContext context)
         {
-            if (context.Type != TriggerType) return;
+            if (!context.Type.IsType(TriggerType)) return;
+
+            _clipBuffer += ClipChange;
+            _reserveBuffer += ReserveChange;
+
+            if (_clipBuffer < 1 && _clipBuffer > -1 && _reserveBuffer < 1 && _reserveBuffer > -1) return;
 
             // Calculate the actual changes we can make to clip/ammo
             PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(context.Weapon.Owner.Owner).AmmoStorage;
-            int clipChange = PullFromReserve ? Math.Min(ClipChange, ammoStorage.GetBulletsInPack(context.Weapon.AmmoType)) : ClipChange;
+            int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, ammoStorage.GetBulletsInPack(context.Weapon.AmmoType)) : _clipBuffer);
             int newClip = Math.Clamp(context.Weapon.GetCurrentClip() + clipChange, 0, context.Weapon.GetMaxClip() + 1);
             clipChange = newClip - context.Weapon.GetCurrentClip();
-            int reserveChange = PullFromReserve ? ReserveChange - clipChange : ReserveChange;
+            int reserveChange = (int) (PullFromReserve ? _reserveBuffer - clipChange : _reserveBuffer);
+
+            _clipBuffer -= (int) _clipBuffer;
+            _reserveBuffer -= (int) _reserveBuffer;
 
             context.Weapon.SetCurrentClip(newClip);
 
@@ -51,11 +62,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 case "clipchange":
                 case "clip":
-                    ClipChange = reader.GetInt32();
+                    ClipChange = reader.GetSingle();
                     break;
                 case "reservechange":
                 case "reserve":
-                    ReserveChange = reader.GetInt32();
+                    ReserveChange = reader.GetSingle();
                     break;
                 case "pullfromreserve":
                     PullFromReserve = reader.GetBoolean();
