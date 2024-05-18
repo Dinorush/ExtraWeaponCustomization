@@ -8,7 +8,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         OnFire, OnShot = OnFire,
         OnHit,
         OnHitBullet,
-        OnHitExplo, OnHitExplosion = OnHitExplo,
+        OnHitExplo, OnHitExplosive = OnHitExplo,
         OnKill,
         OnReload
     }
