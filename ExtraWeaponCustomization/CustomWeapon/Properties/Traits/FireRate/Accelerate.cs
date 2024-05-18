@@ -4,12 +4,13 @@ using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
-    public class FireRateAccel :
+    public class Accelerate :
         IWeaponProperty<WeaponFireRateSetContext>,
         IWeaponProperty<WeaponPostStopFiringContext>,
-        IWeaponProperty<WeaponTriggerContext>
+        IWeaponProperty<WeaponTriggerContext>,
+        IWeaponProperty<WeaponDamageContext>
     {
-        public readonly static string Name = typeof(FireRateAccel).Name;
+        public readonly static string Name = typeof(Accelerate).Name;
         public bool AllowStack { get; } = false;
 
         private float _endShotDelay = 1f;
@@ -29,6 +30,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             set { _endFireRate = Math.Max(0.001f, value); }
         }
         private float _accelTime = 1f;
+        public float EndDamageMod { get; set; } = 1f;
         public float AccelTime
         {
             get { return _accelTime; }
@@ -82,9 +84,21 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _lastUpdateTime = Clock.Time;
         }
 
+        // FireRateSet context is called first, so we know progress is up to date
+        public void Invoke(WeaponDamageContext context)
+        {
+            if (EndDamageMod == 1f) return;
+            context.Damage *= CalculateCurrentDamageMod();
+        }
+
         private float CalculateCurrentFireRate(float startFireRate)
         {
-            return startFireRate + (EndFireRate - startFireRate) * (float) Math.Pow(_progress, AccelExponent);
+            return UnityEngine.Mathf.Lerp(startFireRate, EndFireRate, (float) Math.Pow(_progress, AccelExponent));
+        }
+
+        private float CalculateCurrentDamageMod()
+        {
+            return UnityEngine.Mathf.Lerp(1f, EndDamageMod, (float)Math.Pow(_progress, AccelExponent));
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
@@ -93,6 +107,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteString(nameof(Name), Name);
             writer.WriteNumber(nameof(EndShotDelay), EndShotDelay);
             writer.WriteNumber(nameof(EndFireRate), EndFireRate);
+            writer.WriteNumber(nameof(EndDamageMod), EndDamageMod);
             writer.WriteNumber(nameof(AccelTime), AccelTime);
             writer.WriteNumber(nameof(AccelExponent), AccelExponent);
             writer.WriteNumber(nameof(DecelTime), DecelTime);
@@ -113,6 +128,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 case "accelfirerate":
                     EndFireRate = reader.GetSingle();
                     break;
+                case "enddamagemod":
+                case "acceldamagemod":
+                    EndDamageMod = reader.GetSingle();
+                    break;
                 case "acceltime":
                     AccelTime = reader.GetSingle();
                     break;
@@ -128,8 +147,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "resettriggertype":
                 case "resettrigger":
-                case "triggertype":
-                case "trigger":
                     ResetTriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
                     break;
                 default:
