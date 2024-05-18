@@ -2,16 +2,18 @@
 using AK;
 using CharacterDestruction;
 using Enemies;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion.EEC_Explosion;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
 using FluffyUnderware.DevTools.Extensions;
+using Gear;
 using Player;
 using SNetwork;
 using System;
 using System.Linq;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public static class ExplosionManager
     {
@@ -32,12 +34,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion
             ExplosionEffectPooling.Initialize();
         }
 
-        public static void DoExplosion(Vector3 position, PlayerAgent source, float falloffMod, Explosive eBase)
+        public static void DoExplosion(Vector3 position, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
         {
             ExplosionFXData fxData = new() { position = position };
             fxData.radius.Set(eBase.Radius, MaxRadius);
             FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
-            DoExplosionDamage(position, source, falloffMod, eBase);
+            DoExplosionDamage(position, source, falloffMod, eBase, weapon);
         }
     
         internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius)
@@ -62,7 +64,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion
             });
         }
 
-        internal static void DoExplosionDamage(Vector3 position, PlayerAgent source, float falloffMod, Explosive explosiveBase)
+        internal static void DoExplosionDamage(Vector3 position, PlayerAgent source, float falloffMod, Explosive explosiveBase, BulletWeapon weapon)
         {
             var colliders = Physics.OverlapSphere(position, explosiveBase.Radius, LayerManager.MASK_EXPLOSION_TARGETS);
             if (colliders.Count < 1)
@@ -108,14 +110,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion
 
                 damBase.TempSearchID = searchID;
                 
-                SendExplosionDamage(limb, position, distance, source, falloffMod, explosiveBase);
+                SendExplosionDamage(limb, position, distance, source, falloffMod, explosiveBase, weapon);
             }
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, float distance, PlayerAgent source, float falloffMod, Explosive eBase)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, float distance, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
         {
+            float distFalloff = distance.Map(eBase.InnerRadius, eBase.Radius, 1f, 0f);
             // 0.001f to account for rounding error
-            float damage = falloffMod * distance.Map(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage) + 0.001f;
+            float damage = falloffMod * Mathf.Lerp(eBase.MaxDamage, eBase.MinDamage, distFalloff) + 0.001f;
+            CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
+            if (cwc != null)
+            {
+                WeaponDamageContext context = new(damage, damageable, weapon);
+                cwc.Invoke(context);
+                damage = context.Damage;
+
+                cwc.Invoke(new WeaponPreHitEnemyContext(distFalloff * falloffMod, damageable, weapon, TriggerType.OnHitExplo));
+            }
+
             if (damageable.GetBaseAgent()?.Type == AgentType.Player)
             {
                 GuiManager.CrosshairLayer.PopFriendlyTarget();

@@ -1,13 +1,16 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
+﻿using Agents;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
 using Player;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
-    public sealed class DamageOverTime : IWeaponProperty<WeaponPreHitEnemyContext>
+    public sealed class DamageOverTime :
+        IWeaponProperty<WeaponPreHitEnemyContext>
     {
         public readonly static string Name = typeof(DamageOverTime).Name;
         public bool AllowStack { get; } = true;
@@ -27,11 +30,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             get { return _tickRate; }
             set { _tickRate = MathF.Max(0.01f, value); }
         }
+        public TriggerType TriggerType { get; set; } = TriggerType.OnHit;
+
         private readonly DOTController _controller = new();
-        private DOTInstance? _lastDOT = null;
+        private readonly Dictionary<AgentWrapper, DOTInstance> _lastDOTs = new();
 
         public void Invoke(WeaponPreHitEnemyContext context)
         {
+            if (!context.Type.IsType(TriggerType)) return;
+
             if (Owner == null)
                 Owner = context.Weapon.Owner;
 
@@ -39,16 +46,48 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;
             float damage = TotalDamage * (IgnoreFalloff ? 1f : context.Falloff);
 
-            // If it doesn't stack and we already added one, set the new one with the existing next tick time
-            if (!Stacks && _lastDOT != null && !_lastDOT.Expired)
+            WeaponDamageContext damageContext = new(damage, context.Damageable, context.Weapon);
+            damageContext.Weapon.GetComponent<CustomWeaponComponent>().Invoke(damageContext);
+            damage = damageContext.Damage;
+
+            // If it doesn't stack, need to kill the existing DOT and add a new one
+            if (!Stacks)
             {
-                float nextTickTime = _lastDOT.NextTickTime;
-                _lastDOT.Destroy();
-                _lastDOT = _controller.AddDOT(damage, context.Damageable, this);
-                _lastDOT?.StartWithTargetTime(nextTickTime);
+                _lastDOTs.Keys
+                .Where(wrapper => wrapper.Agent == null || wrapper.Agent.Alive != true || wrapper.Agent.m_isBeingDestroyed == true || _lastDOTs[wrapper].Expired)
+                .ToList()
+                .ForEach(wrapper => {
+                    _lastDOTs.Remove(wrapper);
+                });
+
+                AgentWrapper wrapper = new(limb.GetBaseAgent());
+
+                if (_lastDOTs.ContainsKey(wrapper))
+                {
+                    DOTInstance? lastDot = _lastDOTs[wrapper];
+                    if (!lastDot.Started)
+                        return;
+
+                    float nextTickTime = lastDot.NextTickTime;
+                    lastDot.Destroy();
+                    lastDot = _controller.AddDOT(damage, context.Damageable, this);
+                    if (lastDot != null)
+                    {
+                        lastDot.StartWithTargetTime(nextTickTime);
+                        _lastDOTs[wrapper] = lastDot;
+                    }
+                    else
+                        _lastDOTs.Remove(wrapper);
+                }
+                else
+                {
+                    DOTInstance? newDOT = _controller.AddDOT(damage, context.Damageable, this);
+                    if (newDOT != null)
+                        _lastDOTs[wrapper] = newDOT;
+                }
             }
             else
-                _lastDOT = _controller.AddDOT(damage, context.Damageable, this);
+                _controller.AddDOT(damage, context.Damageable, this);
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
@@ -103,8 +142,35 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "ignorearmor":
                     IgnoreArmor = reader.GetBoolean();
                     break;
+                case "triggertype":
+                case "trigger":
+                    TriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
+                    if (!TriggerType.IsType(TriggerType.OnHit)) TriggerType = TriggerType.Invalid;
+                    break;
                 default:
                     break;
+            }
+        }
+
+        sealed class AgentWrapper
+        {
+            public int ID { get; }
+            public Agent Agent { get; }
+
+            public AgentWrapper(Agent agent)
+            {
+                ID = agent.GetInstanceID();
+                Agent = agent;
+            }
+
+            public override int GetHashCode()
+            {
+                return ID;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is AgentWrapper wrapper && wrapper.ID == ID;
             }
         }
     }

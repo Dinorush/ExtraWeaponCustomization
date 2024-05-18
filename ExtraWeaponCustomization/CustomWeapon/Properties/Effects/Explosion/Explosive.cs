@@ -1,14 +1,13 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class Explosive : IWeaponProperty<WeaponPreHitContext>
     {
         public readonly static string Name = typeof(Explosive).Name;
-        public bool AllowStack { get; } = false;
+        public bool AllowStack { get; } = true;
 
         public float MaxDamage { get; set; } = 0f;
         public float MinDamage { get; set; } = 0f;
@@ -23,7 +22,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPreHitContext context)
         {
             float falloffMod = IgnoreFalloff ? 1f : context.Falloff;
-            ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Weapon.Owner, falloffMod, this);
+            ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Weapon.Owner, falloffMod, this, context.Weapon);
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)

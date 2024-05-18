@@ -16,7 +16,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
             Data = weaponHitData;
             Weapon = weapon;
             AdditionalDist = additionalDist;
-            Falloff = (Data.rayHit.distance + AdditionalDist).Map(Data.damageFalloff.x, Data.damageFalloff.y, 1f, BulletWeapon.s_falloffMin);
+            Falloff = Data.Falloff(additionalDist);
         }
     }
 }

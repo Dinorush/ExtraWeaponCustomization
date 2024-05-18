@@ -7,9 +7,8 @@ using ExtraWeaponCustomization.Dependencies;
 using GTFO.API;
 using Il2CppInterop.Runtime.Injection;
 using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion.EEC_Explosion.Handlers;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion;
 
 namespace ExtraWeaponCustomization;
 
@@ -44,5 +43,6 @@ internal sealed class EntryPoint : BasePlugin
         ClassInjector.RegisterTypeInIl2Cpp<CustomWeaponComponent>();
         ExplosionManager.Init();
         DOTDamageManager.Init();
+        CustomWeaponManager.Current.GetCustomWeaponData(0); // Just want to make it get custom weapon data on startup, need to call something
     }
 }

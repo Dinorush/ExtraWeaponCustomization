@@ -1,11 +1,12 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Text.Json;
-using ExtraWeaponCustomization.Utils;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
-    public class FireRateMod : IWeaponProperty<WeaponTriggerContext>, IWeaponProperty<WeaponFireRateContext>
+    public class FireRateMod :
+        IWeaponProperty<WeaponTriggerContext>,
+        IWeaponProperty<WeaponFireRateContext>
     {
         public readonly static string Name = typeof(FireRateMod).Name;
         public bool AllowStack { get; } = true;
@@ -14,12 +15,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public float Duration { get; set; } = 0f;
         public StackType StackType { get; set; } = StackType.None;
         public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
+        public TriggerType ResetTriggerType { get; set; } = TriggerType.Invalid;
 
         private readonly Queue<float> _expireTimes = new();
 
         public void Invoke(WeaponTriggerContext context)
         {
-            if (context.Type != TriggerType) return;
+            if (context.Type.IsType(ResetTriggerType))
+            {
+                _expireTimes.Clear();
+                return;
+            }
+            else if (!context.Type.IsType(TriggerType)) return;
 
             if (StackType == StackType.None) _expireTimes.Clear();
             _expireTimes.Enqueue(Clock.Time + Duration);
@@ -59,6 +66,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "triggertype":
                 case "trigger":
                     TriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
+                    break;
+                case "resettriggertype":
+                case "resettrigger":
+                    ResetTriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
                     break;
                 default:
                     break;

@@ -130,6 +130,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreHitEnemyContext>();
             RegisterContext<WeaponPostReloadContext>();
 
+            RegisterContext<WeaponDamageContext>();
             RegisterContext<WeaponPreAmmoPackContext>();
             RegisterContext<WeaponPostAmmoPackContext>();
             RegisterContext<WeaponPreAmmoUIContext>();

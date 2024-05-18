@@ -5,7 +5,9 @@ using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
-    public sealed class DamageModPerTarget : IWeaponProperty<WeaponPreHitEnemyContext>
+    public sealed class DamageModPerTarget : 
+        IWeaponProperty<WeaponTriggerContext>,
+        IWeaponProperty<WeaponDamageContext>
     {
         public readonly static string Name = typeof(DamageModPerTarget).Name;
         public bool AllowStack { get; } = true;
@@ -13,31 +15,46 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public float Mod { get; set; } = 1f;
         public float Duration { get; set; } = 0f;
         public StackType StackType { get; set; } = StackType.None;
+        public TriggerType TriggerType { get; set; } = TriggerType.OnHit;
+        public TriggerType ResetTriggerType { get; set; } = TriggerType.Invalid;
 
         private readonly Dictionary<Agent, Queue<float>> _expireTimes = new();
 
-        public void Invoke(WeaponPreHitEnemyContext context)
+        public void Invoke(WeaponTriggerContext context)
         {
-            // Context only gets invoked on enemy agents
-            Agent agent = context.Damageable!.GetBaseAgent();
+            if (context.Type.IsType(ResetTriggerType))
+            {
+                _expireTimes.Clear();
+                return;
+            }
+            else if (!context.Type.IsType(TriggerType)) return;
+
+            // TriggerType is enforced to be OnHit
+            WeaponPreHitEnemyContext damageContext = (WeaponPreHitEnemyContext) context;
+            Agent agent = damageContext.Damageable!.GetBaseAgent();
 
             if (!_expireTimes.ContainsKey(agent))
             {
                 // Clean dead agents from dict. Doesn't need to happen here, but we don't need to run this often, so eh
                 List<Agent> dead = new();
-                foreach (var key in _expireTimes.Keys) if (!key.Alive) dead.Add(key);
+                foreach (var key in _expireTimes.Keys) if (key.GetInstanceID() == 0 || !key.Alive) dead.Add(key!);
                 foreach (var key in dead) _expireTimes.Remove(key);
 
                 _expireTimes[agent] = new Queue<float>();
             }
 
-            if (!_expireTimes.ContainsKey(agent)) return;
-            while (_expireTimes[agent].Count > 0 && _expireTimes[agent].Peek() < Clock.Time) _expireTimes[agent].Dequeue();
-            context.Data.damage *= StackType.CalculateMod(Mod, _expireTimes[agent].Count);
-
             if (StackType == StackType.None) _expireTimes[agent].Clear();
 
             _expireTimes[agent].Enqueue(Clock.Time + Duration);
+        }
+
+        public void Invoke(WeaponDamageContext context)
+        {
+            Agent agent = context.Damageable!.GetBaseAgent();
+            if (!_expireTimes.ContainsKey(agent)) return;
+
+            while (_expireTimes[agent].Count > 0 && _expireTimes[agent].Peek() < Clock.Time) _expireTimes[agent].Dequeue();
+            context.Damage *= StackType.CalculateMod(Mod, _expireTimes[agent].Count);
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
@@ -63,6 +80,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "stacktype":
                 case "stack":
                     StackType = reader.GetString()?.ToStackType() ?? StackType.Invalid;
+                    break;
+                case "triggertype":
+                case "trigger":
+                    TriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
+                    if (!TriggerType.IsType(TriggerType.OnHit)) TriggerType = TriggerType.Invalid;
+                    break;
+                case "resettriggertype":
+                case "resettrigger":
+                    ResetTriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
                     break;
                 default:
                     break;

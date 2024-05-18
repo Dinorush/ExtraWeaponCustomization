@@ -26,6 +26,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool Expired => _ticks <= 0;
         public bool CanTick => Clock.Time - _lastTickTime >= TickDelay;
         public bool Started => _ticks < (int)(DotBase.Duration * DotBase.TickRate);
+
         public bool CanAddInstance(DamageOverTime dotBase)
         {
             return DotBase.Stacks && DotBase == dotBase && !Started;

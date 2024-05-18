@@ -1,4 +1,6 @@
 ﻿using Gear;
+using static Weapon;
+using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
@@ -11,6 +13,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         {
             Weapon = weapon;
             Type = type;
+        }
+
+        public static IDamageable? GetDamageableFromData(WeaponHitData data)
+        {
+            GameObject? gameObject = data.rayHit.collider.gameObject;
+            if (gameObject == null) return null;
+
+            IDamageable? collider = gameObject.GetComponent<ColliderMaterial>()?.Damageable;
+            if (collider != null)
+                return collider;
+
+            return gameObject.GetComponent<IDamageable>();
         }
     }
 }

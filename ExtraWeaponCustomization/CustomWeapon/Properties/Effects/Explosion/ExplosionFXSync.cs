@@ -1,6 +1,6 @@
 ﻿using ExtraWeaponCustomization.Networking;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Explosion
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     internal sealed class ExplosionFXSync : SyncedEvent<ExplosionFXData>
     {

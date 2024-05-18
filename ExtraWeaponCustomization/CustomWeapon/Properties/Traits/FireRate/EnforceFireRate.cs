@@ -1,5 +1,4 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using Player;
 using System;
@@ -10,7 +9,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     public sealed class EnforceFireRate :
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponPreHitEnemyContext>
+        IWeaponProperty<WeaponDamageContext>
     {
         public readonly static string Name = typeof(EnforceFireRate).Name;
         public bool AllowStack { get; } = false;
@@ -48,10 +47,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             context.Weapon.UpdateAmmoStatus();
         }
 
-        public void Invoke(WeaponPreHitEnemyContext context)
+        public void Invoke(WeaponDamageContext context)
         {
             // Won't apply on the first shot (no time delta available to use)
-            context.Data.damage *= 1f + GetShotsInBuffer(context.Weapon);
+            context.Damage *= 1f + GetShotsInBuffer(context.Weapon);
         }
 
         private int GetShotsInBuffer(BulletWeapon weapon)
