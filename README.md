@@ -11,11 +11,11 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Fire Rate Mod: Applies a fire rate modifier. [Automatic weapons only]
 
 #### Traits - Innate gun behavior modifications
+- Accelerate: Fire rate and/or damage changes as the trigger is held. [Automatic weapons only]
 - Ammopack Refill: Specify the % of reserves ammopacks refill.
 - Auto Aim: Automatically fire toward targets.
 - Auto Trigger: Hold the trigger to fire. [Semi or Burst weapons only]
 - Enforce Fire Rate: Increases damage/ammo cost when FPS is lower than fire rate. [Automatic weapons only]
-- Accelerate: Fire rate changes as the trigger is held. [Automatic weapons only]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst weapons only]
 - Reserve Clip: Combines reserve ammo with the magazine.
 
