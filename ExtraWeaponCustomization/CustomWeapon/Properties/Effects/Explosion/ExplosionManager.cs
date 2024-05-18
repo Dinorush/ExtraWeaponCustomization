@@ -116,9 +116,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, float distance, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
         {
-            float distFalloff = distance.Map(eBase.InnerRadius, eBase.Radius, 1f, 0f);
+            float damage = distance.Map(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage);
+            float distFalloff = damage / eBase.MaxDamage;
             // 0.001f to account for rounding error
-            float damage = falloffMod * Mathf.Lerp(eBase.MaxDamage, eBase.MinDamage, distFalloff) + 0.001f;
+            damage = falloffMod * damage + 0.001f;
+
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc != null)
             {
