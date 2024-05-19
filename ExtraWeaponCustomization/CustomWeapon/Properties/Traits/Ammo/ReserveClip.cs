@@ -1,5 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using Player;
 using System;
@@ -27,7 +27,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostAmmoPackContext context)
         {
-            context.Weapon.Owner.Inventory.DoReload();
+            BulletWeapon weapon = context.Weapon;
+            if (weapon.Owner.Inventory.WieldedItem.AmmoType == AmmoType.ResourcePackRel)
+            {
+                weapon.SetCurrentClip(PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetClipBulletsFromPack(weapon.GetCurrentClip(), weapon.AmmoType));
+                weapon.m_wasOutOfAmmo = false;
+            }
+            else
+                weapon.Owner.Inventory.DoReload();
         }
 
         public void Invoke(WeaponPostFireContext context)
@@ -39,6 +46,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         {
             context.Reserve += context.Clip;
             context.ShowClip = false;
+        }
+
+        public IWeaponProperty Clone()
+        {
+            return new ReserveClip();
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)

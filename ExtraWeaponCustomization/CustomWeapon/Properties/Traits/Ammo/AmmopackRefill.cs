@@ -1,4 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
@@ -13,6 +14,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPreAmmoPackContext context)
         {
             context.AmmoRel = AmmoRefillRel;
+        }
+
+        public IWeaponProperty Clone()
+        {
+            AmmopackRefill copy = new()
+            {
+                AmmoRefillRel = AmmoRefillRel,
+            };
+            return copy;
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)

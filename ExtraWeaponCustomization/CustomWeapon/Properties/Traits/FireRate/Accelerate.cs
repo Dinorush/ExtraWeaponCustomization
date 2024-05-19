@@ -1,4 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Text.Json;
 
@@ -99,6 +100,21 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private float CalculateCurrentDamageMod()
         {
             return UnityEngine.Mathf.Lerp(1f, EndDamageMod, (float)Math.Pow(_progress, AccelExponent));
+        }
+
+        public IWeaponProperty Clone()
+        {
+            Accelerate copy = new()
+            {
+                EndFireRate = EndFireRate,
+                EndDamageMod = EndDamageMod,
+                AccelTime = AccelTime,
+                AccelExponent = AccelExponent,
+                DecelTime = DecelTime,
+                DecelDelay = DecelDelay,
+                ResetTriggerType = ResetTriggerType
+            };
+            return copy;
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)

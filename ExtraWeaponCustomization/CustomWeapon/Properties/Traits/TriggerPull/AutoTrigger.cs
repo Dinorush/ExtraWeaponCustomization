@@ -19,6 +19,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
+        public IWeaponProperty Clone()
+        {
+            return new AutoTrigger();
+        }
+
         public void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
     }
 }

@@ -44,11 +44,6 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _autoAim?.Update();
         }
 
-        public void OnDestroy()
-        {
-            _autoAim?.Destroy();
-        }
-
         public void OnEnable()
         {
             _autoAim?.OnEnable();
@@ -77,7 +72,8 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public void Register(CustomWeaponData data)
         {
-            foreach (IWeaponProperty property in data.Properties)
+            List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
+            foreach (IWeaponProperty property in properties)
                 Register(property);
         }
 

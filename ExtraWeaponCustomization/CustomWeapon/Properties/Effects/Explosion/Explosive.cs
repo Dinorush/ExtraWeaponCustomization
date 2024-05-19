@@ -25,6 +25,23 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Weapon.Owner, falloffMod, this, context.Weapon);
         }
 
+        public IWeaponProperty Clone()
+        {
+            Explosive copy = new()
+            {
+                MaxDamage = MaxDamage,
+                MinDamage = MinDamage,
+                InnerRadius = InnerRadius,
+                Radius = Radius,
+                PrecisionMult = PrecisionMult,
+                StaggerMult = StaggerMult,
+                DamageLimb = DamageLimb,
+                IgnoreArmor = IgnoreArmor,
+                IgnoreFalloff = IgnoreFalloff,
+            };
+            return copy;
+        }
+
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();

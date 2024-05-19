@@ -62,6 +62,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return Math.Min(cap, (int)_shotBuffer);
         }
 
+        public IWeaponProperty Clone()
+        {
+            return new EnforceFireRate();
+        }
+
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();

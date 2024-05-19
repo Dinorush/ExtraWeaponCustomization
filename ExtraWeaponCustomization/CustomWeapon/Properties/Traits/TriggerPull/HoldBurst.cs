@@ -1,4 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using System.Text.Json;
 
@@ -30,6 +31,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostStopFiringContext context)
         {
             _burstMaxCount = 0;
+        }
+
+        public IWeaponProperty Clone()
+        {
+            HoldBurst copy = new()
+            {
+                ShotsUntilCancel = ShotsUntilCancel
+            };
+            return copy;
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)

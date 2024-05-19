@@ -90,6 +90,24 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 _controller.AddDOT(damage, context.Damageable, this);
         }
 
+        public IWeaponProperty Clone()
+        {
+            DamageOverTime copy = new()
+            {
+                TotalDamage = TotalDamage,
+                PrecisionMult = PrecisionMult,
+                StaggerMult = StaggerMult,
+                Duration = Duration,
+                Stacks = Stacks,
+                IgnoreFalloff = IgnoreFalloff,
+                DamageLimb = DamageLimb,
+                IgnoreArmor = IgnoreArmor,
+                TickRate = TickRate,
+                TriggerType = TriggerType
+            };
+            return copy;
+        }
+
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();

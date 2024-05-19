@@ -45,6 +45,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             ammoStorage.UpdateSlotAmmoUI(ammoStorage.m_ammoStorage[(int) context.Weapon.AmmoType], newClip);
         }
 
+        public IWeaponProperty Clone()
+        {
+            AmmoMod copy = new()
+            {
+                ClipChange = ClipChange,
+                ReserveChange = ReserveChange,
+                PullFromReserve = PullFromReserve,
+                TriggerType = TriggerType
+            };
+            return copy;
+        }
+
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();

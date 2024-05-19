@@ -57,6 +57,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             context.Damage *= StackType.CalculateMod(Mod, _expireTimes[agent].Count);
         }
 
+        public IWeaponProperty Clone()
+        {
+            DamageModPerTarget copy = new()
+            {
+                Mod = Mod,
+                Duration = Duration,
+                StackType = StackType,
+                TriggerType = TriggerType,
+                ResetTriggerType = ResetTriggerType
+            };
+            return copy;
+        }
+
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
