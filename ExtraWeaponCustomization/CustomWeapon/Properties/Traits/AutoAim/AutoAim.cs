@@ -1,8 +1,5 @@
 ﻿using Enemies;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
-using FluffyUnderware.DevTools.Extensions;
 using Gear;
 using System.Linq;
 using System.Text.Json;
@@ -74,18 +71,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         {
             _weapon = context.Weapon;
 
-            // Setup reticle
-            _reticleHolder = new GameObject();
-            _reticleHolder.transform.SetParent(GuiManager.CrosshairLayer.CanvasTrans);
-            _reticleHolder.transform.localScale = Vector3.one;
-            _reticleHolder.transform.eulerAngles = Vector3.zero;
-
-            _reticle = GameObject.Instantiate(GuiManager.CrosshairLayer.m_hitIndicatorFriendly, _reticleHolder.transform);
-            _reticle.name = "AutoAimIndicator";
-            _reticle.transform.localScale = Vector3.zero;
-            _reticle.transform.localEulerAngles = Vector3.zero;
-            _reticle.m_hitColor = _passiveDetection;
-            _reticle.UpdateColorsWithAlphaMul(0f);
+            _reticle = AutoAimReticle.Reticle;
+            _reticle.SetVisible(true);
+            _reticleHolder = AutoAimReticle.ReticleHolder;
         }
 
         public void Update() 
@@ -113,12 +101,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void OnEnable()
         {
             _reticle?.SetVisible(true);
-        }
-
-        public void Destroy()
-        {
-            _reticle.Destroy();
-            _reticleHolder.Destroy();
         }
 
         private void UpdateDetection()
@@ -262,6 +244,26 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     return enemyAgent;
             }
             return null;
+        }
+
+        public IWeaponProperty Clone()
+        {
+            AutoAim copy = new()
+            {
+                AimActive = AimActive,
+                HipActive = HipActive,
+                Angle = Angle,
+                Range = Range,
+                LockTime = LockTime,
+                LockDecayTime = LockDecayTime,
+                StayOnTarget = StayOnTarget,
+                ResetOnNewTarget = ResetOnNewTarget,
+                RequireLock = RequireLock,
+                TagOnly = TagOnly,
+                IgnoreInvisibility = IgnoreInvisibility,
+                TargetBody = TargetBody
+            };
+            return copy;
         }
 
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
