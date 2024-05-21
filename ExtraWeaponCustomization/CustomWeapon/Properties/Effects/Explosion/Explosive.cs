@@ -17,6 +17,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreFalloff { get; set; } = false;
         public bool DamageLimb { get; set; } = true;
         public bool IgnoreArmor { get; set; } = false;
+        public bool IgnoreDamageMods { get; set; } = false;
 
         public void Invoke(WeaponPreHitContext context)
         {
@@ -38,6 +39,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 DamageLimb = DamageLimb,
                 IgnoreArmor = IgnoreArmor,
                 IgnoreFalloff = IgnoreFalloff,
+                IgnoreDamageMods = IgnoreDamageMods
             };
             return copy;
         }
@@ -55,6 +57,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
+            writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
             writer.WriteEndObject();
         }
 
@@ -92,6 +95,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "ignorearmor":
                     IgnoreArmor = reader.GetBoolean();
+                    break;
+                case "ignoredamagemods":
+                case "ignoredamagemod":
+                    IgnoreDamageMods = reader.GetBoolean();
                     break;
                 default:
                     break;

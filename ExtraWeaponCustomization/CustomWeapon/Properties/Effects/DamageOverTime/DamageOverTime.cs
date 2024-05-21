@@ -1,6 +1,5 @@
 ﻿using Agents;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using Player;
 using System;
@@ -26,6 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreFalloff { get; set; } = false;
         public bool DamageLimb { get; set; } = true;
         public bool IgnoreArmor { get; set; } = false;
+        public bool IgnoreDamageMods { get; set; } = false;
         private float _tickRate = 2f;
         public float TickRate
         {
@@ -48,9 +48,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;
             float damage = TotalDamage * (IgnoreFalloff ? 1f : context.Falloff);
 
-            WeaponDamageContext damageContext = new(damage, context.Damageable, context.Weapon);
-            damageContext.Weapon.GetComponent<CustomWeaponComponent>().Invoke(damageContext);
-            damage = damageContext.Damage;
+            if (!IgnoreDamageMods)
+            {
+                WeaponDamageContext damageContext = new(damage, context.Damageable, context.Weapon);
+                damageContext.Weapon.GetComponent<CustomWeaponComponent>().Invoke(damageContext);
+                damage = damageContext.Damage;
+            }
 
             // If it doesn't stack, need to kill the existing DOT and add a new one
             if (!Stacks)
@@ -104,6 +107,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 IgnoreFalloff = IgnoreFalloff,
                 DamageLimb = DamageLimb,
                 IgnoreArmor = IgnoreArmor,
+                IgnoreDamageMods = IgnoreDamageMods,
                 TickRate = TickRate,
                 TriggerType = TriggerType
             };
@@ -123,6 +127,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
+            writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
+            writer.WriteString(nameof(TriggerType), TriggerType.ToString());
             writer.WriteEndObject();
         }
 
@@ -161,6 +167,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "ignorearmor":
                     IgnoreArmor = reader.GetBoolean();
+                    break;
+                case "ignoredamagemods":
+                case "ignoredamagemod":
+                    IgnoreDamageMods = reader.GetBoolean();
                     break;
                 case "triggertype":
                 case "trigger":

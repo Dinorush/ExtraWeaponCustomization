@@ -139,9 +139,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc != null)
             {
-                WeaponDamageContext context = new(damage, damageable, weapon);
-                cwc.Invoke(context);
-                damage = context.Damage;
+                if (!eBase.IgnoreDamageMods)
+                {
+                    WeaponDamageContext context = new(damage, damageable, weapon);
+                    cwc.Invoke(context);
+                    damage = context.Damage;
+                }
 
                 cwc.Invoke(new WeaponPreHitEnemyContext(
                     distFalloff * falloffMod,
