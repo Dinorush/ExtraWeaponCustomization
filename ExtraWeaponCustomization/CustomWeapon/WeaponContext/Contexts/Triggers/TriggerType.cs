@@ -6,16 +6,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
     public enum TriggerType
     {
         Invalid = -1,
-        OnFire = 0, OnShot = OnFire,
-        OnHit = 1,
-        OnHitBullet = OnHit | 2,
-        OnHitExplo = OnHit | 4, OnHitExplosive = OnHitExplo,
-        OnPrecHit = OnHit | 8, OnPrecisionHit = OnPrecHit,
-        OnPrecHitBullet = OnPrecHit | OnHitBullet | 16, OnPrecisionHitBullet = OnPrecHitBullet,
-        OnPrecHitExplo = OnPrecHit | OnHitExplo | 32, OnPrecHitExplosive = OnPrecHitExplo, OnPrecisionHitExplo = OnPrecHitExplo, OnPrecisionHitExplosive = OnPrecHitExplo,
-        OnKill = 64,
-        OnPrecKill = OnKill | 128, OnPrecisionKill = OnPrecKill,
-        OnReload = 256
+        OnFire = 1, OnShot = OnFire,
+        OnHit = 2,
+        OnHitBullet = OnHit | 4,
+        OnHitExplo = OnHit | 8, OnHitExplosive = OnHitExplo,
+        OnPrecHit = OnHit | 16, OnPrecisionHit = OnPrecHit,
+        OnPrecHitBullet = OnPrecHit | OnHitBullet | 32, OnPrecisionHitBullet = OnPrecHitBullet,
+        OnPrecHitExplo = OnPrecHit | OnHitExplo | 64, OnPrecHitExplosive = OnPrecHitExplo, OnPrecisionHitExplo = OnPrecHitExplo, OnPrecisionHitExplosive = OnPrecHitExplo,
+        OnKill = 128,
+        OnPrecKill = OnKill | 256, OnPrecisionKill = OnPrecKill,
+        OnReload = 512
     }
 
     public static class TriggerTypeMethods
