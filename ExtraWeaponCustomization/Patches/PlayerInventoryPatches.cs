@@ -1,13 +1,12 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using HarmonyLib;
 using Player;
 
 namespace ExtraWeaponCustomization.Patches
 {
-    internal class PlayerInventoryPatches
+    internal static class PlayerInventoryPatches
     {
         [HarmonyPatch(typeof(PUI_Inventory), nameof(PUI_Inventory.SetSlotAmmo))]
         [HarmonyWrapSafe]
