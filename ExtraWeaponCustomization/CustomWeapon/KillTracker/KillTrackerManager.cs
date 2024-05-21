@@ -12,7 +12,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
 
         public static void RegisterHit(Agent? enemy, BulletWeapon? weapon, bool precHit = false)
         {
-            if (enemy == null || weapon == null) return;
+            if (enemy == null || weapon == null || !weapon.Owner.IsLocallyOwned) return;
 
             AgentWrapper wrapper = new(enemy);
             _lastHits[wrapper] = new WeaponHitWrapper(weapon, precHit);
