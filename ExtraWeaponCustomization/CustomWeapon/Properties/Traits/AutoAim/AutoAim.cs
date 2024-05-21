@@ -28,6 +28,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public bool TagOnly { get; set; } = false;
         public bool IgnoreInvisibility { get; set; } = false;
         public bool TargetBody { get; set; } = false;
+        public bool FavorLookPoint { get; set; } = false;
 
         public CrosshairHitIndicator? _reticle;
         private GameObject? _reticleHolder;
@@ -38,6 +39,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private EnemyAgent? _lastTarget;
         private float _progress;
         private float _lastUpdateTime;
+
+        private static Ray _ray;
+        private static RaycastHit _raycastHit;
 
         private readonly Color _targetedColor = new(1.2f, 0.3f, 0.1f, 1f);
         private readonly Color _passiveLocked = new(0.8f, 0.3f, 0.2f, 1f);
@@ -60,6 +64,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPreRayContext context)
         {
+            // Prioritize aim if looking at an enemy
+            if (FavorLookPoint && _camera != null)
+            {
+                _ray.origin = _camera.transform.position;
+                _ray.direction = context.Data.fireDir;
+                if (Physics.Raycast(_ray, out _raycastHit, 100f, LayerManager.MASK_BULLETWEAPON_RAY))
+                {
+                    IDamageable? damageable = WeaponTriggerContext.GetDamageableFromRayHit(_raycastHit);
+                    if (damageable != null && damageable.GetBaseAgent()?.Type == Agents.AgentType.Enemy)
+                        return; // Cancel auto aim (just shoot where user is aiming)
+                }
+            }
+
             if (UseAutoAim)
             {
                 Vector3 trgtPos = TargetBody ? _target!.AimTargetBody.position : _target!.AimTarget.position;
@@ -119,6 +136,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     _progress = 0;
                 _target = null;
                 return;
+            }
+
+            // If the target died, immediately re-acquire another one
+            if (_lastTarget != null && (_target == null || !_target.Alive))
+            {
+                _target = null;
+                _detectionTick = 0f;
             }
 
             if (_detectionTick >= Time.time) return;
@@ -261,7 +285,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 RequireLock = RequireLock,
                 TagOnly = TagOnly,
                 IgnoreInvisibility = IgnoreInvisibility,
-                TargetBody = TargetBody
+                TargetBody = TargetBody,
+                FavorLookPoint = FavorLookPoint
             };
             return copy;
         }
@@ -282,6 +307,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(TagOnly), TagOnly);
             writer.WriteBoolean(nameof(IgnoreInvisibility), IgnoreInvisibility);
             writer.WriteBoolean(nameof(TargetBody), TargetBody);
+            writer.WriteBoolean(nameof(FavorLookPoint), FavorLookPoint);
             writer.WriteEndObject();
         }
 
@@ -327,6 +353,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "targetbody":
                     TargetBody = reader.GetBoolean();
+                    break;
+                case "favorlookpoint":
+                case "favourlookpoint":
+                    FavorLookPoint = reader.GetBoolean();
                     break;
                 default:
                     break;

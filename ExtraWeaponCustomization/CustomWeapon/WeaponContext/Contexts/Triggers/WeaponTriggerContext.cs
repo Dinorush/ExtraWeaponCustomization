@@ -17,7 +17,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 
         public static IDamageable? GetDamageableFromData(WeaponHitData data)
         {
-            GameObject? gameObject = data.rayHit.collider.gameObject;
+            return GetDamageableFromRayHit(data.rayHit);
+        }
+
+        public static IDamageable? GetDamageableFromRayHit(RaycastHit rayHit)
+        {
+            GameObject? gameObject = rayHit.collider.gameObject;
             if (gameObject == null) return null;
 
             IDamageable? collider = gameObject.GetComponent<ColliderMaterial>()?.Damageable;
