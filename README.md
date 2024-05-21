@@ -7,7 +7,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Damage Mod: Applies a damage modifier.
 - Damage Mod Per Target: Applies a damage modifier unique to each target. [Hits only]
 - Damage Over Time: Applies a damage over time effect. [Hits only]
-- Explosive: Causes explosions where bullets land. [Hits only]
+- Explosive: Causes explosions where bullets land. [Bullets fired only]
 - Fire Rate Mod: Applies a fire rate modifier.
 
 #### Traits - Innate gun behavior modifications
