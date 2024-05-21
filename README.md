@@ -8,10 +8,10 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Damage Mod Per Target: Applies a damage modifier unique to each target. [Hits only]
 - Damage Over Time: Applies a damage over time effect. [Hits only]
 - Explosive: Causes explosions where bullets land. [Hits only]
-- Fire Rate Mod: Applies a fire rate modifier. [Automatic weapons only]
+- Fire Rate Mod: Applies a fire rate modifier.
 
 #### Traits - Innate gun behavior modifications
-- Accelerate: Fire rate and/or damage changes as the trigger is held. [Automatic weapons only]
+- Accelerate: Fire rate and/or damage changes with continuous fire.
 - Ammopack Refill: Specify the % of reserves ammopacks refill.
 - Auto Aim: Automatically fire toward targets.
 - Auto Trigger: Hold the trigger to fire. [Semi or Burst weapons only]
