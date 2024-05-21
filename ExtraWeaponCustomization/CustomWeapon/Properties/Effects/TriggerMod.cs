@@ -72,6 +72,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(TriggerType), TriggerType.ToString());
+            writer.WriteString(nameof(ResetTriggerType), ResetTriggerType.ToString());
             writer.WriteEndObject();
         }
 
