@@ -66,14 +66,26 @@ namespace ExtraWeaponCustomization.Patches
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.PostFireCheck))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void PostFireCallback(BulletWeaponArchetype __instance)
+        private static bool PrePostFireCallback(BulletWeaponArchetype __instance)
         {
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null || cwc.FlushCancelShot(__instance)) return;
+            if (cwc == null) return true;
+            if (cwc.FlushCancelShot(__instance)) return false;
+            return true;
+        }
+
+        [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.PostFireCheck))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void PostPostFireCallback(BulletWeaponArchetype __instance)
+        {
+            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
+            if (cwc == null) return;
 
             cwc.ModifyFireRate(__instance);
             cwc.Invoke(new WeaponPostFireContext(__instance.m_weapon!));
         }
+        
 
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStopFiring))]
         [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnStopFiring))]
