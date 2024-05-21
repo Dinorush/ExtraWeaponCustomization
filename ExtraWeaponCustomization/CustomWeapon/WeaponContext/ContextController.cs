@@ -1,5 +1,6 @@
 using ExtraWeaponCustomization.CustomWeapon.Properties;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts.Firing;
 using ExtraWeaponCustomization.Utils;
 using System;
 using System.Collections.Generic;
@@ -144,6 +145,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreHitEnemyContext>();
             RegisterContext<WeaponPostReloadContext>();
 
+            RegisterContext<WeaponCancelFireContext>();
             RegisterContext<WeaponDamageContext>();
             RegisterContext<WeaponPreAmmoPackContext>();
             RegisterContext<WeaponPostAmmoPackContext>();

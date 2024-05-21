@@ -1,6 +1,5 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using HarmonyLib;
 
@@ -19,13 +18,11 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return true;
 
-            WeaponPreFireContext context = new(__instance.m_weapon!);
+            WeaponPreStartFireContext context = new(__instance.m_weapon!);
             cwc.Invoke(context);
+            cwc.UpdateStoredFireRate(__instance); // Need to update prior to firing to predict weapon sound delay
             if (!context.Allow)
-            {
-                cwc.StoreCancelShot(__instance);
-                __instance.m_readyToFire = false;
-            }
+                cwc.StoreCancelShot();
 
             return context.Allow;
         }
@@ -38,7 +35,14 @@ namespace ExtraWeaponCustomization.Patches
         private static void PostStartFireCallback(BulletWeaponArchetype __instance)
         {
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null || cwc.CancelShot) return;
+
+            if (cwc == null) return;
+            if (cwc.ResetShotIfCancel(__instance))
+            {
+                cwc.CancelShot = false;
+                __instance.m_readyToFire = false; // Prevent anything else from running (no need to let it run if cancelled)
+                return;
+            }
 
             cwc.Invoke(new WeaponPostStartFireContext(__instance.m_weapon!));
         }
@@ -57,8 +61,7 @@ namespace ExtraWeaponCustomization.Patches
             WeaponPreFireContext context = new(__instance.m_weapon!);
             cwc.Invoke(context);
             if (!context.Allow)
-                cwc.StoreCancelShot(__instance);
-            cwc.UpdateStoredFireRate();
+                cwc.StoreCancelShot();
 
             return context.Allow;
         }
@@ -66,12 +69,12 @@ namespace ExtraWeaponCustomization.Patches
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.PostFireCheck))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static bool PrePostFireCallback(BulletWeaponArchetype __instance)
+        private static void PrePostFireCallback(BulletWeaponArchetype __instance)
         {
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return true;
-            if (cwc.FlushCancelShot(__instance)) return false;
-            return true;
+            if (cwc == null) return;
+
+            cwc.ResetShotIfCancel(__instance); // Need reset stuff here so post fire check correctly stops firing
         }
 
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.PostFireCheck))]
@@ -81,7 +84,13 @@ namespace ExtraWeaponCustomization.Patches
         {
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
+            if (cwc.CancelShot)
+            {
+                cwc.CancelShot = false;
+                return;
+            }
 
+            cwc.UpdateStoredFireRate(__instance);
             cwc.ModifyFireRate(__instance);
             cwc.Invoke(new WeaponPostFireContext(__instance.m_weapon!));
         }

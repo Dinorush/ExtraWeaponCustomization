@@ -25,7 +25,6 @@ namespace ExtraWeaponCustomization.Patches
 
             CustomWeaponComponent cwc = __instance.gameObject.AddComponent<CustomWeaponComponent>();
             cwc.Register(data);
-            cwc.Invoke(new WeaponPostSetupContext(__instance));
         }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]

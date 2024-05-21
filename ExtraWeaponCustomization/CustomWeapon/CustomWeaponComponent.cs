@@ -3,10 +3,13 @@ using ExtraWeaponCustomization.CustomWeapon.Properties;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts.Firing;
+using ExtraWeaponCustomization.Utils;
 using Gear;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static GameData.GD;
 
 namespace ExtraWeaponCustomization.CustomWeapon
 {
@@ -18,13 +21,13 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         private AutoAim? _autoAim;
 
-        public bool CancelShot { get { return _nextShotTime > 0; } }
+        public bool CancelShot { get; set; }
 
-        private readonly HashSet<Type> _propertyTypes = new();
+        private readonly HashSet<Type> _propertyTypes;
         // When canceling a shot, holds the next shot timer so we can reset back to it
-        private float _nextShotTime = 0f;
-        private float _nextBurstTime = 0f;
-
+        private float _lastShotTimer = 0f;
+        private float _lastBurstTimer = 0f;
+        private float _lastFireRate = 0f;
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
 
@@ -33,12 +36,15 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
             _contextController = new ContextController();
+            _propertyTypes = new HashSet<Type>();
+
             BulletWeapon? bulletWeapon = GetComponent<BulletWeapon>();
             if (bulletWeapon == null)
                 throw new ArgumentException("Parent Object", "Custom Weapon Component was added to an object without a Bullet Weapon component.");
             Weapon = bulletWeapon;
 
             _fireRate = 1f / Math.Max(Weapon.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+            _lastFireRate = _fireRate;
             CurrentFireRate = _fireRate;
             _burstDelay = Weapon.m_archeType.BurstDelay();
             CustomWeaponManager.Current.AddCWCListener(this);
@@ -80,36 +86,37 @@ namespace ExtraWeaponCustomization.CustomWeapon
             List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
             foreach (IWeaponProperty property in properties)
                 Register(property);
+
+            Invoke(new WeaponPostSetupContext(Weapon));
         }
 
         public void Clear()
         {
             _propertyTypes.Clear();
             _contextController.Clear();
+            _autoAim?.OnDisable();
             _autoAim = null;
             CurrentFireRate = _fireRate;
             CurrentBurstDelay = _burstDelay;
-            _nextShotTime = 0;
-            _nextBurstTime = 0;
         }
 
         public bool HasProperty(Type type) => _propertyTypes.Contains(type);
 
-        public void StoreCancelShot(BulletWeaponArchetype archetype) 
+        public void StoreCancelShot()
         {
-            _nextShotTime = archetype.m_nextShotTimer;
-            _nextBurstTime = archetype.m_nextBurstTimer;
+            Invoke(new WeaponCancelFireContext(Weapon));
+            CancelShot = true;
         }
 
-        public bool FlushCancelShot(BulletWeaponArchetype archetype)
+        public bool ResetShotIfCancel(BulletWeaponArchetype archetype)
         {
             if (CancelShot)
             {
                 archetype.m_fireHeld = false;
-                archetype.m_nextShotTimer = _nextShotTime;
-                archetype.m_nextBurstTimer = _nextBurstTime;
-                _nextShotTime = 0;
-                _nextBurstTime = 0;
+                archetype.m_nextShotTimer = _lastShotTimer;
+                archetype.m_nextBurstTimer = _lastBurstTimer;
+                CurrentFireRate = _lastFireRate;
+                Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
                 if (archetype.m_archetypeData.FireMode == eWeaponFireMode.Burst)
                     archetype.TryCast<BWA_Burst>()!.m_burstCurrentCount = 0;
                 return true;
@@ -117,8 +124,12 @@ namespace ExtraWeaponCustomization.CustomWeapon
             return false;
         }
 
-        public void UpdateStoredFireRate()
+        public void UpdateStoredFireRate(BulletWeaponArchetype archetype)
         {
+            _lastFireRate = CurrentFireRate;
+            _lastShotTimer = archetype.m_nextShotTimer;
+            _lastBurstTimer = archetype.m_nextBurstTimer;
+
             // Invoke callbacks that override base fire rate
             WeaponFireRateSetContext context = new(Weapon, _fireRate);
             Invoke(context);

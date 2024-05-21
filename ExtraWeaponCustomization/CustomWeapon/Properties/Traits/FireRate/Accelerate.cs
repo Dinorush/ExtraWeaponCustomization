@@ -1,14 +1,15 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts.Firing;
 using System;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class Accelerate :
-        IWeaponProperty<WeaponPostStartFireContext>,
+        IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireRateSetContext>,
         IWeaponProperty<WeaponPostStopFiringContext>,
+        IWeaponProperty<WeaponCancelFireContext>,
         IWeaponProperty<WeaponTriggerContext>,
         IWeaponProperty<WeaponDamageContext>
     {
@@ -50,20 +51,26 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private float _progress = 0f;
         private float _lastUpdateTime = 0f;
+
+        private float _resetProgress = 0f;
+        private float _resetUpdateTime = 0f;
         private CustomWeaponComponent? _cachedCWC;
 
-        public void Invoke(WeaponPostStartFireContext context)
+        public void Invoke(WeaponPreStartFireContext context)
         {
+            _resetProgress = _progress;
+            _resetUpdateTime = _lastUpdateTime;
+
             if (_cachedCWC == null)
                 _cachedCWC = context.Weapon.GetComponent<CustomWeaponComponent>();
             if (_lastUpdateTime == 0f)
                 _lastUpdateTime = Clock.Time;
 
-            float delta = Clock.Time - _lastUpdateTime - Clock.Delta;
+            float delta = Clock.Time - _lastUpdateTime;
             float accelTime = Math.Min(1f / _cachedCWC.CurrentFireRate, delta);
 
             _progress = Math.Min(_progress + accelTime / AccelTime, 1f);
-            delta -= accelTime;
+            delta -= accelTime + Clock.Delta;
 
             if (delta > 0 && delta > DecelDelay)
                 _progress = Math.Max(_progress - (delta - DecelDelay) / DecelTime, 0f);
@@ -86,6 +93,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostStopFiringContext context)
         {
             _lastUpdateTime = Clock.Time;
+        }
+
+        public void Invoke(WeaponCancelFireContext context)
+        {
+            _progress = _resetProgress;
+            _lastUpdateTime = _resetUpdateTime;
         }
 
         public void Invoke(WeaponTriggerContext context)
