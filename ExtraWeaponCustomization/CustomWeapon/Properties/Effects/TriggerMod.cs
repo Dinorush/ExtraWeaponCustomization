@@ -11,7 +11,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool AllowStack { get; } = true;
 
         public float Mod { get; set; } = 1f;
-        public float Cap { get; set; } = -1f;
+        public float Cap { get; set; } = 0f;
         public float Duration { get; set; } = 0f;
         public StackType StackType { get; set; } = StackType.None;
         public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
@@ -31,7 +31,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         private float ClampToCap(float mod)
         {
-            if (Cap < 0) return mod;
             if (Cap > 1f) return Math.Min(mod, Cap);
             return Math.Max(mod, Cap);
         }
