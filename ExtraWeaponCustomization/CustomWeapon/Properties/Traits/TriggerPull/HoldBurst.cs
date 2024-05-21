@@ -1,11 +1,12 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
-    public sealed class HoldBurst : IWeaponProperty<WeaponPreFireContext>, IWeaponProperty<WeaponPostStopFiringContext>
+    public sealed class HoldBurst :
+        IWeaponProperty<WeaponPostStartFireContext>,
+        IWeaponProperty<WeaponPreFireContext>
     {
         public readonly static string Name = typeof(HoldBurst).Name;
         public bool AllowStack { get; } = false;
@@ -14,23 +15,24 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private int _burstMaxCount = 0;
 
+        public void Invoke(WeaponPostStartFireContext context)
+        {
+            if (context.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
+            BWA_Burst archetype = context.Weapon.m_archeType.TryCast<BWA_Burst>()!;
+            // Can't use archetype.m_burstMax in case clip < max burst count
+            _burstMaxCount = archetype.m_burstCurrentCount;
+        }
+
         public void Invoke(WeaponPreFireContext context)
         {
             if (context.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
             BWA_Burst archetype = context.Weapon.m_archeType.TryCast<BWA_Burst>()!;
 
-            if (_burstMaxCount == 0) // Can't use archetype.m_burstMax in case clip < max burst count
-                _burstMaxCount = archetype.m_burstCurrentCount;
             if (_burstMaxCount - archetype.m_burstCurrentCount >= ShotsUntilCancel && !archetype.m_fireHeld)
             {
                 archetype.m_burstCurrentCount = 0;
                 context.Allow = false;
             }
-        }
-
-        public void Invoke(WeaponPostStopFiringContext context)
-        {
-            _burstMaxCount = 0;
         }
 
         public IWeaponProperty Clone()
