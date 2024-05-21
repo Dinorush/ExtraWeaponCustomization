@@ -6,6 +6,7 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class Accelerate :
+        IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponFireRateSetContext>,
         IWeaponProperty<WeaponPostStopFiringContext>,
         IWeaponProperty<WeaponTriggerContext>,
@@ -49,20 +50,33 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private float _progress = 0f;
         private float _lastUpdateTime = 0f;
-        private bool _firing = false;
+        private CustomWeaponComponent? _cachedCWC;
+
+        public void Invoke(WeaponPostStartFireContext context)
+        {
+            if (_cachedCWC == null)
+                _cachedCWC = context.Weapon.GetComponent<CustomWeaponComponent>();
+            if (_lastUpdateTime == 0f)
+                _lastUpdateTime = Clock.Time;
+
+            float delta = Clock.Time - _lastUpdateTime - Clock.Delta;
+            float accelTime = Math.Min(1f / _cachedCWC.CurrentFireRate, delta);
+
+            _progress = Math.Min(_progress + accelTime / AccelTime, 1f);
+            delta -= accelTime;
+
+            if (delta > 0 && delta > DecelDelay)
+                _progress = Math.Max(_progress - (delta - DecelDelay) / DecelTime, 0f);
+
+            _lastUpdateTime = Clock.Time;
+        }
 
         public void Invoke(WeaponFireRateSetContext context)
         {
-            if (_lastUpdateTime == 0f) _lastUpdateTime = Clock.Time;
-
             // Update acceleration progress
-            if (_firing)
-                _progress = Math.Min(_progress + (Clock.Time - _lastUpdateTime) / AccelTime, 1f);
-            else if(Clock.Time - _lastUpdateTime > DecelDelay)
-                _progress = Math.Max(_progress - (Clock.Time - _lastUpdateTime) / DecelTime, 0f);
+            _progress = Math.Min(_progress + (Clock.Time - _lastUpdateTime) / AccelTime, 1f);
 
             _lastUpdateTime = Clock.Time;
-            _firing = context.Weapon.GetCurrentClip() > 0;
 
             // Apply accelerated fire rate
             float startFireRate = 1f/Math.Max(CustomWeaponData.MinShotDelay, context.Weapon.m_archeType.ShotDelay());
@@ -72,7 +86,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostStopFiringContext context)
         {
             _lastUpdateTime = Clock.Time;
-            _firing = false;
         }
 
         public void Invoke(WeaponTriggerContext context)
@@ -81,7 +94,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             // Reset acceleration
             _progress = 0;
-            _firing = false;
             _lastUpdateTime = Clock.Time;
         }
 

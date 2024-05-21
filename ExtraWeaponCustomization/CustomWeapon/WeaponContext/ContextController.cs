@@ -20,6 +20,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
         {
             bool Add(IWeaponProperty property);
             bool Remove(IWeaponProperty property);
+            void Clear();
             void Invoke(IWeaponContext context, List<Exception> exceptions);
         }
 
@@ -59,6 +60,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             public bool Remove(IWeaponProperty property)
             {
                 return property is IWeaponProperty<TContext> contextedProperty && _entries.Remove(contextedProperty);
+            }
+
+            public void Clear()
+            {
+                _entries.Clear();
             }
 
             public void Invoke(TContext context, List<Exception> exceptions)
@@ -103,6 +109,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             foreach (IContextList contextList in _allContextLists.Values)
             {
                 contextList.Remove(property);
+            }
+        }
+
+        public void Clear()
+        {
+            foreach (IContextList contextList in _allContextLists.Values)
+            {
+                contextList.Clear();
             }
         }
 

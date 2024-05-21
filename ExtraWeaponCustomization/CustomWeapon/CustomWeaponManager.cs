@@ -12,25 +12,26 @@ namespace ExtraWeaponCustomization.CustomWeapon
     {
         public static readonly CustomWeaponManager Current = new();
 
-        private readonly Dictionary<uint, CustomWeaponData> customData = new();
+        private readonly Dictionary<uint, CustomWeaponData> _customData = new();
+        private readonly List<CustomWeaponComponent> _listenCWCs = new();
 
-        private readonly LiveEditListener liveEditListener;
+        private readonly LiveEditListener _liveEditListener;
 
         public string DEFINITION_PATH { get; private set; }
 
         public override string ToString()
         {
-            return "Printing manager: " + customData.ToString();
+            return "Printing manager: " + _customData.ToString();
         }
 
         public void AddCustomWeaponData(CustomWeaponData? data)
         {
             if (data == null) return;
 
-            if (customData.ContainsKey(data.ArchetypeID))
+            if (_customData.ContainsKey(data.ArchetypeID))
                 EWCLogger.Warning("Replaced custom weapon behavior for ArchetypeID " + data.ArchetypeID);
 
-            customData[data.ArchetypeID] = data;
+            _customData[data.ArchetypeID] = data;
         }
 
         private void FileChanged(LiveEditEventArgs e)
@@ -53,11 +54,27 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
                 foreach (CustomWeaponData data in dataList)
                     AddCustomWeaponData(data);
+
+                // Re-apply changes to listening CWCs
+                for (int i = _listenCWCs.Count - 1; i >= 0; i--)
+                {
+                    if (_listenCWCs[i] != null)
+                    {
+                        _listenCWCs[i].Clear();
+                        CustomWeaponData? data = GetCustomWeaponData(_listenCWCs[i].Weapon.ArchetypeID);
+                        if (data != null)
+                            _listenCWCs[i].Register(data);
+                    }
+                    else
+                        _listenCWCs.RemoveAt(i);
+                }
             });
         }
 
-        public CustomWeaponData? GetCustomWeaponData(uint ArchetypeID) => customData.ContainsKey(ArchetypeID) ? customData[ArchetypeID] : null;
+        public CustomWeaponData? GetCustomWeaponData(uint ArchetypeID) => _customData.ContainsKey(ArchetypeID) ? _customData[ArchetypeID] : null;
         
+        public void AddCWCListener(CustomWeaponComponent cwc) => _listenCWCs.Add(cwc);
+
         private CustomWeaponManager()
         {
             DEFINITION_PATH = Path.Combine(MTFOPathAPI.CustomPath, EntryPoint.MODNAME);
@@ -93,8 +110,8 @@ namespace ExtraWeaponCustomization.CustomWeapon
                     AddCustomWeaponData(data);
             }
 
-            liveEditListener = LiveEdit.CreateListener(DEFINITION_PATH, "*.json", true);
-            liveEditListener.FileChanged += FileChanged;
+            _liveEditListener = LiveEdit.CreateListener(DEFINITION_PATH, "*.json", true);
+            _liveEditListener.FileChanged += FileChanged;
         }
     }
 }

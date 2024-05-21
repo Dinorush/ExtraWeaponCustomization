@@ -3,7 +3,6 @@ using ExtraWeaponCustomization.CustomWeapon.Properties;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using System;
 using System.Collections.Generic;
@@ -24,9 +23,13 @@ namespace ExtraWeaponCustomization.CustomWeapon
         private readonly HashSet<Type> _propertyTypes = new();
         // When canceling a shot, holds the next shot timer so we can reset back to it
         private float _nextShotTime = 0f;
+        private float _nextBurstTime = 0f;
 
         public float CurrentFireRate { get; private set; }
+        public float CurrentBurstDelay { get; private set; }
+
         private readonly float _fireRate;
+        private readonly float _burstDelay;
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
             _contextController = new ContextController();
@@ -37,6 +40,8 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
             _fireRate = 1f / Math.Max(Weapon.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
             CurrentFireRate = _fireRate;
+            _burstDelay = Weapon.m_archeType.BurstDelay();
+            CustomWeaponManager.Current.AddCWCListener(this);
         }
 
         public void Update()
@@ -66,7 +71,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             }
 
             _contextController.Register(property);
-            
+
             _propertyTypes.Add(property.GetType());
         }
 
@@ -77,9 +82,24 @@ namespace ExtraWeaponCustomization.CustomWeapon
                 Register(property);
         }
 
+        public void Clear()
+        {
+            _propertyTypes.Clear();
+            _contextController.Clear();
+            _autoAim = null;
+            CurrentFireRate = _fireRate;
+            CurrentBurstDelay = _burstDelay;
+            _nextShotTime = 0;
+            _nextBurstTime = 0;
+        }
+
         public bool HasProperty(Type type) => _propertyTypes.Contains(type);
 
-        public void StoreCancelShot(BulletWeaponArchetype archetype) => _nextShotTime = archetype.m_nextShotTimer;
+        public void StoreCancelShot(BulletWeaponArchetype archetype) 
+        {
+            _nextShotTime = archetype.m_nextShotTimer;
+            _nextBurstTime = archetype.m_nextBurstTimer;
+        }
 
         public bool FlushCancelShot(BulletWeaponArchetype archetype)
         {
@@ -87,7 +107,9 @@ namespace ExtraWeaponCustomization.CustomWeapon
             {
                 archetype.m_fireHeld = false;
                 archetype.m_nextShotTimer = _nextShotTime;
+                archetype.m_nextBurstTimer = _nextBurstTime;
                 _nextShotTime = 0;
+                _nextBurstTime = 0;
                 if (archetype.m_archetypeData.FireMode == eWeaponFireMode.Burst)
                     archetype.TryCast<BWA_Burst>()!.m_burstCurrentCount = 0;
                 return true;
@@ -108,12 +130,15 @@ namespace ExtraWeaponCustomization.CustomWeapon
             if (CurrentFireRate != postContext.FireRate)
             {
                 CurrentFireRate = Math.Min(CustomWeaponData.MaxFireRate, postContext.FireRate);
+                CurrentBurstDelay = _burstDelay * _fireRate / CurrentFireRate;
                 Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
             }
         }
 
         public void ModifyFireRate(BulletWeaponArchetype archetype) {
             archetype.m_nextShotTimer = Clock.Time + 1f / CurrentFireRate;
+            if (archetype.BurstIsDone())
+                archetype.m_nextBurstTimer = Math.Max(Clock.Time + CurrentBurstDelay, archetype.m_nextShotTimer);
         }
     }
 }
