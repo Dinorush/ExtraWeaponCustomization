@@ -30,6 +30,7 @@ internal sealed class EntryPoint : BasePlugin
         harmonyInstance.PatchAll(typeof(WeaponArchetypePatches));
         harmonyInstance.PatchAll(typeof(WeaponPatches));
         harmonyInstance.PatchAll(typeof(WeaponRayPatch));
+        harmonyInstance.PatchAll(typeof(PlayerLocalPatches));
 
         KillAPIWrapper.Init();
         Configuration.Init();
@@ -43,6 +44,7 @@ internal sealed class EntryPoint : BasePlugin
         ClassInjector.RegisterTypeInIl2Cpp<CustomWeaponComponent>();
         ExplosionManager.Init();
         DOTDamageManager.Init();
+        HealManager.Init();
         CustomWeaponManager.Current.GetCustomWeaponData(0); // Just want to make it get custom weapon data on startup, need to call something
     }
 }

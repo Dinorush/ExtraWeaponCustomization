@@ -19,7 +19,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (!context.Type.IsType(TriggerType)) return;
 
             PlayerAgent owner = context.Weapon.Owner;
-            owner.Damage.AddHealth(HealthChange + HealthRelChange * owner.Damage.HealthMax, owner);
+            HealManager.DoHeal(owner, HealthChange + HealthRelChange * owner.Damage.HealthMax);
         }
 
         public IWeaponProperty Clone()
