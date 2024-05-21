@@ -129,7 +129,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
             if (CurrentFireRate != postContext.FireRate)
             {
-                CurrentFireRate = Math.Min(CustomWeaponData.MaxFireRate, postContext.FireRate);
+                CurrentFireRate = Math.Clamp(postContext.FireRate, 0.001f, CustomWeaponData.MaxFireRate);
                 CurrentBurstDelay = _burstDelay * _fireRate / CurrentFireRate;
                 Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
             }
