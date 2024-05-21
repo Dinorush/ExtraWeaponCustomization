@@ -1,5 +1,4 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
@@ -38,9 +37,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             switch (property)
             {
                 case "ammorefillrel":
-                case "ammorefill":
+                case "refillrel":
                 case "ammorel":
-                case "ammo":
                     AmmoRefillRel = reader.GetSingle();
                     break;
                 default:
