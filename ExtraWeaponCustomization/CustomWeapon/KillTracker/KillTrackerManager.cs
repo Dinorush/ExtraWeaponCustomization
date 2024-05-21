@@ -1,28 +1,30 @@
 ﻿using Agents;
+using ExtraWeaponCustomization.Utils;
 using Gear;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ExtraWeaponCustomization.CustomWeapon
+namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
 {
     public static class KillTrackerManager
     {
-        private static readonly Dictionary<AgentWrapper, BulletWeapon?> _lastHits = new();
+        private static readonly Dictionary<AgentWrapper, WeaponHitWrapper> _lastHits = new();
 
-        public static void RegisterHit(Agent? enemy, BulletWeapon? weapon)
+        public static void RegisterHit(Agent? enemy, BulletWeapon? weapon, bool precHit = false)
         {
             if (enemy == null || weapon == null) return;
 
             AgentWrapper wrapper = new(enemy);
-            _lastHits[wrapper] = weapon;
+            _lastHits[wrapper] = new WeaponHitWrapper(weapon, precHit);
         }
 
-        public static BulletWeapon? GetKillWeapon(Agent? enemy)
+        public static WeaponHitWrapper? GetKillWeaponWrapper(Agent? enemy)
         {
             _lastHits.Keys
-                .Where(wrapper => wrapper.Agent == null || wrapper.Agent.Alive != true || wrapper.Agent.m_isBeingDestroyed == true || _lastHits[wrapper] == null)
+                .Where(wrapper => wrapper.Agent == null || _lastHits[wrapper].Weapon == null)
                 .ToList()
-                .ForEach(wrapper => {
+                .ForEach(wrapper =>
+                {
                     _lastHits.Remove(wrapper);
                 });
 

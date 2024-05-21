@@ -1,4 +1,5 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon;
+using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
 using Gear;
@@ -50,13 +51,15 @@ namespace ExtraWeaponCustomization.Patches
                 weaponRayData.damage = damageContext.Damage;
 
                 Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
+                bool precHit = limb != null && limb.m_type == eLimbDamageType.Weakspot;
                 cwc.Invoke(new WeaponPreHitEnemyContext(
                     weaponRayData.Falloff(additionalDis),
                     damageable,
                     cwc.Weapon,
-                    limb != null && limb.m_type == eLimbDamageType.Weakspot ? TriggerType.OnPrecHitBullet : TriggerType.OnHitBullet
+                    precHit ? TriggerType.OnPrecHitBullet : TriggerType.OnHitBullet
                     ));
-                KillTrackerManager.RegisterHit(damageable.GetBaseAgent(), cwc.Weapon);
+
+                KillTrackerManager.RegisterHit(damageable.GetBaseAgent(), cwc.Weapon, precHit);
             }
         }
     }

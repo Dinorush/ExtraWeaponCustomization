@@ -2,10 +2,10 @@
 using AK;
 using CharacterDestruction;
 using Enemies;
+using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
-using FluffyUnderware.DevTools.Extensions;
 using Gear;
 using Player;
 using SNetwork;
@@ -135,6 +135,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_base.IsImortal) return;
 
+            bool precHit = limb.m_type == eLimbDamageType.Weakspot && eBase.PrecisionMult > 0;
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc != null)
             {
@@ -146,7 +147,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     distFalloff * falloffMod,
                     damageable,
                     weapon,
-                    limb.m_type == eLimbDamageType.Weakspot && eBase.PrecisionMult > 0 ? TriggerType.OnPrecHitExplo : TriggerType.OnHitExplo
+                    precHit ? TriggerType.OnPrecHitExplo : TriggerType.OnHitExplo
                     ));
             }
 
@@ -171,7 +172,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (source.IsLocallyOwned == true)
             {
                 limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), limb.DamageTargetPos, armorMulti < 1f);
-                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), weapon);
+                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), weapon, precHit);
             }
 
             DamageSync.Send(data, SNet.IsMaster ? null : SNet.Master, SNet_ChannelType.GameNonCritical);

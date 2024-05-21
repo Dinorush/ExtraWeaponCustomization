@@ -7,7 +7,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
     {
         public EnemyAgent Enemy { get; }
 
-        public WeaponPostKillContext(EnemyAgent enemy, BulletWeapon weapon) : base(weapon, TriggerType.OnKill)
+        public WeaponPostKillContext(EnemyAgent enemy, BulletWeapon weapon, TriggerType type = TriggerType.OnKill) : base(weapon, type)
         {
             Enemy = enemy;
         }

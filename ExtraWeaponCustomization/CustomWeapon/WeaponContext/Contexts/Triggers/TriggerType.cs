@@ -14,7 +14,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         OnPrecHitBullet = OnPrecHit | OnHitBullet | 16, OnPrecisionHitBullet = OnPrecHitBullet,
         OnPrecHitExplo = OnPrecHit | OnHitExplo | 32, OnPrecHitExplosive = OnPrecHitExplo, OnPrecisionHitExplo = OnPrecHitExplo, OnPrecisionHitExplosive = OnPrecHitExplo,
         OnKill = 64,
-        OnReload = 128
+        OnPrecKill = OnKill | 128, OnPrecisionKill = OnPrecKill,
+        OnReload = 256
     }
 
     public static class TriggerTypeMethods

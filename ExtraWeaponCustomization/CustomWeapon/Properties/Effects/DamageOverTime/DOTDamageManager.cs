@@ -1,6 +1,7 @@
 ﻿using Agents;
 using CharacterDestruction;
 using Enemies;
+using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using Player;
 using SNetwork;
 using System;
