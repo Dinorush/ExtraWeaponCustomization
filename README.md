@@ -9,6 +9,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Damage Over Time: Applies a damage over time effect. [Hits only]
 - Explosive: Causes explosions where bullets land. [Bullets fired only]
 - Fire Rate Mod: Applies a fire rate modifier.
+- Heal Mod: Modifies the user's health.
 
 #### Traits - Innate gun behavior modifications
 - Accelerate: Fire rate and/or damage changes with continuous fire.
