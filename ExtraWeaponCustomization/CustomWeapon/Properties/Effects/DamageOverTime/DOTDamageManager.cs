@@ -32,9 +32,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             data.localPosition.Set(limb.DamageTargetPos - limb.m_base.Owner.Position, 10f);
             data.staggerMult.Set(dotBase.StaggerMult, MaxStagger);
 
+            bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = dotBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
-            float weakspotMulti = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot
-                                  ? Math.Max(limb.m_weakspotDamageMulti * dotBase.PrecisionMult, 1f) : 1f;
+            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * dotBase.PrecisionMult, 1f) : 1f;
             float precDamage = damage * weakspotMulti * armorMulti;
 
             // Clamp damage for bubbles
@@ -46,10 +46,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (dotBase.Owner != null && dotBase.Owner.IsLocallyOwned == true)
             {
                 limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), limb.DamageTargetPos, armorMulti < 1f);
-                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), dotBase.Weapon);
+                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), limb.DamageTargetPos - limb.m_base.Owner.Position, dotBase.Weapon, precHit);
             }
 
-            Sync.Send(data, SNet.IsMaster ? null : SNet.Master, SNet_ChannelType.GameNonCritical);
+            Sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
         internal static void Internal_ReceiveDOTDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult)

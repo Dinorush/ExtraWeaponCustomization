@@ -94,7 +94,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 if (damBase.TempSearchID == searchID)
                     continue;
 
-                float distance = Vector3.Distance(position, targetPosition);
+                if (damBase.GetBaseAgent()?.Alive == false)
+                    continue;
+
                 // Ensure there is nothing between the explosion and this target
                 if (Physics.Linecast(position, targetPosition, out RaycastHit hit, LayerManager.MASK_EXPLOSION_BLOCKERS))
                 {
@@ -106,11 +108,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
                     if (hit.collider.gameObject.GetInstanceID() != collider.gameObject.GetInstanceID())
                         continue;
+
+                    targetPosition = hit.point;
                 }
 
                 damBase.TempSearchID = searchID;
-                
-                SendExplosionDamage(limb, position, distance, source, falloffMod, explosiveBase, weapon);
+                SendExplosionDamage(limb, targetPosition, Vector3.Distance(position, targetPosition), source, falloffMod, explosiveBase, weapon);
             }
         }
 
@@ -174,11 +177,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             if (source.IsLocallyOwned == true)
             {
-                limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), limb.DamageTargetPos, armorMulti < 1f);
-                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), weapon, precHit);
+                limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), position, armorMulti < 1f);
+                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), position - limb.m_base.Owner.Position, weapon, precHit);
             }
 
-            DamageSync.Send(data, SNet.IsMaster ? null : SNet.Master, SNet_ChannelType.GameNonCritical);
+            DamageSync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
         internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult)

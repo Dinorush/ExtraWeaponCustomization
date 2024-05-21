@@ -1,8 +1,10 @@
 ﻿using Agents;
-using ExtraWeaponCustomization.Utils;
+using Enemies;
+using ExtraWeaponCustomization.Dependencies;
 using Gear;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
 {
@@ -10,10 +12,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
     {
         private static readonly Dictionary<AgentWrapper, WeaponHitWrapper> _lastHits = new();
 
-        public static void RegisterHit(Agent? enemy, BulletWeapon? weapon, bool precHit = false)
+        public static void RegisterHit(Agent? agent, Vector3? localHitPosition, BulletWeapon? weapon, bool precHit = false)
         {
+            EnemyAgent? enemy = agent?.TryCast<EnemyAgent>();
             if (enemy == null || weapon == null || !weapon.Owner.IsLocallyOwned) return;
 
+            // Tag the enemy to ensure KillIndicatorFix tracks hit correctly.
+            KillAPIWrapper.TagEnemy(enemy, weapon, localHitPosition);
+            
+            // Still need to track weapon since KIF doesn't do that for host (only uses wielded, which may not be right for DoT)
             AgentWrapper wrapper = new(enemy);
             _lastHits[wrapper] = new WeaponHitWrapper(weapon, precHit);
         }

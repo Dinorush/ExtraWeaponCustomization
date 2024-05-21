@@ -4,7 +4,7 @@ using Player;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
-    internal sealed class DOTDamageSync : SyncedEvent<DOTData>
+    internal sealed class DOTDamageSync : SyncedEventMasterOnly<DOTData>
     {
         public override string GUID => "DOT";
 

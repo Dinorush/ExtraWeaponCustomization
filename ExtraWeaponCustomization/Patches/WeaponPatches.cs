@@ -5,6 +5,7 @@ using ExtraWeaponCustomization.Utils;
 using Gear;
 using HarmonyLib;
 using Player;
+using UnityEngine;
 using static Weapon;
 
 namespace ExtraWeaponCustomization.Patches
@@ -42,14 +43,19 @@ namespace ExtraWeaponCustomization.Patches
             IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
             if (damageSearchID != 0 && damBase != null && damBase.TempSearchID == damageSearchID) return;
 
-            cwc.Invoke(new WeaponPreHitContext(ref weaponRayData, additionalDis, cwc.Weapon));
-            if (doDamage && damageable?.GetBaseAgent()?.Type == Agents.AgentType.Enemy)
+            bool hitEnemy = doDamage && damageable?.GetBaseAgent()?.Type == Agents.AgentType.Enemy;
+            if (hitEnemy)
             {
-                WeaponDamageContext damageContext = new(weaponRayData.damage, damageable, cwc.Weapon);
+                // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
+                WeaponDamageContext damageContext = new(weaponRayData.damage, damageable!, cwc.Weapon);
                 cwc.Invoke(damageContext);
                 weaponRayData.damage = damageContext.Damage;
+            }
 
-                Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
+            cwc.Invoke(new WeaponPreHitContext(ref weaponRayData, additionalDis, cwc.Weapon));
+            if (hitEnemy)
+            {
+                Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>();
                 bool precHit = limb != null && limb.m_type == eLimbDamageType.Weakspot;
                 cwc.Invoke(new WeaponPreHitEnemyContext(
                     weaponRayData.Falloff(additionalDis),
@@ -58,7 +64,8 @@ namespace ExtraWeaponCustomization.Patches
                     precHit ? TriggerType.OnPrecHitBullet : TriggerType.OnHitBullet
                     ));
 
-                KillTrackerManager.RegisterHit(damageable.GetBaseAgent(), cwc.Weapon, precHit);
+                Vector3 localPos = weaponRayData.rayHit.point - damageable.GetBaseAgent().Position;
+                KillTrackerManager.RegisterHit(damageable.GetBaseAgent(), localPos, cwc.Weapon, precHit);
             }
         }
     }

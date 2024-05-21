@@ -4,7 +4,7 @@ using Player;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
-    internal sealed class ExplosionDamageSync : SyncedEvent<ExplosionDamageData>
+    internal sealed class ExplosionDamageSync : SyncedEventMasterOnly<ExplosionDamageData>
     {
         public override string GUID => "EXPDMG";
 
@@ -22,7 +22,5 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 packet.staggerMult.Get(ExplosionManager.MaxStagger)
                 );
         }
-
-        
     }
 }

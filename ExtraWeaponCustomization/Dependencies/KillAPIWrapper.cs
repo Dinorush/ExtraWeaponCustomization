@@ -1,35 +1,24 @@
-﻿using BepInEx.Unity.IL2CPP;
-using Enemies;
+﻿using Enemies;
 using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Utils;
 using Gear;
 using KillIndicatorFix;
+using UnityEngine;
 
 namespace ExtraWeaponCustomization.Dependencies
 {
     public static class KillAPIWrapper
     {
         public const string PLUGIN_GUID = "randomuserhi.KillIndicatorFix";
-        public static bool HasKillAPI
-        {
-            get
-            {
-                return IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
-            }
-        }
 
         public static void Init()
         {
-            // Hard dependency for now, so no need to check
-            //if (HasKillAPI)
-            UnsafeInit();
-        }
-
-        private static void UnsafeInit()
-        {
             Kill.OnKillIndicator += RunKillCallbacks;
         }
+
+        public static void TagEnemy(EnemyAgent enemy, ItemEquippable? item = null, Vector3? localHitPosition = null) => Kill.TagEnemy(enemy, item, localHitPosition);
 
         private const long MAX_DELAY = 500;
         public static void RunKillCallbacks(EnemyAgent enemy, ItemEquippable? item, long delay)
@@ -37,7 +26,8 @@ namespace ExtraWeaponCustomization.Dependencies
             if (delay > MAX_DELAY) return;
 
             WeaponHitWrapper? wrapper = KillTrackerManager.GetKillWeaponWrapper(enemy);
-            BulletWeapon? weapon = wrapper?.Weapon ?? item?.TryCast<BulletWeapon>();
+            BulletWeapon? weapon = item?.TryCast<BulletWeapon>();
+
             if (weapon == null) return;
 
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();

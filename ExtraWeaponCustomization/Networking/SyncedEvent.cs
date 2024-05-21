@@ -41,8 +41,6 @@ namespace ExtraWeaponCustomization.Networking
         {
             ReceiveLocal(packet);
             OnReceiveLocal?.Invoke(packet);
-            Receive(packet);
-            OnReceive?.Invoke(packet);
         }
 
         private void ReceiveClient_Callback(ulong sender, T packet)

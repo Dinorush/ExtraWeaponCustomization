@@ -10,5 +10,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             ExplosionManager.Internal_ReceiveExplosionFX(packet.position, packet.radius.Get(ExplosionManager.MaxRadius));
         }
+
+        protected override void ReceiveLocal(ExplosionFXData packet)
+        {
+            Receive(packet);
+        }
     }
 }
