@@ -1,22 +1,19 @@
-﻿using Player;
-using System;
+﻿using System;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class DOTInstance
     {
         public DamageOverTime DotBase { get; }
-        public PlayerAgent Owner { get; }
 
         public float NextTickTime { get { return _lastTickTime + TickDelay; } }
         private float _lastTickTime = 0f;
         private int _ticks = 0;
         private float _damagePerTick = 0f;
 
-        public DOTInstance(float totalDamage, PlayerAgent agent, DamageOverTime dotBase)
+        public DOTInstance(float totalDamage, DamageOverTime dotBase)
         {
             DotBase = dotBase;
-            Owner = agent;
             _lastTickTime = Clock.Time;
             _ticks = (int)(dotBase.Duration * dotBase.TickRate);
             AddInstance(totalDamage);

@@ -49,12 +49,14 @@ namespace ExtraWeaponCustomization.Patches
                 cwc.Invoke(damageContext);
                 weaponRayData.damage = damageContext.Damage;
 
+                Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
                 cwc.Invoke(new WeaponPreHitEnemyContext(
                     weaponRayData.Falloff(additionalDis),
                     damageable,
                     cwc.Weapon,
-                    TriggerType.OnHitBullet
+                    limb != null && limb.m_type == eLimbDamageType.Weakspot ? TriggerType.OnPrecHitBullet : TriggerType.OnHitBullet
                     ));
+                KillTrackerManager.RegisterHit(damageable.GetBaseAgent(), cwc.Weapon);
             }
         }
     }

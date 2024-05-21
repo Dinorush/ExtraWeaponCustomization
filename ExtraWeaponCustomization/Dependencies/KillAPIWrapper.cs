@@ -35,10 +35,13 @@ namespace ExtraWeaponCustomization.Dependencies
         {
             if (delay > MAX_DELAY) return;
 
-            CustomWeaponComponent? cwc = item?.TryCast<BulletWeapon>()?.GetComponent<CustomWeaponComponent>();
+            BulletWeapon? weapon = KillTrackerManager.GetKillWeapon(enemy) ?? item?.TryCast<BulletWeapon>();
+            if (weapon == null) return;
+
+            CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPostKillContext(enemy, cwc.Weapon));
+            cwc.Invoke(new WeaponPostKillContext(enemy, weapon));
         }
     }
 }

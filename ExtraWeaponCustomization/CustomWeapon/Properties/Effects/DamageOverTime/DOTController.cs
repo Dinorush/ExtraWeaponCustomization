@@ -25,7 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (instanceID == 0) return null;
 
             // If the limb doesn't exist in enemyDots, initialize a new Wrapper and add it
-            DOTInstance dot = new(totalDamage, dotBase.Owner, dotBase);
+            DOTInstance dot = new(totalDamage, dotBase);
             if (!_idToWrapper.ContainsKey(instanceID))
             {
                 DamageableWrapper wrapper = new(instanceID, damageable);

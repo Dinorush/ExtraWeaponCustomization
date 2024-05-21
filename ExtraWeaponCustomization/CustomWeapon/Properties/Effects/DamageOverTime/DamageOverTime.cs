@@ -1,6 +1,7 @@
 ﻿using Agents;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
+using Gear;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         public readonly static string Name = typeof(DamageOverTime).Name;
         public bool AllowStack { get; } = true;
-        public PlayerAgent? Owner { get; set; }
+        public BulletWeapon? Weapon { get; set; }
+        public PlayerAgent? Owner => Weapon?.Owner;
 
         public float TotalDamage { get; set; } = 0f;
         public float PrecisionMult { get; set; } = 0f;
@@ -39,8 +41,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             if (!context.Type.IsType(TriggerType)) return;
 
-            if (Owner == null)
-                Owner = context.Weapon.Owner;
+            if (Weapon == null)
+                Weapon = context.Weapon;
 
             Dam_EnemyDamageLimb? limb = context.Damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;

@@ -1,5 +1,4 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
@@ -21,6 +20,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponPreHitContext context)
         {
+            if (!context.Weapon.Owner.IsLocallyOwned) return;
             float falloffMod = IgnoreFalloff ? 1f : context.Falloff;
             ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Weapon.Owner, falloffMod, this, context.Weapon);
         }

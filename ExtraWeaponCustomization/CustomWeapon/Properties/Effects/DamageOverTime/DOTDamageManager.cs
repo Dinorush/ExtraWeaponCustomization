@@ -43,7 +43,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             data.damage.Set(precDamage, limb.m_base.DamageMax);
 
             if (dotBase.Owner != null && dotBase.Owner.IsLocallyOwned == true)
+            {
                 limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), limb.DamageTargetPos, armorMulti < 1f);
+                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), dotBase.Weapon);
+            }
 
             Sync.Send(data, SNet.IsMaster ? null : SNet.Master, SNet_ChannelType.GameNonCritical);
         }
