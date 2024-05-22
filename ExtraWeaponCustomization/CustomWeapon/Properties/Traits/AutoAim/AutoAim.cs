@@ -25,7 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public bool StayOnTarget { get; set; } = false;
         public bool ResetOnNewTarget { get; set; } = false;
         public bool RequireLock { get; set; } = false;
-        public bool LockWhileEmpty { get; set; } = false;
+        public bool LockWhileEmpty { get; set; } = true;
         public bool TagOnly { get; set; } = false;
         public bool IgnoreInvisibility { get; set; } = false;
         public bool TargetBody { get; set; } = false;
