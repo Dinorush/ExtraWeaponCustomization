@@ -25,8 +25,7 @@ namespace ExtraWeaponCustomization.Dependencies
             if (delay > MAX_DELAY) return;
 
             WeaponHitWrapper? wrapper = KillTrackerManager.GetKillWeaponWrapper(enemy);
-            BulletWeapon? weapon = item?.TryCast<BulletWeapon>();
-
+            BulletWeapon? weapon = wrapper?.Weapon ?? item?.TryCast<BulletWeapon>();
             if (weapon == null) return;
 
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
