@@ -1,5 +1,6 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Player;
+using System;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
@@ -10,24 +11,29 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public readonly static string Name = typeof(HealthMod).Name;
         public bool AllowStack { get; } = true;
 
-        public float HealthChange { get; set; } = 0f;
-        public float HealthRelChange { get; set; } = 0f;
+        public float HealthChangeRel { get; set; } = 0f;
+        public float CapRel { get; set; } = -1f;
         public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
 
         public void Invoke(WeaponTriggerContext context)
         {
             if (!context.Type.IsType(TriggerType)) return;
 
+            float cap = CapRel >= 0f ? CapRel : Math.Sign(HealthChangeRel);
             PlayerAgent owner = context.Weapon.Owner;
-            HealManager.DoHeal(owner, HealthChange + HealthRelChange * owner.Damage.HealthMax);
+            HealManager.DoHeal(
+                owner,
+                HealthChangeRel * owner.Damage.HealthMax,
+                cap * owner.Damage.HealthMax
+                );
         }
 
         public IWeaponProperty Clone()
         {
             HealthMod copy = new()
             {
-                HealthChange = HealthChange,
-                HealthRelChange = HealthRelChange,
+                HealthChangeRel = HealthChangeRel,
+                CapRel = CapRel,
                 TriggerType = TriggerType
             };
             return copy;
@@ -37,8 +43,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             writer.WriteStartObject();
             writer.WriteString(nameof(Name), Name);
-            writer.WriteNumber(nameof(HealthChange), HealthChange);
-            writer.WriteNumber(nameof(HealthRelChange), HealthRelChange);
+            writer.WriteNumber(nameof(HealthChangeRel), HealthChangeRel);
+            writer.WriteNumber(nameof(CapRel), CapRel);
             writer.WriteString(nameof(TriggerType), TriggerType.ToString());
             writer.WriteEndObject();
         }
@@ -47,15 +53,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             switch (property.ToLowerInvariant())
             {
+                case "healthchangerel":
                 case "healthchange":
-                case "health":
-                case "heal":
-                    HealthChange = reader.GetSingle();
-                    break;
-                case "healthrelchange":
                 case "healthrel":
+                case "health":
                 case "healrel":
-                    HealthRelChange = reader.GetSingle();
+                case "heal":
+                    HealthChangeRel = reader.GetSingle();
+                    break;
+                case "caprel":
+                case "cap":
+                    CapRel = reader.GetSingle();
                     break;
                 case "triggertype":
                 case "trigger":
