@@ -4,12 +4,10 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts.Firing;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using static GameData.GD;
 
 namespace ExtraWeaponCustomization.CustomWeapon
 {

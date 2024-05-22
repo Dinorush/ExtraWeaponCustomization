@@ -2,7 +2,6 @@
 using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using KillIndicatorFix;
 using UnityEngine;
