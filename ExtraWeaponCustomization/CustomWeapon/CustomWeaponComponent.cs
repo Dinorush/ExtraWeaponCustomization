@@ -96,6 +96,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _autoAim = null;
             CurrentFireRate = _fireRate;
             CurrentBurstDelay = _burstDelay;
+            Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
         public bool HasProperty(Type type) => _propertyTypes.Contains(type);
