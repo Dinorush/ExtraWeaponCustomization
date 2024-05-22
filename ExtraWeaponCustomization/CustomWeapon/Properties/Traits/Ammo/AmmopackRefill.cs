@@ -37,8 +37,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             switch (property)
             {
                 case "ammorefillrel":
+                case "ammorefill":
                 case "refillrel":
+                case "refill":
                 case "ammorel":
+                case "ammo":
                     AmmoRefillRel = reader.GetSingle();
                     break;
                 default:
