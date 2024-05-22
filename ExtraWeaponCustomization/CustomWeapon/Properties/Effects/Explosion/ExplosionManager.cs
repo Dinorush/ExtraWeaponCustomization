@@ -138,7 +138,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_base.IsImortal) return;
 
-            bool precHit = limb.m_type == eLimbDamageType.Weakspot && eBase.PrecisionMult > 0;
+            bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc != null)
             {
@@ -165,8 +165,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             data.staggerMult.Set(eBase.StaggerMult, MaxStagger);
 
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
-            float weakspotMulti = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot
-                                  ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionMult, 1f) : 1f;
+            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionMult, 1f) : 1f;
             float precDamage = damage * weakspotMulti * armorMulti;
 
             // Clamp damage for bubbles
