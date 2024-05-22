@@ -25,6 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public bool StayOnTarget { get; set; } = false;
         public bool ResetOnNewTarget { get; set; } = false;
         public bool RequireLock { get; set; } = false;
+        public bool LockWhileEmpty { get; set; } = false;
         public bool TagOnly { get; set; } = false;
         public bool IgnoreInvisibility { get; set; } = false;
         public bool TargetBody { get; set; } = false;
@@ -217,9 +218,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 );
         }
 
-        private bool CanLock => _weapon != null && _weapon.GetCurrentClip() > 0 && _weapon.IsReloading == false;
+        private bool HasAmmo => _weapon != null && _weapon.GetCurrentClip() > 0 && _weapon.IsReloading == false;
+        private bool CanLock => LockWhileEmpty || HasAmmo;
         private bool LockedTarget => _target != null && _progress == 1f;
-        private bool AutoAimActive => (
+        private bool AutoAimActive => HasAmmo && (
                AimActive == InputMapper.GetButtonKeyMouse(InputAction.Aim, eFocusState.FPS)
             || HipActive != InputMapper.GetButtonKeyMouse(InputAction.Aim, eFocusState.FPS)
             );
@@ -283,6 +285,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 StayOnTarget = StayOnTarget,
                 ResetOnNewTarget = ResetOnNewTarget,
                 RequireLock = RequireLock,
+                LockWhileEmpty = LockWhileEmpty,
                 TagOnly = TagOnly,
                 IgnoreInvisibility = IgnoreInvisibility,
                 TargetBody = TargetBody,
@@ -304,6 +307,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(StayOnTarget), StayOnTarget);
             writer.WriteBoolean(nameof(ResetOnNewTarget), ResetOnNewTarget);
             writer.WriteBoolean(nameof(RequireLock), RequireLock);
+            writer.WriteBoolean(nameof(LockWhileEmpty), LockWhileEmpty);
             writer.WriteBoolean(nameof(TagOnly), TagOnly);
             writer.WriteBoolean(nameof(IgnoreInvisibility), IgnoreInvisibility);
             writer.WriteBoolean(nameof(TargetBody), TargetBody);
@@ -343,6 +347,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "requirelock":
                     RequireLock = reader.GetBoolean();
+                    break;
+                case "lockwhileempty":
+                    LockWhileEmpty = reader.GetBoolean();
                     break;
                 case "tagonly":
                     TagOnly = reader.GetBoolean();
