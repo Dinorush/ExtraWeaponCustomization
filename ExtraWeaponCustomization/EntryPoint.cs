@@ -12,7 +12,7 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
 
 namespace ExtraWeaponCustomization;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.2.0")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.3.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOPartialDataUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -29,7 +29,7 @@ internal sealed class EntryPoint : BasePlugin
         harmonyInstance.PatchAll(typeof(PlayerInventoryPatches));
         harmonyInstance.PatchAll(typeof(WeaponArchetypePatches));
         harmonyInstance.PatchAll(typeof(WeaponPatches));
-        harmonyInstance.PatchAll(typeof(WeaponRayPatch));
+        harmonyInstance.PatchAll(typeof(WeaponRayPatches));
         harmonyInstance.PatchAll(typeof(PlayerLocalPatches));
 
         KillAPIWrapper.Init();
