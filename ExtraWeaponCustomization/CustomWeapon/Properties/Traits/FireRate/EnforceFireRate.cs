@@ -50,7 +50,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponDamageContext context)
         {
             // Won't apply on the first shot (no time delta available to use)
-            context.Damage *= 1f + GetShotsInBuffer(context.Weapon);
+            context.AddMod(1f + GetShotsInBuffer(context.Weapon), Effects.StackType.Multiply);
         }
 
         private int GetShotsInBuffer(BulletWeapon weapon)
