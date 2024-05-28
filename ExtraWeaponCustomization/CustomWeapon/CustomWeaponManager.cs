@@ -3,7 +3,9 @@ using ExtraWeaponCustomization.Utils;
 using GTFO.API.Utilities;
 using MTFO.API;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon
@@ -27,9 +29,6 @@ namespace ExtraWeaponCustomization.CustomWeapon
         public void AddCustomWeaponData(CustomWeaponData? data)
         {
             if (data == null) return;
-
-            if (_customData.ContainsKey(data.ArchetypeID))
-                EWCLogger.Warning("Replaced custom weapon behavior for ArchetypeID " + data.ArchetypeID);
 
             _customData[data.ArchetypeID] = data;
         }
@@ -69,11 +68,19 @@ namespace ExtraWeaponCustomization.CustomWeapon
                         _listenCWCs.RemoveAt(i);
                 }
             });
+            PrintCustomIDs();
         }
 
         public CustomWeaponData? GetCustomWeaponData(uint ArchetypeID) => _customData.ContainsKey(ArchetypeID) ? _customData[ArchetypeID] : null;
         
         public void AddCWCListener(CustomWeaponComponent cwc) => _listenCWCs.Add(cwc);
+
+        private void PrintCustomIDs()
+        {
+            StringBuilder builder = new("Found custom blocks for archetype IDs: ");
+            builder.AppendJoin(", ", _customData.Keys.ToImmutableSortedSet());
+            EWCLogger.Log(builder.ToString());
+        }
 
         private CustomWeaponManager()
         {
@@ -109,6 +116,8 @@ namespace ExtraWeaponCustomization.CustomWeapon
                 foreach (CustomWeaponData data in dataList)
                     AddCustomWeaponData(data);
             }
+
+            PrintCustomIDs();
 
             _liveEditListener = LiveEdit.CreateListener(DEFINITION_PATH, "*.json", true);
             _liveEditListener.FileChanged += FileChanged;
