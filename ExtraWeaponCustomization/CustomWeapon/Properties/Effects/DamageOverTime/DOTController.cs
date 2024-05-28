@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +10,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class DOTController
     {
-        private readonly Dictionary<int, DamageableWrapper> _idToWrapper = new();
-        private readonly Dictionary<DamageableWrapper, PriorityQueue<DOTInstance, DOTInstance>> _enemyDots = new();
+        // Used to give a fast reference back to the wrapper used as key in the enemyDots dictionary.
+        // Need to access that specific wrapper so we can get the last DOT instance added to it.
+        private readonly Dictionary<int, DOTDamageableWrapper> _idToWrapper = new();
+        private readonly Dictionary<DOTDamageableWrapper, PriorityQueue<DOTInstance, DOTInstance>> _enemyDots = new();
         private readonly DOTComparer comparer = new();
         private Coroutine? _updateRoutine = null;
         private float _nextTickTime = float.MaxValue;
@@ -26,7 +29,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             DOTInstance dot = new(totalDamage, dotBase);
             if (!_idToWrapper.ContainsKey(instanceID))
             {
-                DamageableWrapper wrapper = new(instanceID, damageable);
+                DOTDamageableWrapper wrapper = new(damageable, instanceID);
                 _idToWrapper[instanceID] = wrapper;
                 _enemyDots[wrapper] = new(comparer);
                 _enemyDots[wrapper].Enqueue(dot, dot);
@@ -36,7 +39,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 // If the limb does exist, try and batch it with the last added DOT on the limb.
                 // Mainly to improve shotgun shot performance, not reliable with more than 1 DOT but doesn't need to be.
-                DamageableWrapper key = _idToWrapper[instanceID];
+                DOTDamageableWrapper key = _idToWrapper[instanceID];
 
                 if (key.LastInstance?.CanAddInstance(dotBase) == true)
                 {
@@ -64,7 +67,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 foreach (var kv in _enemyDots)
                 {
                     PriorityQueue<DOTInstance, DOTInstance> queue = kv.Value;
-                    IDamageable damageable = kv.Key.Damageable;
+                    IDamageable damageable = kv.Key.Damageable!;
                     // Keep getting next DOT and dealing damage until no more can deal damage
                     while (queue.Count > 0 && queue.Peek().CanTick)
                     {
@@ -94,8 +97,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 .Where(wrapper => 
                         wrapper.Damageable == null
                      || wrapper.Damageable.GetBaseAgent() == null
-                     || wrapper.Damageable.GetBaseAgent().Alive != true
-                     || wrapper.Damageable.GetBaseAgent().m_isBeingDestroyed == true)
+                     || !wrapper.Damageable.GetBaseAgent().Alive)
                 .ToList()
                 .ForEach(wrapper => {
                     _enemyDots.Remove(wrapper);
@@ -103,27 +105,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 });
         }
 
-        sealed class DamageableWrapper
+        sealed class DOTDamageableWrapper : DamageableWrapper
         {
-            public int ID { get; }
-            public IDamageable Damageable { get; }
+            // Used for batching shotgun hits on same shot
             public DOTInstance? LastInstance { get; set; }
-
-            public DamageableWrapper(int iD, IDamageable damageable)
-            {
-                ID = iD;
-                Damageable = damageable;
-            }
-
-            public override int GetHashCode()
-            {
-                return ID;
-            }
-
-            public override bool Equals(object? obj)
-            {
-                return obj is DamageableWrapper wrapper && wrapper.ID == ID;
-            }
+            public DOTDamageableWrapper(IDamageable damageable, int iD) : base(damageable, iD) {}
         }
 
         sealed class DOTComparer : IComparer<DOTInstance>

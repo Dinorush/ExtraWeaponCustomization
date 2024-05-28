@@ -1,4 +1,4 @@
-﻿using Agents;
+﻿using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using Player;
@@ -36,6 +36,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         private readonly DOTController _controller = new();
         private readonly Dictionary<AgentWrapper, DOTInstance> _lastDOTs = new();
+        private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
         public void Invoke(WeaponPreHitEnemyContext context)
         {
@@ -52,24 +53,24 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 WeaponDamageContext damageContext = new(damage, context.Damageable, context.Weapon);
                 damageContext.Weapon.GetComponent<CustomWeaponComponent>().Invoke(damageContext);
-                damage = damageContext.Damage;
+                damage = damageContext.Value;
             }
 
             // If it doesn't stack, need to kill the existing DOT and add a new one
             if (!Stacks)
             {
                 _lastDOTs.Keys
-                .Where(wrapper => wrapper.Agent == null || wrapper.Agent.Alive != true || wrapper.Agent.m_isBeingDestroyed == true || _lastDOTs[wrapper].Expired)
+                .Where(wrapper => wrapper.Agent == null || !wrapper.Agent.Alive || _lastDOTs[wrapper].Expired)
                 .ToList()
                 .ForEach(wrapper => {
                     _lastDOTs.Remove(wrapper);
                 });
 
-                AgentWrapper wrapper = new(limb.GetBaseAgent());
+                TempWrapper.SetAgent(limb.GetBaseAgent());
 
-                if (_lastDOTs.ContainsKey(wrapper))
+                if (_lastDOTs.ContainsKey(TempWrapper))
                 {
-                    DOTInstance? lastDot = _lastDOTs[wrapper];
+                    DOTInstance? lastDot = _lastDOTs[TempWrapper];
                     if (!lastDot.Started)
                         return;
 
@@ -79,16 +80,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     if (lastDot != null)
                     {
                         lastDot.StartWithTargetTime(nextTickTime);
-                        _lastDOTs[wrapper] = lastDot;
+                        _lastDOTs[TempWrapper] = lastDot;
                     }
                     else
-                        _lastDOTs.Remove(wrapper);
+                        _lastDOTs.Remove(TempWrapper);
                 }
                 else
                 {
                     DOTInstance? newDOT = _controller.AddDOT(damage, context.Damageable, this);
                     if (newDOT != null)
-                        _lastDOTs[wrapper] = newDOT;
+                        _lastDOTs[new AgentWrapper(limb.GetBaseAgent())] = newDOT;
                 }
             }
             else
@@ -179,28 +180,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 default:
                     break;
-            }
-        }
-
-        sealed class AgentWrapper
-        {
-            public int ID { get; }
-            public Agent Agent { get; }
-
-            public AgentWrapper(Agent agent)
-            {
-                ID = agent.GetInstanceID();
-                Agent = agent;
-            }
-
-            public override int GetHashCode()
-            {
-                return ID;
-            }
-
-            public override bool Equals(object? obj)
-            {
-                return obj is AgentWrapper wrapper && wrapper.ID == ID;
             }
         }
     }
