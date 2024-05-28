@@ -6,7 +6,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties
     public interface IWeaponProperty
     {
         bool AllowStack { get; }
-        IWeaponProperty Clone();
+        IWeaponProperty Clone(); // Should return a new instance with the same initial data.
         void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options);
         void DeserializeProperty(string property, ref Utf8JsonReader reader);
     }
