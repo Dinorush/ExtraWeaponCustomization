@@ -10,7 +10,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         public readonly static string Name = typeof(FireRateMod).Name;
 
-        private readonly Queue<float> _expireTimes = new();
+        private readonly Queue<TriggerInstance> _expireTimes = new();
 
         public override void Reset()
         {
@@ -20,13 +20,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public override void AddStack(WeaponTriggerContext context)
         {
             if (StackType == StackType.None) _expireTimes.Clear();
-            _expireTimes.Enqueue(Clock.Time + Duration);
+
+            float mod = Mod;
+            if (context.Type.IsType(TriggerType.OnDamage))
+                mod = CalculateOnDamageMod(((WeaponOnDamageContext) context).Damage);
+            _expireTimes.Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
         }
 
         public void Invoke(WeaponFireRateContext context)
         {
-            while (_expireTimes.TryPeek(out float time) && time < Clock.Time) _expireTimes.Dequeue();
-            context.FireRate *= CalculateMod(_expireTimes.Count);
+            while (_expireTimes.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) _expireTimes.Dequeue();
+            context.AddMod(CalculateMod(_expireTimes), StackLayer);
         }
 
         public override IWeaponProperty Clone()

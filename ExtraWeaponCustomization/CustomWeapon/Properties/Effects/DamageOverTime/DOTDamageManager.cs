@@ -2,10 +2,12 @@
 using CharacterDestruction;
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Player;
 using SNetwork;
 using System;
 using UnityEngine;
+using static GameData.GD;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
@@ -38,10 +40,21 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             float precDamage = damage * weakspotMulti * armorMulti;
 
             // Clamp damage for bubbles
-            if (limb.TryCast<Dam_EnemyDamageLimb_Custom>() != null)
+            if (limb.DestructionType == eLimbDestructionType.Custom)
                 precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
 
             data.damage.Set(precDamage, limb.m_base.DamageMax);
+
+            CustomWeaponComponent? cwc = dotBase.Weapon?.GetComponent<CustomWeaponComponent>();
+            if (cwc != null)
+            {
+                cwc.Invoke(new WeaponOnDamageContext(
+                    Math.Min(precDamage, limb.m_base.HealthMax),
+                    damageable,
+                    dotBase.Weapon!,
+                    precHit ? TriggerType.OnPrecDamage : TriggerType.OnDamage
+                    ));
+            }
 
             if (dotBase.Owner != null && dotBase.Owner.IsLocallyOwned == true)
             {

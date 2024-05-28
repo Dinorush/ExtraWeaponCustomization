@@ -138,7 +138,24 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_base.IsImortal) return;
 
+            ExplosionDamageData data = default;
+            data.target.Set(limb.m_base.Owner);
+            data.source.Set(source);
+            data.limbID = (byte)(eBase.DamageLimb ? limb.m_limbID : 0);
+            data.localPosition.Set(position - limb.m_base.Owner.Position, 10f);
+            data.staggerMult.Set(eBase.StaggerMult, MaxStagger);
+
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
+            float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
+            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionMult, 1f) : 1f;
+            float precDamage = damage * weakspotMulti * armorMulti;
+
+            // Clamp damage for bubbles
+            if (limb.DestructionType == eLimbDestructionType.Custom)
+                precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
+
+            data.damage.Set(precDamage, limb.m_base.DamageMax);
+
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc != null)
             {
@@ -146,7 +163,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 {
                     WeaponDamageContext context = new(damage, damageable, weapon);
                     cwc.Invoke(context);
-                    damage = context.Damage;
+                    damage = context.Value;
                 }
 
                 cwc.Invoke(new WeaponPreHitEnemyContext(
@@ -155,24 +172,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     weapon,
                     precHit ? TriggerType.OnPrecHitExplo : TriggerType.OnHitExplo
                     ));
+
+                cwc.Invoke(new WeaponOnDamageContext(
+                    Math.Min(precDamage, limb.m_base.HealthMax),
+                    damageable,
+                    weapon,
+                    precHit ? TriggerType.OnPrecDamage : TriggerType.OnDamage
+                    ));
             }
-
-            ExplosionDamageData data = default;
-            data.target.Set(limb.m_base.Owner);
-            data.source.Set(source);
-            data.limbID = (byte)(eBase.DamageLimb ? limb.m_limbID : 0);
-            data.localPosition.Set(position - limb.m_base.Owner.Position, 10f);
-            data.staggerMult.Set(eBase.StaggerMult, MaxStagger);
-
-            float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
-            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionMult, 1f) : 1f;
-            float precDamage = damage * weakspotMulti * armorMulti;
-
-            // Clamp damage for bubbles
-            if (limb.TryCast<Dam_EnemyDamageLimb_Custom>() != null)
-                precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
-
-            data.damage.Set(precDamage, limb.m_base.DamageMax);
 
             if (source.IsLocallyOwned == true)
             {

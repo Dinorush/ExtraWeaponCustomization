@@ -1,6 +1,7 @@
-﻿using Agents;
+﻿using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using Il2CppSystem.Collections.Generic;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
@@ -11,7 +12,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         public readonly static string Name = typeof(DamageModPerTarget).Name;
 
-        private readonly Dictionary<Agent, Queue<float>> _expireTimes = new();
+        private readonly Dictionary<AgentWrapper, Queue<TriggerInstance>> _expireTimes = new();
+        private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
         public override void Reset()
         {
@@ -20,32 +22,41 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public override void AddStack(WeaponTriggerContext context)
         {
-            // TriggerType is enforced to be OnHit
-            WeaponPreHitEnemyContext damageContext = (WeaponPreHitEnemyContext) context;
-            Agent agent = damageContext.Damageable!.GetBaseAgent();
-
-            if (!_expireTimes.ContainsKey(agent))
+            float mod = Mod;
+            // Enforced to be one of these two types
+            if (context.Type.IsType(TriggerType.OnHit))
+                TempWrapper.SetAgent(((WeaponPreHitEnemyContext) context).Damageable.GetBaseAgent());
+            else if (context.Type.IsType(TriggerType.OnDamage))
             {
-                // Clean dead agents from dict. Doesn't need to happen here, but we don't need to run this often, so eh
-                List<Agent> dead = new();
-                foreach (var key in _expireTimes.Keys) if (key.GetInstanceID() == 0 || !key.Alive) dead.Add(key!);
-                foreach (var key in dead) _expireTimes.Remove(key);
-
-                _expireTimes[agent] = new Queue<float>();
+                WeaponOnDamageContext damageContext = (WeaponOnDamageContext) context;
+                TempWrapper.SetAgent(damageContext.Damageable.GetBaseAgent());
+                mod = CalculateOnDamageMod(damageContext.Damage);
             }
 
-            if (StackType == StackType.None) _expireTimes[agent].Clear();
+            if (!_expireTimes.ContainsKey(TempWrapper))
+            {
+                // Clean dead agents from dict. Doesn't need to happen here, but we don't need to run this often, so eh
+                _expireTimes.Keys
+                    .Where(wrapper => wrapper.Agent == null || !wrapper.Agent.Alive)
+                    .ToList()
+                    .ForEach(wrapper => _expireTimes.Remove(wrapper));
 
-            _expireTimes[agent].Enqueue(Clock.Time + Duration);
+                _expireTimes[new AgentWrapper(TempWrapper)] = new Queue<TriggerInstance>();
+            }
+
+            if (StackType == StackType.None) _expireTimes[TempWrapper].Clear();
+
+            _expireTimes[TempWrapper].Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
         }
 
         public void Invoke(WeaponDamageContext context)
         {
-            Agent agent = context.Damageable!.GetBaseAgent();
-            if (!_expireTimes.ContainsKey(agent)) return;
+            TempWrapper.SetAgent(context.Damageable!.GetBaseAgent());
+            if (!_expireTimes.ContainsKey(TempWrapper)) return;
 
-            while (_expireTimes[agent].Count > 0 && _expireTimes[agent].Peek() < Clock.Time) _expireTimes[agent].Dequeue();
-            context.Damage *= CalculateMod(_expireTimes[agent].Count);
+            Queue<TriggerInstance> queue = _expireTimes[TempWrapper];
+            while (queue.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) queue.Dequeue();
+            context.AddMod(CalculateMod(queue), StackLayer);
         }
 
         public override IWeaponProperty Clone()
@@ -63,7 +74,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             base.DeserializeProperty(property, ref reader);
-            if (!TriggerType.IsType(TriggerType.OnHit)) TriggerType = TriggerType.Invalid;
+            if (!TriggerType.IsType(TriggerType.OnHit) && !TriggerType.IsType(TriggerType.OnDamage))
+                TriggerType = TriggerType.Invalid;
         }
     }
 }

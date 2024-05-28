@@ -1,5 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts.Firing;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Text.Json;
 
@@ -34,6 +34,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         }
         private float _accelTime = 1f;
         public float EndDamageMod { get; set; } = 1f;
+        public StackType DamageStackLayer { get; set; } = StackType.Multiply;
         public float AccelTime
         {
             get { return _accelTime; }
@@ -103,7 +104,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponTriggerContext context)
         {
-            if (context.Type != ResetTriggerType) return;
+            if (!context.Type.IsType(ResetTriggerType)) return;
 
             // Reset acceleration
             _progress = 0;
@@ -114,7 +115,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponDamageContext context)
         {
             if (EndDamageMod == 1f) return;
-            context.Damage *= CalculateCurrentDamageMod();
+            context.AddMod(CalculateCurrentDamageMod(), DamageStackLayer);
         }
 
         private float CalculateCurrentFireRate(float startFireRate)
@@ -133,6 +134,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             {
                 EndFireRate = EndFireRate,
                 EndDamageMod = EndDamageMod,
+                DamageStackLayer = DamageStackLayer,
                 AccelTime = AccelTime,
                 AccelExponent = AccelExponent,
                 DecelTime = DecelTime,
@@ -149,6 +151,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(EndShotDelay), EndShotDelay);
             writer.WriteNumber(nameof(EndFireRate), EndFireRate);
             writer.WriteNumber(nameof(EndDamageMod), EndDamageMod);
+            writer.WriteString(nameof(DamageStackLayer), DamageStackLayer.ToString());
             writer.WriteNumber(nameof(AccelTime), AccelTime);
             writer.WriteNumber(nameof(AccelExponent), AccelExponent);
             writer.WriteNumber(nameof(DecelTime), DecelTime);
@@ -172,6 +175,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 case "enddamagemod":
                 case "acceldamagemod":
                     EndDamageMod = reader.GetSingle();
+                    break;
+                case "damagestacklayer":
+                case "stacklayer":
+                case "layer":
+                    DamageStackLayer = reader.GetString()?.ToStackType() ?? StackType.Invalid;
                     break;
                 case "acceltime":
                     AccelTime = reader.GetSingle();

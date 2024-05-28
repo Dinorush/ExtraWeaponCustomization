@@ -4,7 +4,6 @@ using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
 using Gear;
 using HarmonyLib;
-using Player;
 using UnityEngine;
 using static Weapon;
 
@@ -12,22 +11,6 @@ namespace ExtraWeaponCustomization.Patches
 {
     internal static class WeaponPatches
     {
-        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetOwner))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void SetupCallback(BulletWeapon __instance, PlayerAgent agent)
-        {
-            if (agent == null) return;
-
-            CustomWeaponData? data = CustomWeaponManager.Current.GetCustomWeaponData(__instance.ArchetypeID);
-            if (data == null) return;
-
-            if (__instance.gameObject.GetComponent<CustomWeaponComponent>() != null) return;
-
-            CustomWeaponComponent cwc = __instance.gameObject.AddComponent<CustomWeaponComponent>();
-            cwc.Register(data);
-        }
-
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
@@ -49,7 +32,7 @@ namespace ExtraWeaponCustomization.Patches
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(weaponRayData.damage, damageable!, cwc.Weapon);
                 cwc.Invoke(damageContext);
-                weaponRayData.damage = damageContext.Damage;
+                weaponRayData.damage = damageContext.Value;
             }
 
             cwc.Invoke(new WeaponPreHitContext(ref weaponRayData, additionalDis, cwc.Weapon));
@@ -64,6 +47,17 @@ namespace ExtraWeaponCustomization.Patches
                     precHit ? TriggerType.OnPrecHitBullet : TriggerType.OnHitBullet
                     ));
 
+                if (limb != null)
+                {
+                    cwc.Invoke(new WeaponOnDamageContext(
+                        weaponRayData,
+                        additionalDis,
+                        limb,
+                        cwc.Weapon,
+                        precHit ? TriggerType.OnPrecDamage : TriggerType.OnDamage
+                        ));
+                }
+                
                 Vector3 localPos = weaponRayData.rayHit.point - damageable.GetBaseAgent().Position;
                 KillTrackerManager.RegisterHit(damageable.GetBaseAgent(), localPos, cwc.Weapon, precHit);
             }

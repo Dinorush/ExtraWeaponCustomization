@@ -3,7 +3,6 @@ using ExtraWeaponCustomization.CustomWeapon.Properties;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts.Firing;
 using Gear;
 using System;
 using System.Collections.Generic;
@@ -134,12 +133,12 @@ namespace ExtraWeaponCustomization.CustomWeapon
             Invoke(context);
 
             // Invoke callbacks that modify current fire rate
-            WeaponFireRateContext postContext = new(Weapon, context.FireRate);
+            WeaponFireRateContext postContext = new(context.FireRate, Weapon);
             Invoke(postContext);
 
-            if (CurrentFireRate != postContext.FireRate)
+            if (CurrentFireRate != postContext.Value)
             {
-                CurrentFireRate = Math.Clamp(postContext.FireRate, 0.001f, CustomWeaponData.MaxFireRate);
+                CurrentFireRate = Math.Clamp(postContext.Value, 0.001f, CustomWeaponData.MaxFireRate);
                 CurrentBurstDelay = _burstDelay * _fireRate / CurrentFireRate;
                 Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
             }

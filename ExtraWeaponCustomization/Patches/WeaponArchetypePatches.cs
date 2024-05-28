@@ -2,11 +2,27 @@
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using HarmonyLib;
+using Player;
 
 namespace ExtraWeaponCustomization.Patches
 {
     internal static class WeaponArchetypePatches
     {
+        [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.SetOwner))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void SetupCallback(BulletWeaponArchetype __instance, PlayerAgent owner)
+        {
+            if (owner == null) return;
+
+            CustomWeaponData? data = CustomWeaponManager.Current.GetCustomWeaponData(__instance.m_archetypeData.persistentID);
+            if (data == null) return;
+
+            if (__instance.m_weapon.gameObject.GetComponent<CustomWeaponComponent>() != null) return;
+
+            CustomWeaponComponent cwc = __instance.m_weapon.gameObject.AddComponent<CustomWeaponComponent>();
+            cwc.Register(data);
+        }
 
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStartFiring))]
         [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnStartFiring))]

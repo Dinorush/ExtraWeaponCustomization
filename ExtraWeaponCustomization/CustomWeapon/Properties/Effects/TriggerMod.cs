@@ -1,5 +1,7 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
@@ -12,7 +14,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public float Mod { get; set; } = 1f;
         public float Cap { get; set; } = 0f;
         public float Duration { get; set; } = 0f;
-        public StackType StackType { get; set; } = StackType.None;
+        public StackType StackType { get; set; } = StackType.Add;
+        public StackType StackLayer { get; set; } = StackType.Multiply;
         public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
         public TriggerType ResetTriggerType { get; set; } = TriggerType.Invalid;
 
@@ -34,16 +37,30 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             return Math.Max(mod, Cap);
         }
 
-        protected float CalculateMod(int count)
+        protected float CalculateMod(IEnumerable<TriggerInstance> count)
         {
+            if (count.Count() == 0) return 1f;
+
             return ClampToCap(
                 StackType switch
                 {
-                    StackType.Multiply or StackType.None => (float)Math.Pow(Mod, count),
-                    StackType.Add => Math.Max(0f, 1f + (Mod - 1f) * count),
+                    StackType.None => count.First().mod,
+                    StackType.Multiply => count.Aggregate(new TriggerInstance(), (x, y) => { x.mod *= y.mod; return x; }, x => x.mod),
+                    StackType.Add => count.Aggregate(new TriggerInstance(), (x, y) => { x.mod += (y.mod - 1f); return x; }, x => x.mod),
                     _ => 1f
                 }
                 );
+        }
+
+        protected float CalculateOnDamageMod(float damage)
+        {
+            return StackType switch
+            {
+                StackType.None => Mod,
+                StackType.Multiply => (float) Math.Pow(Mod, damage),
+                StackType.Add => 1f + (Mod - 1f) * damage,
+                _ => 1f
+            };
         }
 
         public abstract void Reset();
@@ -55,6 +72,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Cap = triggerMod.Cap;
             Duration = triggerMod.Duration;
             StackType = triggerMod.StackType;
+            StackLayer = triggerMod.StackLayer;
             TriggerType = triggerMod.TriggerType;
             ResetTriggerType = triggerMod.ResetTriggerType;
         }
@@ -69,6 +87,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteString(nameof(StackType), StackType.ToString());
+            writer.WriteString(nameof(StackLayer), StackLayer.ToString());
             writer.WriteString(nameof(TriggerType), TriggerType.ToString());
             writer.WriteString(nameof(ResetTriggerType), ResetTriggerType.ToString());
             writer.WriteEndObject();
@@ -91,6 +110,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "stack":
                     StackType = reader.GetString()?.ToStackType() ?? StackType.Invalid;
                     break;
+                case "stacklayer":
+                case "layer":
+                    StackLayer = reader.GetString()?.ToStackType() ?? StackType.Invalid;
+                    break;
                 case "triggertype":
                 case "trigger":
                     TriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
@@ -103,5 +126,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
             }
         }
+
+        protected struct TriggerInstance
+        {
+            public float mod = 1f;
+            public float endTime = 0f;
+
+            public TriggerInstance(float mod, float endTime)
+            {
+                this.mod = mod;
+                this.endTime = endTime;
+            }
+        };
     }
 }

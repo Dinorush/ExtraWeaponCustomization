@@ -5,7 +5,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     public enum StackType
     {
         Invalid = -1,
-        None,
+        Override, None = Override,
         Add,
         Multiply,
         Mult = Multiply

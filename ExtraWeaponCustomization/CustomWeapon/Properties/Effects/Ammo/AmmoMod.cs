@@ -30,8 +30,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             if (!context.Type.IsType(TriggerType)) return;
 
-            _clipBuffer += ClipChange;
-            _reserveBuffer += ReserveChange;
+            float damageMod = 1f;
+            if (context.Type.IsType(TriggerType.OnDamage))
+                damageMod = ((WeaponOnDamageContext) context).Damage;
+
+            _clipBuffer += ClipChange * damageMod;
+            _reserveBuffer += ReserveChange * damageMod;
 
             if (_clipBuffer < 1 && _clipBuffer > -1 && _reserveBuffer < 1 && _reserveBuffer > -1) return;
             
