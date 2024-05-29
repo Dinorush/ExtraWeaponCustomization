@@ -15,6 +15,7 @@ namespace ExtraWeaponCustomization.Patches
         {
             if (owner == null) return;
 
+            CustomWeaponManager.Current.AddWeaponListener(__instance.m_weapon);
             CustomWeaponData? data = CustomWeaponManager.Current.GetCustomWeaponData(__instance.m_archetypeData.persistentID);
             if (data == null) return;
 

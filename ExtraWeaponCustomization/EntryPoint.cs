@@ -34,8 +34,14 @@ internal sealed class EntryPoint : BasePlugin
 
         KillAPIWrapper.Init();
         Configuration.Init();
+        LevelAPI.OnEnterLevel += LevelAPI_OnEnterLevel;
         AssetAPI.OnStartupAssetsLoaded += AssetAPI_OnStartupAssetsLoaded;
         EWCLogger.Log("Loaded " + MODNAME);
+    }
+
+    private void LevelAPI_OnEnterLevel()
+    {
+        CustomWeaponManager.Current.ResetCWCs();
     }
 
     private void AssetAPI_OnStartupAssetsLoaded()

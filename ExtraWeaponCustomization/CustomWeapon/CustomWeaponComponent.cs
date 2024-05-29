@@ -44,7 +44,6 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _lastFireRate = _fireRate;
             CurrentFireRate = _fireRate;
             _burstDelay = Weapon.m_archeType.BurstDelay();
-            CustomWeaponManager.Current.AddCWCListener(this);
         }
 
         public void Update()
@@ -78,8 +77,10 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _propertyTypes.Add(property.GetType());
         }
 
-        public void Register(CustomWeaponData data)
+        public void Register(CustomWeaponData? data)
         {
+            if (data == null) return;
+
             List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
             foreach (IWeaponProperty property in properties)
                 Register(property);
