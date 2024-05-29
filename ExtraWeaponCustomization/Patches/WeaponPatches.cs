@@ -26,8 +26,7 @@ namespace ExtraWeaponCustomization.Patches
             IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
             if (damageSearchID != 0 && damBase != null && damBase.TempSearchID == damageSearchID) return;
 
-            bool hitEnemy = doDamage && damageable?.GetBaseAgent()?.Type == Agents.AgentType.Enemy;
-            if (hitEnemy)
+            if (doDamage)
             {
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(weaponRayData.damage, damageable!, cwc.Weapon);
@@ -36,7 +35,7 @@ namespace ExtraWeaponCustomization.Patches
             }
 
             cwc.Invoke(new WeaponPreHitContext(ref weaponRayData, additionalDis, cwc.Weapon));
-            if (hitEnemy)
+            if (doDamage && damageable?.GetBaseAgent()?.Type == Agents.AgentType.Enemy)
             {
                 Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>();
                 bool precHit = limb != null && limb.m_type == eLimbDamageType.Weakspot;

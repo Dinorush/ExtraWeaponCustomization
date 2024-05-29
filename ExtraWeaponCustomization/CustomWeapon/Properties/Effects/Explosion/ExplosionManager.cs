@@ -124,6 +124,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             // 0.001f to account for rounding error
             damage = falloffMod * damage + 0.001f;
 
+            CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
+            if (cwc != null && !eBase.IgnoreDamageMods)
+            {
+                WeaponDamageContext context = new(damage, damageable, weapon);
+                cwc.Invoke(context);
+                damage = context.Value;
+            }
+
             if (damageable.GetBaseAgent()?.Type == AgentType.Player)
             {
                 GuiManager.CrosshairLayer.PopFriendlyTarget();
@@ -156,16 +164,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             data.damage.Set(precDamage, limb.m_base.DamageMax);
 
-            CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc != null)
             {
-                if (!eBase.IgnoreDamageMods)
-                {
-                    WeaponDamageContext context = new(damage, damageable, weapon);
-                    cwc.Invoke(context);
-                    damage = context.Value;
-                }
-
                 cwc.Invoke(new WeaponPreHitEnemyContext(
                     distFalloff * falloffMod,
                     damageable,
