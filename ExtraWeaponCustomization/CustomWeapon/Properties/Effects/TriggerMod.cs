@@ -39,14 +39,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         protected float CalculateMod(IEnumerable<TriggerInstance> count)
         {
-            if (count.Count() == 0) return 1f;
+            if (!count.Any()) return 1f;
 
             return ClampToCap(
                 StackType switch
                 {
                     StackType.None => count.First().mod,
-                    StackType.Multiply => count.Aggregate(new TriggerInstance(), (x, y) => { x.mod *= y.mod; return x; }, x => x.mod),
-                    StackType.Add => count.Aggregate(new TriggerInstance(), (x, y) => { x.mod += (y.mod - 1f); return x; }, x => x.mod),
+                    StackType.Multiply => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod *= y.mod; return x; }, x => x.mod),
+                    StackType.Add => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod += (y.mod - 1f); return x; }, x => x.mod),
                     _ => 1f
                 }
                 );
