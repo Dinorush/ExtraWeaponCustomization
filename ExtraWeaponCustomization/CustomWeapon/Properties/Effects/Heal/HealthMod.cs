@@ -19,12 +19,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             if (!context.Type.IsType(TriggerType)) return;
 
-
             float cap = CapRel >= 0f ? CapRel : Math.Sign(HealthChangeRel);
             PlayerAgent owner = context.Weapon.Owner;
             float heal = HealthChangeRel * owner.Damage.HealthMax;
             if (context.Type.IsType(TriggerType.OnDamage))
                 heal *= ((WeaponOnDamageContext) context).Damage;
+
             HealManager.DoHeal(
                 owner,
                 heal,
