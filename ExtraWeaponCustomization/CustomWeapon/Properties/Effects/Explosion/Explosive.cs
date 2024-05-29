@@ -17,13 +17,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreFalloff { get; set; } = false;
         public bool DamageLimb { get; set; } = true;
         public bool IgnoreArmor { get; set; } = false;
+        public bool IgnoreBackstab { get; set; } = false;
         public bool IgnoreDamageMods { get; set; } = false;
 
         public void Invoke(WeaponPreHitContext context)
         {
             if (!context.Weapon.Owner.IsLocallyOwned) return;
+
             float falloffMod = IgnoreFalloff ? 1f : context.Falloff;
-            ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Weapon.Owner, falloffMod, this, context.Weapon);
+            ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Data.fireDir.normalized, context.Weapon.Owner, falloffMod, this, context.Weapon);
         }
 
         public IWeaponProperty Clone()
@@ -39,6 +41,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 DamageLimb = DamageLimb,
                 IgnoreArmor = IgnoreArmor,
                 IgnoreFalloff = IgnoreFalloff,
+                IgnoreBackstab = IgnoreBackstab,
                 IgnoreDamageMods = IgnoreDamageMods
             };
             return copy;
@@ -57,6 +60,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
+            writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
             writer.WriteEndObject();
         }
@@ -95,6 +99,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "ignorearmor":
                     IgnoreArmor = reader.GetBoolean();
+                    break;
+                case "ignorebackstab":
+                case "ignorebackdamage":
+                case "ignorebackbonus":
+                    IgnoreBackstab = reader.GetBoolean();
                     break;
                 case "ignoredamagemods":
                 case "ignoredamagemod":

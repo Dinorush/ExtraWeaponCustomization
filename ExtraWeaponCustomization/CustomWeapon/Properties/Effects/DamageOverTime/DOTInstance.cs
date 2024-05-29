@@ -10,10 +10,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private float _lastTickTime = 0f;
         private int _ticks = 0;
         private float _damagePerTick = 0f;
+        private float _backstabMulti = 1f;
 
-        public DOTInstance(float totalDamage, DamageOverTime dotBase)
+        public DOTInstance(float totalDamage, float backstab, DamageOverTime dotBase)
         {
             DotBase = dotBase;
+            _backstabMulti = backstab;
             _lastTickTime = Clock.Time;
             _ticks = (int)(dotBase.Duration * dotBase.TickRate);
             AddInstance(totalDamage);
@@ -26,6 +28,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public bool CanAddInstance(DamageOverTime dotBase)
         {
+            // Technically, shotgun pellets may have different backstab bonuses... but it's too much effort to fix
             return DotBase.Stacks && DotBase == dotBase && !Started;
         }
 
@@ -55,7 +58,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             _lastTickTime += damageTicks * TickDelay;
             _ticks -= damageTicks;
 
-            DOTDamageManager.DoDOTDamage(damageable, damage, DotBase);
+            DOTDamageManager.DoDOTDamage(damageable, damage, _backstabMulti, DotBase);
         }
     }
 }

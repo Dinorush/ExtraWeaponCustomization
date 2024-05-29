@@ -34,12 +34,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             ExplosionEffectPooling.Initialize();
         }
 
-        public static void DoExplosion(Vector3 position, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
+        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
         {
             ExplosionFXData fxData = new() { position = position };
             fxData.radius.Set(eBase.Radius, MaxRadius);
             FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
-            DoExplosionDamage(position, source, falloffMod, eBase, weapon);
+            DoExplosionDamage(position, direction, source, falloffMod, eBase, weapon);
         }
     
         internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius)
@@ -64,7 +64,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             });
         }
 
-        internal static void DoExplosionDamage(Vector3 position, PlayerAgent source, float falloffMod, Explosive explosiveBase, BulletWeapon weapon)
+        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, BulletWeapon weapon)
         {
             var colliders = Physics.OverlapSphere(position, explosiveBase.Radius, LayerManager.MASK_EXPLOSION_TARGETS);
             if (colliders.Count < 1)
@@ -113,11 +113,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 }
 
                 damBase.TempSearchID = searchID;
-                SendExplosionDamage(limb, targetPosition, Vector3.Distance(position, targetPosition), source, falloffMod, explosiveBase, weapon);
+                SendExplosionDamage(limb, targetPosition, direction, Vector3.Distance(position, targetPosition), source, falloffMod, explosiveBase, weapon);
             }
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, float distance, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, float distance, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
         {
             float damage = distance.Map(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage);
             float distFalloff = damage / eBase.MaxDamage;
@@ -156,7 +156,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionMult, 1f) : 1f;
-            float precDamage = damage * weakspotMulti * armorMulti;
+            float backstabMulti = eBase.IgnoreBackstab ? 1f : limb.ApplyDamageFromBehindBonus(1f, position, direction);
+            float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
             if (limb.DestructionType == eLimbDestructionType.Custom)
@@ -168,6 +169,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 cwc.Invoke(new WeaponPreHitEnemyContext(
                     distFalloff * falloffMod,
+                    backstabMulti,
                     damageable,
                     weapon,
                     precHit ? TriggerType.OnPrecHitExplo : TriggerType.OnHitExplo

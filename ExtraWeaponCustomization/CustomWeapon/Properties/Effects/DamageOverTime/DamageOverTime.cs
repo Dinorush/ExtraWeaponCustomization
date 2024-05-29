@@ -25,6 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreFalloff { get; set; } = false;
         public bool DamageLimb { get; set; } = true;
         public bool IgnoreArmor { get; set; } = false;
+        public bool IgnoreBackstab { get; set; } = false;
         public bool IgnoreDamageMods { get; set; } = false;
         private float _tickRate = 2f;
         public float TickRate
@@ -48,6 +49,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Dam_EnemyDamageLimb? limb = context.Damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;
             float damage = TotalDamage * (IgnoreFalloff ? 1f : context.Falloff);
+            float backstabMulti = IgnoreBackstab ? 1f : context.Backstab;
 
             if (!IgnoreDamageMods)
             {
@@ -76,7 +78,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
                     float nextTickTime = lastDot.NextTickTime;
                     lastDot.Destroy();
-                    lastDot = _controller.AddDOT(damage, context.Damageable, this);
+                    lastDot = _controller.AddDOT(damage, backstabMulti, context.Damageable, this);
                     if (lastDot != null)
                     {
                         lastDot.StartWithTargetTime(nextTickTime);
@@ -87,13 +89,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 }
                 else
                 {
-                    DOTInstance? newDOT = _controller.AddDOT(damage, context.Damageable, this);
+                    DOTInstance? newDOT = _controller.AddDOT(damage, backstabMulti, context.Damageable, this);
                     if (newDOT != null)
                         _lastDOTs[new AgentWrapper(limb.GetBaseAgent())] = newDOT;
                 }
             }
             else
-                _controller.AddDOT(damage, context.Damageable, this);
+                _controller.AddDOT(damage, backstabMulti, context.Damageable, this);
         }
 
         public IWeaponProperty Clone()
@@ -108,6 +110,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 IgnoreFalloff = IgnoreFalloff,
                 DamageLimb = DamageLimb,
                 IgnoreArmor = IgnoreArmor,
+                IgnoreBackstab = IgnoreBackstab,
                 IgnoreDamageMods = IgnoreDamageMods,
                 TickRate = TickRate,
                 TriggerType = TriggerType
@@ -128,6 +131,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
+            writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
             writer.WriteString(nameof(TriggerType), TriggerType.ToString());
             writer.WriteEndObject();
@@ -168,6 +172,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "ignorearmor":
                     IgnoreArmor = reader.GetBoolean();
+                    break;
+                case "ignorebackstab":
+                case "ignorebackdamage":
+                case "ignorebackbonus":
+                    IgnoreBackstab = reader.GetBoolean();
                     break;
                 case "ignoredamagemods":
                 case "ignoredamagemod":

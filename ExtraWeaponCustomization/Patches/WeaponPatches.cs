@@ -41,6 +41,7 @@ namespace ExtraWeaponCustomization.Patches
                 bool precHit = limb != null && limb.m_type == eLimbDamageType.Weakspot;
                 cwc.Invoke(new WeaponPreHitEnemyContext(
                     weaponRayData.Falloff(additionalDis),
+                    limb != null ? limb.ApplyDamageFromBehindBonus(1f, weaponRayData.rayHit.point, weaponRayData.fireDir.normalized) : 1f,
                     damageable,
                     cwc.Weapon,
                     precHit ? TriggerType.OnPrecHitBullet : TriggerType.OnHitBullet

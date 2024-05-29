@@ -18,7 +18,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private Coroutine? _updateRoutine = null;
         private float _nextTickTime = float.MaxValue;
 
-        public DOTInstance? AddDOT(float totalDamage, IDamageable damageable, DamageOverTime dotBase)
+        public DOTInstance? AddDOT(float totalDamage, float backstab, IDamageable damageable, DamageOverTime dotBase)
         {
             if (dotBase.Owner == null) return null;
 
@@ -26,7 +26,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (instanceID == 0) return null;
 
             // If the limb doesn't exist in enemyDots, initialize a new Wrapper and add it
-            DOTInstance dot = new(totalDamage, dotBase);
+            DOTInstance dot = new(totalDamage, backstab, dotBase);
             if (!_idToWrapper.ContainsKey(instanceID))
             {
                 DOTDamageableWrapper wrapper = new(damageable, instanceID);

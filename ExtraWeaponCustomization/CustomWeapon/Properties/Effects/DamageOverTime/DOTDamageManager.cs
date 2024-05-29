@@ -7,7 +7,6 @@ using Player;
 using SNetwork;
 using System;
 using UnityEngine;
-using static GameData.GD;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
@@ -21,7 +20,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Sync.Setup();
         }
 
-        public static void DoDOTDamage(IDamageable damageable, float damage, DamageOverTime dotBase)
+        public static void DoDOTDamage(IDamageable damageable, float damage, float backstabMulti, DamageOverTime dotBase)
         {
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_base.IsImortal || damage <= 0) return;
@@ -37,7 +36,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = dotBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * dotBase.PrecisionMult, 1f) : 1f;
-            float precDamage = damage * weakspotMulti * armorMulti;
+            float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
             if (limb.DestructionType == eLimbDestructionType.Custom)
@@ -56,7 +55,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     ));
             }
 
-            if (dotBase.Owner != null && dotBase.Owner.IsLocallyOwned == true)
+            if (dotBase.Owner != null && dotBase.Owner.IsLocallyOwned)
             {
                 limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), limb.DamageTargetPos, armorMulti < 1f);
                 KillTrackerManager.RegisterHit(limb.GetBaseAgent(), limb.DamageTargetPos - limb.m_base.Owner.Position, dotBase.Weapon, precHit);
