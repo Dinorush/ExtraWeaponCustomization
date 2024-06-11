@@ -1,5 +1,6 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Dependencies;
 using Gear;
 using Player;
 using System;
@@ -50,6 +51,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;
             float damage = TotalDamage * (IgnoreFalloff ? 1f : context.Falloff);
             float backstabMulti = IgnoreBackstab ? 1f : context.Backstab;
+
+            EXPAPIWrapper.ApplyMod(ref damage);
 
             if (!IgnoreDamageMods)
             {

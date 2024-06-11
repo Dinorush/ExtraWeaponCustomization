@@ -3,6 +3,7 @@ using CharacterDestruction;
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Dependencies;
 using Player;
 using SNetwork;
 using System;
@@ -86,6 +87,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 severity = CD_DestructionSeverity.Severe;
             }
+
+            EXPAPIWrapper.RegisterDamage(target, source, damage, willKill);
 
             Vector3 direction = target.TargetLookDir * -1;
             Vector3 position = localPos + target.Position;

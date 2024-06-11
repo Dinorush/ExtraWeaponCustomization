@@ -5,6 +5,7 @@ using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Dependencies;
 using ExtraWeaponCustomization.Utils;
 using Gear;
 using Player;
@@ -143,6 +144,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 return;
             }
 
+            // Applied after FF damage since EXP mod doesn't affect FF damage
+            EXPAPIWrapper.ApplyMod(ref damage);
+
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_base.IsImortal) return;
 
@@ -212,6 +216,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 severity = CD_DestructionSeverity.Severe;
             }
+
+            EXPAPIWrapper.RegisterDamage(target, source, damage, willKill);
 
             Vector3 direction = Vector3.up;
             if (limb != null && (willKill || limb.DoDamage(damage)))
