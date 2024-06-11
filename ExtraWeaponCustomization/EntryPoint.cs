@@ -12,11 +12,12 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
 
 namespace ExtraWeaponCustomization;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.3.0")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.4.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOPartialDataUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency(EXPAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 internal sealed class EntryPoint : BasePlugin
 {
     public const string MODNAME = "ExtraWeaponCustomization";
@@ -30,9 +31,9 @@ internal sealed class EntryPoint : BasePlugin
         harmonyInstance.PatchAll(typeof(WeaponArchetypePatches));
         harmonyInstance.PatchAll(typeof(WeaponPatches));
         harmonyInstance.PatchAll(typeof(WeaponRayPatches));
+        harmonyInstance.PatchAll(typeof(WeaponRecoilPatches));
         harmonyInstance.PatchAll(typeof(PlayerLocalPatches));
 
-        KillAPIWrapper.Init();
         Configuration.Init();
         LevelAPI.OnEnterLevel += LevelAPI_OnEnterLevel;
         AssetAPI.OnStartupAssetsLoaded += AssetAPI_OnStartupAssetsLoaded;
@@ -51,6 +52,7 @@ internal sealed class EntryPoint : BasePlugin
         ExplosionManager.Init();
         DOTDamageManager.Init();
         HealManager.Init();
+        KillAPIWrapper.Init();
         CustomWeaponManager.Current.GetCustomWeaponData(0); // Just want to make it get custom weapon data on startup, need to call something
     }
 }

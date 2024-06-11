@@ -11,6 +11,17 @@ namespace ExtraWeaponCustomization.Patches
 {
     internal static class WeaponPatches
     {
+        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnWield))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void UpdateCurrentWeapon(BulletWeapon __instance)
+        {
+            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
+            if (cwc == null) return;
+
+            cwc.Invoke(new WeaponWieldContext(__instance));
+        }
+
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
@@ -24,12 +35,12 @@ namespace ExtraWeaponCustomization.Patches
 
             IDamageable? damageable = WeaponTriggerContext.GetDamageableFromData(weaponRayData);
             IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
-            if (damageSearchID != 0 && damBase != null && damBase.TempSearchID == damageSearchID) return;
+            if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
 
-            if (doDamage)
+            if (doDamage && damageable != null)
             {
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
-                WeaponDamageContext damageContext = new(weaponRayData.damage, damageable!, cwc.Weapon);
+                WeaponDamageContext damageContext = new(weaponRayData.damage, damageable, cwc.Weapon);
                 cwc.Invoke(damageContext);
                 weaponRayData.damage = damageContext.Value;
             }

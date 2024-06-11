@@ -20,6 +20,7 @@ namespace ExtraWeaponCustomization.JSON
                     new DamageOverTime(),
                     new FireRateMod(),
                     new HealthMod(),
+                    new RecoilMod(),
 
                     new AmmopackRefill(),
                     new AutoAim(),

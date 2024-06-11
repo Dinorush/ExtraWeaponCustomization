@@ -144,6 +144,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreHitEnemyContext>();
             RegisterContext<WeaponOnDamageContext>();
             RegisterContext<WeaponPostReloadContext>();
+            RegisterContext<WeaponWieldContext>();
 
             RegisterContext<WeaponCancelFireContext>();
             RegisterContext<WeaponDamageContext>();
@@ -159,6 +160,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreRayContext>();
             RegisterContext<WeaponPostSetupContext>();
             RegisterContext<WeaponPostStopFiringContext>();
+            RegisterContext<WeaponRecoilContext>();
         }
     }
 }
