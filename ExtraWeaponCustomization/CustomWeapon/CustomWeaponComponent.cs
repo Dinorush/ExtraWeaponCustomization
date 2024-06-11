@@ -44,6 +44,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _lastFireRate = _fireRate;
             CurrentFireRate = _fireRate;
             _burstDelay = Weapon.m_archeType.BurstDelay();
+            CurrentBurstDelay = _burstDelay;
         }
 
         public void Update()
