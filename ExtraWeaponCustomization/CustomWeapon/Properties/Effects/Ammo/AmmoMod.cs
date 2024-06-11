@@ -14,6 +14,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public float ClipChange { get; set; } = 0;
         public float ReserveChange { get; set; } = 0;
+        public bool OverflowToReserve { get; set; } = true;
         public bool PullFromReserve { get; set; } = false;
         public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
 
@@ -47,8 +48,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(context.Weapon.Owner.Owner).AmmoStorage;
             int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, ammoStorage.GetBulletsInPack(context.Weapon.AmmoType)) : _clipBuffer);
             int newClip = Math.Clamp(context.Weapon.GetCurrentClip() + clipChange, accountForShot, context.Weapon.GetMaxClip() + accountForShot);
+
+            // If we overflow/underflow the magazine, send the rest to reserves (if not pulling from reserves)
+            int bonusReserve = OverflowToReserve ? clipChange - (newClip - context.Weapon.GetCurrentClip()) : 0;
             clipChange = newClip - context.Weapon.GetCurrentClip();
-            int reserveChange = (int) (PullFromReserve ? _reserveBuffer - clipChange : _reserveBuffer);
+
+            int reserveChange = (int) (PullFromReserve ? _reserveBuffer - clipChange : _reserveBuffer + bonusReserve);
 
             _clipBuffer -= (int) _clipBuffer;
             _reserveBuffer -= (int) _reserveBuffer;
@@ -66,6 +71,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 ClipChange = ClipChange,
                 ReserveChange = ReserveChange,
+                OverflowToReserve = OverflowToReserve,
                 PullFromReserve = PullFromReserve,
                 TriggerType = TriggerType
             };
@@ -78,6 +84,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteString(nameof(Name), Name);
             writer.WriteNumber(nameof(ClipChange), ClipChange);
             writer.WriteNumber(nameof(ReserveChange), ReserveChange);
+            writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteString(nameof(TriggerType), TriggerType.ToString());
             writer.WriteEndObject();
@@ -94,6 +101,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "reservechange":
                 case "reserve":
                     ReserveChange = reader.GetSingle();
+                    break;
+                case "overflowtoreserve":
+                case "overflow":
+                    OverflowToReserve = reader.GetBoolean();
                     break;
                 case "pullfromreserve":
                     PullFromReserve = reader.GetBoolean();
