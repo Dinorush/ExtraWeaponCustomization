@@ -11,7 +11,7 @@ namespace ExtraWeaponCustomization.JSON
         private static readonly JsonSerializerOptions _setting = new()
         {
             ReadCommentHandling = JsonCommentHandling.Skip,
-            IncludeFields = false,
+            IncludeFields = true,
             PropertyNameCaseInsensitive = true,
             WriteIndented = true,
             IgnoreReadOnlyProperties = true,
