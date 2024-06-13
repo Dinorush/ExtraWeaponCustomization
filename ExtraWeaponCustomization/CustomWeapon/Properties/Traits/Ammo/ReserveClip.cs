@@ -27,7 +27,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostAmmoPackContext context)
         {
             BulletWeapon weapon = context.Weapon;
-            if (weapon.Owner.Inventory.WieldedItem.AmmoType == AmmoType.ResourcePackRel)
+            if (weapon.Owner.Inventory.WieldedItem != context.Weapon)
             {
                 weapon.SetCurrentClip(PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetClipBulletsFromPack(weapon.GetCurrentClip(), weapon.AmmoType));
                 weapon.m_wasOutOfAmmo = false;
