@@ -13,7 +13,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponPreRayContext>
     {
-        public readonly static string Name = typeof(AutoAim).Name;
         public bool AllowStack { get; } = false;
 
         public bool HipActive { get; set; } = false;
@@ -297,7 +296,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteBoolean(nameof(HipActive), HipActive);
             writer.WriteBoolean(nameof(AimActive), AimActive);
             writer.WriteNumber(nameof(Angle), Angle);

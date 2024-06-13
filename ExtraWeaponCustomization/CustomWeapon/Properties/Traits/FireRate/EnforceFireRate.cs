@@ -11,7 +11,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponDamageContext>
     {
-        public readonly static string Name = typeof(EnforceFireRate).Name;
         public bool AllowStack { get; } = false;
         private CustomWeaponComponent? _cachedCWC = null;
 
@@ -70,7 +69,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteEndObject();
         }
 

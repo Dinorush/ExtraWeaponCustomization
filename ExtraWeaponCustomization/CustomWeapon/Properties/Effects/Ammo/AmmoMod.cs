@@ -9,7 +9,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponTriggerContext>
     {
-        public readonly static string Name = typeof(AmmoMod).Name;
         public bool AllowStack { get; } = true;
 
         public float ClipChange { get; set; } = 0;
@@ -81,7 +80,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(ClipChange), ClipChange);
             writer.WriteNumber(nameof(ReserveChange), ReserveChange);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);

@@ -8,7 +8,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     public sealed class HealthMod :
         IWeaponProperty<WeaponTriggerContext>
     {
-        public readonly static string Name = typeof(HealthMod).Name;
         public bool AllowStack { get; } = true;
 
         public float HealthChangeRel { get; set; } = 0f;
@@ -46,7 +45,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(HealthChangeRel), HealthChangeRel);
             writer.WriteNumber(nameof(CapRel), CapRel);
             writer.WriteString(nameof(TriggerType), TriggerType.ToString());

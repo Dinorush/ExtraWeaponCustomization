@@ -13,7 +13,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponTriggerContext>,
         IWeaponProperty<WeaponDamageContext>
     {
-        public readonly static string Name = typeof(Accelerate).Name;
         public bool AllowStack { get; } = false;
 
         private float _endShotDelay = 1f;
@@ -147,7 +146,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(EndShotDelay), EndShotDelay);
             writer.WriteNumber(nameof(EndFireRate), EndFireRate);
             writer.WriteNumber(nameof(EndDamageMod), EndDamageMod);

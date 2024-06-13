@@ -5,7 +5,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class Explosive : IWeaponProperty<WeaponPreHitContext>
     {
-        public readonly static string Name = typeof(Explosive).Name;
         public bool AllowStack { get; } = true;
 
         public float MaxDamage { get; set; } = 0f;
@@ -50,7 +49,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(MaxDamage), MaxDamage);
             writer.WriteNumber(nameof(MinDamage), MinDamage);
             writer.WriteNumber(nameof(InnerRadius), InnerRadius);

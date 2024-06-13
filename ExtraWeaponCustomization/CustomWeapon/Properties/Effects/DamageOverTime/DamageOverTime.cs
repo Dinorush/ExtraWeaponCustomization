@@ -13,7 +13,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     public sealed class DamageOverTime :
         IWeaponProperty<WeaponPreHitEnemyContext>
     {
-        public readonly static string Name = typeof(DamageOverTime).Name;
         public bool AllowStack { get; } = true;
         public BulletWeapon? Weapon { get; set; }
         public PlayerAgent? Owner => Weapon?.Owner;
@@ -124,7 +123,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(TotalDamage), TotalDamage);
             writer.WriteNumber(nameof(PrecisionMult), PrecisionMult);
             writer.WriteNumber(nameof(StaggerMult), StaggerMult);

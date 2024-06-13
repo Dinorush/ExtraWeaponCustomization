@@ -8,7 +8,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPreFireContext>
     {
-        public readonly static string Name = typeof(HoldBurst).Name;
         public bool AllowStack { get; } = false;
 
         public int ShotsUntilCancel = 1;
@@ -47,7 +46,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(ShotsUntilCancel), ShotsUntilCancel);
             writer.WriteEndObject();
         }

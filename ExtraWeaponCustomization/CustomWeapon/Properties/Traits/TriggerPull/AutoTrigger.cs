@@ -5,7 +5,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class AutoTrigger : IWeaponProperty<WeaponPostSetupContext>
     {
-        public readonly static string Name = typeof(AutoTrigger).Name;
         public bool AllowStack { get; } = false;
 
         public void Invoke(WeaponPostSetupContext context) {
@@ -15,7 +14,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteEndObject();
         }
 

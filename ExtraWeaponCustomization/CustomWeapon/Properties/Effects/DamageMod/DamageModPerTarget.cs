@@ -10,8 +10,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         TriggerMod,
         IWeaponProperty<WeaponDamageContext>
     {
-        public readonly static string Name = typeof(DamageModPerTarget).Name;
-
         private readonly Dictionary<AgentWrapper, Queue<TriggerInstance>> _expireTimes = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
@@ -68,7 +66,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public override void WriteName(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
         }
 
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)

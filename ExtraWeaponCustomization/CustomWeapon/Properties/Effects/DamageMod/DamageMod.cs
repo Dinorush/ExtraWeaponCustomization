@@ -8,8 +8,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         TriggerMod,
         IWeaponProperty<WeaponDamageContext>
     {
-        public readonly static string Name = typeof(DamageMod).Name;
-
         private readonly Queue<TriggerInstance> _expireTimes = new();
 
         public override void Reset()
@@ -43,7 +41,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public override void WriteName(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
         }
     }
 }
