@@ -13,7 +13,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>
     {
-        public readonly static string Name = typeof(ReserveClip).Name;
         public bool AllowStack { get; } = false;
 
         public void Invoke(WeaponPostStartFireContext context)
@@ -56,7 +55,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(Name), Name);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteEndObject();
         }
 
