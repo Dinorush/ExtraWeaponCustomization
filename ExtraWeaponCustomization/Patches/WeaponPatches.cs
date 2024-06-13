@@ -1,4 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon;
+﻿using Agents;
+using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
@@ -46,7 +47,9 @@ namespace ExtraWeaponCustomization.Patches
             }
 
             cwc.Invoke(new WeaponPreHitContext(ref weaponRayData, additionalDis, cwc.Weapon));
-            if (doDamage && damageable?.GetBaseAgent()?.Type == Agents.AgentType.Enemy)
+
+            Agent? agent = damageable?.GetBaseAgent();
+            if (doDamage && agent != null && agent.Type == AgentType.Enemy && agent.Alive)
             {
                 Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>();
                 bool precHit = limb != null && limb.m_type == eLimbDamageType.Weakspot;

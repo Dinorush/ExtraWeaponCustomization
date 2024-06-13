@@ -68,7 +68,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, BulletWeapon weapon)
         {
             var colliders = Physics.OverlapSphere(position, explosiveBase.Radius, LayerManager.MASK_EXPLOSION_TARGETS);
-            if (colliders.Count < 1)
+            if (colliders.Length < 1)
                 return;
 
             DamageUtil.IncrementSearchID();
@@ -95,7 +95,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 if (damBase.TempSearchID == searchID)
                     continue;
 
-                if (damBase.GetBaseAgent()?.Alive == false)
+                if (damBase.GetBaseAgent() == null || !damBase.GetBaseAgent().Alive)
                     continue;
 
                 // Ensure there is nothing between the explosion and this target
