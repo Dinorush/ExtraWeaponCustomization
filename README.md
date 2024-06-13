@@ -14,7 +14,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 
 #### Traits - Innate gun behavior modifications
 - Accelerate: Fire rate and/or damage changes with continuous fire.
-- Ammopack Refill: Specify the % of reserves ammopacks refill.
+- Ammo Cap: Adjust the value used to calculate ammopack refills and starting ammo.
 - Auto Aim: Automatically fire toward targets.
 - Auto Trigger: Hold the trigger to fire. [Semi or Burst weapons only]
 - Enforce Fire Rate: Increases damage/ammo cost when FPS is lower than fire rate. [Automatic weapons only]
