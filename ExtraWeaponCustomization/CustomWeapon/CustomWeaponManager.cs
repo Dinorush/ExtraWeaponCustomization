@@ -1,4 +1,5 @@
-﻿using ExtraWeaponCustomization.JSON;
+﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.JSON;
 using ExtraWeaponCustomization.Utils;
 using Gear;
 using GTFO.API.Utilities;
@@ -138,7 +139,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _listenCWs.Add(weapon);
         }
 
-        internal void ResetCWCs()
+        internal void LevelEnter_ResetCWCs()
         {
             // Resets CWCs by removing and re-adding all custom data.
             // Not as efficient as implementing a reset function on each property,
@@ -157,6 +158,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
                             cwc = _listenCWs[i].gameObject.AddComponent<CustomWeaponComponent>();
 
                         cwc.Register(data);
+                        cwc.Invoke(new WeaponLevelEnterContext(_listenCWs[i]));
                     }
                 }
                 else

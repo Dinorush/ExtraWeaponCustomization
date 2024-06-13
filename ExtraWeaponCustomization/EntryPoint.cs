@@ -42,7 +42,7 @@ internal sealed class EntryPoint : BasePlugin
 
     private void LevelAPI_OnEnterLevel()
     {
-        CustomWeaponManager.Current.ResetCWCs();
+        CustomWeaponManager.Current.LevelEnter_ResetCWCs();
     }
 
     private void AssetAPI_OnStartupAssetsLoaded()

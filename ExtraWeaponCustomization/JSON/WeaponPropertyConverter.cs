@@ -1,4 +1,6 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
+using ExtraWeaponCustomization.Utils;
 using System;
 using System.Text.Json;
 
@@ -58,6 +60,9 @@ namespace ExtraWeaponCustomization.JSON
 
                 Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
                 if (type == null) throw new JsonException("Unable to find corresponding weapon property for \"" + name + "\"");
+
+                if (type == typeof(AmmopackRefill))
+                    EWCLogger.Warning("Property name \"AmmopackRefill\" is deprecated and will be removed in a future version. Use \"AmmoCap\" instead.");
 
                 return (IWeaponProperty?)Activator.CreateInstance(type);
             }

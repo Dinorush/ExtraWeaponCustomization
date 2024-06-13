@@ -22,7 +22,7 @@ namespace ExtraWeaponCustomization.JSON
                     new HealthMod(),
                     new RecoilMod(),
 
-                    new AmmopackRefill(),
+                    new AmmoCap(),
                     new AutoAim(),
                     new AutoTrigger(),
                     new EnforceFireRate(),
