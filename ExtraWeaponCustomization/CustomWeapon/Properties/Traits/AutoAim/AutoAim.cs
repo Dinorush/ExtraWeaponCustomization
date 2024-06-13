@@ -1,7 +1,9 @@
-﻿using Enemies;
+﻿using Agents;
+using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
-using System.Linq;
+using System;
+using System.Collections;
 using System.Text.Json;
 using UnityEngine;
 
@@ -36,9 +38,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private Camera? _camera;
         private float _detectionTick;
         private EnemyAgent? _target;
-        private EnemyAgent? _lastTarget;
+        private bool _hadTarget = false;
         private float _progress;
         private float _lastUpdateTime;
+
+        private static readonly ColliderComparer _colliderComparer = new();
 
         private static Ray _ray;
         private static RaycastHit _raycastHit;
@@ -72,7 +76,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 if (Physics.Raycast(_ray, out _raycastHit, 100f, LayerManager.MASK_BULLETWEAPON_RAY))
                 {
                     IDamageable? damageable = WeaponTriggerContext.GetDamageableFromRayHit(_raycastHit);
-                    if (damageable != null && damageable.GetBaseAgent()?.Type == Agents.AgentType.Enemy)
+                    Agent? agent = damageable?.GetBaseAgent();
+                    if (damageable != null && agent != null && agent.Type == AgentType.Enemy && agent.Alive)
                         return; // Cancel auto aim (just shoot where user is aiming)
                 }
             }
@@ -139,7 +144,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             }
 
             // If the target died, immediately re-acquire another one
-            if (_lastTarget != null && (_target == null || !_target.Alive))
+            if (_hadTarget && (_target == null || !_target.Alive))
             {
                 _target = null;
                 _detectionTick = 0f;
@@ -153,12 +158,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             // Acquire new target if applicable
             if (_target == null || !StayOnTarget)
             {
+                EnemyAgent? _lastTarget = _target;
                 _target = CheckForTarget();
 
                 if (ResetOnNewTarget && _target != null && _target != _lastTarget)
                     _progress = 0;
 
-                _lastTarget = _target;
+                _hadTarget = _target != null;
             }
 
             // Prevents statements at the top of the func from doing div by 0
@@ -167,7 +173,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             else if (_target != null && LockTime <= 0)
                 _progress = 1f;
 
-            _detectionTick = Time.time + 0.25f;
+            _detectionTick = Time.time + 0.1f;
         }
 
         private void UpdateAnimate()
@@ -250,16 +256,23 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         {
             Vector3 forward = _weapon!.transform.forward;
             Vector3 position = _weapon!.transform.position;
-            Collider[] array = Physics.OverlapSphere(position, Range, LayerManager.MASK_SENTRYGUN_DETECTION_TARGETS);
+
+            Collider[] colliders = Physics.OverlapSphere(position, Range, LayerManager.MASK_SENTRYGUN_DETECTION_TARGETS);
+            _colliderComparer.Set(forward, position);
+            Array.Sort(colliders, 0, colliders.Length, _colliderComparer);
 
             // Go through colliders by order of minimum angle (enemies closest to aim point are prioritized)
-            foreach (Collider collider in array.OrderBy(c => Vector3.Angle(forward, c.transform.position - position)))
+            foreach (Collider collider in colliders)
             {
                 Vector3 pos = collider.transform.position;
+                Vector3 to = pos - position;
+                // Sorted by this, so if any are bigger, no valid colliders remain
+                if (Vector3.Angle(forward, to) >= Angle)
+                    return null;
+
                 Vector3 up = pos + Vector3.up * 0.4f;
                 Vector3 left = pos + Vector3.left * 0.4f;
-                Vector3 to = pos - position;
-                if (Vector3.Angle(forward, to) >= Angle || Physics.Linecast(position, pos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS) || Physics.Linecast(position, up, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS) || Physics.Linecast(position, left, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                if (Physics.Linecast(position, pos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS) || Physics.Linecast(position, up, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS) || Physics.Linecast(position, left, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
                     continue;
 
                 EnemyAgent? enemyAgent = collider.GetComponent<IDamageable>()?.GetBaseAgent()?.TryCast<EnemyAgent>();
@@ -366,6 +379,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 default:
                     break;
+            }
+        }
+
+        sealed class ColliderComparer : IComparer
+        {
+            Vector3 _forward;
+            Vector3 _position;
+            public void Set(Vector3 forward, Vector3 position)
+            {
+                _forward = forward;
+                _position = position;
+            }
+
+            public int Compare(object? x, object? y)
+            {
+                // OverlapSphere never returns null colliders, so assuming non-null
+                Vector3 xPos = ((Collider)x!).transform.position;
+                Vector3 yPos = ((Collider)y!).transform.position;
+                return Vector3.Angle(_forward, xPos - _position) < Vector3.Angle(_forward, yPos - _position) ? -1 : 1;
             }
         }
     }
