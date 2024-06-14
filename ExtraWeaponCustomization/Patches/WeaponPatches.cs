@@ -73,7 +73,7 @@ namespace ExtraWeaponCustomization.Patches
                 }
                 
                 Vector3 localPos = weaponRayData.rayHit.point - damageable.GetBaseAgent().Position;
-                KillTrackerManager.RegisterHit(damageable.GetBaseAgent(), localPos, cwc.Weapon, precHit);
+                KillTrackerManager.RegisterHit(agent, localPos, cwc.Weapon, precHit);
             }
         }
     }
