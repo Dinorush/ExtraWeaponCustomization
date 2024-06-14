@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Text.Json;
 using UnityEngine;
+using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
@@ -38,7 +39,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private Camera? _camera;
         private float _detectionTick;
         private EnemyAgent? _target;
-        private bool _hadTarget = false;
+        private bool _hasTarget = false;
         private float _progress;
         private float _lastUpdateTime;
 
@@ -51,6 +52,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private readonly Color _passiveLocked = new(0.8f, 0.3f, 0.2f, 1f);
         private readonly Color _passiveDetection = new(0.5f, 0.5f, 0.5f, 1f);
         private readonly Vector3 _targetedAngles = new(0f, 0f, 45f);
+        private Coroutine? targetLostAnimator = null;
 
         public void Invoke(WeaponPreStartFireContext context)
         {
@@ -68,16 +70,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPreRayContext context)
         {
-            // Prioritize aim if looking at an enemy
+            // Prioritize aim if looking at the locked enemy
             if (FavorLookPoint && _camera != null)
             {
                 _ray.origin = _camera.transform.position;
                 _ray.direction = context.Data.fireDir;
                 if (Physics.Raycast(_ray, out _raycastHit, 100f, LayerManager.MASK_BULLETWEAPON_RAY))
                 {
-                    IDamageable? damageable = WeaponTriggerContext.GetDamageableFromRayHit(_raycastHit);
-                    Agent? agent = damageable?.GetBaseAgent();
-                    if (damageable != null && agent != null && agent.Type == AgentType.Enemy && agent.Alive)
+                    Agent? agent = WeaponTriggerContext.GetDamageableFromRayHit(_raycastHit)?.GetBaseAgent();
+                    if (agent != null && agent.Alive && agent == _target)
                         return; // Cancel auto aim (just shoot where user is aiming)
                 }
             }
@@ -105,7 +106,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (_camera == null)
                 _camera = _weapon.Owner?.FPSCamera?.m_camera;
 
+            bool hasTarget = _hasTarget;
             UpdateDetection();
+            if (LockDecayTime > 0)
+            {
+                if (hasTarget && !_hasTarget)
+                    targetLostAnimator = CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(AnimateReticleToCenter()));
+                else if(!hasTarget && _hasTarget && targetLostAnimator != null)
+                {
+                    CoroutineManager.StopCoroutine(targetLostAnimator);
+                    targetLostAnimator = null;
+                }
+            }
             UpdateAnimate();
         }
 
@@ -140,11 +152,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 if (LockDecayTime <= 0)
                     _progress = 0;
                 _target = null;
+                _hasTarget = false;
                 return;
             }
 
             // If the target died, immediately re-acquire another one
-            if (_hadTarget && (_target == null || !_target.Alive))
+            if (_hasTarget && (_target == null || !_target.Alive))
             {
                 _target = null;
                 _detectionTick = 0f;
@@ -160,11 +173,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             {
                 EnemyAgent? _lastTarget = _target;
                 _target = CheckForTarget();
+                _hasTarget = _target != null;
 
-                if (ResetOnNewTarget && _target != null && _target != _lastTarget)
+                if (ResetOnNewTarget && _hasTarget && _target != _lastTarget)
                     _progress = 0;
-
-                _hadTarget = _target != null;
             }
 
             // Prevents statements at the top of the func from doing div by 0
@@ -211,6 +223,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             _reticle.transform.localScale *= AutoAimActive ? 1.6f : 1f;
             _reticle.UpdateColorsWithAlphaMul(AutoAimActive ? 1.0f : 0.5f);
+        }
+
+        private IEnumerator AnimateReticleToCenter()
+        {
+            Vector3 startPos = _reticleHolder!.transform.position;
+            Vector3 endPos = _camera!.ViewportToScreenPoint(new Vector3(0.5f, 0.5f));
+            float startProgress = _progress;
+            while(_progress > 0)
+            {
+                _reticleHolder.transform.position = Vector3.Lerp(endPos, startPos, _progress / startProgress);
+                yield return null;
+            }
+            targetLostAnimator = null;
         }
 
         private Color GetLockingColor(float frac)
