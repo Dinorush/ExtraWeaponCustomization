@@ -1,5 +1,4 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using GameData;
 using Player;
 using System.Text.Json;
@@ -8,7 +7,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class AmmoCap :
         IWeaponProperty<WeaponPostSetupContext>,
-        IWeaponProperty<WeaponLevelEnterContext>,
+        IWeaponProperty<WeaponPostAmmoInitContext>,
         IWeaponProperty<WeaponPreAmmoPackContext>
     {
         public bool AllowStack { get; } = false;
@@ -41,14 +40,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 AmmoCapRel = context.Weapon.ArchetypeData.CostOfBullet / CostOfBullet;
         }
 
-        public void Invoke(WeaponLevelEnterContext context)
+        public void Invoke(WeaponPostAmmoInitContext context)
         {
             // Fix the starting ammo for the weapon.
-            AmmoType type = context.Weapon.AmmoType;
-            PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(context.Weapon.Owner.Owner).AmmoStorage;
-            InventorySlotAmmo slot = ammoStorage.m_ammoStorage[(int)type];
+            InventorySlotAmmo slot = context.SlotAmmo;
             slot.AmmoInPack = (context.Weapon.GetCurrentClip() * slot.CostOfBullet + slot.AmmoInPack) * AmmoCapRel;
-            context.Weapon.SetCurrentClip(ammoStorage.GetClipBulletsFromPack(0, type));
+            context.Weapon.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(0, slot.AmmoType));
         }
 
         public void Invoke(WeaponPreAmmoPackContext context)

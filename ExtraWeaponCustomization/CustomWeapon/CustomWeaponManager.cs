@@ -1,5 +1,4 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.JSON;
+﻿using ExtraWeaponCustomization.JSON;
 using ExtraWeaponCustomization.Utils;
 using Gear;
 using GTFO.API.Utilities;
@@ -108,25 +107,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             }
 
             // Re-apply changes to listening CWCs
-            for (int i = _listenCWs.Count - 1; i >= 0; i--)
-            {
-                if (_listenCWs[i] != null)
-                {
-                    CustomWeaponComponent cwc = _listenCWs[i].GetComponent<CustomWeaponComponent>();
-                    cwc?.Clear();
-
-                    CustomWeaponData? data = GetCustomWeaponData(_listenCWs[i].ArchetypeID);
-                    if (data != null)
-                    {
-                        if (cwc == null)
-                            cwc = _listenCWs[i].gameObject.AddComponent<CustomWeaponComponent>();
-                        
-                        cwc.Register(data);
-                    }
-                }
-                else
-                    _listenCWs.RemoveAt(i);
-            }
+            ResetCWCs();
         }
 
         public CustomWeaponData? GetCustomWeaponData(uint ArchetypeID) => _customData.ContainsKey(ArchetypeID) ? _customData[ArchetypeID] : null;
@@ -139,7 +120,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _listenCWs.Add(weapon);
         }
 
-        internal void LevelEnter_ResetCWCs()
+        internal void ResetCWCs()
         {
             // Resets CWCs by removing and re-adding all custom data.
             // Not as efficient as implementing a reset function on each property,
@@ -158,7 +139,6 @@ namespace ExtraWeaponCustomization.CustomWeapon
                             cwc = _listenCWs[i].gameObject.AddComponent<CustomWeaponComponent>();
 
                         cwc.Register(data);
-                        cwc.Invoke(new WeaponLevelEnterContext(_listenCWs[i]));
                     }
                 }
                 else

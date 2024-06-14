@@ -38,7 +38,7 @@ namespace ExtraWeaponCustomization.Patches
         [HarmonyPatch(typeof(PlayerBackpackManager), nameof(PlayerBackpackManager.ReceiveAmmoGive))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void AmmoPackCallback(PlayerBackpackManager __instance, ref pAmmoGive data)
+        private static void AmmoPackCallback(ref pAmmoGive data)
         {
             if (!data.targetPlayer.TryGetPlayer(out var player)) return;
 
@@ -71,7 +71,7 @@ namespace ExtraWeaponCustomization.Patches
         [HarmonyPatch(typeof(PlayerBackpackManager), nameof(PlayerBackpackManager.ReceiveAmmoGive))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void PostAmmoPackCallback(PlayerBackpackManager __instance, ref pAmmoGive data)
+        private static void PostAmmoPackCallback(ref pAmmoGive data)
         {
             if (!data.targetPlayer.TryGetPlayer(out var player)) return;
 
@@ -101,6 +101,24 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null) return;
 
             cwc.Invoke(new WeaponPostReloadContext(cwc.Weapon));
+        }
+
+        [HarmonyPatch(typeof(PlayerAmmoStorage), nameof(PlayerAmmoStorage.FillAllClips))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void PostFillAllClipsCallback(PlayerAmmoStorage __instance)
+        {
+            if (__instance.m_playerBackpack.TryGetBackpackItem(InventorySlot.GearStandard, out BackpackItem primary))
+            {
+                CustomWeaponComponent? cwc = primary.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(new WeaponPostAmmoInitContext(__instance, __instance.StandardAmmo, cwc.Weapon));
+            }
+
+            if (__instance.m_playerBackpack.TryGetBackpackItem(InventorySlot.GearSpecial, out BackpackItem special))
+            {
+                CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(new WeaponPostAmmoInitContext(__instance, __instance.SpecialAmmo, cwc.Weapon));
+            }
         }
     }
 }
