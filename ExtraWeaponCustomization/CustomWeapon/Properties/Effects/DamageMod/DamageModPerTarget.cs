@@ -49,6 +49,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponDamageContext context)
         {
+            if (context.Damageable!.GetBaseAgent() == null) return;
+
             TempWrapper.SetAgent(context.Damageable!.GetBaseAgent());
             if (!_expireTimes.ContainsKey(TempWrapper)) return;
 
