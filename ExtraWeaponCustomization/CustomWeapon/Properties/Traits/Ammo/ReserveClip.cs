@@ -1,5 +1,4 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using Player;
 using System;
@@ -29,7 +28,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             BulletWeapon weapon = context.Weapon;
             if (weapon.Owner.Inventory.WieldedItem != context.Weapon)
             {
-                weapon.SetCurrentClip(PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetClipBulletsFromPack(weapon.GetCurrentClip(), weapon.AmmoType));
+                weapon.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(weapon.GetCurrentClip(), weapon.AmmoType));
                 weapon.m_wasOutOfAmmo = false;
             }
             else

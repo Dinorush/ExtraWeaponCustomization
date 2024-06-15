@@ -75,19 +75,17 @@ namespace ExtraWeaponCustomization.Patches
         {
             if (!data.targetPlayer.TryGetPlayer(out var player)) return;
 
-            PlayerAgent? agent = player.PlayerAgent?.TryCast<PlayerAgent>();
-            if (agent == null) return;
-
-            if (PlayerBackpackManager.TryGetItem(player, InventorySlot.GearStandard, out BackpackItem primary))
+            PlayerBackpack backpack = PlayerBackpackManager.GetBackpack(player);
+            if (backpack.TryGetBackpackItem(InventorySlot.GearStandard, out BackpackItem primary))
             {
                 CustomWeaponComponent? cwc = primary.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(new WeaponPostAmmoPackContext(cwc.Weapon));
+                cwc?.Invoke(new WeaponPostAmmoPackContext(backpack.AmmoStorage, cwc.Weapon));
             }
 
-            if (PlayerBackpackManager.TryGetItem(player, InventorySlot.GearSpecial, out BackpackItem special))
+            if (backpack.TryGetBackpackItem(InventorySlot.GearSpecial, out BackpackItem special))
             {
                 CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(new WeaponPostAmmoPackContext(cwc.Weapon));
+                cwc?.Invoke(new WeaponPostAmmoPackContext(backpack.AmmoStorage, cwc.Weapon));
             }
         }
 
