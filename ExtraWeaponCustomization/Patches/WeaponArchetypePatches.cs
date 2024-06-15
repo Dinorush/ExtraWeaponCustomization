@@ -15,14 +15,10 @@ namespace ExtraWeaponCustomization.Patches
         {
             if (owner == null) return;
 
-            CustomWeaponManager.Current.AddWeaponListener(__instance.m_weapon);
-            CustomWeaponData? data = CustomWeaponManager.Current.GetCustomWeaponData(__instance.m_archetypeData.persistentID);
-            if (data == null) return;
+            CustomWeaponComponent cwc = __instance.m_weapon.GetComponent<CustomWeaponComponent>();
+            if (cwc == null) return;
 
-            if (__instance.m_weapon.gameObject.GetComponent<CustomWeaponComponent>() != null) return;
-
-            CustomWeaponComponent cwc = __instance.m_weapon.gameObject.AddComponent<CustomWeaponComponent>();
-            cwc.Register(data);
+            cwc.OwnerInit();
         }
 
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStartFiring))]

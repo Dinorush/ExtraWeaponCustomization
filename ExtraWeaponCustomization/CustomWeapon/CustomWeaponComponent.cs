@@ -17,6 +17,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
         private readonly ContextController _contextController;
 
         private AutoAim? _autoAim;
+        private bool _ownerSet;
 
         public bool CancelShot { get; set; }
 
@@ -45,21 +46,40 @@ namespace ExtraWeaponCustomization.CustomWeapon
             CurrentFireRate = _fireRate;
             _burstDelay = Weapon.m_archeType.BurstDelay();
             CurrentBurstDelay = _burstDelay;
+            _ownerSet = false;
+        }
+
+        public void OwnerInit()
+        {
+            if (_ownerSet) return;
+
+            if (Weapon.Owner != null && Weapon.Owner.IsLocallyOwned)
+                _autoAim?.OnEnable();
+            else if(_autoAim != null)
+            {
+                _contextController.Unregister(_autoAim);
+                _autoAim = null;
+            }
+
+            _ownerSet = true;
         }
 
         public void Update()
         {
-            _autoAim?.Update();
+            if (_ownerSet)
+                _autoAim?.Update();
         }
 
         public void OnEnable()
         {
-            _autoAim?.OnEnable();
+            if (_ownerSet)
+                _autoAim?.OnEnable();
         }
 
         public void OnDisable()
         {
-            _autoAim?.OnDisable();
+            if (_ownerSet)
+                _autoAim?.OnDisable();
         }
 
         public void Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
@@ -67,11 +87,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
         public void Register(IWeaponProperty property)
         {
             if (property is AutoAim autoAim)
-            {
-                if (Weapon.Owner != null && !Weapon.Owner.IsLocallyOwned)
-                    return;
                 _autoAim ??= autoAim;
-            }
 
             _contextController.Register(property);
 
@@ -95,6 +111,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _contextController.Clear();
             _autoAim?.OnDisable();
             _autoAim = null;
+            _ownerSet = false;
             CurrentFireRate = _fireRate;
             CurrentBurstDelay = _burstDelay;
             Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);

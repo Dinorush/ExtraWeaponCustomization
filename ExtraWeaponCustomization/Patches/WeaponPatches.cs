@@ -12,6 +12,21 @@ namespace ExtraWeaponCustomization.Patches
 {
     internal static class WeaponPatches
     {
+        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnGearSpawnComplete))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void SetupCallback(BulletWeapon __instance)
+        {
+            CustomWeaponManager.Current.AddWeaponListener(__instance);
+            CustomWeaponData? data = CustomWeaponManager.Current.GetCustomWeaponData(__instance.ArchetypeData.persistentID);
+            if (data == null) return;
+
+            if (__instance.gameObject.GetComponent<CustomWeaponComponent>() != null) return;
+
+            CustomWeaponComponent cwc = __instance.gameObject.AddComponent<CustomWeaponComponent>();
+            cwc.Register(data);
+        }
+
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnWield))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
