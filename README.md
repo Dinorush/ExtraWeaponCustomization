@@ -17,7 +17,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Ammo Cap: Adjust the value used to calculate ammopack refills and starting ammo.
 - Auto Aim: Automatically fire toward targets.
 - Auto Trigger: Hold the trigger to fire. [Semi or Burst weapons only]
-- Enforce Fire Rate: Increases damage/ammo cost when FPS is lower than fire rate. [Automatic weapons only]
+- Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Automatic weapons only]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst weapons only]
 - Reserve Clip: Combines reserve ammo with the magazine.
 
