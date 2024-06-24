@@ -12,11 +12,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public float HealthChangeRel { get; set; } = 0f;
         public float CapRel { get; set; } = -1f;
+        public float Cooldown { get; set; } = 0f;
         public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
+        private float _lastTriggerTime = 0f;
 
         public void Invoke(WeaponTriggerContext context)
         {
-            if (!context.Type.IsType(TriggerType)) return;
+            if (!context.Type.IsType(TriggerType) || Clock.Time < _lastTriggerTime + Cooldown) return;
 
             float cap = CapRel >= 0f ? CapRel : Math.Sign(HealthChangeRel);
             PlayerAgent owner = context.Weapon.Owner;
@@ -29,6 +31,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 heal,
                 cap * owner.Damage.HealthMax
                 );
+
+            _lastTriggerTime = Clock.Time;
         }
 
         public IWeaponProperty Clone()
@@ -37,6 +41,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 HealthChangeRel = HealthChangeRel,
                 CapRel = CapRel,
+                Cooldown = Cooldown,
                 TriggerType = TriggerType
             };
             return copy;
@@ -48,6 +53,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(HealthChangeRel), HealthChangeRel);
             writer.WriteNumber(nameof(CapRel), CapRel);
+            writer.WriteNumber(nameof(Cooldown), Cooldown);
             writer.WriteString(nameof(TriggerType), TriggerType.ToString());
             writer.WriteEndObject();
         }
@@ -67,6 +73,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "caprel":
                 case "cap":
                     CapRel = reader.GetSingle();
+                    break;
+                case "cooldown":
+                    Cooldown = reader.GetSingle();
                     break;
                 case "triggertype":
                 case "trigger":

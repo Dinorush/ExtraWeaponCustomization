@@ -13,6 +13,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public float ClipChange { get; set; } = 0;
         public float ReserveChange { get; set; } = 0;
+        public float Cooldown { get; set; } = 0f;
         public bool OverflowToReserve { get; set; } = true;
         public bool PullFromReserve { get; set; } = false;
         public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
@@ -20,6 +21,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private float _clipBuffer = 0;
         private float _reserveBuffer = 0;
         private float _lastFireTime = 0;
+        private float _lastTriggerTime = 0;
 
         public void Invoke(WeaponPreFireContext context)
         {
@@ -28,7 +30,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponTriggerContext context)
         {
-            if (!context.Type.IsType(TriggerType)) return;
+            if (!context.Type.IsType(TriggerType) || Clock.Time < _lastTriggerTime + Cooldown) return;
 
             float damageMod = 1f;
             if (context.Type.IsType(TriggerType.OnDamage))
@@ -62,6 +64,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             // Need to update UI since UpdateBulletsInPack does it without including the clip
             ammoStorage.UpdateBulletsInPack(context.Weapon.AmmoType, reserveChange);
             ammoStorage.UpdateSlotAmmoUI(ammoStorage.m_ammoStorage[(int) context.Weapon.AmmoType], newClip);
+            _lastTriggerTime = Clock.Time;
         }
 
         public IWeaponProperty Clone()
@@ -70,6 +73,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 ClipChange = ClipChange,
                 ReserveChange = ReserveChange,
+                Cooldown = Cooldown,
                 OverflowToReserve = OverflowToReserve,
                 PullFromReserve = PullFromReserve,
                 TriggerType = TriggerType
@@ -83,6 +87,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(ClipChange), ClipChange);
             writer.WriteNumber(nameof(ReserveChange), ReserveChange);
+            writer.WriteNumber(nameof(Cooldown), Cooldown);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteString(nameof(TriggerType), TriggerType.ToString());
@@ -100,6 +105,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "reservechange":
                 case "reserve":
                     ReserveChange = reader.GetSingle();
+                    break;
+                case "cooldown":
+                    Cooldown = reader.GetSingle();
                     break;
                 case "overflowtoreserve":
                 case "overflow":
