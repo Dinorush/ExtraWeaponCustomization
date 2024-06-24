@@ -36,7 +36,13 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null) return;
 
             cwc.Invoke(new WeaponWieldContext(__instance));
+            _lastSearchID = 0;
         }
+
+        // Used to correctly apply HitCallback damage modification on piercing shots
+        // (otherwise damage mods apply to future pierce shots exponentially)
+        private static uint _lastSearchID = 0;
+        private static float _origHitDamage = 0;
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyWrapSafe]
@@ -55,6 +61,17 @@ namespace ExtraWeaponCustomization.Patches
 
             if (doDamage && damageable != null)
             {
+                // Correct piercing damage back to base damage to apply damage mods
+                if (damageSearchID != 0)
+                {
+                    if (_lastSearchID != damageSearchID)
+                    {
+                        _lastSearchID = damageSearchID;
+                        _origHitDamage = weaponRayData.damage;
+                    }
+                    weaponRayData.damage = _origHitDamage;
+                }
+
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(weaponRayData.damage, damageable, cwc.Weapon);
                 cwc.Invoke(damageContext);
