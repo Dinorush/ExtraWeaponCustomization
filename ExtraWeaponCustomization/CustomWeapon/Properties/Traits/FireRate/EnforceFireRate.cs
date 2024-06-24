@@ -9,7 +9,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     public sealed class EnforceFireRate :
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponDamageContext>
+        IWeaponProperty<WeaponDamageContext>,
+        IWeaponProperty<WeaponRecoilContext>
     {
         public bool AllowStack { get; } = false;
         private CustomWeaponComponent? _cachedCWC = null;
@@ -47,6 +48,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         }
 
         public void Invoke(WeaponDamageContext context)
+        {
+            // Won't apply on the first shot (no time delta available to use)
+            context.AddMod(1f + GetShotsInBuffer(context.Weapon), Effects.StackType.Multiply);
+        }
+
+        public void Invoke(WeaponRecoilContext context)
         {
             // Won't apply on the first shot (no time delta available to use)
             context.AddMod(1f + GetShotsInBuffer(context.Weapon), Effects.StackType.Multiply);
