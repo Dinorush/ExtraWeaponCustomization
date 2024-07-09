@@ -11,6 +11,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Fire Rate Mod: Applies a fire rate modifier.
 - Health Mod: Modifies the user's health.
 - Recoil Mod: Applies a recoil modifier.
+- Tumor Multi: Applies a damage multiplier when hitting tumors.
 
 #### Traits - Innate gun behavior modifications
 - Accelerate: Fire rate and/or damage changes with continuous fire.

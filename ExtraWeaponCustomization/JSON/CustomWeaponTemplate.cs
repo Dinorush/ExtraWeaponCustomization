@@ -21,6 +21,7 @@ namespace ExtraWeaponCustomization.JSON
                     new FireRateMod(),
                     new HealthMod(),
                     new RecoilMod(),
+                    new TumorMulti(),
 
                     new AmmoCap(),
                     new AutoAim(),
