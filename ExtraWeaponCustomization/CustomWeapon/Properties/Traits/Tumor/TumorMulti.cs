@@ -1,7 +1,8 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     internal class TumorMulti : IWeaponProperty<WeaponDamageContext>
     {
