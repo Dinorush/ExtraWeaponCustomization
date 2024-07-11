@@ -7,12 +7,12 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class EnforceFireRate :
+        Trait,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponDamageContext>,
         IWeaponProperty<WeaponRecoilContext>
     {
-        public bool AllowStack { get; } = false;
         private CustomWeaponComponent? _cachedCWC = null;
 
         private float _lastShotTime = 0f;

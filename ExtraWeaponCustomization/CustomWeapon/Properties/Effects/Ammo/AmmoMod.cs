@@ -6,11 +6,10 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class AmmoMod :
+        Effect,
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponTriggerContext>
     {
-        public bool AllowStack { get; } = true;
-
         public float ClipChange { get; set; } = 0;
         public float ReserveChange { get; set; } = 0;
         public float Cooldown { get; set; } = 0f;

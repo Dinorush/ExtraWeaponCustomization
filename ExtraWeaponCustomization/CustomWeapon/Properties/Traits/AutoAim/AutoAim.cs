@@ -11,13 +11,12 @@ using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionEx
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class AutoAim : 
+        Trait,
         IWeaponProperty<WeaponPostSetupContext>,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponPreRayContext>
     {
-        public bool AllowStack { get; } = false;
-
         public bool HipActive { get; set; } = false;
         public bool AimActive { get; set; } = true;
         public float Angle { get; set; } = 0f;

@@ -6,10 +6,9 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class HealthMod :
+        Effect,
         IWeaponProperty<WeaponTriggerContext>
     {
-        public bool AllowStack { get; } = true;
-
         public float HealthChangeRel { get; set; } = 0f;
         public float CapRel { get; set; } = -1f;
         public float Cooldown { get; set; } = 0f;
