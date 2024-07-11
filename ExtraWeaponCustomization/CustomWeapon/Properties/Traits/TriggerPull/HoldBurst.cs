@@ -52,7 +52,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            switch (property.ToLowerInvariant())
+            switch (property)
             {
                 case "shotsuntilcancel":
                 case "shots":
