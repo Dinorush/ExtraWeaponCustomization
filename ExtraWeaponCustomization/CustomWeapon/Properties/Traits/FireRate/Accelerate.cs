@@ -7,12 +7,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class Accelerate :
         Trait,
-        IWeaponProperty<WeaponPreStartFireContext>,
-        IWeaponProperty<WeaponFireRateSetContext>,
-        IWeaponProperty<WeaponPostStopFiringContext>,
-        IWeaponProperty<WeaponCancelFireContext>,
-        IWeaponProperty<WeaponTriggerContext>,
-        IWeaponProperty<WeaponDamageContext>
+        IContextCallback<WeaponPreStartFireContext>,
+        IContextCallback<WeaponFireRateSetContext>,
+        IContextCallback<WeaponPostStopFiringContext>,
+        IContextCallback<WeaponCancelFireContext>,
+        IContextCallback<WeaponTriggerContext>,
+        IContextCallback<WeaponDamageContext>
     {
         private float _endShotDelay = 1f;
         public float EndShotDelay
@@ -126,7 +126,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return UnityEngine.Mathf.Lerp(1f, EndDamageMod, (float)Math.Pow(_progress, AccelExponent));
         }
 
-        public IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             Accelerate copy = new()
             {
@@ -142,7 +142,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -158,7 +158,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {

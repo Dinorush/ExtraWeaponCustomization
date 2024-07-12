@@ -6,7 +6,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public class FireRateMod :
         TriggerMod,
-        IWeaponProperty<WeaponFireRateContext>
+        IContextCallback<WeaponFireRateContext>
     {
         private readonly Queue<TriggerInstance> _expireTimes = new();
 
@@ -31,7 +31,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             context.AddMod(CalculateMod(_expireTimes), StackLayer);
         }
 
-        public override IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             FireRateMod copy = new();
             copy.CopyFrom(this);

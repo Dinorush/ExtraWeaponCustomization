@@ -1,6 +1,7 @@
 ﻿using AK;
 using ExtraWeaponCustomization.CustomWeapon.Properties;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
@@ -15,6 +16,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
         public BulletWeapon Weapon { get; private set; }
 
         private readonly ContextController _contextController;
+        private readonly ContextController _triggerController;
 
         private AutoAim? _autoAim;
         private bool _ownerSet;
@@ -34,6 +36,9 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
             _contextController = new ContextController();
+            _triggerController = new ContextController(false);
+            _triggerController.RegisterTriggerContexts();
+
             _propertyTypes = new HashSet<Type>();
 
             BulletWeapon? bulletWeapon = GetComponent<BulletWeapon>();
@@ -84,7 +89,13 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public void Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
 
-        public void Register(IWeaponProperty property)
+        public void Invoke(WeaponTriggerContext context)
+        {
+            _contextController.Invoke(context);
+            _triggerController.Invoke(context);
+        }
+
+        public void Register(IContextCallback property)
         {
             if (property is AutoAim autoAim)
                 _autoAim ??= autoAim;
@@ -94,12 +105,17 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _propertyTypes.Add(property.GetType());
         }
 
+        public void Register(Trigger trigger)
+        {
+            _triggerController.Register(trigger);
+        }
+
         public void Register(CustomWeaponData? data)
         {
             if (data == null) return;
 
-            List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
-            foreach (IWeaponProperty property in properties)
+            List<IContextCallback> properties = data.Properties.ConvertAll(property => property.Clone());
+            foreach (IContextCallback property in properties)
                 Register(property);
 
             Invoke(new WeaponPostSetupContext(Weapon));

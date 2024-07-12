@@ -7,7 +7,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class HealthMod :
         Effect,
-        IWeaponProperty<WeaponTriggerContext>
+        IContextCallback<WeaponTriggerContext>
     {
         public float HealthChangeRel { get; set; } = 0f;
         public float CapRel { get; set; } = -1f;
@@ -34,7 +34,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             _lastTriggerTime = Clock.Time;
         }
 
-        public IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             HealthMod copy = new()
             {
@@ -46,7 +46,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -57,7 +57,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {

@@ -3,15 +3,15 @@ using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties
 {
-    public interface IWeaponProperty
+    public interface IContextCallback
     {
         bool AllowStack { get; }
-        IWeaponProperty Clone(); // Should return a new instance with the same initial data.
+        IContextCallback Clone(); // Should return a new instance with the same initial data.
         void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options);
         void DeserializeProperty(string property, ref Utf8JsonReader reader);
     }
 
-    public interface IWeaponProperty<TContext> : IWeaponProperty where TContext : IWeaponContext
+    public interface IContextCallback<TContext> : IContextCallback where TContext : IWeaponContext
     {
         void Invoke(TContext context);
     }

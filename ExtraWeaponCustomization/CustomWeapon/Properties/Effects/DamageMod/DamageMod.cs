@@ -6,7 +6,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class DamageMod :
         TriggerMod,
-        IWeaponProperty<WeaponDamageContext>
+        IContextCallback<WeaponDamageContext>
     {
         private readonly Queue<TriggerInstance> _expireTimes = new();
 
@@ -32,7 +32,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             context.AddMod(CalculateMod(_expireTimes), StackLayer);
         }
 
-        public override IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             DamageMod copy = new();
             copy.CopyFrom(this);

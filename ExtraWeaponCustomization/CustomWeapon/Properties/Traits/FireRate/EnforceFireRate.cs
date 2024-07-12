@@ -8,10 +8,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class EnforceFireRate :
         Trait,
-        IWeaponProperty<WeaponPostStartFireContext>,
-        IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponDamageContext>,
-        IWeaponProperty<WeaponRecoilContext>
+        IContextCallback<WeaponPostStartFireContext>,
+        IContextCallback<WeaponPostFireContext>,
+        IContextCallback<WeaponDamageContext>,
+        IContextCallback<WeaponRecoilContext>
     {
         private CustomWeaponComponent? _cachedCWC = null;
 
@@ -68,18 +68,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return Math.Min(cap, (int)_shotBuffer);
         }
 
-        public IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             return new EnforceFireRate();
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
     }
 }

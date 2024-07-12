@@ -6,7 +6,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class RecoilMod :
         TriggerMod,
-        IWeaponProperty<WeaponRecoilContext>
+        IContextCallback<WeaponRecoilContext>
     {
         private readonly Queue<TriggerInstance> _expireTimes = new();
 
@@ -32,7 +32,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             context.AddMod(CalculateMod(_expireTimes), StackLayer);
         }
 
-        public override IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             RecoilMod copy = new();
             copy.CopyFrom(this);

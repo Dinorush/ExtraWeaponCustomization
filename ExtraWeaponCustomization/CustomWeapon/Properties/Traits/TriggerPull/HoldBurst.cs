@@ -6,8 +6,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class HoldBurst :
         Trait,
-        IWeaponProperty<WeaponPostStartFireContext>,
-        IWeaponProperty<WeaponPreFireContext>
+        IContextCallback<WeaponPostStartFireContext>,
+        IContextCallback<WeaponPreFireContext>
     {
         public int ShotsUntilCancel = 1;
 
@@ -33,7 +33,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             }
         }
 
-        public IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             HoldBurst copy = new()
             {
@@ -42,7 +42,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -50,7 +50,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {

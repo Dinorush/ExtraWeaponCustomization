@@ -8,12 +8,12 @@ using System.Text.Json.Serialization;
 
 namespace ExtraWeaponCustomization.JSON
 {
-    public sealed class WeaponPropertyConverter : JsonConverter<IWeaponProperty>
+    public sealed class WeaponPropertyConverter : JsonConverter<IContextCallback>
     {
-        private static readonly string PropertyNamespace = typeof(IWeaponProperty).Namespace!;
-        public override IWeaponProperty? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        private static readonly string PropertyNamespace = typeof(IContextCallback).Namespace!;
+        public override IContextCallback? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            IWeaponProperty? instance = CreatePropertyInstance(reader);
+            IContextCallback? instance = CreatePropertyInstance(reader);
             if (instance == null) return null;
 
             while (reader.Read())
@@ -30,13 +30,12 @@ namespace ExtraWeaponCustomization.JSON
             throw new JsonException("Expected EndObject token");
             }
 
-        // Literally the only reason this class exists, so it doesn't write the backing fields.
-        public override void Write(Utf8JsonWriter writer, IWeaponProperty value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, IContextCallback value, JsonSerializerOptions options)
         {
             value.Serialize(writer, options);
         }
 
-        private static IWeaponProperty? CreatePropertyInstance(Utf8JsonReader reader)
+        private static IContextCallback? CreatePropertyInstance(Utf8JsonReader reader)
         {
             if (reader.TokenType != JsonTokenType.StartObject) return null;
 
@@ -64,7 +63,7 @@ namespace ExtraWeaponCustomization.JSON
                 if (type == typeof(AmmopackRefill))
                     EWCLogger.Warning("Property name \"AmmopackRefill\" is deprecated and will be removed in a future version. Use \"AmmoCap\" instead.");
 
-                return (IWeaponProperty?)Activator.CreateInstance(type);
+                return (IContextCallback?)Activator.CreateInstance(type);
             }
 
             return null;

@@ -8,7 +8,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public abstract class TriggerMod :
         Effect,
-        IWeaponProperty<WeaponTriggerContext>
+        IContextCallback<WeaponTriggerContext>
     {
         public float Mod { get; set; } = 1f;
         public float Cap { get; set; } = 0f;
@@ -68,7 +68,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public abstract void Reset();
         public abstract void AddStack(WeaponTriggerContext context);
-        public abstract IWeaponProperty Clone();
+        public override abstract IContextCallback Clone();
         protected void CopyFrom(TriggerMod triggerMod)
         {
             Mod = triggerMod.Mod;
@@ -83,7 +83,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public abstract void WriteName(Utf8JsonWriter writer, JsonSerializerOptions options);
 
-        public virtual void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             WriteName(writer, options);
@@ -98,7 +98,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {

@@ -7,8 +7,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class AmmoMod :
         Effect,
-        IWeaponProperty<WeaponPreFireContext>,
-        IWeaponProperty<WeaponTriggerContext>
+        IContextCallback<WeaponPreFireContext>,
+        IContextCallback<WeaponTriggerContext>
     {
         public float ClipChange { get; set; } = 0;
         public float ReserveChange { get; set; } = 0;
@@ -66,7 +66,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             _lastTriggerTime = Clock.Time;
         }
 
-        public IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             AmmoMod copy = new()
             {
@@ -80,7 +80,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -93,7 +93,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {

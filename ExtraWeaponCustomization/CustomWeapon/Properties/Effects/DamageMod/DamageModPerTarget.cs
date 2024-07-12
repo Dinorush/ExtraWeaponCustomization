@@ -8,7 +8,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class DamageModPerTarget : 
         TriggerMod,
-        IWeaponProperty<WeaponDamageContext>
+        IContextCallback<WeaponDamageContext>
     {
         private readonly Dictionary<AgentWrapper, Queue<TriggerInstance>> _expireTimes = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
@@ -59,7 +59,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             context.AddMod(CalculateMod(queue), StackLayer);
         }
 
-        public override IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             DamageModPerTarget copy = new();
             copy.CopyFrom(this);

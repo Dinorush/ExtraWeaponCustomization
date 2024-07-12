@@ -5,7 +5,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class Explosive : 
         Effect,
-        IWeaponProperty<WeaponPreHitContext>
+        IContextCallback<WeaponPreHitContext>
     {
         public float MaxDamage { get; set; } = 0f;
         public float MinDamage { get; set; } = 0f;
@@ -27,7 +27,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Data.fireDir.normalized, context.Weapon.Owner, falloffMod, this, context.Weapon);
         }
 
-        public IWeaponProperty Clone()
+        public override IContextCallback Clone()
         {
             Explosive copy = new()
             {
@@ -46,7 +46,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -64,7 +64,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {

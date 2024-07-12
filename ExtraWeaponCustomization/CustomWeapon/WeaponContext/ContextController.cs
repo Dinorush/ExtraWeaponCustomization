@@ -11,22 +11,23 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
     {
         private readonly Dictionary<Type, IContextList> _allContextLists = new();
 
-        public ContextController()
+        public ContextController(bool registerAllContexts = true)
         {
-            RegisterAllContexts();
+            if (registerAllContexts)
+                RegisterAllContexts();
         }
 
         private interface IContextList
         {
-            bool Add(IWeaponProperty property);
-            bool Remove(IWeaponProperty property);
+            bool Add(IContextCallback property);
+            bool Remove(IContextCallback property);
             void Clear();
             void Invoke(IWeaponContext context, List<Exception> exceptions);
         }
 
         private sealed class ContextList<TContext> : IContextList where TContext : IWeaponContext
         {
-            private readonly List<IWeaponProperty<TContext>> _entries;
+            private readonly List<IContextCallback<TContext>> _entries;
             private readonly IContextList? _baseContextList;
             private readonly ContextController _manager;
 
@@ -42,9 +43,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
                 _manager._allContextLists.Add(typeof(TContext), this);
             }
 
-            public bool Add(IWeaponProperty property)
+            public bool Add(IContextCallback property)
             {
-                if (property is not IWeaponProperty<TContext> contextedProperty)
+                if (property is not IContextCallback<TContext> contextedProperty)
                     return false;
 
                 if (_entries.Contains(contextedProperty))
@@ -57,9 +58,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
                 return true;
             }
 
-            public bool Remove(IWeaponProperty property)
+            public bool Remove(IContextCallback property)
             {
-                return property is IWeaponProperty<TContext> contextedProperty && _entries.Remove(contextedProperty);
+                return property is IContextCallback<TContext> contextedProperty && _entries.Remove(contextedProperty);
             }
 
             public void Clear()
@@ -69,7 +70,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
 
             public void Invoke(TContext context, List<Exception> exceptions)
             {
-                foreach (IWeaponProperty<TContext> property in _entries)
+                foreach (IContextCallback<TContext> property in _entries)
                 {
                     try
                     {
@@ -93,7 +94,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             }
         }
 
-        public void Register(IWeaponProperty property)
+        public void Register(IContextCallback property)
         {
             if (property == null)
                 throw new ArgumentNullException(nameof(property));
@@ -104,7 +105,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             }
         }
 
-        public void Unregister(IWeaponProperty property)
+        public void Unregister(IContextCallback property)
         {
             foreach (IContextList contextList in _allContextLists.Values)
             {
@@ -136,7 +137,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             _allContextLists.TryAdd(typeof(TContext), new ContextList<TContext>(this));
         }
 
-        internal void RegisterAllContexts()
+        internal void RegisterTriggerContexts()
         {
             RegisterContext<WeaponTriggerContext>();
             RegisterContext<WeaponPostKillContext>();
@@ -145,6 +146,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponOnDamageContext>();
             RegisterContext<WeaponPostReloadContext>();
             RegisterContext<WeaponWieldContext>();
+        }
+
+        internal void RegisterAllContexts()
+        {
+            RegisterTriggerContexts();
 
             RegisterContext<WeaponCancelFireContext>();
             RegisterContext<WeaponDamageContext>();
