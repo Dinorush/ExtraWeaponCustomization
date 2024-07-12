@@ -3,10 +3,10 @@ using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
-    public sealed class Explosive : 
-        Effect,
-        IWeaponProperty<WeaponPreHitContext>
+    public sealed class Explosive : IWeaponProperty<WeaponPreHitContext>
     {
+        public bool AllowStack { get; } = true;
+
         public float MaxDamage { get; set; } = 0f;
         public float MinDamage { get; set; } = 0f;
         public float InnerRadius { get; set; } = 0f;

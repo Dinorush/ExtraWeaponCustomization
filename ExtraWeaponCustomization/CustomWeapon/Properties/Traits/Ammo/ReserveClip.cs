@@ -7,12 +7,13 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class ReserveClip :
-        Trait,
         IWeaponProperty<WeaponPostAmmoPackContext>,
         IWeaponProperty<WeaponPreAmmoUIContext>,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>
     {
+        public bool AllowStack { get; } = false;
+
         public void Invoke(WeaponPostStartFireContext context)
         {
             if (context.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;

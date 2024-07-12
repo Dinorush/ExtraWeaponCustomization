@@ -3,10 +3,10 @@ using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
-    public sealed class AutoTrigger : 
-        Trait,
-        IWeaponProperty<WeaponPostSetupContext>
+    public sealed class AutoTrigger : IWeaponProperty<WeaponPostSetupContext>
     {
+        public bool AllowStack { get; } = false;
+
         public void Invoke(WeaponPostSetupContext context) {
             context.Weapon.m_archeType.m_triggerNeedsPress = false;
         }

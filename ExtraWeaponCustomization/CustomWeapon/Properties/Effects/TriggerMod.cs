@@ -7,9 +7,10 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public abstract class TriggerMod :
-        Effect,
         IWeaponProperty<WeaponTriggerContext>
     {
+        public bool AllowStack { get; } = true;
+
         public float Mod { get; set; } = 1f;
         public float Cap { get; set; } = 0f;
         public float Duration { get; set; } = 0f;

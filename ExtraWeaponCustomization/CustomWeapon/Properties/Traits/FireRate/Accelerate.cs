@@ -6,7 +6,6 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class Accelerate :
-        Trait,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireRateSetContext>,
         IWeaponProperty<WeaponPostStopFiringContext>,
@@ -14,6 +13,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponTriggerContext>,
         IWeaponProperty<WeaponDamageContext>
     {
+        public bool AllowStack { get; } = false;
+
         private float _endShotDelay = 1f;
         public float EndShotDelay
         {

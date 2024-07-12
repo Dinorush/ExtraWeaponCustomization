@@ -11,9 +11,9 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class DamageOverTime :
-        Effect,
         IWeaponProperty<WeaponPreHitEnemyContext>
     {
+        public bool AllowStack { get; } = true;
         public BulletWeapon? Weapon { get; set; }
         public PlayerAgent? Owner => Weapon?.Owner;
 

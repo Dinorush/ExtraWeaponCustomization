@@ -6,11 +6,12 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class AmmoCap :
-        Trait,
         IWeaponProperty<WeaponPostSetupContext>,
         IWeaponProperty<WeaponPostAmmoInitContext>,
         IWeaponProperty<WeaponPreAmmoPackContext>
     {
+        public bool AllowStack { get; } = false;
+
         public float AmmoCapRel { get; set; } = 1f;
         public float AmmopackRefillRel { get; set; } = 0f;
         public float CostOfBullet { get; set; } = 0f;

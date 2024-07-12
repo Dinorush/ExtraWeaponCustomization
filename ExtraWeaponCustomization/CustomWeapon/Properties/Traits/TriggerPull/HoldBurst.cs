@@ -5,10 +5,11 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class HoldBurst :
-        Trait,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPreFireContext>
     {
+        public bool AllowStack { get; } = false;
+
         public int ShotsUntilCancel = 1;
 
         private int _burstMaxCount = 0;
