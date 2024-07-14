@@ -8,20 +8,20 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     {
         public bool AllowStack { get; } = false;
 
-        public float Multi { get; set; } = 1f;
+        public float TumorDamageMulti { get; set; } = 1f;
 
         public void Invoke(WeaponDamageContext context)
         {
             Dam_EnemyDamageLimb_Custom? tumor = context.Damageable.TryCast<Dam_EnemyDamageLimb_Custom>();
             if (tumor != null)
-                context.AddMod(Multi, StackType.Multiply);
+                context.AddMod(TumorDamageMulti, StackType.Multiply);
         }
 
         public IWeaponProperty Clone()
         {
             TumorMulti copy = new()
             {
-                Multi = Multi
+                TumorDamageMulti = TumorDamageMulti
             };
             return copy;
         }
@@ -30,7 +30,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
-            writer.WriteNumber(nameof(Multi), Multi);
+            writer.WriteNumber(nameof(TumorDamageMulti), TumorDamageMulti);
             writer.WriteEndObject();
         }
 
@@ -38,9 +38,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         {
             switch (property.ToLowerInvariant())
             {
-                case "multiplier":
-                case "multi":
-                    Multi = reader.GetSingle();
+                case "tumordamagemulti":
+                case "tumormulti":
+                    TumorDamageMulti = reader.GetSingle();
                     break;
                 default:
                     break;
