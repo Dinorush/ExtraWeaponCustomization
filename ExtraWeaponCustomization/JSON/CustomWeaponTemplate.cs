@@ -29,6 +29,7 @@ namespace ExtraWeaponCustomization.JSON
                     new Explosive(),
                     new Accelerate(),
                     new HoldBurst(),
+                    new PierceMulti(),
                     new ReserveClip()
                 }
             };
