@@ -21,7 +21,6 @@ namespace ExtraWeaponCustomization.JSON
                     new FireRateMod(),
                     new HealthMod(),
                     new RecoilMod(),
-                    new TumorMulti(),
 
                     new AmmoCap(),
                     new AutoAim(),
@@ -30,7 +29,8 @@ namespace ExtraWeaponCustomization.JSON
                     new Explosive(),
                     new Accelerate(),
                     new HoldBurst(),
-                    new ReserveClip()
+                    new ReserveClip(),
+                    new TumorMulti()
                 }
             };
             return data;
