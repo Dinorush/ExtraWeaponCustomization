@@ -154,6 +154,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreAmmoUIContext>();
             RegisterContext<WeaponFireRateContext>();
             RegisterContext<WeaponFireRateSetContext>();
+            RegisterContext<WeaponPierceContext>();
             RegisterContext<WeaponPreFireContext>();
             RegisterContext<WeaponPreStartFireContext>();
             RegisterContext<WeaponPostStartFireContext>();

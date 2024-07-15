@@ -69,6 +69,12 @@ namespace ExtraWeaponCustomization.Patches
                         _lastSearchID = damageSearchID;
                         _origHitDamage = weaponRayData.damage;
                     }
+                    else
+                    {
+                        WeaponPierceContext pierceContext = new(_origHitDamage, damageable, cwc.Weapon);
+                        cwc.Invoke(pierceContext);
+                        _origHitDamage = pierceContext.Value;
+                    }
                     weaponRayData.damage = _origHitDamage;
                 }
 

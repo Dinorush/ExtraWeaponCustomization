@@ -19,6 +19,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Auto Trigger: Hold the trigger to fire. [Semi or Burst weapons only]
 - Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Automatic weapons only]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst weapons only]
+- Pierce Multi: Applies a damage multiplier when shots pierce.
 - Reserve Clip: Combines reserve ammo with the magazine.
 - Tumor Multi: Applies a damage multiplier when hitting tumors.
 
