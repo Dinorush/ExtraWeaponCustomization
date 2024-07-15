@@ -29,7 +29,8 @@ namespace ExtraWeaponCustomization.JSON
                     new Explosive(),
                     new Accelerate(),
                     new HoldBurst(),
-                    new ReserveClip()
+                    new ReserveClip(),
+                    new TumorMulti()
                 }
             };
             return data;
