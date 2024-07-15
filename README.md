@@ -21,6 +21,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Hold Burst: Releasing the trigger ends a burst early. [Burst weapons only]
 - Pierce Multi: Applies a damage multiplier when shots pierce.
 - Reserve Clip: Combines reserve ammo with the magazine.
+- Tumor Multi: Applies a damage multiplier when hitting tumors.
 
 Additional details for customizing/implementing these can be found on the wiki:
 

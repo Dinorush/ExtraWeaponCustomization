@@ -31,6 +31,7 @@ namespace ExtraWeaponCustomization.JSON
                     new HoldBurst(),
                     new PierceMulti(),
                     new ReserveClip()
+                    new TumorMulti()
                 }
             };
             return data;

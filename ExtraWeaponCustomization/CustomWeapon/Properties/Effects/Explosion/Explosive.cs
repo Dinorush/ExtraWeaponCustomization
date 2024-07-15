@@ -11,8 +11,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public float MinDamage { get; set; } = 0f;
         public float InnerRadius { get; set; } = 0f;
         public float Radius { get; set; } = 0f;
-        public float PrecisionMult { get; set; } = 0f;
-        public float StaggerMult { get; set; } = 1f;
+        public float PrecisionDamageMulti { get; set; } = 0f;
+        public float StaggerDamageMulti { get; set; } = 1f;
         public bool IgnoreFalloff { get; set; } = false;
         public bool DamageLimb { get; set; } = true;
         public bool IgnoreArmor { get; set; } = false;
@@ -35,8 +35,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 MinDamage = MinDamage,
                 InnerRadius = InnerRadius,
                 Radius = Radius,
-                PrecisionMult = PrecisionMult,
-                StaggerMult = StaggerMult,
+                PrecisionDamageMulti = PrecisionDamageMulti,
+                StaggerDamageMulti = StaggerDamageMulti,
                 DamageLimb = DamageLimb,
                 IgnoreArmor = IgnoreArmor,
                 IgnoreFalloff = IgnoreFalloff,
@@ -54,8 +54,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(MinDamage), MinDamage);
             writer.WriteNumber(nameof(InnerRadius), InnerRadius);
             writer.WriteNumber(nameof(Radius), Radius);
-            writer.WriteNumber(nameof(PrecisionMult), PrecisionMult);
-            writer.WriteNumber(nameof(StaggerMult), StaggerMult);
+            writer.WriteNumber(nameof(PrecisionDamageMulti), PrecisionDamageMulti);
+            writer.WriteNumber(nameof(StaggerDamageMulti), StaggerDamageMulti);
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
@@ -82,13 +82,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "maxradius":
                     Radius = reader.GetSingle();
                     break;
+                case "precisiondamagemulti":
+                case "precisionmulti":
                 case "precisionmult":
                 case "precision":
-                    PrecisionMult = reader.GetSingle();
+                    PrecisionDamageMulti = reader.GetSingle();
                     break;
+                case "staggerdamagemulti":
+                case "staggermulti":
                 case "staggermult":
                 case "stagger":
-                    StaggerMult = reader.GetSingle();
+                    StaggerDamageMulti = reader.GetSingle();
                     break;
                 case "ignorefalloff":
                     IgnoreFalloff = reader.GetBoolean();

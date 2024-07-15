@@ -96,7 +96,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            switch (property.ToLowerInvariant())
+            switch (property)
             {
                 case "clipchange":
                 case "clip":

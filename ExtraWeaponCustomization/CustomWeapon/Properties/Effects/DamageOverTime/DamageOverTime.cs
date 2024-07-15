@@ -18,8 +18,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public PlayerAgent? Owner => Weapon?.Owner;
 
         public float TotalDamage { get; set; } = 0f;
-        public float PrecisionMult { get; set; } = 0f;
-        public float StaggerMult { get; set; } = 0f;
+        public float PrecisionDamageMulti { get; set; } = 0f;
+        public float StaggerDamageMulti { get; set; } = 0f;
         public float Duration { get; set; } = 0f;
         public bool Stacks { get; set; } = true;
         public bool IgnoreFalloff { get; set; } = false;
@@ -105,8 +105,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             DamageOverTime copy = new()
             {
                 TotalDamage = TotalDamage,
-                PrecisionMult = PrecisionMult,
-                StaggerMult = StaggerMult,
+                PrecisionDamageMulti = PrecisionDamageMulti,
+                StaggerDamageMulti = StaggerDamageMulti,
                 Duration = Duration,
                 Stacks = Stacks,
                 IgnoreFalloff = IgnoreFalloff,
@@ -125,8 +125,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(TotalDamage), TotalDamage);
-            writer.WriteNumber(nameof(PrecisionMult), PrecisionMult);
-            writer.WriteNumber(nameof(StaggerMult), StaggerMult);
+            writer.WriteNumber(nameof(PrecisionDamageMulti), PrecisionDamageMulti);
+            writer.WriteNumber(nameof(StaggerDamageMulti), StaggerDamageMulti);
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteNumber(nameof(TickRate), TickRate);
             writer.WriteBoolean(nameof(Stacks), Stacks);
@@ -147,13 +147,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "damage":
                     TotalDamage = reader.GetSingle();
                     break;
+                case "precisiondamagemulti":
+                case "precisionmulti":
                 case "precisionmult":
                 case "precision":
-                    PrecisionMult = reader.GetSingle();
+                    PrecisionDamageMulti = reader.GetSingle();
                     break;
+                case "staggerdamagemulti":
+                case "staggermulti":
                 case "staggermult":
                 case "stagger":
-                    StaggerMult = reader.GetSingle();
+                    StaggerDamageMulti = reader.GetSingle();
                     break;
                 case "duration":
                     Duration = reader.GetSingle();

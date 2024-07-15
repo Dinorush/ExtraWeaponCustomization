@@ -155,11 +155,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             data.source.Set(source);
             data.limbID = (byte)(eBase.DamageLimb ? limb.m_limbID : 0);
             data.localPosition.Set(position - limb.m_base.Owner.Position, 10f);
-            data.staggerMult.Set(eBase.StaggerMult, MaxStagger);
+            data.staggerMult.Set(eBase.StaggerDamageMulti, MaxStagger);
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
-            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionMult, 1f) : 1f;
+            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionDamageMulti, 1f) : 1f;
             float backstabMulti = eBase.IgnoreBackstab ? 1f : limb.ApplyDamageFromBehindBonus(1f, position, direction);
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 

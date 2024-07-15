@@ -32,11 +32,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             data.source.Set(dotBase.Owner);
             data.limbID = (byte) (dotBase.DamageLimb ? limb.m_limbID : 0);
             data.localPosition.Set(limb.DamageTargetPos - limb.m_base.Owner.Position, 10f);
-            data.staggerMult.Set(dotBase.StaggerMult, MaxStagger);
+            data.staggerMult.Set(dotBase.StaggerDamageMulti, MaxStagger);
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = dotBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
-            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * dotBase.PrecisionMult, 1f) : 1f;
+            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * dotBase.PrecisionDamageMulti, 1f) : 1f;
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
