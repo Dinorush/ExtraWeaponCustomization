@@ -2,12 +2,12 @@
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
-    public abstract class Trait : IContextCallback
+    public abstract class Trait : IWeaponProperty
     {
         public bool AllowStack { get; } = false;
 
-        public abstract IContextCallback Clone();
+        public abstract IWeaponProperty Clone();
         public abstract void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options);
-        public abstract void DeserializeProperty(string property, ref Utf8JsonReader reader);
+        public abstract void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options);
     }
 }

@@ -5,7 +5,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class AutoTrigger : 
         Trait,
-        IContextCallback<WeaponPostSetupContext>
+        IWeaponProperty<WeaponPostSetupContext>
     {
         public void Invoke(WeaponPostSetupContext context) {
             context.Weapon.m_archeType.m_triggerNeedsPress = false;
@@ -18,11 +18,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override IContextCallback Clone()
+        public override IWeaponProperty Clone()
         {
             return new AutoTrigger();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options) {}
     }
 }

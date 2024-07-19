@@ -7,9 +7,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class AmmoCap :
         Trait,
-        IContextCallback<WeaponPostSetupContext>,
-        IContextCallback<WeaponPostAmmoInitContext>,
-        IContextCallback<WeaponPreAmmoPackContext>
+        IWeaponProperty<WeaponPostSetupContext>,
+        IWeaponProperty<WeaponPostAmmoInitContext>,
+        IWeaponProperty<WeaponPreAmmoPackContext>
     {
         public float AmmoCapRel { get; set; } = 1f;
         public float AmmopackRefillRel { get; set; } = 0f;
@@ -54,7 +54,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             context.AmmoRel *= AmmoCapRel;
         }
 
-        public override IContextCallback Clone()
+        public override IWeaponProperty Clone()
         {
             AmmoCap copy = new()
             {
@@ -75,7 +75,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             switch (property)
             {

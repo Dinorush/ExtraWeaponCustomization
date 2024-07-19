@@ -8,10 +8,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class ReserveClip :
         Trait,
-        IContextCallback<WeaponPostAmmoPackContext>,
-        IContextCallback<WeaponPreAmmoUIContext>,
-        IContextCallback<WeaponPostStartFireContext>,
-        IContextCallback<WeaponPostFireContext>
+        IWeaponProperty<WeaponPostAmmoPackContext>,
+        IWeaponProperty<WeaponPreAmmoUIContext>,
+        IWeaponProperty<WeaponPostStartFireContext>,
+        IWeaponProperty<WeaponPostFireContext>
     {
         public void Invoke(WeaponPostStartFireContext context)
         {
@@ -45,7 +45,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             context.ShowClip = false;
         }
 
-        public override IContextCallback Clone()
+        public override IWeaponProperty Clone()
         {
             return new ReserveClip();
         }
@@ -57,6 +57,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options) {}
     }
 }

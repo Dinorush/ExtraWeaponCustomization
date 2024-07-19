@@ -12,10 +12,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class AutoAim : 
         Trait,
-        IContextCallback<WeaponPostSetupContext>,
-        IContextCallback<WeaponPreStartFireContext>,
-        IContextCallback<WeaponPreFireContext>,
-        IContextCallback<WeaponPreRayContext>
+        IWeaponProperty<WeaponPostSetupContext>,
+        IWeaponProperty<WeaponPreStartFireContext>,
+        IWeaponProperty<WeaponPreFireContext>,
+        IWeaponProperty<WeaponPreRayContext>
     {
         public bool HipActive { get; set; } = false;
         public bool AimActive { get; set; } = true;
@@ -308,7 +308,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return null;
         }
 
-        public override IContextCallback Clone()
+        public override IWeaponProperty Clone()
         {
             AutoAim copy = new()
             {
@@ -351,7 +351,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             switch (property)
             {

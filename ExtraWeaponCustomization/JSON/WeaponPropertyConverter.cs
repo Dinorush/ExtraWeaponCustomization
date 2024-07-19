@@ -8,12 +8,12 @@ using System.Text.Json.Serialization;
 
 namespace ExtraWeaponCustomization.JSON
 {
-    public sealed class WeaponPropertyConverter : JsonConverter<IContextCallback>
+    public sealed class WeaponPropertyConverter : JsonConverter<IWeaponProperty>
     {
-        private static readonly string PropertyNamespace = typeof(IContextCallback).Namespace!;
-        public override IContextCallback? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        private static readonly string PropertyNamespace = typeof(IWeaponProperty).Namespace!;
+        public override IWeaponProperty? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            IContextCallback? instance = CreatePropertyInstance(reader);
+            IWeaponProperty? instance = CreatePropertyInstance(reader);
             if (instance == null) return null;
 
             while (reader.Read())
@@ -24,18 +24,18 @@ namespace ExtraWeaponCustomization.JSON
 
                 string property = reader.GetString()!;
                 reader.Read();
-                instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader, options);
             }
 
             throw new JsonException("Expected EndObject token");
-            }
+        }
 
-        public override void Write(Utf8JsonWriter writer, IContextCallback value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, IWeaponProperty value, JsonSerializerOptions options)
         {
             value.Serialize(writer, options);
         }
 
-        private static IContextCallback? CreatePropertyInstance(Utf8JsonReader reader)
+        private static IWeaponProperty? CreatePropertyInstance(Utf8JsonReader reader)
         {
             if (reader.TokenType != JsonTokenType.StartObject) return null;
 
@@ -63,7 +63,7 @@ namespace ExtraWeaponCustomization.JSON
                 if (type == typeof(AmmopackRefill))
                     EWCLogger.Warning("Property name \"AmmopackRefill\" is deprecated and will be removed in a future version. Use \"AmmoCap\" instead.");
 
-                return (IContextCallback?)Activator.CreateInstance(type);
+                return (IWeaponProperty?)Activator.CreateInstance(type);
             }
 
             return null;
