@@ -146,6 +146,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPostReloadContext>();
             RegisterContext<WeaponWieldContext>();
 
+            RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponCancelFireContext>();
             RegisterContext<WeaponDamageContext>();
             RegisterContext<WeaponPostAmmoInitContext>();
