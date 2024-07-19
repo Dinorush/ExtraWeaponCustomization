@@ -2,9 +2,9 @@
 using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
 using Gear;
 using HarmonyLib;
+using SNetwork;
 using UnityEngine;
 using static Weapon;
 
@@ -43,18 +43,24 @@ namespace ExtraWeaponCustomization.Patches
         // (otherwise damage mods apply to future pierce shots exponentially)
         private static uint _lastSearchID = 0;
         private static float _origHitDamage = 0;
+        public static CustomWeaponComponent? CachedHitCWC { get; private set; }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
         private static void HitCallback(ref WeaponHitData weaponRayData, bool doDamage, float additionalDis, uint damageSearchID, bool allowDirectionalBonus)
         {
+            CachedHitCWC = null;
             // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
             if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null) return;
+
+            // Bot/other player filter. All CWC behavior is handled client-side.
+            if (!weaponRayData.owner.IsLocallyOwned && (!SNet.HasMaster || !weaponRayData.owner.Owner.IsBot)) return;
 
             CustomWeaponComponent? cwc = weaponRayData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
+            CachedHitCWC = cwc;
             IDamageable? damageable = WeaponTriggerContext.GetDamageableFromData(weaponRayData);
             IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
@@ -78,34 +84,24 @@ namespace ExtraWeaponCustomization.Patches
                 weaponRayData.damage = damageContext.Value;
             }
 
-            cwc.Invoke(new WeaponPreHitContext(ref weaponRayData, additionalDis, cwc.Weapon));
+            cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, cwc.Weapon));
 
             Agent? agent = damageable?.GetBaseAgent();
             if (doDamage && agent != null && agent.Type == AgentType.Enemy && agent.Alive)
             {
-                Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>();
-                bool precHit = limb != null && limb.m_type == eLimbDamageType.Weakspot;
-                cwc.Invoke(new WeaponPreHitEnemyContext(
-                    weaponRayData.Falloff(additionalDis),
-                    limb != null ? limb.ApplyDamageFromBehindBonus(1f, weaponRayData.rayHit.point, weaponRayData.fireDir.normalized) : 1f,
-                    damageable,
+                Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>()!;
+                WeaponPreHitEnemyContext hitContext = new(
+                    weaponRayData,
+                    additionalDis,
+                    limb,
                     cwc.Weapon,
-                    precHit ? TriggerType.OnPrecHitBullet : TriggerType.OnHitBullet
-                    ));
+                    DamageFlag.Bullet
+                    );
 
-                if (limb != null)
-                {
-                    cwc.Invoke(new WeaponOnDamageContext(
-                        weaponRayData,
-                        additionalDis,
-                        limb,
-                        cwc.Weapon,
-                        precHit ? TriggerType.OnPrecDamage : TriggerType.OnDamage
-                        ));
-                }
+                cwc.Invoke(hitContext);
                 
                 Vector3 localPos = weaponRayData.rayHit.point - damageable.GetBaseAgent().Position;
-                KillTrackerManager.RegisterHit(agent, localPos, cwc.Weapon, precHit);
+                KillTrackerManager.RegisterHit(agent, localPos, cwc.Weapon, hitContext.DamageFlag);
             }
         }
     }

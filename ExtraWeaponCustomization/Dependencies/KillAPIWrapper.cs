@@ -31,7 +31,7 @@ namespace ExtraWeaponCustomization.Dependencies
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPostKillContext(enemy, weapon, wrapper?.PrecHit == true ? TriggerType.OnPrecKill : TriggerType.OnKill));
+            cwc.Invoke(new WeaponPostKillContext(enemy, weapon, wrapper?.DamageFlag ?? DamageFlag.Any));
         }
     }
 }
