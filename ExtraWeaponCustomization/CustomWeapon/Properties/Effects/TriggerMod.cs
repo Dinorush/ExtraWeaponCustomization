@@ -74,7 +74,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Mod = triggerMod.Mod;
             Cap = triggerMod.Cap;
             Duration = triggerMod.Duration;
-            Cooldown = triggerMod.Cooldown;
             StackType = triggerMod.StackType;
             StackLayer = triggerMod.StackLayer;
             Trigger = triggerMod.Trigger?.Clone();
@@ -89,7 +88,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Mod), Mod);
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteNumber(nameof(Duration), Duration);
-            writer.WriteNumber(nameof(Cooldown), Cooldown);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
             SerializeTrigger(writer, options);
@@ -119,11 +117,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "stacktype":
                 case "stack":
-                    StackType = reader.GetString()?.ToStackType() ?? StackType.Invalid;
+                    StackType = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 case "stacklayer":
                 case "layer":
-                    StackLayer = reader.GetString()?.ToStackType() ?? StackType.Invalid;
+                    StackLayer = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 default:
                     break;

@@ -1,4 +1,5 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using ExtraWeaponCustomization.Utils;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 HealthChangeRel = HealthChangeRel,
                 CapRel = CapRel,
-                Cooldown = Cooldown,
                 Trigger = Trigger?.Clone()
             };
             return copy;
@@ -48,7 +48,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(HealthChangeRel), HealthChangeRel);
             writer.WriteNumber(nameof(CapRel), CapRel);
-            writer.WriteNumber(nameof(Cooldown), Cooldown);
             SerializeTrigger(writer, options);
             writer.WriteEndObject();
         }
@@ -72,9 +71,20 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "cooldown":
                     Cooldown = reader.GetSingle();
+                    EWCLogger.Warning(
+                        "\"Cooldown\" as an Effect field is deprecated and will not be supported in a future version." +
+                        "Please port it to the Trigger object."
+                        );
                     break;
                 default:
                     break;
+            }
+
+            // Backwards compatibility | Remove when Effect's Cooldown support is removed
+            if (Trigger != null && Cooldown != 0)
+            {
+                Trigger.Cooldown = Cooldown;
+                Cooldown = 0;
             }
         }
     }
