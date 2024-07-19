@@ -6,6 +6,7 @@ using Player;
 
 namespace ExtraWeaponCustomization.Patches
 {
+    [HarmonyPatch]
     internal static class WeaponArchetypePatches
     {
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.SetOwner))]

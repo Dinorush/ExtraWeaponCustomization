@@ -10,6 +10,7 @@ using static Weapon;
 
 namespace ExtraWeaponCustomization.Patches
 {
+    [HarmonyPatch]
     internal static class WeaponPatches
     {
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnGearSpawnComplete))]
