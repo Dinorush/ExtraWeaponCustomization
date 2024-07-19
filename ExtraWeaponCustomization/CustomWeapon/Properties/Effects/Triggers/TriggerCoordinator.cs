@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Linq;
-using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
 {
