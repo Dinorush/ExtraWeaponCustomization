@@ -1,6 +1,7 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -184,7 +185,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 case "damagestacklayer":
                 case "stacklayer":
                 case "layer":
-                    DamageStackLayer = reader.GetString()?.ToStackType() ?? StackType.Invalid;
+                    DamageStackLayer = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 case "acceltime":
                     AccelTime = reader.GetSingle();
