@@ -1,11 +1,13 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using System.Collections.Generic;
 using System.Text.Json;
+using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class Explosive : 
-        Effect,
-        IContextCallback<WeaponPreHitContext>
+        Effect
     {
         public float MaxDamage { get; set; } = 0f;
         public float MinDamage { get; set; } = 0f;
@@ -19,15 +21,26 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreBackstab { get; set; } = false;
         public bool IgnoreDamageMods { get; set; } = false;
 
-        public void Invoke(WeaponPreHitContext context)
+        public Explosive()
         {
-            if (!context.Weapon.Owner.IsLocallyOwned) return;
-
-            float falloffMod = IgnoreFalloff ? 1f : context.Falloff;
-            ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Data.fireDir.normalized, context.Weapon.Owner, falloffMod, this, context.Weapon);
+            Trigger = new();
+            Trigger.Activate.Add(new BasicTrigger<WeaponPreHitContext>("BulletLanded"));
         }
 
-        public override IContextCallback Clone()
+        public override void TriggerReset() {}
+        public override void TriggerApply(List<TriggerContext> triggerList)
+        {
+            foreach (TriggerContext tContext in triggerList)
+            {
+                WeaponPreHitContext context = (WeaponPreHitContext) tContext.context;
+                Vector3 position = context.Position;
+                if (context.Damageable != null)
+                    position = context.LocalPosition + context.Damageable.GetBaseAgent().Position;
+                ExplosionManager.DoExplosion(position, context.Direction, context.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, context.Weapon);
+            }
+        }
+
+        public override IWeaponProperty Clone()
         {
             Explosive copy = new()
             {
@@ -41,7 +54,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 IgnoreArmor = IgnoreArmor,
                 IgnoreFalloff = IgnoreFalloff,
                 IgnoreBackstab = IgnoreBackstab,
-                IgnoreDamageMods = IgnoreDamageMods
+                IgnoreDamageMods = IgnoreDamageMods,
+                Trigger = Trigger?.Clone()
             };
             return copy;
         }
@@ -64,8 +78,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
+            base.DeserializeProperty(property, ref reader, options);
+            VerifyTrigger(ITrigger.Hit, ITrigger.Damage, ITrigger.BulletLanded);
+            BlacklistTriggerFlag(DamageFlag.Explosive);
             switch (property)
             {
                 case "maxdamage":

@@ -1,4 +1,5 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Dependencies;
 using Gear;
@@ -11,8 +12,7 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class DamageOverTime :
-        Effect,
-        IContextCallback<WeaponPreHitEnemyContext>
+        Effect
     {
         public BulletWeapon? Weapon { get; set; }
         public PlayerAgent? Owner => Weapon?.Owner;
@@ -33,19 +33,27 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             get { return _tickRate; }
             set { _tickRate = MathF.Max(0.01f, value); }
         }
-        public TriggerType TriggerType { get; set; } = TriggerType.OnHit;
 
         private readonly DOTController _controller = new();
         private readonly Dictionary<AgentWrapper, DOTInstance> _lastDOTs = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
-        public void Invoke(WeaponPreHitEnemyContext context)
+        public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            if (!context.Type.IsType(TriggerType)) return;
-
             if (Weapon == null)
-                Weapon = context.Weapon;
+                Weapon = triggerList[0].context.Weapon;
 
+            foreach (TriggerContext tContext in triggerList)
+                AddDOT((WeaponPreHitEnemyContext)tContext.context, tContext.triggerAmt);
+        }
+
+        public override void TriggerReset()
+        {
+            _controller.Clear();
+        }
+
+        private void AddDOT(WeaponPreHitEnemyContext context, float triggerAmt)
+        {
             Dam_EnemyDamageLimb? limb = context.Damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;
             float damage = TotalDamage * (IgnoreFalloff ? 1f : context.Falloff);
@@ -100,7 +108,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 _controller.AddDOT(damage, backstabMulti, context.Damageable, this);
         }
 
-        public override IContextCallback Clone()
+        public override IWeaponProperty Clone()
         {
             DamageOverTime copy = new()
             {
@@ -115,7 +123,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 IgnoreBackstab = IgnoreBackstab,
                 IgnoreDamageMods = IgnoreDamageMods,
                 TickRate = TickRate,
-                TriggerType = TriggerType
+                Trigger = Trigger?.Clone()
             };
             return copy;
         }
@@ -135,12 +143,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
-            writer.WriteString(nameof(TriggerType), TriggerType.ToString());
+            SerializeTrigger(writer, options);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
+            base.DeserializeProperty(property, ref reader, options);
+            VerifyTrigger(ITrigger.Hit, ITrigger.Damage);
+            BlacklistTriggerFlag(DamageFlag.DOT);
             switch (property)
             {
                 case "totaldamage":
@@ -187,11 +198,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "ignoredamagemods":
                 case "ignoredamagemod":
                     IgnoreDamageMods = reader.GetBoolean();
-                    break;
-                case "triggertype":
-                case "trigger":
-                    TriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
-                    if (!TriggerType.IsType(TriggerType.OnHit)) TriggerType = TriggerType.Invalid;
                     break;
                 default:
                     break;

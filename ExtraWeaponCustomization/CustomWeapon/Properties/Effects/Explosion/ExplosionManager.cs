@@ -150,11 +150,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_base.IsImortal) return;
 
+            Vector3 localPosition = position - limb.m_base.Owner.Position;
             ExplosionDamageData data = default;
             data.target.Set(limb.m_base.Owner);
             data.source.Set(source);
             data.limbID = (byte)(eBase.DamageLimb ? limb.m_limbID : 0);
-            data.localPosition.Set(position - limb.m_base.Owner.Position, 10f);
+            data.localPosition.Set(localPosition, 10f);
             data.staggerMult.Set(eBase.StaggerDamageMulti, MaxStagger);
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
@@ -169,28 +170,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             data.damage.Set(precDamage, limb.m_base.DamageMax);
 
+            DamageFlag flag = precHit ? DamageFlag.WeakspotExplo : DamageFlag.Explo;
             if (cwc != null)
             {
                 cwc.Invoke(new WeaponPreHitEnemyContext(
+                    precDamage,
                     distFalloff * falloffMod,
                     backstabMulti,
                     damageable,
+                    position,
+                    direction,
                     weapon,
-                    precHit ? TriggerType.OnPrecHitExplo : TriggerType.OnHitExplo
-                    ));
-
-                cwc.Invoke(new WeaponOnDamageContext(
-                    Math.Min(precDamage, limb.m_base.HealthMax),
-                    damageable,
-                    weapon,
-                    precHit ? TriggerType.OnPrecDamage : TriggerType.OnDamage
+                    flag
                     ));
             }
 
             if (source.IsLocallyOwned == true)
             {
                 limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), position, armorMulti < 1f);
-                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), position - limb.m_base.Owner.Position, weapon, precHit);
+                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), position - limb.m_base.Owner.Position, weapon, flag);
             }
 
             DamageSync.Send(data, SNet_ChannelType.GameNonCritical);

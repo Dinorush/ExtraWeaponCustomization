@@ -45,21 +45,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             data.damage.Set(precDamage, limb.m_base.DamageMax);
 
-            CustomWeaponComponent? cwc = dotBase.Weapon?.GetComponent<CustomWeaponComponent>();
-            if (cwc != null)
-            {
-                cwc.Invoke(new WeaponOnDamageContext(
-                    Math.Min(precDamage, limb.m_base.HealthMax),
-                    damageable,
-                    dotBase.Weapon!,
-                    precHit ? TriggerType.OnPrecDamage : TriggerType.OnDamage
-                    ));
-            }
-
             if (dotBase.Owner != null && dotBase.Owner.IsLocallyOwned)
             {
+                DamageFlag flag = precHit ? DamageFlag.WeakspotDOT : DamageFlag.DOT;
                 limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), limb.DamageTargetPos, armorMulti < 1f);
-                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), limb.DamageTargetPos - limb.m_base.Owner.Position, dotBase.Weapon, precHit);
+                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), limb.DamageTargetPos - limb.m_base.Owner.Position, dotBase.Weapon, flag);
             }
 
             Sync.Send(data, SNet_ChannelType.GameNonCritical);

@@ -2,20 +2,22 @@
 using Player;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
+using System.Collections.Generic;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using System.Linq;
+using Gear;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class AmmoMod :
         Effect,
-        IContextCallback<WeaponPreFireContext>,
-        IContextCallback<WeaponTriggerContext>
+        IWeaponProperty<WeaponPreFireContext>
     {
         public float ClipChange { get; set; } = 0;
         public float ReserveChange { get; set; } = 0;
         public float Cooldown { get; set; } = 0f;
         public bool OverflowToReserve { get; set; } = true;
         public bool PullFromReserve { get; set; } = false;
-        public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
 
         private float _clipBuffer = 0;
         private float _reserveBuffer = 0;
@@ -27,16 +29,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             _lastFireTime = Clock.Time;
         }
 
-        public void Invoke(WeaponTriggerContext context)
+        public override void TriggerReset()
         {
-            if (!context.Type.IsType(TriggerType) || Clock.Time < _lastTriggerTime + Cooldown) return;
+            _clipBuffer = 0;
+            _reserveBuffer = 0;
+        }
 
-            float damageMod = 1f;
-            if (context.Type.IsType(TriggerType.OnDamage))
-                damageMod = ((WeaponOnDamageContext) context).Damage;
-
-            _clipBuffer += ClipChange * damageMod;
-            _reserveBuffer += ReserveChange * damageMod;
+        public override void TriggerApply(List<TriggerContext> triggerList)
+        {
+            BulletWeapon weapon = triggerList[0].context.Weapon;
+            float triggers = triggerList.Sum(context => context.triggerAmt);
+            _clipBuffer += ClipChange * triggers;
+            _reserveBuffer += ReserveChange * triggers;
 
             if (_clipBuffer < 1 && _clipBuffer > -1 && _reserveBuffer < 1 && _reserveBuffer > -1) return;
             
@@ -45,28 +49,28 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             int accountForShot = Clock.Time == _lastFireTime ? 1 : 0;
 
             // Calculate the actual changes we can make to clip/ammo
-            PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(context.Weapon.Owner.Owner).AmmoStorage;
-            int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, ammoStorage.GetBulletsInPack(context.Weapon.AmmoType)) : _clipBuffer);
-            int newClip = Math.Clamp(context.Weapon.GetCurrentClip() + clipChange, accountForShot, context.Weapon.GetMaxClip() + accountForShot);
+            PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage;
+            int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, ammoStorage.GetBulletsInPack(weapon.AmmoType)) : _clipBuffer);
+            int newClip = Math.Clamp(weapon.GetCurrentClip() + clipChange, accountForShot, weapon.GetMaxClip() + accountForShot);
 
             // If we overflow/underflow the magazine, send the rest to reserves (if not pulling from reserves)
-            int bonusReserve = OverflowToReserve ? clipChange - (newClip - context.Weapon.GetCurrentClip()) : 0;
-            clipChange = newClip - context.Weapon.GetCurrentClip();
+            int bonusReserve = OverflowToReserve ? clipChange - (newClip - weapon.GetCurrentClip()) : 0;
+            clipChange = newClip - weapon.GetCurrentClip();
 
             int reserveChange = (int) (PullFromReserve ? _reserveBuffer - clipChange : _reserveBuffer + bonusReserve);
 
             _clipBuffer -= (int) _clipBuffer;
             _reserveBuffer -= (int) _reserveBuffer;
 
-            context.Weapon.SetCurrentClip(newClip);
+            weapon.SetCurrentClip(newClip);
 
             // Need to update UI since UpdateBulletsInPack does it without including the clip
-            ammoStorage.UpdateBulletsInPack(context.Weapon.AmmoType, reserveChange);
-            ammoStorage.UpdateSlotAmmoUI(ammoStorage.m_ammoStorage[(int) context.Weapon.AmmoType], newClip);
+            ammoStorage.UpdateBulletsInPack(weapon.AmmoType, reserveChange);
+            ammoStorage.UpdateSlotAmmoUI(ammoStorage.m_ammoStorage[(int) weapon.AmmoType], newClip);
             _lastTriggerTime = Clock.Time;
         }
 
-        public override IContextCallback Clone()
+        public override IWeaponProperty Clone()
         {
             AmmoMod copy = new()
             {
@@ -75,7 +79,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 Cooldown = Cooldown,
                 OverflowToReserve = OverflowToReserve,
                 PullFromReserve = PullFromReserve,
-                TriggerType = TriggerType
+                Trigger = Trigger?.Clone()
             };
             return copy;
         }
@@ -89,12 +93,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Cooldown), Cooldown);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
-            writer.WriteString(nameof(TriggerType), TriggerType.ToString());
+            SerializeTrigger(writer, options);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
+            base.DeserializeProperty(property, ref reader, options);
             switch (property)
             {
                 case "clipchange":
@@ -114,10 +119,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "pullfromreserve":
                     PullFromReserve = reader.GetBoolean();
-                    break;
-                case "triggertype":
-                case "trigger":
-                    TriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
                     break;
                 default:
                     break;

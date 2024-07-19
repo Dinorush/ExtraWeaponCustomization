@@ -1,4 +1,6 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +9,7 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public abstract class TriggerMod :
-        Effect,
-        IContextCallback<WeaponTriggerContext>
+        Effect
     {
         public float Mod { get; set; } = 1f;
         public float Cap { get; set; } = 0f;
@@ -16,23 +17,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public float Cooldown { get; set; } = 0f;
         public StackType StackType { get; set; } = StackType.Add;
         public StackType StackLayer { get; set; } = StackType.Multiply;
-        public TriggerType TriggerType { get; set; } = TriggerType.Invalid;
-        public TriggerType ResetTriggerType { get; set; } = TriggerType.Invalid;
-
-        private float _lastStackTime = 0f;
-
-        public void Invoke(WeaponTriggerContext context)
-        {
-            if (context.Type.IsType(ResetTriggerType))
-            {
-                Reset();
-                return;
-            }
-            else if (!context.Type.IsType(TriggerType) || Clock.Time < _lastStackTime + Cooldown) return;
-
-            AddStack(context);
-            _lastStackTime = Clock.Time;
-        }
 
         private float ClampToCap(float mod)
         {
@@ -55,20 +39,36 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 );
         }
 
-        protected float CalculateOnDamageMod(float damage)
+        protected float CalculateMod(float num)
         {
             return StackType switch
             {
                 StackType.None => Mod,
-                StackType.Multiply => (float) Math.Pow(Mod, damage),
-                StackType.Add => 1f + (Mod - 1f) * damage,
+                StackType.Multiply => (float)Math.Pow(Mod, num),
+                StackType.Add => 1f + (Mod - 1f) * num,
                 _ => 1f
             };
         }
 
-        public abstract void Reset();
-        public abstract void AddStack(WeaponTriggerContext context);
-        public override abstract IContextCallback Clone();
+        protected float ConvertTriggersToMod(IEnumerable<TriggerContext> count)
+        {
+            if (!count.Any()) return 1f;
+
+            float mod = 1f;
+            foreach(TriggerContext context in count)
+            {
+                float triggerMod = CalculateMod(context.triggerAmt);
+                mod = StackType switch
+                {
+                    StackType.None => triggerMod,
+                    StackType.Multiply => mod *= triggerMod,
+                    StackType.Add => mod += triggerMod - 1f,
+                    _ => mod
+                };
+            }
+            return mod;
+        }
+
         protected void CopyFrom(TriggerMod triggerMod)
         {
             Mod = triggerMod.Mod;
@@ -77,8 +77,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Cooldown = triggerMod.Cooldown;
             StackType = triggerMod.StackType;
             StackLayer = triggerMod.StackLayer;
-            TriggerType = triggerMod.TriggerType;
-            ResetTriggerType = triggerMod.ResetTriggerType;
+            Trigger = triggerMod.Trigger?.Clone();
         }
 
         public abstract void WriteName(Utf8JsonWriter writer, JsonSerializerOptions options);
@@ -93,13 +92,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Cooldown), Cooldown);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
-            writer.WriteString(nameof(TriggerType), TriggerType.ToString());
-            writer.WriteString(nameof(ResetTriggerType), ResetTriggerType.ToString());
+            SerializeTrigger(writer, options);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
+            base.DeserializeProperty(property, ref reader, options);
             switch (property)
             {
                 case "mod":
@@ -113,6 +112,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "cooldown":
                     Cooldown = reader.GetSingle();
+                    EWCLogger.Warning(
+                        "\"Cooldown\" as an Effect field is deprecated and will not be supported in a future version." +
+                        "Please port it to the Trigger object."
+                        );
                     break;
                 case "stacktype":
                 case "stack":
@@ -122,16 +125,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "layer":
                     StackLayer = reader.GetString()?.ToStackType() ?? StackType.Invalid;
                     break;
-                case "triggertype":
-                case "trigger":
-                    TriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
-                    break;
-                case "resettriggertype":
-                case "resettrigger":
-                    ResetTriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
-                    break;
                 default:
                     break;
+            }
+
+            // Backwards compatibility | Remove when Effect's Cooldown support is removed
+            if (Trigger != null && Cooldown != 0)
+            {
+                Trigger.Cooldown = Cooldown;
+                Cooldown = 0;
             }
         }
 

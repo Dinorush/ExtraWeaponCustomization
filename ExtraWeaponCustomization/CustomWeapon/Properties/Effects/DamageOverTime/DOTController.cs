@@ -105,6 +105,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 });
         }
 
+        public void Clear()
+        {
+            _enemyDots.Clear();
+            _idToWrapper.Clear();
+            if (_updateRoutine != null)
+            {
+                CoroutineManager.StopCoroutine(_updateRoutine);
+                _updateRoutine = null;
+            }
+        }
+
         sealed class DOTDamageableWrapper : DamageableWrapper
         {
             // Used for batching shotgun hits on same shot
