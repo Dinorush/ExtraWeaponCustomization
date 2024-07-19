@@ -3,11 +3,11 @@ using Gear;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
-    public sealed class WeaponPostKillContext : WeaponTriggerContext
+    public sealed class WeaponPostKillContext : WeaponDamageFlagContext
     {
         public EnemyAgent Enemy { get; }
 
-        public WeaponPostKillContext(EnemyAgent enemy, BulletWeapon weapon, TriggerType type = TriggerType.OnKill) : base(weapon, type)
+        public WeaponPostKillContext(EnemyAgent enemy, BulletWeapon weapon, DamageFlag flag = DamageFlag.Any) : base(weapon, flag)
         {
             Enemy = enemy;
         }

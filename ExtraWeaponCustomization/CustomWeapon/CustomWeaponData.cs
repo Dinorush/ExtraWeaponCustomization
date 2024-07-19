@@ -9,6 +9,6 @@ namespace ExtraWeaponCustomization.CustomWeapon
         public const float MinShotDelay = 1/MaxFireRate;
         public uint ArchetypeID { get; set; } = 0;
         public string Name { get; set; } = string.Empty;
-        public List<IContextCallback> Properties { get; set; } = new();
+        public List<IWeaponProperty> Properties { get; set; } = new();
     }
 }

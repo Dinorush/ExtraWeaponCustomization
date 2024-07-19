@@ -4,6 +4,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
     public class WeaponPostReloadContext : WeaponTriggerContext
     {
-        public WeaponPostReloadContext(BulletWeapon weapon) : base(weapon, TriggerType.OnReload) {}
+        public WeaponPostReloadContext(BulletWeapon weapon) : base(weapon) {}
     }
 }
