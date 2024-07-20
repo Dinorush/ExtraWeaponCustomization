@@ -16,7 +16,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         public float ClipChange { get; set; } = 0;
         public float ReserveChange { get; set; } = 0;
-        public float Cooldown { get; set; } = 0f;
         public bool OverflowToReserve { get; set; } = true;
         public bool PullFromReserve { get; set; } = false;
 
@@ -109,13 +108,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "reserve":
                     ReserveChange = reader.GetSingle();
                     break;
-                case "cooldown":
-                    Cooldown = reader.GetSingle();
-                    EWCLogger.Warning(
-                        "\"Cooldown\" as an Effect field is deprecated and will not be supported in a future version." +
-                        "Please port it to the Trigger object."
-                        );
-                    break;
                 case "overflowtoreserve":
                 case "overflow":
                     OverflowToReserve = reader.GetBoolean();
@@ -125,13 +117,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 default:
                     break;
-            }
-
-            // Backwards compatibility | Remove when Effect's Cooldown support is removed
-            if (Trigger != null && Cooldown != 0)
-            {
-                Trigger.Cooldown = Cooldown;
-                Cooldown = 0;
             }
         }
     }

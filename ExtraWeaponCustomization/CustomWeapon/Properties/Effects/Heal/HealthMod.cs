@@ -13,7 +13,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         public float HealthChangeRel { get; set; } = 0f;
         public float CapRel { get; set; } = -1f;
-        public float Cooldown { get; set; } = 0f;
 
         public override void TriggerReset() {}
 
@@ -69,22 +68,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "cap":
                     CapRel = reader.GetSingle();
                     break;
-                case "cooldown":
-                    Cooldown = reader.GetSingle();
-                    EWCLogger.Warning(
-                        "\"Cooldown\" as an Effect field is deprecated and will not be supported in a future version." +
-                        "Please port it to the Trigger object."
-                        );
-                    break;
                 default:
                     break;
-            }
-
-            // Backwards compatibility | Remove when Effect's Cooldown support is removed
-            if (Trigger != null && Cooldown != 0)
-            {
-                Trigger.Cooldown = Cooldown;
-                Cooldown = 0;
             }
         }
     }

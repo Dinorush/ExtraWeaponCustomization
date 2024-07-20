@@ -1,5 +1,4 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
 using System;
 using System.Collections.Generic;
@@ -14,7 +13,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public float Mod { get; set; } = 1f;
         public float Cap { get; set; } = 0f;
         public float Duration { get; set; } = 0f;
-        public float Cooldown { get; set; } = 0f;
         public StackType StackType { get; set; } = StackType.Add;
         public StackType StackLayer { get; set; } = StackType.Multiply;
 
@@ -108,13 +106,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "duration":
                     Duration = reader.GetSingle();
                     break;
-                case "cooldown":
-                    Cooldown = reader.GetSingle();
-                    EWCLogger.Warning(
-                        "\"Cooldown\" as an Effect field is deprecated and will not be supported in a future version." +
-                        "Please port it to the Trigger object."
-                        );
-                    break;
                 case "stacktype":
                 case "stack":
                     StackType = reader.GetString().ToEnum(StackType.Invalid);
@@ -125,13 +116,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 default:
                     break;
-            }
-
-            // Backwards compatibility | Remove when Effect's Cooldown support is removed
-            if (Trigger != null && Cooldown != 0)
-            {
-                Trigger.Cooldown = Cooldown;
-                Cooldown = 0;
             }
         }
 
