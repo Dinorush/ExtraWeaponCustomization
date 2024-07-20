@@ -21,6 +21,8 @@ namespace ExtraWeaponCustomization.JSON
         {
             _setting.Converters.Add(new JsonStringEnumConverter());
             _setting.Converters.Add(new WeaponPropertyConverter());
+            _setting.Converters.Add(new TriggerConverter());
+            _setting.Converters.Add(new TriggerCoordinatorConverter());
             if (MTFOPartialDataUtil.IsLoaded)
             {
                 _setting.Converters.Add(MTFOPartialDataUtil.PersistentIDConverter!);
