@@ -24,7 +24,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public override IWeaponProperty Clone()
         {
-            return new ArmorPierce();
+            return new ArmorPierce()
+            {
+                Pierce = Pierce,
+                Type = Type
+            };
         }
 
         public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
