@@ -1,5 +1,4 @@
-﻿using ExtraWeaponCustomization.Patches;
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using ExtraWeaponCustomization.Utils;
@@ -12,7 +11,7 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
 
 namespace ExtraWeaponCustomization;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.4.4")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.5.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOPartialDataUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
