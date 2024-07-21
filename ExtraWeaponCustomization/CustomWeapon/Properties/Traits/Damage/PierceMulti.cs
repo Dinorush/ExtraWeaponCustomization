@@ -38,6 +38,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             {
                 case "piercedamagemulti":
                 case "piercemulti":
+                case "multi":
                     PierceDamageMulti = reader.GetSingle();
                     break;
                 default:

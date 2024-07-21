@@ -40,6 +40,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             {
                 case "tumordamagemulti":
                 case "tumormulti":
+                case "multi":
                     TumorDamageMulti = reader.GetSingle();
                     break;
                 default:
