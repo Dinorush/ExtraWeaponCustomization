@@ -27,7 +27,13 @@ namespace ExtraWeaponCustomization.JSON
             if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException("Expected Trigger Coordinator to be either a string or object");
 
             // Customized trigger case
-            ITrigger? customTrigger = JsonSerializer.Deserialize<ITrigger>(ref reader, options);
+            ITrigger? customTrigger = null;
+            try
+            {
+                customTrigger = JsonSerializer.Deserialize<ITrigger>(ref reader, options);
+            }
+            catch (JsonException) { }
+
             if (customTrigger != null)
             {
                 coordinator.Activate.Add(customTrigger);
