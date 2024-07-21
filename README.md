@@ -15,13 +15,14 @@ Adds additional gun mechanics for rundown developers to use. These include:
 #### Traits - Innate gun behavior modifications
 - Accelerate: Fire rate and/or damage changes with continuous fire.
 - Ammo Cap: Adjust the value used to calculate ammopack refills and starting ammo.
+- Armor Pierce: Pierces armor or modifies bullet damage dealt to armor.
 - Auto Aim: Automatically fire toward targets.
 - Auto Trigger: Hold the trigger to fire. [Semi or Burst weapons only]
 - Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Automatic weapons only]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst weapons only]
-- Pierce Multi: Applies a damage multiplier when shots pierce.
+- Pierce Multi: Applies a damage multiplier with each enemy pierced.
 - Reserve Clip: Combines reserve ammo with the magazine.
-- Tumor Multi: Applies a damage multiplier when hitting tumors.
+- Tumor Multi: Applies a multiplier to tumor damage.
 
 Additional details for customizing/implementing these can be found on the wiki:
 
