@@ -4,14 +4,14 @@ using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
 {
-    public sealed class DamageTrigger : DamageFlagTrigger<WeaponPreHitEnemyContext>
+    public sealed class DamageTrigger : DamageTypeTrigger<WeaponPreHitEnemyContext>
     {
         public float Cap { get; set; }
-        public DamageTrigger(DamageFlag type = DamageFlag.Any) : base(ITrigger.Damage, type) {}
+        public DamageTrigger(DamageType type = DamageType.Any) : base(ITrigger.Damage, type) {}
 
         public override float Invoke(WeaponTriggerContext context)
         {
-            if (context is WeaponPreHitEnemyContext hitContext && hitContext.DamageFlag.HasFlag(Type))
+            if (context is WeaponPreHitEnemyContext hitContext && hitContext.DamageType.HasFlag(DamageType))
             {
                 if (Cap > 0)
                     return Math.Min(Cap, hitContext.Damage);

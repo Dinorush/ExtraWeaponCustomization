@@ -31,7 +31,7 @@ namespace ExtraWeaponCustomization.Dependencies
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPostKillContext(enemy, weapon, wrapper?.DamageFlag ?? DamageFlag.Any));
+            cwc.Invoke(new WeaponPostKillContext(enemy, weapon, wrapper?.DamageType ?? DamageType.Any));
         }
     }
 }

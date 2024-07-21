@@ -3,35 +3,33 @@ using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
 {
-    public class DamageFlagTrigger<TContext> : IDamageFlagTrigger where TContext : WeaponDamageFlagContext
+    public class DamageTypeTrigger<TContext> : IDamageTypeTrigger where TContext : WeaponDamageTypeContext
     {
-        public DamageFlag Type { get; set; }
-        public DamageFlag BlacklistType { get; set; }
+        public DamageType DamageType { get; set; }
+        public DamageType BlacklistType { get; set; }
         public string Name { get; }
 
-        public DamageFlagTrigger(string name, DamageFlag type = DamageFlag.Any, DamageFlag blacklistType = DamageFlag.Invalid)
+        public DamageTypeTrigger(string name, DamageType type = DamageType.Any, DamageType blacklistType = DamageType.Invalid)
         {
             Name = name;
-            Type = type;
+            DamageType = type;
             BlacklistType = blacklistType;
         }
 
         public virtual float Invoke(WeaponTriggerContext context)
         {
             return context is TContext hitContext
-                && !hitContext.DamageFlag.HasFlag(BlacklistType)
-                && hitContext.DamageFlag.HasFlag(Type) ? 1f : 0f;
+                && !hitContext.DamageType.HasFlag(BlacklistType)
+                && hitContext.DamageType.HasFlag(DamageType) ? 1f : 0f;
         }
 
         public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             switch(property)
             {
-                case "damageflag":
                 case "damagetype":
-                case "flag":
                 case "type":
-                    Type = IDamageFlagTrigger.ResolveDamageFlags(reader.GetString());
+                    DamageType = IDamageTypeTrigger.ResolveDamageType(reader.GetString());
                     break;
             }
         }

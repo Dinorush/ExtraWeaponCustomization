@@ -6,12 +6,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
     public class WeaponHitWrapper
     {
         public BulletWeapon Weapon { get; }
-        public DamageFlag DamageFlag { get; }
+        public DamageType DamageType { get; }
 
-        public WeaponHitWrapper(BulletWeapon weapon, DamageFlag damageFlag)
+        public WeaponHitWrapper(BulletWeapon weapon, DamageType damageType)
         {
             Weapon = weapon;
-            DamageFlag = damageFlag;
+            DamageType = damageType;
         }
     }
 }

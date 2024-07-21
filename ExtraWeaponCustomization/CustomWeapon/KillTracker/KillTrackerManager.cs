@@ -15,7 +15,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
         private static readonly Dictionary<AgentWrapper, WeaponHitWrapper> _lastHits = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
-        public static void RegisterHit(Agent? agent, Vector3? localHitPosition, BulletWeapon? weapon, DamageFlag flag = DamageFlag.Any)
+        public static void RegisterHit(Agent? agent, Vector3? localHitPosition, BulletWeapon? weapon, DamageType flag = DamageType.Any)
         {
             EnemyAgent? enemy = agent?.TryCast<EnemyAgent>();
             if (enemy == null || weapon == null || !weapon.Owner.IsLocallyOwned) return;

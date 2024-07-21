@@ -13,16 +13,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
         {
             if (triggerName == null) return null;
 
-            triggerName = triggerName.Replace(" ", null).Replace("on", null).ToLowerInvariant();
+            triggerName = triggerName.ToLowerInvariant().Replace(" ", null).Replace("on", null);
             return triggerName switch
             {
                 "fire" or "shot" => new BasicTrigger<WeaponPostFireContext>(Fire),
                 "reload" => new BasicTrigger<WeaponPostReloadContext>(Reload),
                 "wield" => new BasicTrigger<WeaponWieldContext>(Wield),
-                "bulletlanded" => new BasicTrigger<WeaponPreHitContext>(BulletLanded),
-                string hit when hit.Contains("hit") => new DamageFlagTrigger<WeaponPreHitEnemyContext>(Hit, ResolveDamageFlags(triggerName)),
-                string damage when damage.Contains("damage") => new DamageTrigger(ResolveDamageFlags(triggerName)),
-                string kill when kill.Contains("kill") => new DamageFlagTrigger<WeaponPostKillContext>(Kill, ResolveDamageFlags(triggerName)),
+                "bulletlanded" or "landedbullet" => new DamageTypeTrigger<WeaponPreHitContext>(BulletLanded, DamageType.Bullet),
+                string hit when hit.Contains("hit") => new DamageTypeTrigger<WeaponPreHitEnemyContext>(Hit, ResolveDamageType(triggerName)),
+                string damage when damage.Contains("damage") => new DamageTrigger(ResolveDamageType(triggerName)),
+                string kill when kill.Contains("kill") => new DamageTypeTrigger<WeaponPostKillContext>(Kill, ResolveDamageType(triggerName)),
                 _ => null
             };
         }
@@ -35,28 +35,28 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
         public const string Damage = "Damage";
         public const string Kill = "Kill";
 
-        private static DamageFlag ResolveDamageFlags(string name) => IDamageFlagTrigger.ResolveDamageFlags(name);
+        private static DamageType ResolveDamageType(string name) => IDamageTypeTrigger.ResolveDamageType(name);
     }
 
-    public interface IDamageFlagTrigger : ITrigger
+    public interface IDamageTypeTrigger : ITrigger
     {
-        DamageFlag Type { get; set; }
-        DamageFlag BlacklistType { get; set; }
+        DamageType DamageType { get; set; }
+        DamageType BlacklistType { get; set; }
 
-        public static DamageFlag ResolveDamageFlags(string? name)
+        public static DamageType ResolveDamageType(string? name)
         {
-            if (name == null) return DamageFlag.Invalid;
+            if (name == null) return DamageType.Invalid;
 
             name = name.Replace(" ", null).ToLowerInvariant();
-            DamageFlag flag = DamageFlag.Any;
+            DamageType flag = DamageType.Any;
             if (name.Contains("prec") || name.Contains("weakspot"))
-                flag |= DamageFlag.Weakspot;
+                flag |= DamageType.Weakspot;
             if (name.Contains("bullet"))
-                flag |= DamageFlag.Bullet;
+                flag |= DamageType.Bullet;
             else if (name.Contains("explo"))
-                flag |= DamageFlag.Explosive;
+                flag |= DamageType.Explosive;
             else if (name.Contains("dot"))
-                flag |= DamageFlag.DOT;
+                flag |= DamageType.DOT;
             return flag;
         }
     }
