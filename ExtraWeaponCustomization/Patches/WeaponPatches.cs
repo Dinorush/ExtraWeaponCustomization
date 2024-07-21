@@ -86,9 +86,10 @@ namespace ExtraWeaponCustomization.Patches
                 }
 
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
-                WeaponDamageContext damageContext = new(weaponRayData.damage, damageable, cwc.Weapon);
+                WeaponDamageContext damageContext = new(weaponRayData.damage, weaponRayData.precisionMulti, damageable, cwc.Weapon);
                 cwc.Invoke(damageContext);
-                weaponRayData.damage = damageContext.Value;
+                weaponRayData.damage = damageContext.Damage.Value;
+                weaponRayData.precisionMulti = damageContext.Precision.Value;
             }
 
             Agent? agent = damageable?.GetBaseAgent();
@@ -99,7 +100,6 @@ namespace ExtraWeaponCustomization.Patches
                     weaponRayData,
                     additionalDis,
                     limb,
-                    damageSearchID,
                     cwc.Weapon,
                     DamageType.Bullet
                     );
@@ -110,7 +110,7 @@ namespace ExtraWeaponCustomization.Patches
                 KillTrackerManager.RegisterHit(agent, localPos, cwc.Weapon, hitContext.DamageType);
             }
             else
-                cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, damageSearchID, cwc.Weapon));
+                cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, cwc.Weapon));
         }
     }
 }
