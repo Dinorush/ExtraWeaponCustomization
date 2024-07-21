@@ -81,7 +81,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             while (queue.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) queue.Dequeue();
 
-            context.AddMod(CalculateMod(queue), StackLayer);
+            context.Damage.AddMod(CalculateMod(queue), StackLayer);
         }
 
         public override IWeaponProperty Clone()

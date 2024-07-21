@@ -132,7 +132,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponDamageContext context)
         {
             if (EndDamageMod == 1f) return;
-            context.AddMod(CalculateCurrentDamageMod(), DamageStackLayer);
+            context.Damage.AddMod(CalculateCurrentDamageMod(), DamageStackLayer);
         }
 
         private float CalculateCurrentFireRate(float startFireRate)

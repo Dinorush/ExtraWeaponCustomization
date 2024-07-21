@@ -28,7 +28,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             while (_expireTimes.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) _expireTimes.Dequeue();
 
-            context.AddMod(CalculateMod(_expireTimes), StackLayer);
+            context.Damage.AddMod(CalculateMod(_expireTimes), StackLayer);
         }
 
         public override IWeaponProperty Clone()

@@ -1,5 +1,4 @@
-﻿using ExtraWeaponCustomization.Utils;
-using System;
+﻿using System;
 using Gear;
 using static Weapon;
 using UnityEngine;
@@ -13,8 +12,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         public new IDamageable Damageable => base.Damageable!;
 
         public WeaponPreHitEnemyContext(float damage, float falloff, float backstab, IDamageable damageable,
-                                        Vector3 position, Vector3 direction, uint damageSearchID, BulletWeapon weapon, DamageType flag = DamageType.Any) 
-            : base(position, direction, falloff, damageSearchID, weapon, damageable)
+                                        Vector3 position, Vector3 direction, BulletWeapon weapon, DamageType flag = DamageType.Any) 
+            : base(position, direction, falloff, weapon, damageable)
         {
             Damage = damage;
             Dam_EnemyDamageBase? baseDam = damageable.GetBaseDamagable()?.TryCast<Dam_EnemyDamageBase>();
@@ -24,8 +23,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
             DamageType = flag;
         }
 
-        public WeaponPreHitEnemyContext(WeaponHitData data, float additionalDist, Dam_EnemyDamageLimb limb, uint damageSearchID, BulletWeapon weapon, DamageType flag = DamageType.Any)
-            : base(data, additionalDist, damageSearchID, weapon, limb.TryCast<IDamageable>())
+        public WeaponPreHitEnemyContext(WeaponHitData data, float additionalDist, Dam_EnemyDamageLimb limb, BulletWeapon weapon, DamageType flag = DamageType.Any)
+            : base(data, additionalDist, weapon, limb.TryCast<IDamageable>())
         {
             Backstab = limb.ApplyDamageFromBehindBonus(1f, data.rayHit.point, data.fireDir.normalized);
 

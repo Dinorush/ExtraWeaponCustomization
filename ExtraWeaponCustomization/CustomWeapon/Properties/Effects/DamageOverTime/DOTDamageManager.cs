@@ -21,7 +21,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Sync.Setup();
         }
 
-        public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float backstabMulti, DamageOverTime dotBase)
+        public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, float backstabMulti, DamageOverTime dotBase)
         {
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_base.IsImortal || damage <= 0) return;
@@ -36,7 +36,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = dotBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
-            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * dotBase.PrecisionDamageMulti, 1f) : 1f;
+            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMulti, 1f) : 1f;
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
@@ -56,7 +56,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     damageable,
                     limb.DamageTargetPos,
                     limb.DamageTargetPos - limb.m_base.Owner.Position,
-                    limb.m_base.TempSearchID,
                     dotBase.Weapon!,
                     flag
                     ));

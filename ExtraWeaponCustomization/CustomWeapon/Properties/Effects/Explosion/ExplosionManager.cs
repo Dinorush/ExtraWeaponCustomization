@@ -133,16 +133,20 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             float damage = distance.Map(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage);
             float distFalloff = damage / eBase.MaxDamage;
-            // 0.001f to account for rounding error
-            damage = falloffMod * damage + 0.001f;
+            float precisionMult = eBase.PrecisionDamageMulti;
 
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
-            if (cwc != null && !eBase.IgnoreDamageMods)
+            if (cwc != null)
             {
-                WeaponDamageContext context = new(damage, damageable, weapon);
+                WeaponDamageContext context = new(damage, precisionMult, damageable, weapon);
                 cwc.Invoke(context);
-                damage = context.Value;
+                if (!eBase.IgnoreDamageMods)
+                    damage = context.Damage.Value;
+                precisionMult = context.Precision.Value;
             }
+
+            // 0.001f to account for rounding error
+            damage = falloffMod * damage + 0.001f;
 
             if (damageable.GetBaseAgent()?.Type == AgentType.Player)
             {
@@ -171,7 +175,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
-            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionDamageMulti, 1f) : 1f;
+            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMult, 1f) : 1f;
             float backstabMulti = 1f;
             if (!eBase.IgnoreBackstab)
                 backstabMulti = eBase.CacheBackstab > 0f ? eBase.CacheBackstab : limb.ApplyDamageFromBehindBonus(1f, position, direction);
@@ -193,7 +197,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     damageable,
                     position,
                     direction,
-                    limb.m_base.TempSearchID,
                     weapon,
                     flag
                     ));

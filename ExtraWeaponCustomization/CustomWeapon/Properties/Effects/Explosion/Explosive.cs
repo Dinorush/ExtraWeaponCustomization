@@ -43,7 +43,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 {
                     CacheBackstab = enemyContext.Backstab;
                     // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage
-                    if (context.Weapon.m_damageSearchID + 1 == DamageUtil.SearchID)
+                    if (context.Weapon.m_damageSearchID - 1 == DamageUtil.SearchID)
                         DamageUtil.IncrementSearchID();
                 }
                 ExplosionManager.DoExplosion(position, context.Direction, context.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, context.Weapon, context.Damageable);

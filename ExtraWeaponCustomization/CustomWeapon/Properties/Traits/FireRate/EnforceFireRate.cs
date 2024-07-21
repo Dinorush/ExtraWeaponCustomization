@@ -7,12 +7,12 @@ using System.Text.Json;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class EnforceFireRate :
+        Trait,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponDamageContext>,
         IWeaponProperty<WeaponRecoilContext>
     {
-        public bool AllowStack { get; } = false;
         private CustomWeaponComponent? _cachedCWC = null;
 
         private float _lastShotTime = 0f;
@@ -50,7 +50,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponDamageContext context)
         {
             // Won't apply on the first shot (no time delta available to use)
-            context.AddMod(1f + GetShotsInBuffer(context.Weapon), Effects.StackType.Multiply);
+            context.Damage.AddMod(1f + GetShotsInBuffer(context.Weapon), Effects.StackType.Multiply);
         }
 
         public void Invoke(WeaponRecoilContext context)

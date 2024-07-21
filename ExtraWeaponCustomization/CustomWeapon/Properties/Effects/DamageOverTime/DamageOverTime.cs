@@ -65,15 +65,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             float falloff = IgnoreFalloff ? 1f : context.Falloff;
             float damage = TotalDamage;
             float backstabMulti = IgnoreBackstab ? 1f : context.Backstab;
+            float precisionMulti = PrecisionDamageMulti;
+
+            CustomWeaponComponent? cwc = Weapon?.GetComponent<CustomWeaponComponent>();
+            if (cwc != null)
+            {
+                WeaponDamageContext damageContext = new(damage, precisionMulti, context.Damageable, cwc.Weapon);
+                cwc.Invoke(context);
+                if (!IgnoreDamageMods)
+                    damage = damageContext.Damage.Value;
+                precisionMulti = damageContext.Precision.Value;
+            }
 
             EXPAPIWrapper.ApplyMod(ref damage);
-
-            if (!IgnoreDamageMods)
-            {
-                WeaponDamageContext damageContext = new(damage, context.Damageable, context.Weapon);
-                damageContext.Weapon.GetComponent<CustomWeaponComponent>().Invoke(damageContext);
-                damage = damageContext.Value;
-            }
 
             // If it doesn't stack, need to kill the existing DOT and add a new one
             if (!Stacks)
@@ -95,7 +99,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
                     float nextTickTime = lastDot.NextTickTime;
                     lastDot.Destroy();
-                    lastDot = _controller.AddDOT(damage, falloff, backstabMulti, context.Damageable, this);
+                    lastDot = _controller.AddDOT(damage, falloff, precisionMulti, backstabMulti, context.Damageable, this);
                     if (lastDot != null)
                     {
                         lastDot.StartWithTargetTime(nextTickTime);
@@ -106,13 +110,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 }
                 else
                 {
-                    DOTInstance? newDOT = _controller.AddDOT(damage, falloff, backstabMulti, context.Damageable, this);
+                    DOTInstance? newDOT = _controller.AddDOT(damage, falloff, precisionMulti, backstabMulti, context.Damageable, this);
                     if (newDOT != null)
                         _lastDOTs[new AgentWrapper(limb.GetBaseAgent())] = newDOT;
                 }
             }
             else
-                _controller.AddDOT(damage, falloff, backstabMulti, context.Damageable, this);
+                _controller.AddDOT(damage, falloff, precisionMulti, backstabMulti, context.Damageable, this);
         }
 
         public override IWeaponProperty Clone()

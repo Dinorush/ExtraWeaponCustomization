@@ -14,7 +14,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         {
             Dam_EnemyDamageLimb_Custom? tumor = context.Damageable.TryCast<Dam_EnemyDamageLimb_Custom>();
             if (tumor != null)
-                context.AddMod(TumorDamageMulti, StackType.Multiply);
+                context.Precision.AddMod(TumorDamageMulti, StackType.Multiply);
         }
 
         public override IWeaponProperty Clone()
