@@ -5,3 +5,7 @@
 *lib/
 *obj/
 *GameFolder.props
+
+*Projectile
+*GrenadeBasePatches.cs
+*message.txt
