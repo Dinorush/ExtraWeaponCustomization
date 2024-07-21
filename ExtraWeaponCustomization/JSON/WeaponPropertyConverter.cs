@@ -24,13 +24,12 @@ namespace ExtraWeaponCustomization.JSON
 
                 string property = reader.GetString()!;
                 reader.Read();
-                instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader, options);
             }
 
             throw new JsonException("Expected EndObject token");
-            }
+        }
 
-        // Literally the only reason this class exists, so it doesn't write the backing fields.
         public override void Write(Utf8JsonWriter writer, IWeaponProperty value, JsonSerializerOptions options)
         {
             value.Serialize(writer, options);
@@ -60,9 +59,6 @@ namespace ExtraWeaponCustomization.JSON
 
                 Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
                 if (type == null) throw new JsonException("Unable to find corresponding weapon property for \"" + name + "\"");
-
-                if (type == typeof(AmmopackRefill))
-                    EWCLogger.Warning("Property name \"AmmopackRefill\" is deprecated and will be removed in a future version. Use \"AmmoCap\" instead.");
 
                 return (IWeaponProperty?)Activator.CreateInstance(type);
             }

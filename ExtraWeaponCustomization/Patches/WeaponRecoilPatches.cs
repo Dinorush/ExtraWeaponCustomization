@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace ExtraWeaponCustomization.Patches
 {
+    [HarmonyPatch]
     internal static class WeaponRecoilPatches
     {
         private static BulletWeapon? _cachedWeapon;

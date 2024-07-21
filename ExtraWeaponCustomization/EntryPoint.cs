@@ -26,14 +26,7 @@ internal sealed class EntryPoint : BasePlugin
     {
         EWCLogger.Log("Loading " + MODNAME);
 
-        Harmony harmonyInstance = new(MODNAME);
-        harmonyInstance.PatchAll(typeof(PlayerInventoryPatches));
-        harmonyInstance.PatchAll(typeof(WeaponArchetypePatches));
-        harmonyInstance.PatchAll(typeof(WeaponPatches));
-        harmonyInstance.PatchAll(typeof(WeaponRayPatches));
-        harmonyInstance.PatchAll(typeof(WeaponRecoilPatches));
-        harmonyInstance.PatchAll(typeof(PlayerLocalPatches));
-
+        new Harmony(MODNAME).PatchAll();
         Configuration.Init();
         LevelAPI.OnEnterLevel += LevelAPI_OnEnterLevel;
         AssetAPI.OnStartupAssetsLoaded += AssetAPI_OnStartupAssetsLoaded;

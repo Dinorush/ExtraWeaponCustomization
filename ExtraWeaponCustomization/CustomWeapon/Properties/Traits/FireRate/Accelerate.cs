@@ -1,20 +1,22 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Utils;
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class Accelerate :
+        Trait,
+        ITriggerCallback,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireRateSetContext>,
         IWeaponProperty<WeaponPostStopFiringContext>,
         IWeaponProperty<WeaponCancelFireContext>,
-        IWeaponProperty<WeaponTriggerContext>,
         IWeaponProperty<WeaponDamageContext>
     {
-        public bool AllowStack { get; } = false;
-
         private float _endShotDelay = 1f;
         public float EndShotDelay
         {
@@ -47,7 +49,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         }
         public float DecelDelay { get; set; } = 0f;
         public float AccelExponent { get; set; } = 1f;
-        public TriggerType ResetTriggerType { get; set; } = TriggerType.Invalid;
+
+        private TriggerCoordinator? _coordinator;
+        public TriggerCoordinator? ResetTrigger
+        {
+            get => _coordinator;
+            set
+            {
+                _coordinator = value;
+                if (value != null)
+                    value.Parent = this;
+            }
+        }
 
         private float _progress = 0f;
         private float _lastUpdateTime = 0f;
@@ -101,10 +114,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _lastUpdateTime = _resetUpdateTime;
         }
 
-        public void Invoke(WeaponTriggerContext context)
+        public void TriggerReset()
         {
-            if (!context.Type.IsType(ResetTriggerType)) return;
+            // Reset acceleration
+            _progress = 0;
+            _lastUpdateTime = Clock.Time;
+        }
 
+        public void TriggerApply(List<TriggerContext> contexts)
+        {
             // Reset acceleration
             _progress = 0;
             _lastUpdateTime = Clock.Time;
@@ -127,7 +145,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return UnityEngine.Mathf.Lerp(1f, EndDamageMod, (float)Math.Pow(_progress, AccelExponent));
         }
 
-        public IWeaponProperty Clone()
+        public override IWeaponProperty Clone()
         {
             Accelerate copy = new()
             {
@@ -138,12 +156,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 AccelExponent = AccelExponent,
                 DecelTime = DecelTime,
                 DecelDelay = DecelDelay,
-                ResetTriggerType = ResetTriggerType
+                ResetTrigger = ResetTrigger?.Clone()
             };
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -155,11 +173,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(AccelExponent), AccelExponent);
             writer.WriteNumber(nameof(DecelTime), DecelTime);
             writer.WriteNumber(nameof(DecelDelay), DecelDelay);
-            writer.WriteString(nameof(ResetTriggerType), ResetTriggerType.ToString());
+            writer.WriteString(nameof(ResetTrigger), "Invalid");
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             switch (property)
             {
@@ -178,7 +196,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 case "damagestacklayer":
                 case "stacklayer":
                 case "layer":
-                    DamageStackLayer = reader.GetString()?.ToStackType() ?? StackType.Invalid;
+                    DamageStackLayer = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 case "acceltime":
                     AccelTime = reader.GetSingle();
@@ -195,7 +213,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "resettriggertype":
                 case "resettrigger":
-                    ResetTriggerType = reader.GetString()?.ToTriggerType() ?? TriggerType.Invalid;
+                    ResetTrigger = JsonSerializer.Deserialize<TriggerCoordinator>(ref reader, options);
                     break;
                 default:
                     break;

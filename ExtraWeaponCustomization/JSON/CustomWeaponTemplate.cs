@@ -23,6 +23,7 @@ namespace ExtraWeaponCustomization.JSON
                     new RecoilMod(),
 
                     new AmmoCap(),
+                    new ArmorPierce(),
                     new AutoAim(),
                     new AutoTrigger(),
                     new EnforceFireRate(),

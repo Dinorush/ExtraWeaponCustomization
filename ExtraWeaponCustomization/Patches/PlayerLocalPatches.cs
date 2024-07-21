@@ -2,6 +2,7 @@
 
 namespace ExtraWeaponCustomization.Patches
 {
+    [HarmonyPatch]
     internal static class PlayerLocalPatches
     {
         // Bug fix health getting stuck at red

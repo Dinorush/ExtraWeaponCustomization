@@ -139,13 +139,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
         internal void RegisterAllContexts()
         {
             RegisterContext<WeaponTriggerContext>();
+            RegisterContext<WeaponDamageTypeContext>();
             RegisterContext<WeaponPostKillContext>();
             RegisterContext<WeaponPostFireContext>();
+            RegisterContext<WeaponPreHitContext>();
             RegisterContext<WeaponPreHitEnemyContext>();
-            RegisterContext<WeaponOnDamageContext>();
             RegisterContext<WeaponPostReloadContext>();
             RegisterContext<WeaponWieldContext>();
 
+            RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponCancelFireContext>();
             RegisterContext<WeaponDamageContext>();
             RegisterContext<WeaponPostAmmoInitContext>();
@@ -158,7 +160,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreFireContext>();
             RegisterContext<WeaponPreStartFireContext>();
             RegisterContext<WeaponPostStartFireContext>();
-            RegisterContext<WeaponPreHitContext>();
             RegisterContext<WeaponPreRayContext>();
             RegisterContext<WeaponPostStopFiringContext>();
             RegisterContext<WeaponRecoilContext>();

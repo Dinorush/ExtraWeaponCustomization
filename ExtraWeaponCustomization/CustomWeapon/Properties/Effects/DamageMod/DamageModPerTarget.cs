@@ -1,8 +1,10 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Agents;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
@@ -13,25 +15,47 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private readonly Dictionary<AgentWrapper, Queue<TriggerInstance>> _expireTimes = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
-        public override void Reset()
+        public DamageModPerTarget()
+        {
+            Trigger ??= new(ITrigger.GetTrigger(ITrigger.Hit)!);
+            SetValidTriggers(ITrigger.Hit, ITrigger.Damage);
+        }
+
+        public override void TriggerReset()
         {
             _expireTimes.Clear();
         }
 
-        public override void AddStack(WeaponTriggerContext context)
+        public override void TriggerApply(List<TriggerContext> contexts)
         {
-            float mod = Mod;
-            // Enforced to be one of these two types
-            if (context.Type.IsType(TriggerType.OnHit))
-                TempWrapper.SetAgent(((WeaponPreHitEnemyContext) context).Damageable.GetBaseAgent());
-            else if (context.Type.IsType(TriggerType.OnDamage))
+            if (contexts.Count > 5)
             {
-                WeaponOnDamageContext damageContext = (WeaponOnDamageContext) context;
-                TempWrapper.SetAgent(damageContext.Damageable.GetBaseAgent());
-                mod = CalculateOnDamageMod(damageContext.Damage);
-            }
+                Dictionary<AgentWrapper, float> triggerDict = new();
+                foreach (var context in contexts)
+                {
+                    TempWrapper.SetAgent(((WeaponPreHitEnemyContext)context.context).Damageable.GetBaseAgent());
+                    if (!triggerDict.ContainsKey(TempWrapper))
+                        triggerDict.Add(new AgentWrapper(TempWrapper), 0);
+                    triggerDict[TempWrapper] += context.triggerAmt;
+                }
 
-            if (!_expireTimes.ContainsKey(TempWrapper))
+                foreach ((AgentWrapper wrapper, float triggerAmt) in triggerDict)
+                    AddTriggerInstance(wrapper, triggerAmt);
+            }
+            else
+            {
+                foreach (var context in contexts)
+                    AddTriggerInstance(
+                        new AgentWrapper(((WeaponPreHitEnemyContext)context.context).Damageable.GetBaseAgent()),
+                        context.triggerAmt
+                        );
+            }
+        }
+
+        private void AddTriggerInstance(AgentWrapper wrapper, float triggerAmt)
+        {
+            float mod = CalculateMod(triggerAmt);
+            if (!_expireTimes.ContainsKey(wrapper))
             {
                 // Clean dead agents from dict. Doesn't need to happen here, but we don't need to run this often, so eh
                 _expireTimes.Keys
@@ -39,23 +63,24 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     .ToList()
                     .ForEach(wrapper => _expireTimes.Remove(wrapper));
 
-                _expireTimes[new AgentWrapper(TempWrapper)] = new Queue<TriggerInstance>();
+                _expireTimes[wrapper] = new Queue<TriggerInstance>();
             }
 
-            if (StackType == StackType.None) _expireTimes[TempWrapper].Clear();
+            if (StackType == StackType.None) _expireTimes[wrapper].Clear();
 
-            _expireTimes[TempWrapper].Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
+            _expireTimes[wrapper].Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
         }
 
         public void Invoke(WeaponDamageContext context)
         {
-            if (context.Damageable!.GetBaseAgent() == null) return;
+            Agent agent = context.Damageable.GetBaseAgent();
+            if (agent == null) return;
 
-            TempWrapper.SetAgent(context.Damageable!.GetBaseAgent());
-            if (!_expireTimes.ContainsKey(TempWrapper)) return;
+            TempWrapper.SetAgent(agent);
+            if (!_expireTimes.TryGetValue(TempWrapper, out Queue<TriggerInstance>? queue)) return;
 
-            Queue<TriggerInstance> queue = _expireTimes[TempWrapper];
             while (queue.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) queue.Dequeue();
+
             context.AddMod(CalculateMod(queue), StackLayer);
         }
 
@@ -69,13 +94,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public override void WriteName(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteString("Name", GetType().Name);
-        }
-
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
-        {
-            base.DeserializeProperty(property, ref reader);
-            if (!TriggerType.IsType(TriggerType.OnHit) && !TriggerType.IsType(TriggerType.OnDamage))
-                TriggerType = TriggerType.Invalid;
         }
     }
 }

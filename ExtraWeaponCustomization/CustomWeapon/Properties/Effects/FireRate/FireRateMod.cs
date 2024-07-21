@@ -1,4 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -10,19 +11,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         private readonly Queue<TriggerInstance> _expireTimes = new();
 
-        public override void Reset()
+        public override void TriggerReset()
         {
             _expireTimes.Clear();
         }
 
-        public override void AddStack(WeaponTriggerContext context)
+        public override void TriggerApply(List<TriggerContext> contexts)
         {
-            if (StackType == StackType.None) _expireTimes.Clear();
+            if (StackType == StackType.None)
+                _expireTimes.Clear();
 
-            float mod = Mod;
-            if (context.Type.IsType(TriggerType.OnDamage))
-                mod = CalculateOnDamageMod(((WeaponOnDamageContext) context).Damage);
-            _expireTimes.Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
+            _expireTimes.Enqueue(new TriggerInstance(ConvertTriggersToMod(contexts), Clock.Time + Duration));
         }
 
         public void Invoke(WeaponFireRateContext context)

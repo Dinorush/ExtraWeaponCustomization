@@ -1,12 +1,14 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using System.Collections.Generic;
 using System.Text.Json;
+using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
-    public sealed class Explosive : IWeaponProperty<WeaponPreHitContext>
+    public sealed class Explosive : 
+        Effect
     {
-        public bool AllowStack { get; } = true;
-
         public float MaxDamage { get; set; } = 0f;
         public float MinDamage { get; set; } = 0f;
         public float InnerRadius { get; set; } = 0f;
@@ -19,15 +21,36 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreBackstab { get; set; } = false;
         public bool IgnoreDamageMods { get; set; } = false;
 
-        public void Invoke(WeaponPreHitContext context)
-        {
-            if (!context.Weapon.Owner.IsLocallyOwned) return;
+        public float CacheBackstab { get; private set; } = 0f;
 
-            float falloffMod = IgnoreFalloff ? 1f : context.Falloff;
-            ExplosionManager.DoExplosion(context.Data.rayHit.point, context.Data.fireDir.normalized, context.Weapon.Owner, falloffMod, this, context.Weapon);
+        public Explosive()
+        {
+            Trigger ??= new(ITrigger.GetTrigger(ITrigger.BulletLanded)!);
+            SetValidTriggers(DamageType.Explosive, ITrigger.Hit, ITrigger.Damage, ITrigger.BulletLanded);
         }
 
-        public IWeaponProperty Clone()
+        public override void TriggerReset() {}
+        public override void TriggerApply(List<TriggerContext> triggerList)
+        {
+            foreach (TriggerContext tContext in triggerList)
+            {
+                CacheBackstab = 1f;
+                WeaponPreHitContext context = (WeaponPreHitContext) tContext.context;
+                Vector3 position = context.Position;
+                if (context.Damageable != null)
+                    position = context.LocalPosition + context.Damageable.GetBaseAgent().Position;
+                if (context is WeaponPreHitEnemyContext enemyContext)
+                {
+                    CacheBackstab = enemyContext.Backstab;
+                    // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage
+                    if (context.Weapon.m_damageSearchID + 1 == DamageUtil.SearchID)
+                        DamageUtil.IncrementSearchID();
+                }
+                ExplosionManager.DoExplosion(position, context.Direction, context.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, context.Weapon, context.Damageable);
+            }
+        }
+
+        public override IWeaponProperty Clone()
         {
             Explosive copy = new()
             {
@@ -41,12 +64,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 IgnoreArmor = IgnoreArmor,
                 IgnoreFalloff = IgnoreFalloff,
                 IgnoreBackstab = IgnoreBackstab,
-                IgnoreDamageMods = IgnoreDamageMods
+                IgnoreDamageMods = IgnoreDamageMods,
+                Trigger = Trigger?.Clone()
             };
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -64,8 +88,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
+            base.DeserializeProperty(property, ref reader, options);
             switch (property)
             {
                 case "maxdamage":

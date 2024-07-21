@@ -11,11 +11,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private int _ticks = 0;
         private float _damagePerTick = 0f;
         private float _backstabMulti = 1f;
+        private float _falloff = 1f;
 
-        public DOTInstance(float totalDamage, float backstab, DamageOverTime dotBase)
+        public DOTInstance(float totalDamage, float falloff, float backstab, DamageOverTime dotBase)
         {
             DotBase = dotBase;
             _backstabMulti = backstab;
+            _falloff = falloff;
             _lastTickTime = Clock.Time;
             _ticks = (int)(dotBase.Duration * dotBase.TickRate);
             AddInstance(totalDamage);
@@ -58,7 +60,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             _lastTickTime += damageTicks * TickDelay;
             _ticks -= damageTicks;
 
-            DOTDamageManager.DoDOTDamage(damageable, damage, _backstabMulti, DotBase);
+            DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _backstabMulti, DotBase);
         }
     }
 }

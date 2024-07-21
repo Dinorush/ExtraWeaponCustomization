@@ -55,7 +55,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             context.AmmoRel *= AmmoCapRel;
         }
 
-        public IWeaponProperty Clone()
+        public override IWeaponProperty Clone()
         {
             AmmoCap copy = new()
             {
@@ -66,7 +66,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", nameof(AmmoCap));
@@ -76,7 +76,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             switch (property)
             {

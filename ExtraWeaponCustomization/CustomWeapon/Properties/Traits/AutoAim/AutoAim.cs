@@ -309,7 +309,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return null;
         }
 
-        public IWeaponProperty Clone()
+        public override IWeaponProperty Clone()
         {
             AutoAim copy = new()
             {
@@ -331,7 +331,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return copy;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -352,7 +352,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             switch (property)
             {

@@ -10,12 +10,4 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         Multiply,
         Mult = Multiply
     }
-
-    public static class StackTypeMethods
-    {
-        public static StackType ToStackType(this string type)
-        {
-            return Enum.TryParse(type.Replace(" ", ""), true, out StackType result) ? result : StackType.Invalid;
-        }
-    }
 }

@@ -6,6 +6,7 @@ using Player;
 
 namespace ExtraWeaponCustomization.Patches
 {
+    [HarmonyPatch]
     internal static class PlayerInventoryPatches
     {
         [HarmonyPatch(typeof(PUI_Inventory), nameof(PUI_Inventory.SetSlotAmmo))]

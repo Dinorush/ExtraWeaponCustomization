@@ -11,18 +11,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             context.Weapon.m_archeType.m_triggerNeedsPress = false;
         }
 
-        public void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteEndObject();
         }
 
-        public IWeaponProperty Clone()
+        public override IWeaponProperty Clone()
         {
             return new AutoTrigger();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options) {}
     }
 }
