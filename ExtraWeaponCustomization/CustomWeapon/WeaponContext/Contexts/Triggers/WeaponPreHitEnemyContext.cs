@@ -13,19 +13,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         public new IDamageable Damageable => base.Damageable!;
 
         public WeaponPreHitEnemyContext(float damage, float falloff, float backstab, IDamageable damageable,
-                                        Vector3 position, Vector3 direction, BulletWeapon weapon, DamageFlag flag = DamageFlag.Any) 
-            : base(position, direction, falloff, weapon, damageable)
+                                        Vector3 position, Vector3 direction, uint damageSearchID, BulletWeapon weapon, DamageType flag = DamageType.Any) 
+            : base(position, direction, falloff, damageSearchID, weapon, damageable)
         {
             Damage = damage;
             Dam_EnemyDamageBase? baseDam = damageable.GetBaseDamagable()?.TryCast<Dam_EnemyDamageBase>();
             if (baseDam != null)
                 Damage = Math.Min(Damage, baseDam.HealthMax);
             Backstab = backstab;
-            DamageFlag = flag;
+            DamageType = flag;
         }
 
-        public WeaponPreHitEnemyContext(WeaponHitData data, float additionalDist, Dam_EnemyDamageLimb limb, BulletWeapon weapon, DamageFlag flag = DamageFlag.Any)
-            : base(data, additionalDist, weapon, limb.TryCast<IDamageable>())
+        public WeaponPreHitEnemyContext(WeaponHitData data, float additionalDist, Dam_EnemyDamageLimb limb, uint damageSearchID, BulletWeapon weapon, DamageType flag = DamageType.Any)
+            : base(data, additionalDist, damageSearchID, weapon, limb.TryCast<IDamageable>())
         {
             Backstab = limb.ApplyDamageFromBehindBonus(1f, data.rayHit.point, data.fireDir.normalized);
 
@@ -36,9 +36,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
             if (limb.DestructionType == eLimbDestructionType.Custom)
                 Damage = Math.Min(Damage, limb.m_healthMax);
 
-            DamageFlag = flag;
+            DamageType = flag;
             if (limb.m_type == eLimbDamageType.Weakspot)
-                DamageFlag |= DamageFlag.Weakspot;
+                DamageType |= DamageType.Weakspot;
         }
     }
 }

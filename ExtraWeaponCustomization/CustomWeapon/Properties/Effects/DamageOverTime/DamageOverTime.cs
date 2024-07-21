@@ -38,6 +38,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private readonly Dictionary<AgentWrapper, DOTInstance> _lastDOTs = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
+        public DamageOverTime()
+        {
+            Trigger ??= new(ITrigger.GetTrigger(ITrigger.Hit)!);
+            SetValidTriggers(DamageType.DOT, ITrigger.Hit, ITrigger.Damage);
+        }
+
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
             if (Weapon == null)
@@ -56,7 +62,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             Dam_EnemyDamageLimb? limb = context.Damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;
-            float damage = TotalDamage * (IgnoreFalloff ? 1f : context.Falloff);
+            float falloff = IgnoreFalloff ? 1f : context.Falloff;
+            float damage = TotalDamage;
             float backstabMulti = IgnoreBackstab ? 1f : context.Backstab;
 
             EXPAPIWrapper.ApplyMod(ref damage);
@@ -88,7 +95,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
                     float nextTickTime = lastDot.NextTickTime;
                     lastDot.Destroy();
-                    lastDot = _controller.AddDOT(damage, backstabMulti, context.Damageable, this);
+                    lastDot = _controller.AddDOT(damage, falloff, backstabMulti, context.Damageable, this);
                     if (lastDot != null)
                     {
                         lastDot.StartWithTargetTime(nextTickTime);
@@ -99,13 +106,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 }
                 else
                 {
-                    DOTInstance? newDOT = _controller.AddDOT(damage, backstabMulti, context.Damageable, this);
+                    DOTInstance? newDOT = _controller.AddDOT(damage, falloff, backstabMulti, context.Damageable, this);
                     if (newDOT != null)
                         _lastDOTs[new AgentWrapper(limb.GetBaseAgent())] = newDOT;
                 }
             }
             else
-                _controller.AddDOT(damage, backstabMulti, context.Damageable, this);
+                _controller.AddDOT(damage, falloff, backstabMulti, context.Damageable, this);
         }
 
         public override IWeaponProperty Clone()
@@ -150,8 +157,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             base.DeserializeProperty(property, ref reader, options);
-            VerifyTrigger(ITrigger.Hit, ITrigger.Damage);
-            BlacklistTriggerFlag(DamageFlag.DOT);
             switch (property)
             {
                 case "totaldamage":

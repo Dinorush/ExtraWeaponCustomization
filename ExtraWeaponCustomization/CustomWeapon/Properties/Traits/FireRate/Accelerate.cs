@@ -49,7 +49,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         }
         public float DecelDelay { get; set; } = 0f;
         public float AccelExponent { get; set; } = 1f;
-        public TriggerCoordinator? ResetTrigger { get; set; }
+
+        private TriggerCoordinator? _coordinator;
+        public TriggerCoordinator? ResetTrigger
+        {
+            get => _coordinator;
+            set
+            {
+                _coordinator = value;
+                if (value != null)
+                    value.Parent = this;
+            }
+        }
 
         private float _progress = 0f;
         private float _lastUpdateTime = 0f;

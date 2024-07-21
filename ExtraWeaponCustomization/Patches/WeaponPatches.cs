@@ -56,7 +56,7 @@ namespace ExtraWeaponCustomization.Patches
             if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null) return;
 
             // Bot/other player filter. All CWC behavior is handled client-side.
-            if (!weaponRayData.owner.IsLocallyOwned && (!SNet.HasMaster || !weaponRayData.owner.Owner.IsBot)) return;
+            if (!weaponRayData.owner.IsLocallyOwned && (!SNet.IsMaster || !weaponRayData.owner.Owner.IsBot)) return;
 
             CustomWeaponComponent? cwc = weaponRayData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
@@ -85,8 +85,6 @@ namespace ExtraWeaponCustomization.Patches
                 weaponRayData.damage = damageContext.Value;
             }
 
-            cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, cwc.Weapon));
-
             Agent? agent = damageable?.GetBaseAgent();
             if (doDamage && agent != null && agent.Type == AgentType.Enemy && agent.Alive)
             {
@@ -95,15 +93,18 @@ namespace ExtraWeaponCustomization.Patches
                     weaponRayData,
                     additionalDis,
                     limb,
+                    damageSearchID,
                     cwc.Weapon,
-                    DamageFlag.Bullet
+                    DamageType.Bullet
                     );
 
                 cwc.Invoke(hitContext);
                 
                 Vector3 localPos = weaponRayData.rayHit.point - damageable.GetBaseAgent().Position;
-                KillTrackerManager.RegisterHit(agent, localPos, cwc.Weapon, hitContext.DamageFlag);
+                KillTrackerManager.RegisterHit(agent, localPos, cwc.Weapon, hitContext.DamageType);
             }
+            else
+                cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, damageSearchID, cwc.Weapon));
         }
     }
 }

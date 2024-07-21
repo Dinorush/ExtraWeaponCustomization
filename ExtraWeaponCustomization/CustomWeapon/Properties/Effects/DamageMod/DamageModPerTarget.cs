@@ -15,6 +15,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private readonly Dictionary<AgentWrapper, Queue<TriggerInstance>> _expireTimes = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
+        public DamageModPerTarget()
+        {
+            Trigger ??= new(ITrigger.GetTrigger(ITrigger.Hit)!);
+            SetValidTriggers(ITrigger.Hit, ITrigger.Damage);
+        }
+
         public override void TriggerReset()
         {
             _expireTimes.Clear();
@@ -88,12 +94,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public override void WriteName(Utf8JsonWriter writer, JsonSerializerOptions options)
         {
             writer.WriteString("Name", GetType().Name);
-        }
-
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
-        {
-            base.DeserializeProperty(property, ref reader, options);
-            VerifyTrigger(ITrigger.Hit, ITrigger.Damage);
         }
     }
 }

@@ -12,13 +12,35 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         IWeaponProperty<WeaponTriggerContext>
     {
         public bool AllowStack { get; } = true;
-        public TriggerCoordinator? Trigger { get; set; }
+
+        private TriggerCoordinator? _coordinator;
+        public TriggerCoordinator? Trigger
+        { 
+            get => _coordinator;
+            set
+            {
+                _coordinator = value;
+                if (value != null)
+                    value.Parent = this;
+            }
+        }
+
+        private string[]? _validTriggers;
+        private DamageType _blacklistType = DamageType.Invalid;
 
         // Backwards compatibility with pre-Trigger overhaul | Remove when no longer supported
         private float _cooldown = 0f;
         private ITrigger? _resetTrigger;
 
         public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
+
+        protected void SetValidTriggers(DamageType flag = DamageType.Invalid, params string[] names)
+        {
+            _validTriggers = names;
+            _blacklistType = flag;
+            VerifyTriggers();
+        }
+        protected void SetValidTriggers(params string[] names) => SetValidTriggers(DamageType.Invalid, names);
 
         public abstract void TriggerApply(List<TriggerContext> triggerList);
         public abstract void TriggerReset();
@@ -44,19 +66,20 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "triggertype":
                 case "trigger":
                     Trigger = JsonSerializer.Deserialize<TriggerCoordinator>(ref reader, options);
+                    VerifyTriggers();
                     break;
                 case "resettriggertype":
                 case "resettrigger":
                     _resetTrigger = JsonSerializer.Deserialize<ITrigger>(ref reader, options);
                     EWCLogger.Warning(
-                        "\"ResetTrigger\" as an Effect field is deprecated and will not be supported in a future version." +
+                        "\"ResetTrigger\" as an Effect field is deprecated and will not be supported in a future version. " +
                         "Please port it to the Trigger object."
                         );
                     break;
                 case "cooldown":
                     _cooldown = reader.GetSingle();
                     EWCLogger.Warning(
-                        "\"Cooldown\" as an Effect field is deprecated and will not be supported in a future version." +
+                        "\"Cooldown\" as an Effect field is deprecated and will not be supported in a future version. " +
                         "Please port it to the Trigger object."
                         );
                     break;
@@ -79,7 +102,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             }
         }
 
-        protected void VerifyTrigger(params string[] names)
+        private void VerifyTriggers()
         {
             if (Trigger == null) return;
 
@@ -87,26 +110,21 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 string name = Trigger.Activate[i].Name;
                 // If the trigger isn't of the valid class, remove it
-                if (!names.Contains(name))
+                if (_validTriggers != null && !_validTriggers.Contains(name))
+                {
+                    EWCLogger.Warning(GetType().Name + " only allows triggers of the following types or subtypes: " + string.Join(", ", _validTriggers));
                     Trigger.Activate.RemoveAt(i);
-            }
+                }
 
-            if (!Trigger.Activate.Any())
-                Trigger = null;
-        }
+                if (Trigger.Activate[i] is not IDamageTypeTrigger typeTrigger) continue;
 
-        protected void BlacklistTriggerFlag(DamageFlag flag)
-        {
-            if (Trigger == null) return;
-
-            for (int i = Trigger.Activate.Count - 1; i >= 0; i--)
-            {
-                if (Trigger.Activate[i] is not IDamageFlagTrigger flagTrigger) continue;
-
-                flagTrigger.BlacklistType |= flag;
+                typeTrigger.BlacklistType &= _blacklistType;
                 // If all valid triggers are blacklisted, remove it
-                if (flagTrigger.Type.HasFlag(flagTrigger.BlacklistType))
+                if (typeTrigger.DamageType.HasFlag(typeTrigger.BlacklistType))
+                {
+                    EWCLogger.Warning(GetType().Name + " cannot have a hit trigger damage type matching " + _blacklistType.ToString());
                     Trigger.Activate.RemoveAt(i);
+                }
             }
 
             if (!Trigger.Activate.Any())

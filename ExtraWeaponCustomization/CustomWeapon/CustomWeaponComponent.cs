@@ -34,12 +34,11 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
             _contextController = new ContextController();
-
             _propertyTypes = new HashSet<Type>();
 
             BulletWeapon? bulletWeapon = GetComponent<BulletWeapon>();
             if (bulletWeapon == null)
-                throw new ArgumentException("Parent Object", "Custom Weapon Component was added to an object without a Bullet Weapon component.");
+                throw new ArgumentException("Parent Object", "Custom Weapon Component was added to an object without a BulletWeapon component.");
             Weapon = bulletWeapon;
 
             _fireRate = 1f / Math.Max(Weapon.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
@@ -83,7 +82,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
                 _autoAim?.OnDisable();
         }
 
-        public void Invoke(IWeaponContext context) => _contextController.Invoke(context);
+        public void Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
 
         public void Register(IWeaponProperty property)
         {
@@ -122,8 +121,11 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public void StoreCancelShot()
         {
-            Invoke(new WeaponCancelFireContext(Weapon));
-            CancelShot = true;
+            if (!CancelShot)
+            {
+                Invoke(new WeaponCancelFireContext(Weapon));
+                CancelShot = true;
+            }
         }
 
         public bool ResetShotIfCancel(BulletWeaponArchetype archetype)

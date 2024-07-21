@@ -21,10 +21,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreBackstab { get; set; } = false;
         public bool IgnoreDamageMods { get; set; } = false;
 
+        public float CacheBackstab { get; private set; } = 0f;
+
         public Explosive()
         {
-            Trigger = new();
-            Trigger.Activate.Add(new BasicTrigger<WeaponPreHitContext>("BulletLanded"));
+            Trigger ??= new(ITrigger.GetTrigger(ITrigger.BulletLanded)!);
+            SetValidTriggers(DamageType.Explosive, ITrigger.Hit, ITrigger.Damage, ITrigger.BulletLanded);
         }
 
         public override void TriggerReset() {}
@@ -32,11 +34,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             foreach (TriggerContext tContext in triggerList)
             {
+                CacheBackstab = 1f;
                 WeaponPreHitContext context = (WeaponPreHitContext) tContext.context;
                 Vector3 position = context.Position;
                 if (context.Damageable != null)
                     position = context.LocalPosition + context.Damageable.GetBaseAgent().Position;
-                ExplosionManager.DoExplosion(position, context.Direction, context.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, context.Weapon);
+                if (context is WeaponPreHitEnemyContext enemyContext)
+                {
+                    CacheBackstab = enemyContext.Backstab;
+                    // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage
+                    if (context.Weapon.m_damageSearchID + 1 == DamageUtil.SearchID)
+                        DamageUtil.IncrementSearchID();
+                }
+                ExplosionManager.DoExplosion(position, context.Direction, context.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, context.Weapon, context.Damageable);
             }
         }
 
@@ -81,8 +91,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             base.DeserializeProperty(property, ref reader, options);
-            VerifyTrigger(ITrigger.Hit, ITrigger.Damage, ITrigger.BulletLanded);
-            BlacklistTriggerFlag(DamageFlag.Explosive);
             switch (property)
             {
                 case "maxdamage":

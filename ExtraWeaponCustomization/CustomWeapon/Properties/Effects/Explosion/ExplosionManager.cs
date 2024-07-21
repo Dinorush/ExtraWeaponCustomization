@@ -35,12 +35,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             ExplosionEffectPooling.Initialize();
         }
 
-        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
+        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon, IDamageable? directLimb = null)
         {
             ExplosionFXData fxData = new() { position = position };
             fxData.radius.Set(eBase.Radius, MaxRadius);
             FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
-            DoExplosionDamage(position, direction, source, falloffMod, eBase, weapon);
+            DoExplosionDamage(position, direction, source, falloffMod, eBase, weapon, directLimb);
         }
     
         internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius)
@@ -65,14 +65,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             });
         }
 
-        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, BulletWeapon weapon)
+        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, BulletWeapon weapon, IDamageable? directLimb = null)
         {
+            DamageUtil.IncrementSearchID();
+            var searchID = DamageUtil.SearchID;
+
+            if (directLimb != null)
+            {
+                IDamageable? directBase = directLimb.GetBaseDamagable();
+                Agent? agent = directLimb.GetBaseAgent();
+                if (directBase != null && agent != null && agent.Alive)
+                {
+                    directBase.TempSearchID = searchID;
+                    SendExplosionDamage(directLimb, position, direction, 0, source, falloffMod, explosiveBase, weapon);
+                }
+            }
+
             var colliders = Physics.OverlapSphere(position, explosiveBase.Radius, LayerManager.MASK_EXPLOSION_TARGETS);
             if (colliders.Length < 1)
                 return;
-
-            DamageUtil.IncrementSearchID();
-            var searchID = DamageUtil.SearchID;
 
             // Loop over colliders in order of distance to make sure we do the most possible damage and hit the correct limb.
             // Not 100% consistent with expectations, but good enough.
@@ -161,7 +172,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * eBase.PrecisionDamageMulti, 1f) : 1f;
-            float backstabMulti = eBase.IgnoreBackstab ? 1f : limb.ApplyDamageFromBehindBonus(1f, position, direction);
+            float backstabMulti = 1f;
+            if (!eBase.IgnoreBackstab)
+                backstabMulti = eBase.CacheBackstab > 0f ? eBase.CacheBackstab : limb.ApplyDamageFromBehindBonus(1f, position, direction);
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
@@ -170,7 +183,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             data.damage.Set(precDamage, limb.m_base.DamageMax);
 
-            DamageFlag flag = precHit ? DamageFlag.WeakspotExplo : DamageFlag.Explo;
+            DamageType flag = precHit ? DamageType.WeakspotExplosive : DamageType.Explosive;
             if (cwc != null)
             {
                 cwc.Invoke(new WeaponPreHitEnemyContext(
@@ -180,6 +193,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     damageable,
                     position,
                     direction,
+                    limb.m_base.TempSearchID,
                     weapon,
                     flag
                     ));
