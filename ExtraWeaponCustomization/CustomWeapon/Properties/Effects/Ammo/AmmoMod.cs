@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
 using Gear;
-using ExtraWeaponCustomization.Utils;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
@@ -22,7 +21,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private float _clipBuffer = 0;
         private float _reserveBuffer = 0;
         private float _lastFireTime = 0;
-        private float _lastTriggerTime = 0;
 
         public void Invoke(WeaponPreFireContext context)
         {
@@ -67,7 +65,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             // Need to update UI since UpdateBulletsInPack does it without including the clip
             ammoStorage.UpdateBulletsInPack(weapon.AmmoType, reserveChange);
             ammoStorage.UpdateSlotAmmoUI(ammoStorage.m_ammoStorage[(int) weapon.AmmoType], newClip);
-            _lastTriggerTime = Clock.Time;
         }
 
         public override IWeaponProperty Clone()
