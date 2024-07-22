@@ -63,7 +63,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Dam_EnemyDamageLimb? limb = context.Damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;
             float falloff = IgnoreFalloff ? 1f : context.Falloff;
-            float damage = TotalDamage;
+            float damage = TotalDamage * triggerAmt;
             float backstabMulti = IgnoreBackstab ? 1f : context.Backstab;
             float precisionMulti = PrecisionDamageMulti;
 
@@ -71,7 +71,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (cwc != null)
             {
                 WeaponDamageContext damageContext = new(damage, precisionMulti, context.Damageable, cwc.Weapon);
-                cwc.Invoke(context);
+                cwc.Invoke(damageContext);
                 if (!IgnoreDamageMods)
                     damage = damageContext.Damage.Value;
                 precisionMulti = damageContext.Precision.Value;
