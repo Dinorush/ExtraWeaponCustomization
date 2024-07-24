@@ -46,23 +46,29 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius)
         {
             // Sound
-            _soundShotOverride++;
-            if (_soundShotOverride > Configuration.ExplosionSFXShotOverride || Clock.Time - _lastSoundTime > Configuration.ExplosionSFXCooldown)
+            if (Configuration.PlayExplosionSFX)
             {
-                CellSound.Post(EVENTS.STICKYMINEEXPLODE, position);
-                _soundShotOverride = 0;
-                _lastSoundTime = Clock.Time;
+                _soundShotOverride++;
+                if (_soundShotOverride > Configuration.ExplosionSFXShotOverride || Clock.Time - _lastSoundTime > Configuration.ExplosionSFXCooldown)
+                {
+                    CellSound.Post(EVENTS.STICKYMINEEXPLODE, position);
+                    _soundShotOverride = 0;
+                    _lastSoundTime = Clock.Time;
+                }
             }
 
             // Lighting
-            ExplosionEffectPooling.TryDoEffect(new ExplosionEffectData()
+            if (Configuration.ShowExplosionEffect)
             {
-                position = position,
-                flashColor = FlashColor,
-                intensity = 5.0f,
-                range = radius,
-                duration = 0.05f
-            });
+                ExplosionEffectPooling.TryDoEffect(new ExplosionEffectData()
+                {
+                    position = position,
+                    flashColor = FlashColor,
+                    intensity = 5.0f,
+                    range = radius,
+                    duration = 0.05f
+                });
+            }
         }
 
         internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, BulletWeapon weapon, IDamageable? directLimb = null)
