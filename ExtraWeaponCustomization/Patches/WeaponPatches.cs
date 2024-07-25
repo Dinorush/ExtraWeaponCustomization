@@ -2,6 +2,7 @@
 using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Utils;
 using Gear;
 using HarmonyLib;
 using SNetwork;
@@ -53,7 +54,7 @@ namespace ExtraWeaponCustomization.Patches
         {
             CachedHitCWC = null;
             // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
-            if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null) return;
+            if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null || !doDamage) return;
 
             // Bot/other player filter. All CWC behavior is handled client-side.
             if (!weaponRayData.owner.IsLocallyOwned && (!SNet.IsMaster || !weaponRayData.owner.Owner.IsBot)) return;
@@ -61,39 +62,46 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = weaponRayData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            CachedHitCWC = cwc;
-            IDamageable? damageable = WeaponTriggerContext.GetDamageableFromData(weaponRayData);
+            IDamageable? damageable = DamageableUtil.GetDamageableFromData(weaponRayData);
             IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
 
-            if (doDamage && damageable != null)
+            // Correct piercing damage back to base damage to apply damage mods
+            if (damageable != null && damageSearchID != 0)
             {
-                // Correct piercing damage back to base damage to apply damage mods
-                if (damageSearchID != 0)
+                if (_lastSearchID != damageSearchID)
                 {
-                    if (_lastSearchID != damageSearchID)
-                    {
-                        _lastSearchID = damageSearchID;
-                        _origHitDamage = weaponRayData.damage;
-                    }
-                    else
-                    {
-                        WeaponPierceContext pierceContext = new(_origHitDamage, damageable, cwc.Weapon);
-                        cwc.Invoke(pierceContext);
-                        _origHitDamage = pierceContext.Value;
-                    }
-                    weaponRayData.damage = _origHitDamage;
+                    _lastSearchID = damageSearchID;
+                    _origHitDamage = weaponRayData.damage;
                 }
+                weaponRayData.damage = _origHitDamage;
+            }
 
+            ApplyEWCBulletHit(cwc, damageable, ref weaponRayData, additionalDis, damageSearchID, ref _origHitDamage);
+        }
+
+        public static void ApplyEWCBulletHit(CustomWeaponComponent cwc, IDamageable? damageable, ref WeaponHitData weaponRayData, float additionalDis, uint damageSearchID, ref float pierceDamage)
+        {
+            CachedHitCWC = cwc;
+            
+            if (damageable != null)
+            {
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(weaponRayData.damage, weaponRayData.precisionMulti, damageable, cwc.Weapon);
                 cwc.Invoke(damageContext);
                 weaponRayData.damage = damageContext.Damage.Value;
                 weaponRayData.precisionMulti = damageContext.Precision.Value;
+
+                if (damageSearchID != 0)
+                {
+                    WeaponPierceContext pierceContext = new(pierceDamage, damageable, cwc.Weapon);
+                    cwc.Invoke(pierceContext);
+                    pierceDamage = pierceContext.Value;
+                }
             }
 
             Agent? agent = damageable?.GetBaseAgent();
-            if (doDamage && agent != null && agent.Type == AgentType.Enemy && agent.Alive)
+            if (agent != null && agent.Type == AgentType.Enemy && agent.Alive)
             {
                 Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>()!;
                 WeaponPreHitEnemyContext hitContext = new(
@@ -105,7 +113,7 @@ namespace ExtraWeaponCustomization.Patches
                     );
 
                 cwc.Invoke(hitContext);
-                
+
                 Vector3 localPos = weaponRayData.rayHit.point - damageable.GetBaseAgent().Position;
                 KillTrackerManager.RegisterHit(agent, localPos, cwc.Weapon, hitContext.DamageType);
             }
