@@ -21,32 +21,31 @@ namespace ExtraWeaponCustomization.Patches
                 );
         }
 
+        private static CustomWeaponComponent? _cachedCWC = null;
+
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void RayCallback(Transform alignTransform, ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
+        private static void PreRayCallback(Transform alignTransform, ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
         {
             // Sentry filter
             if (altRayCastMask != -1) return;
 
-            CustomWeaponComponent? cwc = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
+            _cachedCWC = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
+            if (_cachedCWC == null) return;
 
-            cwc.Invoke(new WeaponPreRayContext(weaponRayData, cwc.Weapon));
+            _cachedCWC.Invoke(new WeaponPreRayContext(weaponRayData, _cachedCWC.Weapon));
         }
 
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void PostRayCallback(Transform alignTransform, ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask, ref bool __result)
+        private static void PostRayCallback(Transform alignTransform, ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
         {
             // Sentry filter
             if (altRayCastMask != -1) return;
 
-            CustomWeaponComponent? cwc = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
+            if (_cachedCWC == null) return;
 
-            WeaponPostRayContext context = new(weaponRayData, cwc.Weapon);
-            cwc.Invoke(context);
-            __result &= context.Allow;
+            _cachedCWC.Invoke(new WeaponPostRayContext(weaponRayData, _cachedCWC.Weapon));
         }
     }
 }

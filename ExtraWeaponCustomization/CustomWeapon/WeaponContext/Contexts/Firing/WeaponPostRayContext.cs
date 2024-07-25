@@ -7,7 +7,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
     {
         public WeaponHitData Data { get; }
         public BulletWeapon Weapon { get; }
-        public bool Allow { get; set; } = true;
 
         public WeaponPostRayContext(WeaponHitData weaponHitData, BulletWeapon weapon)
         {
