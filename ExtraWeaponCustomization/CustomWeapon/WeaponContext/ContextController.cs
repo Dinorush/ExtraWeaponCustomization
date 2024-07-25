@@ -164,6 +164,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPostStopFiringContext>();
             RegisterContext<WeaponRecoilContext>();
 
+            RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponPostSetupContext>();
         }
     }

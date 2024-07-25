@@ -1,6 +1,7 @@
 ﻿using Agents;
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Utils;
 using Gear;
 using System;
 using System.Collections;
@@ -13,6 +14,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     public sealed class AutoAim : 
         Trait,
         IWeaponProperty<WeaponPostSetupContext>,
+        IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponPreRayContext>
@@ -35,7 +37,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public CrosshairHitIndicator? _reticle;
         private GameObject? _reticleHolder;
         private BulletWeapon? _weapon;
-        private Camera? _camera;
+        private FPSCamera? _camera;
         private float _detectionTick;
         private EnemyAgent? _target;
         private bool _hasTarget = false;
@@ -69,14 +71,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPreRayContext context)
         {
+            if (_camera == null) return;
+
             // Prioritize aim if looking at the locked enemy
-            if (FavorLookPoint && _camera != null)
+            if (FavorLookPoint)
             {
-                _ray.origin = _camera.transform.position;
+                _ray.origin = _camera.Position;
                 _ray.direction = context.Data.fireDir;
                 if (Physics.Raycast(_ray, out _raycastHit, 100f, LayerManager.MASK_BULLETWEAPON_RAY))
                 {
-                    Agent? agent = WeaponTriggerContext.GetDamageableFromRayHit(_raycastHit)?.GetBaseAgent();
+                    Agent? agent = DamageableUtil.GetDamageableFromRayHit(_raycastHit)?.GetBaseAgent();
                     if (agent != null && agent.Alive && agent == _target)
                         return; // Cancel auto aim (just shoot where user is aiming)
                 }
@@ -85,7 +89,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (UseAutoAim)
             {
                 Vector3 trgtPos = TargetBody ? _target!.AimTargetBody.position : _target!.AimTarget.position;
-                context.Data.fireDir = (trgtPos - context.Data.owner.FPSCamera.Position).normalized;
+                context.Data.fireDir = (trgtPos - _camera.Position).normalized;
             }
         }
 
@@ -98,12 +102,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _reticleHolder = AutoAimReticle.ReticleHolder;
         }
 
+        public void Invoke(WeaponClearContext _)
+        {
+            OnDisable();
+        }
+
         public void Update() 
         {
             if (_weapon == null) return;
 
             if (_camera == null)
-                _camera = _weapon.Owner?.FPSCamera?.m_camera;
+                _camera = _weapon.Owner?.FPSCamera;
 
             bool hasTarget = _hasTarget;
             UpdateDetection();
@@ -192,7 +201,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (_target != null)
             {
                 Vector3 trgtPos = TargetBody ? _target!.AimTargetBody.position : _target!.AimTarget.position;
-                _reticleHolder!.transform.position = _camera!.WorldToScreenPoint(trgtPos);
+                _reticleHolder!.transform.position = _camera!.m_camera.WorldToScreenPoint(trgtPos);
             }
 
             if (UseAutoAim)
@@ -227,7 +236,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private IEnumerator AnimateReticleToCenter()
         {
             Vector3 startPos = _reticleHolder!.transform.position;
-            Vector3 endPos = _camera!.ViewportToScreenPoint(new Vector3(0.5f, 0.5f));
+            Vector3 endPos = _camera!.m_camera.ViewportToScreenPoint(new Vector3(0.5f, 0.5f));
             float startProgress = _progress;
             while(_progress > 0)
             {
@@ -262,8 +271,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (!IgnoreInvisibility && (_target.RequireTagForDetection || TagOnly) && !_target.IsTagged) return false;
 
             // Check if any part of the target is still valid
-            Vector3 position = _weapon!.transform.position;
-            Vector3 forward = _weapon!.transform.forward;
+            Vector3 position = _camera!.Position;
+            Vector3 forward = _camera!.CameraRayDir;
             foreach (Collider collider in _target.GetComponentsInChildren<Collider>())
             {
                 Vector3 targetPos = collider.transform.position;
@@ -278,8 +287,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private EnemyAgent? CheckForTarget()
         {
-            Vector3 forward = _weapon!.transform.forward;
-            Vector3 position = _weapon!.transform.position;
+            Vector3 position = _camera!.Position;
+            Vector3 forward = _camera!.CameraRayDir;
 
             Collider[] colliders = Physics.OverlapSphere(position, Range, LayerManager.MASK_SENTRYGUN_DETECTION_TARGETS);
             _colliderComparer.Set(forward, position);

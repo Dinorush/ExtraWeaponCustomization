@@ -107,9 +107,9 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public void Clear()
         {
+            Invoke(new WeaponClearContext(Weapon));
             _propertyTypes.Clear();
             _contextController.Clear();
-            _autoAim?.OnDisable();
             _autoAim = null;
             _ownerSet = false;
             CurrentFireRate = _fireRate;
