@@ -45,6 +45,7 @@ namespace ExtraWeaponCustomization.Patches
         // (otherwise damage mods apply to future pierce shots exponentially)
         private static uint _lastSearchID = 0;
         private static float _origHitDamage = 0;
+        private static float _origHitPrecision = 0;
         public static CustomWeaponComponent? CachedHitCWC { get; private set; }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
@@ -73,8 +74,10 @@ namespace ExtraWeaponCustomization.Patches
                 {
                     _lastSearchID = damageSearchID;
                     _origHitDamage = weaponRayData.damage;
+                    _origHitPrecision = weaponRayData.precisionMulti;
                 }
                 weaponRayData.damage = _origHitDamage;
+                weaponRayData.precisionMulti = _origHitPrecision;
             }
 
             ApplyEWCBulletHit(cwc, damageable, ref weaponRayData, additionalDis, damageSearchID, ref _origHitDamage);
