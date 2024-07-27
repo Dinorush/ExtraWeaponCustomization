@@ -73,6 +73,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         {
             if (_camera == null) return;
 
+            // Ignore pierced shots
+            if (context.Data.maxRayDist < context.Weapon.MaxRayDist) return;
+
             // Prioritize aim if looking at the locked enemy
             if (FavorLookPoint)
             {
