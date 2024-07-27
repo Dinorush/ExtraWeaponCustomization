@@ -25,7 +25,7 @@ namespace ExtraWeaponCustomization.Patches
 
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void PreRayCallback(Transform alignTransform, ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
+        private static void PreRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
         {
             // Sentry filter
             if (altRayCastMask != -1) return;
@@ -33,19 +33,19 @@ namespace ExtraWeaponCustomization.Patches
             _cachedCWC = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
             if (_cachedCWC == null) return;
 
-            _cachedCWC.Invoke(new WeaponPreRayContext(weaponRayData, _cachedCWC.Weapon));
+            _cachedCWC.Invoke(new WeaponPreRayContext(weaponRayData, originPos, _cachedCWC.Weapon));
         }
 
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void PostRayCallback(Transform alignTransform, ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
+        private static void PostRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
         {
             // Sentry filter
             if (altRayCastMask != -1) return;
 
             if (_cachedCWC == null) return;
 
-            _cachedCWC.Invoke(new WeaponPostRayContext(weaponRayData, _cachedCWC.Weapon));
+            _cachedCWC.Invoke(new WeaponPostRayContext(weaponRayData, originPos, _cachedCWC.Weapon));
         }
     }
 }
