@@ -3,7 +3,6 @@ using UnityEngine;
 using Player;
 using System.Collections.Generic;
 using SNetwork;
-using ExtraWeaponCustomization.Utils;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {

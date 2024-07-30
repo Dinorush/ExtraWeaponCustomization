@@ -1,5 +1,4 @@
-﻿using ExtraWeaponCustomization.Utils;
-using Gear;
+﻿using Gear;
 using HarmonyLib;
 
 namespace ExtraWeaponCustomization.Patches

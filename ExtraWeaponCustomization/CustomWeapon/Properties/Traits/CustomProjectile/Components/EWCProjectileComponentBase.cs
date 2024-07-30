@@ -1,9 +1,10 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using ExtraWeaponCustomization.Utils;
+using Il2CppInterop.Runtime.Attributes;
 using System;
 using System.Collections;
 using UnityEngine;
-using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components
 {
@@ -26,7 +27,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private float _lerpProgress;
         private float _lerpTime;
         private Vector3 _positionVisualDiff;
-        private Vector3 _dirVisualStart;
         protected Vector3 _positionVisual;
         protected Vector3 _dirVisual;
 
@@ -46,7 +46,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             if (enabled) return;
 
             if (_inactiveRoutine != null)
-                CoroutineManager.StopCoroutine(_inactiveRoutine);
+                StopCoroutine(_inactiveRoutine);
 
             gameObject.transform.localScale = Vector3.one;
             s_tempRot.SetLookRotation(_velocity);
@@ -71,7 +71,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _positionVisual = positionVisual;
             _positionVisualDiff = _positionVisual - _position;
             _dirVisual = _position + _velocity * _lerpTime - _positionVisual;
-            _dirVisualStart = _dirVisual;
             s_tempRot.SetLookRotation(_dirVisual);
             gameObject.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
@@ -112,11 +111,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
-            _inactiveRoutine = CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(DelayedInactive()));
+            _inactiveRoutine = StartCoroutine(DelayedInactive().WrapToIl2Cpp());
             EWCProjectileManager.DoProjectileDestroy(_characterIndex, _id);
             Hitbox.Die();
         }
 
+        [HideFromIl2Cpp]
         private IEnumerator DelayedInactive()
         {
             yield return new WaitForSeconds(2f);

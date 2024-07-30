@@ -1,5 +1,4 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
-using ExtraWeaponCustomization.Utils;
 using System;
 using UnityEngine;
 

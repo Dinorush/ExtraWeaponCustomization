@@ -112,11 +112,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             s_ray.direction = velocityDelta;
 
             s_playerCheck.Clear();
-            if (_settings!.Size == _settings.SizeWorld)
+            if (_settings.Size == _settings.SizeWorld)
                 CheckCollision(_settings.Size, EWCProjectileManager.MaskEntityAndWorld);
             else
             {
                 CheckCollision(_settings.Size, EWCProjectileManager.MaskEntity);
+                if (_pierceCount <= 0) return;
                 CheckCollision(_settings.SizeWorld, EWCProjectileManager.MaskWorld);
             }
 
@@ -141,7 +142,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             Array.Sort(hits, DistanceCompare);
             foreach (RaycastHit hit in hits)
             {
-                if (_pierceCount <= 0) break;
                 s_rayHit = hit;
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
 
@@ -153,6 +153,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
                     _base.Die();
                     return;
                 }
+
+                if (_pierceCount <= 0) break;
             }
         }
 
