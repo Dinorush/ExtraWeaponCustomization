@@ -4,6 +4,7 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
+using Il2CppInterop.Runtime.Attributes;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -82,8 +83,10 @@ namespace ExtraWeaponCustomization.CustomWeapon
                 _autoAim?.OnDisable();
         }
 
+        [HideFromIl2Cpp]
         public void Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
 
+        [HideFromIl2Cpp]
         public void Register(IWeaponProperty property)
         {
             if (property is AutoAim autoAim)
@@ -94,6 +97,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _propertyTypes.Add(property.GetType());
         }
 
+        [HideFromIl2Cpp]
         public void Register(CustomWeaponData? data)
         {
             if (data == null) return;
@@ -117,6 +121,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
             Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
+        [HideFromIl2Cpp]
         public bool HasProperty(Type type) => _propertyTypes.Contains(type);
 
         public void StoreCancelShot()
