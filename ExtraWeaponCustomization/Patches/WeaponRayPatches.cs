@@ -5,12 +5,15 @@ using static Weapon;
 using UnityEngine;
 using System.Reflection;
 using System;
+using Gear;
 
 namespace ExtraWeaponCustomization.Patches
 {
     [HarmonyPatch]
     internal static class WeaponRayPatches
     {
+        public static BulletWeapon? CachedWeapon = null;
+
         [HarmonyTargetMethod]
         private static MethodBase FindWeaponRayFunc(Harmony harmony)
         {
@@ -30,7 +33,11 @@ namespace ExtraWeaponCustomization.Patches
             // Sentry filter
             if (altRayCastMask != -1) return;
 
-            _cachedCWC = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
+            if (CachedWeapon != null)
+                _cachedCWC = CachedWeapon.GetComponent<CustomWeaponComponent>();
+            else
+                _cachedCWC = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
+
             if (_cachedCWC == null) return;
 
             _cachedCWC.Invoke(new WeaponPreRayContext(weaponRayData, originPos, _cachedCWC.Weapon));

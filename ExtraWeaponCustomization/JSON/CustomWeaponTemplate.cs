@@ -31,6 +31,7 @@ namespace ExtraWeaponCustomization.JSON
                     new Explosive(),
                     new HoldBurst(),
                     new PierceMulti(),
+                    new CustomWeapon.Properties.Traits.Projectile(),
                     new ReserveClip(),
                     new TumorMulti()
                 }

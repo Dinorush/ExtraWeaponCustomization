@@ -8,6 +8,8 @@ using Il2CppInterop.Runtime.Injection;
 using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 
 namespace ExtraWeaponCustomization;
 
@@ -27,24 +29,28 @@ internal sealed class EntryPoint : BasePlugin
 
         new Harmony(MODNAME).PatchAll();
         Configuration.Init();
-        LevelAPI.OnEnterLevel += LevelAPI_OnEnterLevel;
+        LevelAPI.OnLevelCleanup += LevelAPI_OnLevelCleanup;
         AssetAPI.OnStartupAssetsLoaded += AssetAPI_OnStartupAssetsLoaded;
         EWCLogger.Log("Loaded " + MODNAME);
     }
 
-    private void LevelAPI_OnEnterLevel()
+    private void LevelAPI_OnLevelCleanup()
     {
         CustomWeaponManager.Current.ResetCWCs();
+        EWCProjectileManager.Reset();
     }
 
     private void AssetAPI_OnStartupAssetsLoaded()
     {
         ClassInjector.RegisterTypeInIl2Cpp<ExplosionEffectHandler>();
         ClassInjector.RegisterTypeInIl2Cpp<CustomWeaponComponent>();
+        ClassInjector.RegisterTypeInIl2Cpp<EWCProjectileComponentBase>();
+        ClassInjector.RegisterTypeInIl2Cpp<EWCProjectileComponentShooter>();
         ExplosionManager.Init();
         DOTDamageManager.Init();
         HealManager.Init();
         KillAPIWrapper.Init();
+        EWCProjectileManager.Init();
         CustomWeaponManager.Current.GetCustomWeaponData(0); // Just want to make it get custom weapon data on startup, need to call something
     }
 }
