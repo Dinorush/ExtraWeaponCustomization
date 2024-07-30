@@ -38,9 +38,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private static RaycastHit s_rayHit;
         private readonly static HashSet<int> s_playerCheck = new(4);
 
-        static float lastUpdateTime = 0;
-        static int updatedInFrame = 0;
-
 #pragma warning disable CS8618
         // Hidden null warnings since other methods will initialize members prior to Update
         public EWCProjectileHitbox(EWCProjectileComponentBase comp) 
@@ -93,7 +90,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _basePrecision = _hitData.precisionMulti;
             _distanceMoved = 0;
             _lastFixedTime = Time.fixedTime;
-            lastUpdateTime = Time.time;
         }
 
         public void Die()
@@ -124,6 +120,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
                 CheckCollision(_settings.SizeWorld, EWCProjectileManager.MaskWorld);
             }
 
+            // Player moves on fixed time so only remove on fixed time
             if (_lastFixedTime != Time.fixedTime && _initialPlayers.Count != 0)
             {
                 _initialPlayers.RemoveWhere(id => !s_playerCheck.Contains(id));
