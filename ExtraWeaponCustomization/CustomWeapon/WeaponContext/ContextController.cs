@@ -161,6 +161,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreStartFireContext>();
             RegisterContext<WeaponPostStartFireContext>();
             RegisterContext<WeaponPreRayContext>();
+            RegisterContext<WeaponPostRayContext>();
             RegisterContext<WeaponPostStopFiringContext>();
             RegisterContext<WeaponRecoilContext>();
 
