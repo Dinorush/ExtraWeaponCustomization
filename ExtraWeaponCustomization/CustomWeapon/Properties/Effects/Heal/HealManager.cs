@@ -3,7 +3,7 @@ using Player;
 using SNetwork;
 using System;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Heal
 {
     public static class HealManager
     {

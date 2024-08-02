@@ -1,5 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.Utils;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Heal;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using Player;
 using System;
 using System.Collections.Generic;

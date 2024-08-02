@@ -1,7 +1,7 @@
 ﻿using ExtraWeaponCustomization.Networking;
 using Player;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Heal
 {
     internal sealed class HealSync : SyncedEventMasterOnly<HealData>
     {
