@@ -6,6 +6,7 @@ using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Dependencies;
+using ExtraWeaponCustomization.Networking.Structs;
 using ExtraWeaponCustomization.Utils;
 using Gear;
 using Player;
@@ -27,6 +28,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private static int _soundShotOverride = 0;
         public const float MaxRadius = 1024f;
         public const float MaxStagger = 16384f; // 2^14
+        public const float MaxGlowDuration = 50f;
 
         internal static void Init()
         {
@@ -37,13 +39,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon, IDamageable? directLimb = null)
         {
-            ExplosionFXData fxData = new() { position = position };
+            ExplosionFXData fxData = new() { position = position, color = eBase.GlowColor };
             fxData.radius.Set(eBase.Radius, MaxRadius);
+            fxData.duration.Set(eBase.GlowDuration, MaxGlowDuration);
             FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
             DoExplosionDamage(position, direction, source, falloffMod, eBase, weapon, directLimb);
         }
     
-        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius)
+        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, Color color, float duration)
         {
             // Sound
             if (Configuration.PlayExplosionSFX)
@@ -63,10 +66,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 ExplosionEffectPooling.TryDoEffect(new ExplosionEffectData()
                 {
                     position = position,
-                    flashColor = FlashColor,
+                    flashColor = color,
                     intensity = 5.0f,
                     range = radius,
-                    duration = 0.05f
+                    duration = duration
                 });
             }
         }
@@ -263,5 +266,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         public Vector3 position;
         public UFloat16 radius;
+        public LowResColor color;
+        public UFloat16 duration;
     }
 }

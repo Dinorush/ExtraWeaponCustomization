@@ -8,7 +8,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         protected override void Receive(ExplosionFXData packet)
         {
-            ExplosionManager.Internal_ReceiveExplosionFX(packet.position, packet.radius.Get(ExplosionManager.MaxRadius));
+            ExplosionManager.Internal_ReceiveExplosionFX(
+                packet.position,
+                packet.radius.Get(ExplosionManager.MaxRadius),
+                packet.color,
+                packet.duration.Get(ExplosionManager.MaxGlowDuration)
+                );
         }
 
         protected override void ReceiveLocal(ExplosionFXData packet)

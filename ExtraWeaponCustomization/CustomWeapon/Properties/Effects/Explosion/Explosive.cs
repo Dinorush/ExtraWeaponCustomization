@@ -20,6 +20,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreArmor { get; set; } = false;
         public bool IgnoreBackstab { get; set; } = false;
         public bool IgnoreDamageMods { get; set; } = false;
+        public Color GlowColor { get; set; } = ExplosionManager.FlashColor;
+        public float GlowDuration { get; set; } = 0.05f;
 
         public float CacheBackstab { get; private set; } = 0f;
 
@@ -65,6 +67,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 IgnoreFalloff = IgnoreFalloff,
                 IgnoreBackstab = IgnoreBackstab,
                 IgnoreDamageMods = IgnoreDamageMods,
+                GlowColor = GlowColor,
+                GlowDuration = GlowDuration,
                 Trigger = Trigger?.Clone()
             };
             return copy;
@@ -85,6 +89,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
+            writer.WritePropertyName(nameof(GlowColor));
+            JsonSerializer.Serialize(writer, GlowColor, options);
+            writer.WriteNumber(nameof(GlowDuration), GlowDuration);
             writer.WriteEndObject();
         }
 
@@ -136,6 +143,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "ignoredamagemods":
                 case "ignoredamagemod":
                     IgnoreDamageMods = reader.GetBoolean();
+                    break;
+                case "glowcolor":
+                case "color":
+                    GlowColor = JsonSerializer.Deserialize<Color>(ref reader, options);
+                    break;
+                case "glowduration":
+                case "duration":
+                    GlowDuration = reader.GetSingle();
                     break;
                 default:
                     break;
