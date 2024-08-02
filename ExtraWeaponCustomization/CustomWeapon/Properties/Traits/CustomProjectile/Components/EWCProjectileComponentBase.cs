@@ -1,6 +1,5 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
-using ExtraWeaponCustomization.Utils;
 using Il2CppInterop.Runtime.Attributes;
 using System;
 using System.Collections;
@@ -19,10 +18,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
         private float _endLifetime;
         private Coroutine? _inactiveRoutine;
-        protected Vector3 _dir;
         protected Vector3 _velocity;
         protected Vector3 _position;
-        protected float _Gravity;
+        protected float _gravity;
 
         private float _lerpProgress;
         private float _lerpTime;
@@ -33,7 +31,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         protected static Quaternion s_tempRot;
         private const float MaxLifetime = 20f;
         public const float VisualLerpDist = 2f;
-        private int _characterIndex;
+        private bool _sendDestroy;
         private ushort _id;
 
         protected virtual void Awake()
@@ -41,15 +39,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             enabled = false;
         }
 
-        public virtual void Init(int characterIndex, ushort ID, Vector3 position, Vector3 velocity, float gravity)
+        public virtual void Init(ushort ID, Vector3 position, Vector3 velocity, float gravity, float scale, bool sendDestroy)
         {
             if (enabled) return;
 
             if (_inactiveRoutine != null)
                 StopCoroutine(_inactiveRoutine);
 
-            gameObject.transform.localScale = Vector3.one;
-            s_tempRot.SetLookRotation(_velocity);
+            gameObject.transform.localScale = Vector3.one * scale;
+            s_tempRot.SetLookRotation(velocity);
             gameObject.transform.SetPositionAndRotation(position, s_tempRot);
             gameObject.active = true;
             enabled = true;
@@ -57,8 +55,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _endLifetime = Time.time + MaxLifetime;
             _position = position;
             _velocity = velocity;
-            _Gravity = gravity;
-            _characterIndex = characterIndex;
+            _gravity = gravity;
+            _sendDestroy = sendDestroy;
             _id = ID;
         }
 
@@ -112,7 +110,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
             _inactiveRoutine = StartCoroutine(DelayedInactive().WrapToIl2Cpp());
-            EWCProjectileManager.DoProjectileDestroy(_characterIndex, _id);
+            if (_sendDestroy)
+                EWCProjectileManager.DoProjectileDestroy(_id);
             Hitbox.Die();
         }
 
@@ -122,11 +121,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             yield return new WaitForSeconds(2f);
             gameObject.active = false;
             _inactiveRoutine = null;
-        }
-
-        private void OnDestroy()
-        {
-            EWCLogger.Error("Destroy was called for an EWC projectile!");
         }
     }
 }

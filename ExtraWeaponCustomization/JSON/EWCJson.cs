@@ -23,6 +23,8 @@ namespace ExtraWeaponCustomization.JSON
             _setting.Converters.Add(new WeaponPropertyConverter());
             _setting.Converters.Add(new TriggerConverter());
             _setting.Converters.Add(new TriggerCoordinatorConverter());
+            _setting.Converters.Add(new ColorConverter());
+
             if (MTFOPartialDataUtil.IsLoaded)
             {
                 _setting.Converters.Add(MTFOPartialDataUtil.PersistentIDConverter!);

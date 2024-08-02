@@ -11,15 +11,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private TrailRenderer? _trailRenderer;
         public ProjectileType Type;
 
+        private Color _origGlowColor;
+        private float _origGlowRange;
+
 #pragma warning disable CS8618
         public EWCProjectileComponentShooter(IntPtr ptr) : base(ptr) { }
 #pragma warning restore CS8618
 
-        public override void Init(int characterIndex, ushort ID, Vector3 position, Vector3 velocity, float gravity)
+        public override void Init(ushort ID, Vector3 position, Vector3 velocity, float gravity, float scale, bool sendDestroy)
         {
             if (enabled) return;
 
-            base.Init(characterIndex, ID, position, velocity, gravity);
+            base.Init(ID, position, velocity, gravity, scale, sendDestroy);
 
             _trailRenderer?.Clear();
             foreach (var effect in _projectile.m_effectsToStopEmittingOnImpact)
@@ -29,8 +32,23 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
             if (_targeting != null)
             {
-                _targeting.m_light.enabled = true;
-                _targeting.m_ricochetEffect.active = true;
+                if (_targeting.m_light != null)
+                    _targeting.m_light.enabled = true;
+                if (_targeting.m_ricochetEffect != null)
+                    _targeting.m_ricochetEffect.active = true;
+            }
+        }
+
+        public void Init(ushort ID, Vector3 position, Vector3 velocity, float gravity, float scale, Color glowColor, float glowRange, bool sendDestroy)
+        {
+            if (enabled) return;
+
+            Init(ID, position, velocity, gravity, scale, sendDestroy);
+
+            if (_targeting != null && _targeting.m_light != null)
+            {
+                _targeting.m_light.Color = Approximately(glowColor, Color.black) ? _origGlowColor : glowColor;
+                _targeting.m_light.Range = glowRange < 0f ? _origGlowRange : glowRange;
             }
         }
 
@@ -43,11 +61,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _projectile.m_soundPlayer.Stop();
             _projectile.enabled = false;
             _trailRenderer = GetComponentInChildren<TrailRenderer>();
+            if (_targeting != null && _targeting.m_light != null)
+            {
+                _origGlowColor = _targeting.m_light.Color;
+                _origGlowRange = _targeting.m_light.Range;
+            }
         }
 
         protected override void Update()
         {
-            _velocity.y -= _Gravity * Time.deltaTime;
+            _velocity.y -= _gravity * Time.deltaTime;
             Vector3 velocity = _velocity * Time.deltaTime;
             _position += velocity;
             base.Update();
@@ -66,11 +89,21 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
             if (_targeting != null)
             {
-                _targeting.m_light.enabled = false;
-                _targeting.m_ricochetEffect.active = false;
+                if (_targeting.m_light != null)
+                    _targeting.m_light.enabled = false;
+                if (_targeting.m_ricochetEffect != null)
+                    _targeting.m_ricochetEffect.active = false;
             }
 
             EWCProjectileManager.Shooter.ReturnToPool(this);
+        }
+
+        private static bool Approximately(Color color1, Color color2)
+        {
+            return Mathf.Approximately(color1.a, color2.a)
+                && Mathf.Approximately(color1.r, color2.r)
+                && Mathf.Approximately(color1.g, color2.g)
+                && Mathf.Approximately(color1.b, color2.b);
         }
     }
 }

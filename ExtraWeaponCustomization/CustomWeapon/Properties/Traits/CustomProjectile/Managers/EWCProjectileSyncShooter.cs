@@ -9,12 +9,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         protected override void Receive(ProjectileDataShooter packet)
         {
             EWCProjectileManager.Shooter.Internal_ReceiveProjectile(
-                packet.characterIndex,
                 packet.id,
                 packet.type,
                 packet.position,
-                packet.velocity,
-                packet.gravity.Get(EWCProjectileManager.MaxGravity)
+                packet.dir.Value * packet.speed.Get(EWCProjectileManager.MaxSpeed),
+                packet.gravity.Get(EWCProjectileManager.MaxGravity),
+                packet.scale.Get(EWCProjectileManager.MaxScale),
+                packet.glowColor,
+                packet.glowRange.Get(EWCProjectileManager.MaxGlowRange)
                 );
         }
     }

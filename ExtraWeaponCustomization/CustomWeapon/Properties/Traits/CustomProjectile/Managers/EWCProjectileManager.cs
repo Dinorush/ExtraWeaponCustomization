@@ -6,16 +6,20 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 {
     public static class EWCProjectileManager
     {
-        private static readonly List<LinkedList<(ushort id, EWCProjectileComponentBase comp)>> _playerProjectiles = new();
+        internal static readonly LinkedList<(ushort id, EWCProjectileComponentBase comp)> PlayerProjectiles = new();
 
         public static readonly EWCProjectileManagerShooter Shooter = new();
 
         private static readonly EWCProjectileSyncDestroy _destroySync = new();
 
+        public const float MaxSpeed = 4096; // 2^12
         public const float MaxGravity = 1024f; // 2^10
-        public static int MaskEntityAndWorld;
-        public static int MaskEntity;
-        public static int MaskWorld;
+        public const float MaxScale = 1024f;
+        public const float MaxGlowRange = 1024f;
+
+        public static int MaskEntityAndWorld { get; private set; }
+        public static int MaskEntity { get; private set; }
+        public static int MaskWorld { get; private set; }
 
         internal static void Init()
         {
@@ -29,59 +33,47 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         internal static void Reset()
         {
             Shooter.Reset();
-            _playerProjectiles.Clear();
+            PlayerProjectiles.Clear();
         }
 
-        internal static LinkedList<(ushort id, EWCProjectileComponentBase comp)> GetProjectileList(int characterIndex)
+        internal static ushort GetNextID()
         {
-            _playerProjectiles.EnsureCapacity(characterIndex + 1);
-            while (_playerProjectiles.Count <= characterIndex)
-                _playerProjectiles.Add(new());
-            return _playerProjectiles[characterIndex];
-        }
-
-        internal static ushort GetNextID(int characterIndex)
-        {
-            var list = GetProjectileList(characterIndex);
-            if (list.Count == 0)
+            if (PlayerProjectiles.Count == 0)
                 return 0;
 
-            return (ushort)(list.Last!.Value.id + 1);
+            return (ushort)(PlayerProjectiles.Last!.Value.id + 1);
         }
 
-        internal static (ushort id, EWCProjectileComponentBase? comp) GetPair(int characterIndex, ushort id)
+        internal static (ushort id, EWCProjectileComponentBase comp)? GetPair(ushort id)
         {
-            foreach (var pair in GetProjectileList(characterIndex))
+            foreach (var pair in PlayerProjectiles)
                 if (pair.id == id)
                     return pair;
-            return (0, null);
+            return null;
         }
 
-        public static void DoProjectileDestroy(int characterIndex, ushort id)
+        public static void DoProjectileDestroy(ushort id)
         {
-            if (characterIndex < 0) return;
-
-            ProjectileDataDestroy data = new() { characterIndex = (ushort)characterIndex, id = id };
+            ProjectileDataDestroy data = new() { id = id };
             _destroySync.Send(data);
 
-            var pair = GetPair(characterIndex, id);
-            if (pair.comp == null) return;
-            GetProjectileList(characterIndex).Remove(pair!);
+            var pair = GetPair(id);
+            if (pair == null) return;
+            PlayerProjectiles.Remove(pair.Value);
         }
 
-        internal static void Internal_ReceiveProjectileDestroy(int characterIndex, ushort id)
+        internal static void Internal_ReceiveProjectileDestroy(ushort id)
         {
-            var pair = GetPair(characterIndex, id);
-            if (pair.comp == null) return;
+            var pair = GetPair(id);
+            if (pair == null) return;
 
-            pair.comp.Die();
-            GetProjectileList(characterIndex).Remove(pair!);
+            pair.Value.comp.Die();
+            PlayerProjectiles.Remove(pair.Value);
         }
     }
 
     public struct ProjectileDataDestroy
     {
-        public ushort characterIndex;
         public ushort id;
     }
 }

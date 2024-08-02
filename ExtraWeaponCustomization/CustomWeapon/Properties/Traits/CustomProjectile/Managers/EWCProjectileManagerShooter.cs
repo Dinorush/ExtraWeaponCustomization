@@ -1,8 +1,8 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using UnityEngine;
-using Player;
 using System.Collections.Generic;
 using SNetwork;
+using ExtraWeaponCustomization.Networking.Structs;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
@@ -18,8 +18,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
         public void Reset()
         {
-            foreach(var queue in _pools.Values)
-                foreach(var comp in queue)
+            foreach (var queue in _pools.Values)
+                foreach (var comp in queue)
                     GameObject.Destroy(comp.gameObject);
 
             _pools.Clear();
@@ -45,43 +45,46 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             return comp;
         }
 
-        public EWCProjectileComponentShooter? CreateProjectile(PlayerAgent source, ProjectileType type, Vector3 position, Vector3 velocity, float gravity)
+        public EWCProjectileComponentShooter? CreateAndSendProjectile(ProjectileType type, Vector3 position, Vector3 velocity, float gravity, float scale, Color glowColor, float glowRange)
         {
-            int characterIndex = source.Owner.CharacterIndex;
-            if (characterIndex < 0) return null;
-
             ProjectileDataShooter data = new()
             {
-                characterIndex = (ushort)characterIndex,
-                id = EWCProjectileManager.GetNextID(characterIndex),
+                id = EWCProjectileManager.GetNextID(),
                 type = type,
                 position = position,
-                velocity = velocity
+                glowColor = glowColor
             };
+            data.dir.Value = velocity.normalized;
+            data.speed.Set(velocity.magnitude, EWCProjectileManager.MaxSpeed);
             data.gravity.Set(gravity, EWCProjectileManager.MaxGravity);
+            data.scale.Set(scale, EWCProjectileManager.MaxScale);
+            data.glowRange.Set(glowRange, EWCProjectileManager.MaxGlowRange);
 
             s_shooterSync.Send(data);
             EWCProjectileComponentShooter comp = GetFromPool(type);
-            EWCProjectileManager.GetProjectileList(characterIndex).AddLast((data.id, comp));
-            comp.Init(characterIndex, data.id, position, velocity, gravity);
+            EWCProjectileManager.PlayerProjectiles.AddLast((data.id, comp));
+            comp.Init(data.id, position, velocity, gravity, scale, glowColor, glowRange, true);
             return comp;
         }
 
-        internal void Internal_ReceiveProjectile(int characterIndex, ushort id, ProjectileType type, Vector3 position, Vector3 velocity, float gravity)
+        internal void Internal_ReceiveProjectile(ushort id, ProjectileType type, Vector3 position, Vector3 velocity, float gravity, float scale, Color glowColor, float glowRange)
         {
             EWCProjectileComponentShooter comp = GetFromPool(type);
-            EWCProjectileManager.GetProjectileList(characterIndex).AddLast((id, comp));
-            comp.Init(-1, id, position, velocity, gravity);
+            EWCProjectileManager.PlayerProjectiles.AddLast((id, comp));
+            comp.Init(id, position, velocity, gravity, scale, glowColor, glowRange, false);
         }
     }
 
     public struct ProjectileDataShooter
     {
-        public ushort characterIndex;
         public ushort id;
         public ProjectileType type;
         public Vector3 position;
-        public Vector3 velocity;
+        public LowResVector3_Normalized dir;
+        public UFloat16 speed;
         public UFloat16 gravity;
+        public UFloat16 scale;
+        public LowResColor glowColor;
+        public SFloat16 glowRange;
     }
 }

@@ -149,7 +149,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
                     DoDamage(damageable);
                 else // Hit a wall
                 {
-                    DoImpactFX(damageable);
+                    BulletHit(null);
                     _base.Die();
                     return;
                 }
@@ -178,10 +178,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private bool ShouldDamage(IDamageable damageable)
         {
             Agent? agent = damageable.GetBaseAgent();
-            if (agent != null && agent.Type == AgentType.Player && _initialPlayers.Contains(agent.GetInstanceID()))
+            if (agent != null)
             {
-                s_playerCheck.Add(agent.GetInstanceID());
-                return false;
+                if (agent.Type == AgentType.Player && _initialPlayers.Contains(agent.GetInstanceID()))
+                {
+                    s_playerCheck.Add(agent.GetInstanceID());
+                    return false;
+                }
+                else if (!agent.Alive)
+                    return false;
             }
 
             if (_searchID == 0) return true;
@@ -214,7 +219,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         }
 
         // Can't call base game bullet hit since WeaponPatches assumes hitscan bullets for its logic
-        private void BulletHit(IDamageable damageable)
+        private void BulletHit(IDamageable? damageable)
         {
             _hitData.damage = _baseDamage;
             _hitData.precisionMulti = _basePrecision;
@@ -224,7 +229,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             DoImpactFX(damageable);
 
             WeaponPatches.ApplyEWCBulletHit(_baseCWC!, damageable, ref _hitData, _distanceMoved, _searchID, ref _baseDamage);
-            float damage = _hitData.damage * _hitData.Falloff(_distanceMoved);
+            float damage = _hitData.damage * _hitData.Falloff(_distanceMoved + _hitData.rayHit.distance);
             damageable?.BulletDamage(damage, _hitData.owner, _hitData.rayHit.point, _hitData.fireDir, _hitData.rayHit.normal, allowDirectionalBonus: true, _hitData.staggerMulti, _hitData.precisionMulti);
         }
     }

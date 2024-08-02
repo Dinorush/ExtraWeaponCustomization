@@ -1,5 +1,4 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
 using FX_EffectSystem;
@@ -16,13 +15,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPostRayContext>,
-        IWeaponProperty<WeaponPostFireContext>
+        IWeaponProperty<WeaponPostFireContext>,
+        IWeaponProperty<WeaponPostFireContextSync>
     {
         public ProjectileType ProjectileType { get; set; } = ProjectileType.TargetingSmall;
         public float Speed { get; set; } = 0f;
         public float Gravity { get; set; } = 1f;
         public float Size { get; set; } = 0f;
         public float SizeWorld { get; set; } = 0f;
+        public float ModelScale { get; set; } = 1f;
+        public float VisualLerpDist { get; set; } = 5f;
+        public Color GlowColor { get; set; } = Color.black;
+        public float GlowRange { get; set; } = -1f;
 
         private CustomWeaponComponent? _cachedCWC;
         private float _weaponRayDist = 100f;
@@ -47,13 +51,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             s_ray.origin = context.Position;
             s_ray.direction = context.Data.fireDir;
-            float visualDist = EWCProjectileComponentBase.VisualLerpDist;
+            float visualDist = VisualLerpDist;
             if (Physics.Raycast(s_ray, out s_rayHit, visualDist, LayerManager.MASK_BULLETWEAPON_RAY))
                 visualDist = s_rayHit.distance;
 
             Vector3 position = context.Position + context.Data.fireDir * Math.Min(visualDist, 0.1f);
 
-            var comp = EWCProjectileManager.Shooter.CreateProjectile(context.Weapon.Owner, ProjectileType, position, context.Data.fireDir * Speed, Gravity);
+            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(ProjectileType, position, context.Data.fireDir * Speed, Gravity, ModelScale, GlowColor, GlowRange);
             if (comp == null)
             {
                 EWCLogger.Error("Unable to create shooter projectile!");
@@ -70,9 +74,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         {
             if (!context.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || context.Weapon.Owner.Owner.IsBot)) return;
 
+            CancelTracerFX(context.Weapon, context.Weapon.TryCast<Shotgun>() != null);
+        }
+
+        public void Invoke(WeaponPostFireContextSync context)
+        {
+            CancelTracerFX(context.Weapon, context.Weapon.TryCast<ShotgunSynced>() != null);
+        }
+
+        private void CancelTracerFX(BulletWeapon weapon, bool isShotgun)
+        {
             int shots = 1;
-            if (context.Weapon.TryCast<Shotgun>() != null)
-                shots = context.Weapon.ArchetypeData.ShotgunBulletCount;
+            if (isShotgun)
+                shots = weapon.ArchetypeData.ShotgunBulletCount;
 
             for (int i = 0; i < shots; i++)
             {
@@ -94,7 +108,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 Speed = Speed,
                 Gravity = Gravity,
                 Size = Size,
-                SizeWorld = SizeWorld
+                SizeWorld = SizeWorld,
+                ModelScale = ModelScale,
+                VisualLerpDist = VisualLerpDist,
+                GlowColor = GlowColor,
+                GlowRange = GlowRange
             };
             return copy;
         }
@@ -108,6 +126,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(Gravity), Gravity);
             writer.WriteNumber(nameof(Size), Size);
             writer.WriteNumber(nameof(SizeWorld), SizeWorld);
+            writer.WriteNumber(nameof(ModelScale), ModelScale);
+            writer.WritePropertyName(nameof(GlowColor));
+            JsonSerializer.Serialize(writer, GlowColor, options);
+            writer.WriteNumber(nameof(GlowRange), GlowRange);
+            writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteEndObject();
         }
 
@@ -130,6 +153,22 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "sizeworld":
                     SizeWorld = reader.GetSingle();
+                    break;
+                case "modelscale":
+                case "scale":
+                    ModelScale = reader.GetSingle();
+                    break;
+                case "glowcolor":
+                case "color":
+                    GlowColor = JsonSerializer.Deserialize<Color>(ref reader, options);
+                    break;
+                case "glowrange":
+                case "range":
+                    GlowRange = reader.GetSingle();
+                    break;
+                case "visuallerpdist":
+                case "lerpdist":
+                    VisualLerpDist = reader.GetSingle();
                     break;
             }
         }
