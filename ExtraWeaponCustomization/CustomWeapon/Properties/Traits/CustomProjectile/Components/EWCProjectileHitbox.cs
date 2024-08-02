@@ -112,13 +112,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             s_ray.direction = velocityDelta;
 
             s_playerCheck.Clear();
-            if (_settings.Size == _settings.SizeWorld)
-                CheckCollision(_settings.Size, EWCProjectileManager.MaskEntityAndWorld);
+            if (_settings.HitSize == _settings.HitSizeWorld)
+                CheckCollision(_settings.HitSize, EWCProjectileManager.MaskEntityAndWorld);
             else
             {
-                CheckCollision(_settings.Size, EWCProjectileManager.MaskEntity);
+                CheckCollision(_settings.HitSize, EWCProjectileManager.MaskEntity);
                 if (_pierceCount <= 0) return;
-                CheckCollision(_settings.SizeWorld, EWCProjectileManager.MaskWorld);
+                CheckCollision(_settings.HitSizeWorld, EWCProjectileManager.MaskWorld);
             }
 
             // Player moves on fixed time so only remove on fixed time

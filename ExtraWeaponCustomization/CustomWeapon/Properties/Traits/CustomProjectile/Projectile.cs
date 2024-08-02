@@ -20,13 +20,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     {
         public ProjectileType ProjectileType { get; set; } = ProjectileType.TargetingSmall;
         public float Speed { get; set; } = 0f;
-        public float Gravity { get; set; } = 1f;
-        public float Size { get; set; } = 0f;
-        public float SizeWorld { get; set; } = 0f;
+        public float Gravity { get; set; } = 0f;
+        public float HitSize { get; set; } = 0f;
+        public float HitSizeWorld { get; set; } = 0f;
         public float ModelScale { get; set; } = 1f;
-        public float VisualLerpDist { get; set; } = 5f;
         public Color GlowColor { get; set; } = Color.black;
         public float GlowRange { get; set; } = -1f;
+        public float VisualLerpDist { get; set; } = 5f;
 
         private CustomWeaponComponent? _cachedCWC;
         private float _weaponRayDist = 100f;
@@ -51,7 +51,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             s_ray.origin = context.Position;
             s_ray.direction = context.Data.fireDir;
-            float visualDist = VisualLerpDist;
+            float visualDist = VisualLerpDist > 0.1f ? VisualLerpDist : 0.1f;
             if (Physics.Raycast(s_ray, out s_rayHit, visualDist, LayerManager.MASK_BULLETWEAPON_RAY))
                 visualDist = s_rayHit.distance;
 
@@ -65,7 +65,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             }
 
             _cachedCWC ??= context.Weapon.GetComponent<CustomWeaponComponent>();
-            comp.SetVisualPosition(context.Weapon.MuzzleAlign.position, visualDist);
+            if (VisualLerpDist > 0)
+                comp.SetVisualPosition(context.Weapon.MuzzleAlign.position, visualDist);
             comp.Hitbox.Init(_cachedCWC, this);
         }
 
@@ -107,12 +108,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 ProjectileType = ProjectileType,
                 Speed = Speed,
                 Gravity = Gravity,
-                Size = Size,
-                SizeWorld = SizeWorld,
+                HitSize = HitSize,
+                HitSizeWorld = HitSizeWorld,
                 ModelScale = ModelScale,
-                VisualLerpDist = VisualLerpDist,
                 GlowColor = GlowColor,
-                GlowRange = GlowRange
+                GlowRange = GlowRange,
+                VisualLerpDist = VisualLerpDist
             };
             return copy;
         }
@@ -124,8 +125,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteString(nameof(ProjectileType), ProjectileType.ToString());
             writer.WriteNumber(nameof(Speed), Speed);
             writer.WriteNumber(nameof(Gravity), Gravity);
-            writer.WriteNumber(nameof(Size), Size);
-            writer.WriteNumber(nameof(SizeWorld), SizeWorld);
+            writer.WriteNumber(nameof(HitSize), HitSize);
+            writer.WriteNumber(nameof(HitSizeWorld), HitSizeWorld);
             writer.WriteNumber(nameof(ModelScale), ModelScale);
             writer.WritePropertyName(nameof(GlowColor));
             JsonSerializer.Serialize(writer, GlowColor, options);
@@ -148,15 +149,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 case "gravity":
                     Gravity = reader.GetSingle();
                     break;
+                case "hitsize":
                 case "size":
-                    Size = reader.GetSingle();
+                    HitSize = Math.Max(0, reader.GetSingle());
                     break;
+                case "hitsizeworld":
                 case "sizeworld":
-                    SizeWorld = reader.GetSingle();
+                    HitSizeWorld = Math.Max(0, reader.GetSingle());
                     break;
                 case "modelscale":
                 case "scale":
-                    ModelScale = reader.GetSingle();
+                    ModelScale = Math.Max(0, reader.GetSingle());
                     break;
                 case "glowcolor":
                 case "color":
