@@ -136,7 +136,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             _allContextLists.TryAdd(typeof(TContext), new ContextList<TContext>(this));
         }
 
-        internal void RegisterAllContexts()
+        private void RegisterAllContexts()
         {
             RegisterContext<WeaponTriggerContext>();
             RegisterContext<WeaponDamageTypeContext>();
@@ -167,6 +167,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
 
             RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponPostSetupContext>();
+        }
+
+        internal void ChangeToSyncContexts()
+        {
+            _allContextLists.Clear();
+            RegisterContext<WeaponFireRateContext>();
+            RegisterContext<WeaponFireRateSetContext>();
+            RegisterContext<WeaponFireRateModContextSync>();
+            RegisterContext<WeaponPreFireContextSync>();
+            RegisterContext<WeaponPostFireContextSync>();
         }
     }
 }

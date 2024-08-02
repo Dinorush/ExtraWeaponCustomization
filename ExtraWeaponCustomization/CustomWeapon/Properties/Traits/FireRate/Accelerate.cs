@@ -2,6 +2,7 @@
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
+using Gear;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -13,9 +14,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         ITriggerCallback,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireRateSetContext>,
-        IWeaponProperty<WeaponPostStopFiringContext>,
         IWeaponProperty<WeaponCancelFireContext>,
-        IWeaponProperty<WeaponDamageContext>
+        IWeaponProperty<WeaponDamageContext>,
+        IWeaponProperty<WeaponPreFireContextSync>
     {
         private float _endShotDelay = 1f;
         public float EndShotDelay
@@ -69,13 +70,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private float _resetUpdateTime = 0f;
         private CustomWeaponComponent? _cachedCWC;
 
-        public void Invoke(WeaponPreStartFireContext context)
+        private void UpdateProgress(BulletWeapon weapon)
         {
             _resetProgress = _progress;
             _resetUpdateTime = _lastUpdateTime;
 
-            if (_cachedCWC == null)
-                _cachedCWC = context.Weapon.GetComponent<CustomWeaponComponent>();
+            _cachedCWC ??= weapon.GetComponent<CustomWeaponComponent>();
+
             if (_lastUpdateTime == 0f)
                 _lastUpdateTime = Clock.Time;
 
@@ -83,6 +84,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             float accelTime = Math.Min(1f / _cachedCWC.CurrentFireRate, delta);
 
             _progress = Math.Min(_progress + accelTime / AccelTime, 1f);
+
             delta -= accelTime + Clock.Delta;
 
             if (delta > 0 && delta > DecelDelay)
@@ -91,6 +93,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _lastUpdateTime = Clock.Time;
         }
 
+        public void Invoke(WeaponPreStartFireContext context)
+        {
+            UpdateProgress(context.Weapon);   
+        }
+
+        // Runs on every shot fired. Don't need to do a full UpdateProgress since we know the player is
+        // holding down the trigger if there are consecutive calls to this without UpdateProgress.
         public void Invoke(WeaponFireRateSetContext context)
         {
             // Update acceleration progress
@@ -103,15 +112,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             context.FireRate = CalculateCurrentFireRate(startFireRate);
         }
 
-        public void Invoke(WeaponPostStopFiringContext context)
-        {
-            _lastUpdateTime = Clock.Time;
-        }
-
         public void Invoke(WeaponCancelFireContext context)
         {
             _progress = _resetProgress;
             _lastUpdateTime = _resetUpdateTime;
+        }
+
+        public void Invoke(WeaponPreFireContextSync context)
+        {
+            UpdateProgress(context.Weapon);
         }
 
         public void TriggerReset()

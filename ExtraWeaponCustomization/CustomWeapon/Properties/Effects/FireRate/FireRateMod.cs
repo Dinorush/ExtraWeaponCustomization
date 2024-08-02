@@ -1,5 +1,8 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using Gear;
+using Player;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -7,7 +10,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public class FireRateMod :
         TriggerMod,
-        IWeaponProperty<WeaponFireRateContext>
+        IWeaponProperty<WeaponFireRateContext>,
+        IWeaponProperty<WeaponFireRateModContextSync>
     {
         private readonly Queue<TriggerInstance> _expireTimes = new();
 
@@ -21,13 +25,26 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (StackType == StackType.None)
                 _expireTimes.Clear();
 
-            _expireTimes.Enqueue(new TriggerInstance(ConvertTriggersToMod(contexts), Clock.Time + Duration));
+            float mod = ConvertTriggersToMod(contexts);
+            _expireTimes.Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
+
+            BulletWeapon weapon = contexts[0].context.Weapon;
+            FireRateModManager.SendInstance(weapon.Owner.Owner, PlayerAmmoStorage.GetSlotFromAmmoType(weapon.AmmoType), mod);
         }
 
         public void Invoke(WeaponFireRateContext context)
         {
             while (_expireTimes.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) _expireTimes.Dequeue();
+
             context.AddMod(CalculateMod(_expireTimes), StackLayer);
+        }
+
+        public void Invoke(WeaponFireRateModContextSync context)
+        {
+            if (StackType == StackType.None)
+                _expireTimes.Clear();
+
+            _expireTimes.Enqueue(new TriggerInstance(context.Mod, Clock.Time + Duration));
         }
 
         public override IWeaponProperty Clone()

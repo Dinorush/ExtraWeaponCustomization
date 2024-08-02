@@ -38,6 +38,7 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null) return;
 
             cwc.Invoke(new WeaponWieldContext(__instance));
+            cwc.RefreshSoundDelay();
             _lastSearchID = 0;
         }
 

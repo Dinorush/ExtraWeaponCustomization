@@ -50,19 +50,22 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _ownerSet = false;
         }
 
+        // Only runs on local player!
         public void OwnerInit()
         {
             if (_ownerSet) return;
 
-            if (Weapon.Owner != null && Weapon.Owner.IsLocallyOwned)
-                _autoAim?.OnEnable();
-            else if(_autoAim != null)
-            {
-                _contextController.Unregister(_autoAim);
-                _autoAim = null;
-            }
-
+            _autoAim?.OnEnable();
             _ownerSet = true;
+        }
+
+        public void SetToSync()
+        {
+            // Bots need full behavior but bots are pain and use different functions so idc for now
+            Clear();
+            _contextController.ChangeToSyncContexts();
+            Register(CustomWeaponManager.Current.GetCustomWeaponData(Weapon.ArchetypeID));
+            _autoAim = null;
         }
 
         public void Update()
@@ -167,14 +170,24 @@ namespace ExtraWeaponCustomization.CustomWeapon
             {
                 CurrentFireRate = Math.Clamp(postContext.Value, 0.001f, CustomWeaponData.MaxFireRate);
                 CurrentBurstDelay = _burstDelay * _fireRate / CurrentFireRate;
-                Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
+                RefreshSoundDelay();
             }
+        }
+
+        public void RefreshSoundDelay()
+        {
+            Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
         public void ModifyFireRate(BulletWeaponArchetype archetype) {
             archetype.m_nextShotTimer = Clock.Time + 1f / CurrentFireRate;
             if (archetype.BurstIsDone())
                 archetype.m_nextBurstTimer = Math.Max(Clock.Time + CurrentBurstDelay, archetype.m_nextShotTimer);
+        }
+
+        public void ModifyFireRate(BulletWeaponSynced synced)
+        {
+            synced.m_lastFireTime = Clock.Time + 1f / CurrentFireRate - Weapon.ArchetypeData.ShotDelay;
         }
     }
 }
