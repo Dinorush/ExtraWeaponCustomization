@@ -141,7 +141,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             {
                 case "projectiletype":
                 case "type":
-                    ProjectileType = reader.GetString().ToEnum(ProjectileType.TargetingMedium);
+                    ProjectileType = reader.GetString().ToEnum(ProjectileType.NotTargetingSmallFast);
+                    if (ProjectileType == ProjectileType.GlueFlying || ProjectileType == ProjectileType.GlueLanded)
+                        ProjectileType = ProjectileType.NotTargetingSmallFast;
                     break;
                 case "speed":
                     Speed = reader.GetSingle();
