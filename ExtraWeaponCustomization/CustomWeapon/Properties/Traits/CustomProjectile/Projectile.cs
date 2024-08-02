@@ -18,7 +18,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
     {
-        public ProjectileType ProjectileType { get; set; } = ProjectileType.TargetingSmall;
+        public ProjectileType ProjectileType { get; set; } = ProjectileType.NotTargetingSmallFast;
         public float Speed { get; set; } = 0f;
         public float Gravity { get; set; } = 0f;
         public float HitSize { get; set; } = 0f;
