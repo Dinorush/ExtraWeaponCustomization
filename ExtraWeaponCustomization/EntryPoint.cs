@@ -10,10 +10,12 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion.Han
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Heal;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate;
 
 namespace ExtraWeaponCustomization;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.5.2")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.6.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOPartialDataUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -49,6 +51,7 @@ internal sealed class EntryPoint : BasePlugin
         ExplosionManager.Init();
         DOTDamageManager.Init();
         HealManager.Init();
+        FireRateModManager.Init();
         KillAPIWrapper.Init();
         EWCProjectileManager.Init();
         CustomWeaponManager.Current.GetCustomWeaponData(0); // Just want to make it get custom weapon data on startup, need to call something
