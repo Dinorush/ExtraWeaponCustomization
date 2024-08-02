@@ -146,6 +146,27 @@ namespace ExtraWeaponCustomization.CustomWeapon
             }
         }
 
+        internal void CreateTemplate()
+        {
+            string path = Path.Combine(DEFINITION_PATH, "Template.json");
+            if (!Directory.Exists(DEFINITION_PATH))
+            {
+                EWCLogger.Log("No directory detected. Creating " + path);
+                Directory.CreateDirectory(DEFINITION_PATH);
+            }
+
+            if (File.Exists(path))
+            {
+                EWCLogger.Error("Can't create template file (already exists)!");
+                return;
+            }
+
+            var file = File.CreateText(path);
+            file.WriteLine(EWCJson.Serialize(new List<CustomWeaponData>() { CustomWeaponTemplate.CreateTemplate() }));
+            file.Flush();
+            file.Close();
+        }
+
         private void PrintCustomIDs()
         {
             StringBuilder builder = new("Found custom blocks for archetype IDs: ");
@@ -157,14 +178,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
         {
             DEFINITION_PATH = Path.Combine(MTFOPathAPI.CustomPath, EntryPoint.MODNAME);
             if (!Directory.Exists(DEFINITION_PATH))
-            {
-                EWCLogger.Log("No directory detected. Creating " + DEFINITION_PATH + "/Template.json");
-                Directory.CreateDirectory(DEFINITION_PATH);
-                var file = File.CreateText(Path.Combine(DEFINITION_PATH, "Template.json"));
-                file.WriteLine(EWCJson.Serialize(new List<CustomWeaponData>() { CustomWeaponTemplate.CreateTemplate() }));
-                file.Flush();
-                file.Close();
-            }
+                CreateTemplate();
             else
                 EWCLogger.Log("Directory detected. " + DEFINITION_PATH);
 
