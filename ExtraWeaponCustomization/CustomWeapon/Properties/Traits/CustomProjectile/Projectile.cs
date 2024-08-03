@@ -12,8 +12,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class Projectile :
         Trait,
-        IWeaponProperty<WeaponPostSetupContext>,
-        IWeaponProperty<WeaponClearContext>,
+        IWeaponProperty<WeaponPreRayContext>,
         IWeaponProperty<WeaponPostRayContext>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
@@ -30,20 +29,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public float VisualLerpDist { get; set; } = 5f;
 
         private CustomWeaponComponent? _cachedCWC;
-        private float _weaponRayDist = 100f;
 
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
 
-        public void Invoke(WeaponPostSetupContext context)
+        public void Invoke(WeaponPreRayContext context)
         {
-            _weaponRayDist = context.Weapon.MaxRayDist;
-            context.Weapon.MaxRayDist = 0f;
-        }
-
-        public void Invoke(WeaponClearContext context)
-        {
-            context.Weapon.MaxRayDist = _weaponRayDist;
+            context.Allow = false;
         }
 
         public void Invoke(WeaponPostRayContext context)

@@ -33,6 +33,7 @@ namespace ExtraWeaponCustomization.JSON
                     new PierceMulti(),
                     new CustomWeapon.Properties.Traits.Projectile(),
                     new ReserveClip(),
+                    new ThickBullet(),
                     new TumorMulti()
                 }
             };
