@@ -23,6 +23,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Pierce Multi: Applies a damage multiplier with each enemy pierced.
 - Projectile: Fires a projectile instead of a hitscan bullet.
 - Reserve Clip: Combines reserve ammo with the magazine.
+- Thick Bullet: Gives bullets a bigger entity hitbox.
 - Tumor Multi: Applies a multiplier to tumor damage.
 
 Additional details for customizing/implementing these can be found on the wiki:
