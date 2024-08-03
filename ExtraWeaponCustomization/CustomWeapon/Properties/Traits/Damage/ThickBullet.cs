@@ -19,7 +19,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (HitSize == 0) return;
 
             float dist = context.Result ? context.Data.rayHit.distance : context.Data.maxRayDist;
-            bool newResult = Physics.SphereCast(Weapon.s_ray, HitSize, out s_rayHit, dist, EWCProjectileManager.MaskEntity);
+            bool newResult = Physics.SphereCast(Weapon.s_ray, HitSize, out s_rayHit, dist, LayerManager.MASK_ENEMY_DAMAGABLE);
             if (!newResult) return;
             
             if (context.Result)
