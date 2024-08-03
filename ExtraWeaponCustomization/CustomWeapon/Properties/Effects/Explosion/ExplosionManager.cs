@@ -83,9 +83,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 IDamageable? directBase = directLimb.GetBaseDamagable();
                 Agent? agent = directLimb.GetBaseAgent();
-                if (directBase != null && agent != null && agent.Alive)
+                if (agent == null || agent.Alive)
                 {
-                    directBase.TempSearchID = searchID;
+                    if (directBase != null)
+                        directBase.TempSearchID = searchID;
                     SendExplosionDamage(directLimb, position, direction, 0, source, falloffMod, explosiveBase, weapon);
                 }
             }
@@ -115,8 +116,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 if (damBase.TempSearchID == searchID)
                     continue;
 
-                if (damBase.GetBaseAgent() == null || !damBase.GetBaseAgent().Alive)
-                    continue;
+                Agent? agent = damBase.GetBaseAgent();
+                if (agent != null && !agent.Alive)
+                    return;
 
                 // Ensure there is nothing between the explosion and this target
                 if (Physics.Linecast(position, targetPosition, out RaycastHit hit, LayerManager.MASK_EXPLOSION_BLOCKERS))
@@ -157,7 +159,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             // 0.001f to account for rounding error
             damage = falloffMod * damage + 0.001f;
 
-            if (damageable.GetBaseAgent()?.Type == AgentType.Player)
+            Agent? agent = damageable.GetBaseAgent();
+            if (agent?.Type == AgentType.Player)
             {
                 GuiManager.CrosshairLayer.PopFriendlyTarget();
                 // Seems like the damageable is always the base, but just in case
@@ -165,6 +168,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 damage *= playerBase.m_playerData.friendlyFireMulti;
                 // Only damage and direction are used AFAIK, but again, just in case...
                 playerBase.BulletDamage(damage, source, position, playerBase.DamageTargetPos - position, Vector3.zero);
+                return;
+            }
+            else if (agent == null) // Lock damage; direction doesn't matter
+            {
+                damageable.BulletDamage(damage, source, Vector3.zero, Vector3.zero, Vector3.zero);
                 return;
             }
 
@@ -214,7 +222,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (source.IsLocallyOwned == true)
             {
                 limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), position, armorMulti < 1f);
-                KillTrackerManager.RegisterHit(limb.GetBaseAgent(), position - limb.m_base.Owner.Position, weapon, flag);
+                KillTrackerManager.RegisterHit(agent, position - limb.m_base.Owner.Position, weapon, flag);
             }
 
             DamageSync.Send(data, SNet_ChannelType.GameNonCritical);
