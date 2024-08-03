@@ -46,7 +46,6 @@ namespace ExtraWeaponCustomization.Patches
             if (!context.Allow)
             {
                 __result = false;
-                _cancelPost = true;
                 return false;
             }
             return true;
@@ -58,12 +57,6 @@ namespace ExtraWeaponCustomization.Patches
         {
             // Sentry filter
             if (altRayCastMask != -1) return;
-
-            if (_cancelPost)
-            {
-                _cancelPost = false;
-                return;
-            }
 
             if (_cachedCWC == null) return;
 
