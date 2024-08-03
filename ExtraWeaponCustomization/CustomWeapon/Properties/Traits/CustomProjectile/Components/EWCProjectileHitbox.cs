@@ -153,8 +153,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
                     _base.Die();
                     return;
                 }
-
-                if (_pierceCount <= 0) break;
             }
         }
 
