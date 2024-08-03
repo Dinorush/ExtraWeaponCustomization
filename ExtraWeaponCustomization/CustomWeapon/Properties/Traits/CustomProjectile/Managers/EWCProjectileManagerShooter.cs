@@ -45,13 +45,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             return comp;
         }
 
-        public EWCProjectileComponentShooter? CreateAndSendProjectile(ProjectileType type, Vector3 position, Vector3 velocity, float gravity, float scale, Color glowColor, float glowRange)
+        public EWCProjectileComponentShooter? CreateAndSendProjectile(ProjectileType type, Vector3 position, Vector3 velocity, float gravity, float scale, bool trail, Color glowColor, float glowRange)
         {
             ProjectileDataShooter data = new()
             {
                 id = EWCProjectileManager.GetNextID(),
                 type = type,
                 position = position,
+                trail = trail,
                 glowColor = glowColor
             };
             data.dir.Value = velocity.normalized;
@@ -63,15 +64,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             s_shooterSync.Send(data);
             EWCProjectileComponentShooter comp = GetFromPool(type);
             EWCProjectileManager.PlayerProjectiles.AddLast((data.id, comp));
-            comp.Init(data.id, position, velocity, gravity, scale, glowColor, glowRange, true);
+            comp.Init(data.id, position, velocity, gravity, scale, trail, glowColor, glowRange, true);
             return comp;
         }
 
-        internal void Internal_ReceiveProjectile(ushort id, ProjectileType type, Vector3 position, Vector3 velocity, float gravity, float scale, Color glowColor, float glowRange)
+        internal void Internal_ReceiveProjectile(ushort id, ProjectileType type, Vector3 position, Vector3 velocity, float gravity, float scale, bool trail, Color glowColor, float glowRange)
         {
             EWCProjectileComponentShooter comp = GetFromPool(type);
             EWCProjectileManager.PlayerProjectiles.AddLast((id, comp));
-            comp.Init(id, position, velocity, gravity, scale, glowColor, glowRange, false);
+            comp.Init(id, position, velocity, gravity, scale, trail, glowColor, glowRange, false);
         }
     }
 
@@ -84,6 +85,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         public UFloat16 speed;
         public UFloat16 gravity;
         public UFloat16 scale;
+        public bool trail;
         public LowResColor glowColor;
         public SFloat16 glowRange;
     }

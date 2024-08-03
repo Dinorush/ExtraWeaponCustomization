@@ -24,6 +24,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public float HitSize { get; set; } = 0f;
         public float HitSizeWorld { get; set; } = 0f;
         public float ModelScale { get; set; } = 1f;
+        public bool EnableTrail { get; set; } = true;
         public Color GlowColor { get; set; } = Color.black;
         public float GlowRange { get; set; } = -1f;
         public float VisualLerpDist { get; set; } = 5f;
@@ -57,7 +58,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             Vector3 position = context.Position + context.Data.fireDir * Math.Min(visualDist, 0.1f);
 
-            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(ProjectileType, position, context.Data.fireDir * Speed, Gravity, ModelScale, GlowColor, GlowRange);
+            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(ProjectileType, position, context.Data.fireDir * Speed, Gravity, ModelScale, EnableTrail, GlowColor, GlowRange);
             if (comp == null)
             {
                 EWCLogger.Error("Unable to create shooter projectile!");
@@ -111,6 +112,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 HitSize = HitSize,
                 HitSizeWorld = HitSizeWorld,
                 ModelScale = ModelScale,
+                EnableTrail = EnableTrail,
                 GlowColor = GlowColor,
                 GlowRange = GlowRange,
                 VisualLerpDist = VisualLerpDist
@@ -128,6 +130,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(HitSize), HitSize);
             writer.WriteNumber(nameof(HitSizeWorld), HitSizeWorld);
             writer.WriteNumber(nameof(ModelScale), ModelScale);
+            writer.WriteBoolean(nameof(EnableTrail), EnableTrail);
             writer.WritePropertyName(nameof(GlowColor));
             JsonSerializer.Serialize(writer, GlowColor, options);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
@@ -162,6 +165,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 case "modelscale":
                 case "scale":
                     ModelScale = Math.Max(0, reader.GetSingle());
+                    break;
+                case "enabletrail":
+                case "trail":
+                    EnableTrail = reader.GetBoolean();
                     break;
                 case "glowcolor":
                 case "color":

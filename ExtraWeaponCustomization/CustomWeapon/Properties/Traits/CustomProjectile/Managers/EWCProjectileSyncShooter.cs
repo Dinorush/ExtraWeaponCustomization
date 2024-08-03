@@ -15,6 +15,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
                 packet.dir.Value * packet.speed.Get(EWCProjectileManager.MaxSpeed),
                 packet.gravity.Get(EWCProjectileManager.MaxGravity),
                 packet.scale.Get(EWCProjectileManager.MaxScale),
+                packet.trail,
                 packet.glowColor,
                 packet.glowRange.Get(EWCProjectileManager.MaxGlowRange)
                 );

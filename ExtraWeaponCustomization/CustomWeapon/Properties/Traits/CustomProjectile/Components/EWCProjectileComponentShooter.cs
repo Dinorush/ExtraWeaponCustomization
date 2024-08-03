@@ -25,6 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             base.Init(ID, position, velocity, gravity, scale, sendDestroy);
 
             _trailRenderer?.Clear();
+
             foreach (var effect in _projectile.m_effectsToStopEmittingOnImpact)
                 effect.Play();
             foreach (var go in _projectile.m_toDestroyOnImpact)
@@ -39,11 +40,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             }
         }
 
-        public void Init(ushort ID, Vector3 position, Vector3 velocity, float gravity, float scale, Color glowColor, float glowRange, bool sendDestroy)
+        public void Init(ushort ID, Vector3 position, Vector3 velocity, float gravity, float scale, bool trail, Color glowColor, float glowRange, bool sendDestroy)
         {
             if (enabled) return;
 
             Init(ID, position, velocity, gravity, scale, sendDestroy);
+
+            if (_trailRenderer != null)
+                _trailRenderer.enabled = trail;
 
             if (_targeting != null && _targeting.m_light != null)
             {
