@@ -51,6 +51,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (!context.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || context.Weapon.Owner.Owner.IsBot)) return;
 
             context.Result = false;
+            context.Data.maxRayDist = 0f;
 
             s_ray.origin = context.Position;
             s_ray.direction = context.Data.fireDir;
