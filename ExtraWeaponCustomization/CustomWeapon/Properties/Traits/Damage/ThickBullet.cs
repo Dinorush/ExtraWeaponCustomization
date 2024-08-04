@@ -2,7 +2,6 @@
 using UnityEngine;
 using System.Text.Json;
 using ExtraWeaponCustomization.Utils;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
