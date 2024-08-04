@@ -6,6 +6,7 @@ using UnityEngine;
 using System.Reflection;
 using System;
 using Gear;
+using ExtraWeaponCustomization.Utils;
 
 namespace ExtraWeaponCustomization.Patches
 {
@@ -25,30 +26,22 @@ namespace ExtraWeaponCustomization.Patches
         }
 
         private static CustomWeaponComponent? _cachedCWC = null;
-        private static bool _cancelPost = false;
 
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static bool PreRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask, ref bool __result)
+        private static void PreRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
         {
             // Sentry filter
-            if (altRayCastMask != -1) return true;
+            if (altRayCastMask != -1) return;
 
             if (CachedWeapon != null)
                 _cachedCWC = CachedWeapon.GetComponent<CustomWeaponComponent>();
             else
                 _cachedCWC = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
 
-            if (_cachedCWC == null) return true;
+            if (_cachedCWC == null) return;
 
-            WeaponPreRayContext context = new(weaponRayData, originPos, _cachedCWC.Weapon);
-            _cachedCWC.Invoke(context);
-            if (!context.Allow)
-            {
-                __result = false;
-                return false;
-            }
-            return true;
+            _cachedCWC.Invoke(new WeaponPreRayContext(weaponRayData, originPos, _cachedCWC.Weapon));
         }
 
         [HarmonyWrapSafe]
@@ -62,7 +55,6 @@ namespace ExtraWeaponCustomization.Patches
 
             WeaponPostRayContext context = new(weaponRayData, originPos, _cachedCWC.Weapon, __result);
             _cachedCWC.Invoke(context);
-            weaponRayData.rayHit = context.Data.rayHit; // Only thing I expect to change rn. Can be modified as needed.
             __result = context.Result;
         }
     }

@@ -12,7 +12,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class Projectile :
         Trait,
-        IWeaponProperty<WeaponPreRayContext>,
+        IWeaponProperty<WeaponPostSetupContext>,
+        IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPostRayContext>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
@@ -29,18 +30,27 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public float VisualLerpDist { get; set; } = 5f;
 
         private CustomWeaponComponent? _cachedCWC;
+        private float _cachedRayDist;
 
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
 
-        public void Invoke(WeaponPreRayContext context)
+        public void Invoke(WeaponPostSetupContext context)
         {
-            context.Allow = false;
+            _cachedRayDist = context.Weapon.MaxRayDist;
+            context.Weapon.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
+        }
+
+        public void Invoke(WeaponClearContext context)
+        {
+            context.Weapon.MaxRayDist = _cachedRayDist;
         }
 
         public void Invoke(WeaponPostRayContext context)
         {
             if (!context.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || context.Weapon.Owner.Owner.IsBot)) return;
+
+            context.Result = false;
 
             s_ray.origin = context.Position;
             s_ray.direction = context.Data.fireDir;
