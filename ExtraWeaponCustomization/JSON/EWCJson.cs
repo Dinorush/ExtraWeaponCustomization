@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using GTFO.API.JSON.Converters;
 using ExtraWeaponCustomization.Utils;
+using ExtraWeaponCustomization.JSON.Converters;
 
 namespace ExtraWeaponCustomization.JSON
 {
@@ -31,7 +32,6 @@ namespace ExtraWeaponCustomization.JSON
                 _setting.Converters.Add(MTFOPartialDataUtil.LocalizedTextConverter!);
                 EWCLogger.Log("PartialData support found!");
             }
-
             else
             {
                 _setting.Converters.Add(new LocalizedTextConverter());

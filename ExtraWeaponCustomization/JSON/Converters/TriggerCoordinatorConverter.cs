@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ExtraWeaponCustomization.JSON
+namespace ExtraWeaponCustomization.JSON.Converters
 {
     public sealed class TriggerCoordinatorConverter : JsonConverter<TriggerCoordinator>
     {
@@ -50,8 +50,11 @@ namespace ExtraWeaponCustomization.JSON
 
                 string property = reader.GetString()!;
                 reader.Read();
-                switch(property.ToLowerInvariant().Replace(" ", "")) 
+                switch (property.ToLowerInvariant().Replace(" ", ""))
                 {
+                    case "cap":
+                        coordinator.Cap = reader.GetUInt32();
+                        break;
                     case "cooldown":
                         coordinator.Cooldown = reader.GetSingle();
                         break;

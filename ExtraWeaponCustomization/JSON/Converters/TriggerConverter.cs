@@ -3,7 +3,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ExtraWeaponCustomization.JSON
+namespace ExtraWeaponCustomization.JSON.Converters
 {
     public sealed class TriggerConverter : JsonConverter<ITrigger>
     {
@@ -26,7 +26,7 @@ namespace ExtraWeaponCustomization.JSON
 
                 if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected PropertyName token");
                 string property = reader.GetString()!;
-                
+
                 reader.Read();
                 trigger.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader, options);
             }
@@ -57,7 +57,7 @@ namespace ExtraWeaponCustomization.JSON
                 reader.Read();
                 string? name = reader.GetString();
                 if (name == null) throw new JsonException("Name field cannot be empty in trigger object.");
-                
+
                 return ITrigger.GetTrigger(name);
             }
 
