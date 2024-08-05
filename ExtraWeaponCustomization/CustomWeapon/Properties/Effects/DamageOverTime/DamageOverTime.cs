@@ -14,8 +14,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     public sealed class DamageOverTime :
         Effect
     {
-        public BulletWeapon? Weapon { get; set; }
-        public PlayerAgent? Owner => Weapon?.Owner;
+        public BulletWeapon Weapon { get; private set; }
+        public CustomWeaponComponent CWC { get; private set; }
+        public PlayerAgent Owner => Weapon.Owner;
 
         public float TotalDamage { get; set; } = 0f;
         public float PrecisionDamageMulti { get; set; } = 0f;
@@ -38,16 +39,21 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private readonly Dictionary<AgentWrapper, DOTInstance> _lastDOTs = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
+#pragma warning disable CS8618
         public DamageOverTime()
         {
             Trigger ??= new(ITrigger.GetTrigger(ITrigger.Hit)!);
             SetValidTriggers(DamageType.DOT, ITrigger.Hit, ITrigger.Damage);
         }
+#pragma warning restore CS8618
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
             if (Weapon == null)
+            {
                 Weapon = triggerList[0].context.Weapon;
+                CWC = Weapon.GetComponent<CustomWeaponComponent>();
+            }
 
             foreach (TriggerContext tContext in triggerList)
                 AddDOT((WeaponPreHitEnemyContext)tContext.context, tContext.triggerAmt);
@@ -67,15 +73,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             float backstabMulti = IgnoreBackstab ? 1f : context.Backstab;
             float precisionMulti = PrecisionDamageMulti;
 
-            CustomWeaponComponent? cwc = Weapon?.GetComponent<CustomWeaponComponent>();
-            if (cwc != null)
-            {
-                WeaponDamageContext damageContext = new(damage, precisionMulti, context.Damageable, cwc.Weapon);
-                cwc.Invoke(damageContext);
-                if (!IgnoreDamageMods)
-                    damage = damageContext.Damage.Value;
-                precisionMulti = damageContext.Precision.Value;
-            }
+            WeaponDamageContext damageContext = new(damage, precisionMulti, context.Damageable, Weapon);
+            CWC.Invoke(damageContext);
+            if (!IgnoreDamageMods)
+                damage = damageContext.Damage.Value;
+            precisionMulti = damageContext.Precision.Value;
 
             EXPAPIWrapper.ApplyMod(ref damage);
 

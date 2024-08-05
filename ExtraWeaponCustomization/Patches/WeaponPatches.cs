@@ -117,9 +117,7 @@ namespace ExtraWeaponCustomization.Patches
                     );
 
                 cwc.Invoke(hitContext);
-
-                Vector3 localPos = weaponRayData.rayHit.point - damageable.GetBaseAgent().Position;
-                KillTrackerManager.RegisterHit(agent, localPos, cwc.Weapon, hitContext.DamageType);
+                KillTrackerManager.RegisterHit(hitContext, limb.m_base.WillDamageKill(weaponRayData.damage));
             }
             else
                 cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, cwc.Weapon));

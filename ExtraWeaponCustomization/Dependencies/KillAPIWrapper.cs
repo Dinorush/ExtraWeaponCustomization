@@ -2,6 +2,7 @@
 using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.Utils;
 using Gear;
 using KillIndicatorFix;
 using UnityEngine;
@@ -24,14 +25,14 @@ namespace ExtraWeaponCustomization.Dependencies
         {
             if (delay > MAX_DELAY) return;
 
-            WeaponHitWrapper? wrapper = KillTrackerManager.GetKillWeaponWrapper(enemy);
-            BulletWeapon? weapon = wrapper?.Weapon ?? item?.TryCast<BulletWeapon>();
-            if (weapon == null) return;
+            WeaponPreHitEnemyContext? hitContext = KillTrackerManager.GetKillHitContext(enemy);
+            if (hitContext == null) return;
 
+            BulletWeapon weapon = hitContext.Weapon;
             CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPostKillContext(enemy, weapon, wrapper?.DamageType ?? DamageType.Any));
+            cwc.Invoke(new WeaponPostKillContext(hitContext));
         }
     }
 }

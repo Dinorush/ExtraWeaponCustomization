@@ -1,4 +1,6 @@
-﻿using ExtraWeaponCustomization.CustomWeapon;
+﻿using Agents;
+using ExtraWeaponCustomization.CustomWeapon;
+using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using HarmonyLib;
 
@@ -31,6 +33,16 @@ namespace ExtraWeaponCustomization.Patches
             if (WeaponPatches.CachedHitCWC == null || __instance.m_type != eLimbDamageType.Armor) return;
 
             __instance.m_armorDamageMulti = _cachedArmor;
+        }
+
+        [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.MeleeDamage))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void Post_MeleeDamage(Dam_EnemyDamageLimb __instance, Agent sourceAgent)
+        {
+            if (!sourceAgent.IsLocallyOwned) return;
+
+            KillTrackerManager.ClearHit(__instance.m_base.Owner);
         }
     }
 }

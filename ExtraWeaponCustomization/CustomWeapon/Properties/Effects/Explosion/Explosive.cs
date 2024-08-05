@@ -1,5 +1,6 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using Gear;
 using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
@@ -24,31 +25,50 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public float GlowDuration { get; set; } = 0.05f;
 
         public float CacheBackstab { get; private set; } = 0f;
+        public CustomWeaponComponent CWC { get; private set; }
+        public BulletWeapon Weapon { get; private set; }
 
+#pragma warning disable CS8618
         public Explosive()
         {
             Trigger ??= new(ITrigger.GetTrigger(ITrigger.BulletLanded)!);
-            SetValidTriggers(DamageType.Explosive, ITrigger.Hit, ITrigger.BulletLanded);
+            SetValidTriggers(DamageType.Explosive, ITrigger.Hit, ITrigger.BulletLanded, ITrigger.Kill);
         }
+#pragma warning restore CS8618
 
         public override void TriggerReset() {}
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
+            if (Weapon == null)
+            {
+                Weapon = triggerList[0].context.Weapon;
+                CWC = Weapon.GetComponent<CustomWeaponComponent>();
+            }
+
             foreach (TriggerContext tContext in triggerList)
             {
-                CacheBackstab = 1f;
-                WeaponPreHitContext context = (WeaponPreHitContext) tContext.context;
-                Vector3 position = context.Position;
-                if (context.Damageable != null)
-                    position = context.LocalPosition + context.Damageable.GetBaseAgent().Position;
-                if (context is WeaponPreHitEnemyContext enemyContext)
+                // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage
+                if (Weapon.m_damageSearchID > 0 && Weapon.m_damageSearchID - 1 == DamageUtil.SearchID)
+                    DamageUtil.IncrementSearchID();
+
+                if (tContext.context is WeaponPostKillContext killContext)
                 {
-                    CacheBackstab = enemyContext.Backstab;
-                    // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage
-                    if (context.Weapon.m_damageSearchID - 1 == DamageUtil.SearchID)
-                        DamageUtil.IncrementSearchID();
+                    CacheBackstab = killContext.Backstab;
+                    ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, null);
                 }
-                ExplosionManager.DoExplosion(position, context.Direction, context.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, context.Weapon, context.Damageable);
+                else
+                {
+                    CacheBackstab = 1f;
+                    WeaponPreHitContext context = (WeaponPreHitContext)tContext.context;
+                    Vector3 position = context.Position;
+                    if (context.Damageable != null)
+                        position = context.LocalPosition + context.Damageable.GetBaseAgent().Position;
+
+                    if (context is WeaponPreHitEnemyContext enemyContext)
+                        CacheBackstab = enemyContext.Backstab;
+
+                    ExplosionManager.DoExplosion(position, context.Direction, Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, context.Damageable);
+                }
             }
         }
 

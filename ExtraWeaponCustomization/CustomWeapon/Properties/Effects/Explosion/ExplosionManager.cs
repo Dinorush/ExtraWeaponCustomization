@@ -8,7 +8,6 @@ using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Dependencies;
 using ExtraWeaponCustomization.Networking.Structs;
 using ExtraWeaponCustomization.Utils;
-using Gear;
 using Player;
 using SNetwork;
 using System;
@@ -37,13 +36,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             ExplosionEffectPooling.Initialize();
         }
 
-        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon, IDamageable? directLimb = null)
+        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, IDamageable? directLimb = null)
         {
+            if (!source.IsLocallyOwned) return;
+
             ExplosionFXData fxData = new() { position = position, color = eBase.GlowColor };
             fxData.radius.Set(eBase.Radius, MaxRadius);
             fxData.duration.Set(eBase.GlowDuration, MaxGlowDuration);
             FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
-            DoExplosionDamage(position, direction, source, falloffMod, eBase, weapon, directLimb);
+            DoExplosionDamage(position, direction, source, falloffMod, eBase, directLimb);
         }
     
         internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, Color color, float duration)
@@ -74,7 +75,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             }
         }
 
-        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, BulletWeapon weapon, IDamageable? directLimb = null)
+        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, IDamageable? directLimb = null)
         {
             DamageUtil.IncrementSearchID();
             var searchID = DamageUtil.SearchID;
@@ -87,7 +88,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 {
                     if (directBase != null)
                         directBase.TempSearchID = searchID;
-                    SendExplosionDamage(directLimb, position, direction, 0, source, falloffMod, explosiveBase, weapon);
+                    SendExplosionDamage(directLimb, position, direction, 0, source, falloffMod, explosiveBase);
                 }
             }
 
@@ -118,7 +119,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
                 Agent? agent = damBase.GetBaseAgent();
                 if (agent != null && !agent.Alive)
-                    return;
+                    continue;
 
                 // Ensure there is nothing between the explosion and this target
                 if (Physics.Linecast(position, targetPosition, out RaycastHit hit, LayerManager.MASK_EXPLOSION_BLOCKERS))
@@ -136,25 +137,21 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 }
 
                 damBase.TempSearchID = searchID;
-                SendExplosionDamage(limb, targetPosition, direction, Vector3.Distance(position, targetPosition), source, falloffMod, explosiveBase, weapon);
+                SendExplosionDamage(limb, targetPosition, direction, Vector3.Distance(position, targetPosition), source, falloffMod, explosiveBase);
             }
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, float distance, PlayerAgent source, float falloffMod, Explosive eBase, BulletWeapon weapon)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, float distance, PlayerAgent source, float falloffMod, Explosive eBase)
         {
             float damage = distance.Map(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage);
             float distFalloff = damage / eBase.MaxDamage;
             float precisionMult = eBase.PrecisionDamageMulti;
 
-            CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
-            if (cwc != null)
-            {
-                WeaponDamageContext context = new(damage, precisionMult, damageable, weapon);
-                cwc.Invoke(context);
-                if (!eBase.IgnoreDamageMods)
-                    damage = context.Damage.Value;
-                precisionMult = context.Precision.Value;
-            }
+            WeaponDamageContext context = new(damage, precisionMult, damageable, eBase.Weapon);
+            eBase.CWC.Invoke(context);
+            if (!eBase.IgnoreDamageMods)
+                damage = context.Damage.Value;
+            precisionMult = context.Precision.Value;
 
             // 0.001f to account for rounding error
             damage = falloffMod * damage + 0.001f;
@@ -204,26 +201,21 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             data.damage.Set(precDamage, limb.m_base.DamageMax);
 
-            DamageType flag = precHit ? DamageType.WeakspotExplosive : DamageType.Explosive;
-            if (cwc != null)
-            {
-                cwc.Invoke(new WeaponPreHitEnemyContext(
-                    precDamage,
-                    distFalloff * falloffMod,
-                    backstabMulti,
-                    damageable,
-                    position,
-                    direction,
-                    weapon,
-                    flag
-                    ));
-            }
+            WeaponPreHitEnemyContext hitContext = new(
+                precDamage,
+                distFalloff * falloffMod,
+                backstabMulti,
+                damageable,
+                position,
+                direction,
+                eBase.Weapon,
+                precHit ? DamageType.WeakspotExplosive : DamageType.Explosive
+                );
+            eBase.CWC.Invoke(hitContext);
 
-            if (source.IsLocallyOwned == true)
-            {
-                limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), position, armorMulti < 1f);
-                KillTrackerManager.RegisterHit(agent, position - limb.m_base.Owner.Position, weapon, flag);
-            }
+            bool willKill = limb.m_base.WillDamageKill(precDamage);
+            KillTrackerManager.RegisterHit(hitContext, willKill);
+            limb.ShowHitIndicator(precDamage > damage, willKill, position, armorMulti < 1f);
 
             DamageSync.Send(data, SNet_ChannelType.GameNonCritical);
         }
