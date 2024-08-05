@@ -81,6 +81,19 @@ namespace ExtraWeaponCustomization.Patches
             return context.Allow;
         }
 
+        [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnFireShot))]
+        [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnFireShot))]
+        [HarmonyPatch(typeof(BWA_Semi), nameof(BWA_Semi.OnFireShot))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void PostFireCallback(BulletWeaponArchetype __instance)
+        {
+            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
+            if (cwc == null || cwc.CancelShot) return;
+
+            cwc.Invoke(new WeaponPostFireContext(__instance.m_weapon!));
+        }
+
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.PostFireCheck))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
@@ -107,7 +120,6 @@ namespace ExtraWeaponCustomization.Patches
 
             cwc.UpdateStoredFireRate(__instance);
             cwc.ModifyFireRate(__instance);
-            cwc.Invoke(new WeaponPostFireContext(__instance.m_weapon!));
         }
         
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStopFiring))]
