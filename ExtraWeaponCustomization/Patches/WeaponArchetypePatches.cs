@@ -32,6 +32,7 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return true;
 
+            cwc.CancelShot = false;
             WeaponPreStartFireContext context = new(__instance.m_weapon!);
             cwc.Invoke(context);
             cwc.UpdateStoredFireRate(__instance); // Need to update prior to firing to predict weapon sound delay
@@ -109,7 +110,6 @@ namespace ExtraWeaponCustomization.Patches
             cwc.Invoke(new WeaponPostFireContext(__instance.m_weapon!));
         }
         
-
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStopFiring))]
         [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnStopFiring))]
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.OnStopFiring))]
@@ -121,6 +121,7 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null) return;
 
             cwc.Invoke(new WeaponPostStopFiringContext(__instance.m_weapon!));
+            cwc.CancelShot = true;
         }
     }
 }
