@@ -220,6 +220,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     DamageFriendly = reader.GetBoolean();
                     break;
                 case "damageowner":
+                case "damageuser":
                     DamageOwner = reader.GetBoolean();
                     break;
                 case "visuallerpdist":
