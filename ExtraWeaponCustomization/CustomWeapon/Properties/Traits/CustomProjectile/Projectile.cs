@@ -20,6 +20,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     {
         public ProjectileType ProjectileType { get; set; } = ProjectileType.NotTargetingSmallFast;
         public float Speed { get; set; } = 0f;
+        public float AccelScale { get; set; } = 1f;
+        public float AccelExponent { get; set; } = 1f;
+        private float _accelTime = 0.001f;
+        public float AccelTime
+        {
+            get { return _accelTime; }
+            set { _accelTime = Math.Max(0.001f, value); }
+        }
         public float Gravity { get; set; } = 0f;
         public float HitSize { get; set; } = 0f;
         public float HitSizeWorld { get; set; } = 0f;
@@ -27,7 +35,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public bool EnableTrail { get; set; } = true;
         public Color GlowColor { get; set; } = Color.black;
         public float GlowRange { get; set; } = -1f;
+        public bool DamageFriendly { get; set; } = true;
+        public bool DamageOwner { get; set; } = false;
         public float VisualLerpDist { get; set; } = 5f;
+        public float Lifetime { get; set; } = 20f;
 
         private CustomWeaponComponent? _cachedCWC;
         private float _cachedRayDist;
@@ -61,7 +72,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             Vector3 position = context.Position + context.Data.fireDir * Math.Min(visualDist, 0.1f);
 
-            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(ProjectileType, position, context.Data.fireDir * Speed, Gravity, ModelScale, EnableTrail, GlowColor, GlowRange);
+            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, context.Data.fireDir);
             if (comp == null)
             {
                 EWCLogger.Error("Unable to create shooter projectile!");
@@ -111,6 +122,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             {
                 ProjectileType = ProjectileType,
                 Speed = Speed,
+                AccelScale = AccelScale,
+                AccelExponent = AccelExponent,
+                AccelTime = AccelTime,
                 Gravity = Gravity,
                 HitSize = HitSize,
                 HitSizeWorld = HitSizeWorld,
@@ -118,7 +132,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 EnableTrail = EnableTrail,
                 GlowColor = GlowColor,
                 GlowRange = GlowRange,
-                VisualLerpDist = VisualLerpDist
+                DamageFriendly = DamageFriendly,
+                DamageOwner = DamageOwner,
+                VisualLerpDist = VisualLerpDist,
+                Lifetime = Lifetime
             };
             return copy;
         }
@@ -129,6 +146,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteString("Name", GetType().Name);
             writer.WriteString(nameof(ProjectileType), ProjectileType.ToString());
             writer.WriteNumber(nameof(Speed), Speed);
+            writer.WriteNumber(nameof(AccelScale), AccelScale);
+            writer.WriteNumber(nameof(AccelExponent), AccelExponent);
+            writer.WriteNumber(nameof(AccelTime), AccelTime);
             writer.WriteNumber(nameof(Gravity), Gravity);
             writer.WriteNumber(nameof(HitSize), HitSize);
             writer.WriteNumber(nameof(HitSizeWorld), HitSizeWorld);
@@ -137,7 +157,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WritePropertyName(nameof(GlowColor));
             JsonSerializer.Serialize(writer, GlowColor, options);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
+            writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
+            writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
+            writer.WriteNumber(nameof(Lifetime), Lifetime);
             writer.WriteEndObject();
         }
 
@@ -153,6 +176,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "speed":
                     Speed = reader.GetSingle();
+                    break;
+                case "accelscale":
+                case "accel":
+                    AccelScale = reader.GetSingle();
+                    break;
+                case "accelexponent":
+                case "accelexpo":
+                    AccelExponent = reader.GetSingle();
+                    break;
+                case "acceltime":
+                    AccelTime = reader.GetSingle();
                     break;
                 case "gravity":
                     Gravity = reader.GetSingle();
@@ -181,9 +215,20 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 case "range":
                     GlowRange = reader.GetSingle();
                     break;
+                case "damagefriendly":
+                case "friendlyfire":
+                    DamageFriendly = reader.GetBoolean();
+                    break;
+                case "damageowner":
+                    DamageOwner = reader.GetBoolean();
+                    break;
                 case "visuallerpdist":
                 case "lerpdist":
                     VisualLerpDist = reader.GetSingle();
+                    break;
+                case "maxlifetime":
+                case "lifetime":
+                    Lifetime = reader.GetSingle();
                     break;
             }
         }

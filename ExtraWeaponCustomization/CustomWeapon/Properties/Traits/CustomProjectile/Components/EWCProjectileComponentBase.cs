@@ -18,9 +18,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
         private float _endLifetime;
         private Coroutine? _inactiveRoutine;
+        protected Vector3 _baseVelocity;
         protected Vector3 _velocity;
+        protected float _accel;
+        protected float _accelExpo;
+        protected float _accelTime;
+        protected float _accelProgress;
+
         protected Vector3 _position;
         protected float _gravity;
+        protected float _gravityVel;
 
         private float _lerpProgress;
         private float _lerpTime;
@@ -29,7 +36,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         protected Vector3 _dirVisual;
 
         protected static Quaternion s_tempRot;
-        private const float MaxLifetime = 20f;
         public const float VisualLerpDist = 2f;
         private bool _sendDestroy;
         private ushort _id;
@@ -39,7 +45,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             enabled = false;
         }
 
-        public virtual void Init(ushort ID, Vector3 position, Vector3 velocity, float gravity, float scale, bool sendDestroy)
+        public virtual void Init(ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, float lifetime, bool sendDestroy)
         {
             if (enabled) return;
 
@@ -52,10 +58,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             gameObject.active = true;
             enabled = true;
             _lerpProgress = 1f;
-            _endLifetime = Time.time + MaxLifetime;
+            _accelProgress = 0f;
+            _endLifetime = Time.time + lifetime;
             _position = position;
             _velocity = velocity;
+            _baseVelocity = velocity;
+            _accel = Mathf.Approximately(accel, 1f) ? 1f : accel; // Explicitly check for approx 1 so can skip accel calculations
+            _accelExpo = accelExpo;
+            _accelTime = accelTime == 0 ? 0.001f : accelTime;
             _gravity = gravity;
+            _gravityVel = 0;
             _sendDestroy = sendDestroy;
             _id = ID;
         }
@@ -78,7 +90,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             if (_lerpProgress == 1f)
             {
                 _positionVisual = _position;
-                _dirVisual = _velocity;
+                _dirVisual = _velocity.sqrMagnitude > 0.001f ? _velocity : _baseVelocity.normalized * .01f;
                 return;
             }
 
@@ -91,7 +103,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
         protected virtual void Update()
         {
-            Hitbox.Update(_position, _velocity * Time.deltaTime);
+            Vector3 deltaVel = _velocity.sqrMagnitude > 0.0001f ? _velocity * Time.deltaTime : _baseVelocity.normalized * .01f;
+            Hitbox.Update(_position, deltaVel);
             if (!enabled) return; // Died by hitbox
 
             if (Time.time > _endLifetime)

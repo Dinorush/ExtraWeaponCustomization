@@ -13,18 +13,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private static readonly EWCProjectileSyncDestroy _destroySync = new();
 
         public const float MaxSpeed = 4096; // 2^12
+        public const float MaxAccelExpo = 16f;
+        public const float MaxAccelTime = 64f;
         public const float MaxGravity = 1024f; // 2^10
         public const float MaxScale = 1024f;
         public const float MaxGlowRange = 1024f;
+        public const float MaxLifetime = 1024f;
 
         public static int MaskEntityAndWorld { get; private set; }
-        public static int MaskEntity { get; private set; }
         public static int MaskWorld { get; private set; }
+        public static int MaskEntity { get; private set; }
+        public static int MaskOwner { get; private set; }
+        public static int MaskFriendly { get; private set; }
 
         internal static void Init()
         {
             Shooter.Init();
             _destroySync.Setup();
+            MaskOwner = LayerMask.GetMask("PlayerMover");
+            MaskFriendly = LayerMask.GetMask("PlayerSynced");
             MaskEntity = LayerMask.GetMask("PlayerMover", "PlayerSynced", "EnemyDamagable");
             MaskWorld = LayerMask.GetMask("Default", "Default_NoGraph", "Default_BlockGraph", "ProjectileBlocker", "Dynamic");
             MaskEntityAndWorld = MaskEntity | MaskWorld;

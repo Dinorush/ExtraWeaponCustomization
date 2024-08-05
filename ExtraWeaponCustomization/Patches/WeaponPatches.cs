@@ -81,10 +81,10 @@ namespace ExtraWeaponCustomization.Patches
                 weaponRayData.precisionMulti = _origHitPrecision;
             }
 
-            ApplyEWCBulletHit(cwc, damageable, ref weaponRayData, additionalDis, damageSearchID, ref _origHitDamage);
+            ApplyEWCBulletHit(cwc, damageable, ref weaponRayData, additionalDis, damageSearchID != 0, ref _origHitDamage);
         }
 
-        public static void ApplyEWCBulletHit(CustomWeaponComponent cwc, IDamageable? damageable, ref WeaponHitData weaponRayData, float additionalDis, uint damageSearchID, ref float pierceDamage)
+        public static void ApplyEWCBulletHit(CustomWeaponComponent cwc, IDamageable? damageable, ref WeaponHitData weaponRayData, float additionalDis, bool pierce, ref float pierceDamage)
         {
             CachedHitCWC = cwc;
             
@@ -96,7 +96,7 @@ namespace ExtraWeaponCustomization.Patches
                 weaponRayData.damage = damageContext.Damage.Value;
                 weaponRayData.precisionMulti = damageContext.Precision.Value;
 
-                if (damageSearchID != 0)
+                if (pierce)
                 {
                     WeaponPierceContext pierceContext = new(pierceDamage, damageable, cwc.Weapon);
                     cwc.Invoke(pierceContext);

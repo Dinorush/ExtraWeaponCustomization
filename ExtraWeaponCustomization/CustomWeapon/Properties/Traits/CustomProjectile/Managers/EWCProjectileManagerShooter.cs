@@ -45,34 +45,39 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             return comp;
         }
 
-        public EWCProjectileComponentShooter? CreateAndSendProjectile(ProjectileType type, Vector3 position, Vector3 velocity, float gravity, float scale, bool trail, Color glowColor, float glowRange)
+        public EWCProjectileComponentShooter? CreateAndSendProjectile(Projectile projBase, Vector3 position, Vector3 dir)
         {
             ProjectileDataShooter data = new()
             {
                 id = EWCProjectileManager.GetNextID(),
-                type = type,
+                type = projBase.ProjectileType,
                 position = position,
-                trail = trail,
-                glowColor = glowColor
+                trail = projBase.EnableTrail,
+                glowColor = projBase.GlowColor,
             };
-            data.dir.Value = velocity.normalized;
-            data.speed.Set(velocity.magnitude, EWCProjectileManager.MaxSpeed);
-            data.gravity.Set(gravity, EWCProjectileManager.MaxGravity);
-            data.scale.Set(scale, EWCProjectileManager.MaxScale);
-            data.glowRange.Set(glowRange, EWCProjectileManager.MaxGlowRange);
+            data.dir.Value = dir;
+            data.speed.Set(projBase.Speed, EWCProjectileManager.MaxSpeed);
+            data.accel.Set(projBase.AccelScale, EWCProjectileManager.MaxSpeed);
+            data.accelExpo.Set(projBase.AccelExponent, EWCProjectileManager.MaxAccelExpo);
+            data.accelTime.Set(projBase.AccelTime, EWCProjectileManager.MaxAccelTime);
+            data.gravity.Set(projBase.Gravity, EWCProjectileManager.MaxGravity);
+            data.scale.Set(projBase.ModelScale, EWCProjectileManager.MaxScale);
+            data.glowRange.Set(projBase.GlowRange, EWCProjectileManager.MaxGlowRange);
+            data.lifetime.Set(projBase.Lifetime, EWCProjectileManager.MaxLifetime);
 
             s_shooterSync.Send(data);
-            EWCProjectileComponentShooter comp = GetFromPool(type);
+            EWCProjectileComponentShooter comp = GetFromPool(data.type);
             EWCProjectileManager.PlayerProjectiles.AddLast((data.id, comp));
-            comp.Init(data.id, position, velocity, gravity, scale, trail, glowColor, glowRange, true);
+            comp.Init(data.id, position, dir * projBase.Speed, projBase.AccelScale, projBase.AccelExponent, projBase.AccelTime, 
+                projBase.Gravity, projBase.ModelScale, projBase.EnableTrail, projBase.GlowColor, projBase.GlowRange, projBase.Lifetime, true);
             return comp;
         }
 
-        internal void Internal_ReceiveProjectile(ushort id, ProjectileType type, Vector3 position, Vector3 velocity, float gravity, float scale, bool trail, Color glowColor, float glowRange)
+        internal void Internal_ReceiveProjectile(ushort id, ProjectileType type, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, bool trail, Color glowColor, float glowRange, float lifetime)
         {
             EWCProjectileComponentShooter comp = GetFromPool(type);
             EWCProjectileManager.PlayerProjectiles.AddLast((id, comp));
-            comp.Init(id, position, velocity, gravity, scale, trail, glowColor, glowRange, false);
+            comp.Init(id, position, velocity, accel, accelExpo, accelTime, gravity, scale, trail, glowColor, glowRange, lifetime, false);
         }
     }
 
@@ -83,10 +88,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         public Vector3 position;
         public LowResVector3_Normalized dir;
         public UFloat16 speed;
+        public UFloat16 accel;
+        public UFloat16 accelExpo;
+        public UFloat16 accelTime;
         public UFloat16 gravity;
         public UFloat16 scale;
         public bool trail;
         public LowResColor glowColor;
         public SFloat16 glowRange;
+        public UFloat16 lifetime;
     }
 }

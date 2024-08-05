@@ -18,11 +18,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         public EWCProjectileComponentShooter(IntPtr ptr) : base(ptr) { }
 #pragma warning restore CS8618
 
-        public override void Init(ushort ID, Vector3 position, Vector3 velocity, float gravity, float scale, bool sendDestroy)
+        public override void Init(ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, float lifetime, bool sendDestroy)
         {
             if (enabled) return;
 
-            base.Init(ID, position, velocity, gravity, scale, sendDestroy);
+            base.Init(ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
 
             _trailRenderer?.Clear();
 
@@ -40,11 +40,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             }
         }
 
-        public void Init(ushort ID, Vector3 position, Vector3 velocity, float gravity, float scale, bool trail, Color glowColor, float glowRange, bool sendDestroy)
+        public void Init(ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, bool trail, Color glowColor, float glowRange, float lifetime, bool sendDestroy)
         {
             if (enabled) return;
 
-            Init(ID, position, velocity, gravity, scale, sendDestroy);
+            Init(ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
 
             if (_trailRenderer != null)
                 _trailRenderer.enabled = trail;
@@ -74,7 +74,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
         protected override void Update()
         {
-            _velocity.y -= _gravity * Time.deltaTime;
+            _gravityVel += _gravity * Time.deltaTime;
+            if (_accel != 1f)
+            {
+                _accelProgress = Math.Min(_accelProgress + Time.deltaTime / _accelTime, 1f);
+                _velocity = _baseVelocity * Mathf.Lerp(1f, _accel, (float) Math.Pow(_accelProgress, _accelExpo));
+            }
+            else
+                _velocity = _baseVelocity;
+            _velocity.y -= _gravityVel;
+
             Vector3 velocity = _velocity * Time.deltaTime;
             _position += velocity;
             base.Update();
