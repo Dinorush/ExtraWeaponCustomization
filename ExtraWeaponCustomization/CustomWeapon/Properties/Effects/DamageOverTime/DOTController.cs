@@ -14,7 +14,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         // Need to access that specific wrapper so we can get the last DOT instance added to it.
         private readonly Dictionary<int, DOTDamageableWrapper> _idToWrapper = new();
         private readonly Dictionary<DOTDamageableWrapper, PriorityQueue<DOTInstance, DOTInstance>> _enemyDots = new();
-        private readonly DOTComparer comparer = new();
+        private readonly DOTComparer _comparer = new();
         private Coroutine? _updateRoutine = null;
         private float _nextTickTime = float.MaxValue;
 
@@ -31,7 +31,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 DOTDamageableWrapper wrapper = new(damageable, instanceID);
                 _idToWrapper[instanceID] = wrapper;
-                _enemyDots[wrapper] = new(comparer);
+                _enemyDots[wrapper] = new(_comparer);
                 _enemyDots[wrapper].Enqueue(dot, dot);
                 wrapper.LastInstance = dot;
             }
@@ -64,7 +64,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 _nextTickTime = float.MaxValue;
                 Cleanup();
 
-                foreach (var kv in _enemyDots)
+                int count = _enemyDots.Count;
+                foreach (var kv in _enemyDots.ToList())
                 {
                     PriorityQueue<DOTInstance, DOTInstance> queue = kv.Value;
                     IDamageable damageable = kv.Key.Damageable!;
@@ -81,6 +82,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     if (queue.Count > 0)
                         _nextTickTime = Math.Min(_nextTickTime, queue.Peek().NextTickTime);
                 }
+
+                // Recalculate next tick time if new DOTs were added
+                if (_enemyDots.Count > count)
+                    foreach (var queue in _enemyDots.Values)
+                        if (queue.Count > 0)
+                            _nextTickTime = Math.Min(_nextTickTime, queue.Peek().NextTickTime);
 
                 if (_nextTickTime == float.MaxValue) break;
 
