@@ -1,4 +1,5 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+﻿using AK;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using System.Collections.Generic;
@@ -21,6 +22,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public bool IgnoreArmor { get; set; } = false;
         public bool IgnoreBackstab { get; set; } = false;
         public bool IgnoreDamageMods { get; set; } = false;
+        public bool DamageFriendly { get; set; } = true;
+        public bool DamageOwner { get; set; } = true;
+        public uint SoundID { get; set; } = EVENTS.STICKYMINEEXPLODE;
         public Color GlowColor { get; set; } = ExplosionManager.FlashColor;
         public float GlowDuration { get; set; } = 0.05f;
 
@@ -87,6 +91,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 IgnoreFalloff = IgnoreFalloff,
                 IgnoreBackstab = IgnoreBackstab,
                 IgnoreDamageMods = IgnoreDamageMods,
+                DamageFriendly = DamageFriendly,
+                DamageOwner = DamageOwner,
+                SoundID = SoundID,
                 GlowColor = GlowColor,
                 GlowDuration = GlowDuration,
                 Trigger = Trigger?.Clone()
@@ -109,6 +116,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
+            writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
+            writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
+            writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WritePropertyName(nameof(GlowColor));
             JsonSerializer.Serialize(writer, GlowColor, options);
             writer.WriteNumber(nameof(GlowDuration), GlowDuration);
@@ -163,6 +173,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "ignoredamagemods":
                 case "ignoredamagemod":
                     IgnoreDamageMods = reader.GetBoolean();
+                    break;
+                case "damagefriendly":
+                case "friendlyfire":
+                    DamageFriendly = reader.GetBoolean();
+                    break;
+                case "damageowner":
+                case "damageuser":
+                    DamageOwner = reader.GetBoolean();
+                    break;
+                case "soundid":
+                case "sound":
+                    SoundID = reader.GetUInt32();
                     break;
                 case "glowcolor":
                 case "color":

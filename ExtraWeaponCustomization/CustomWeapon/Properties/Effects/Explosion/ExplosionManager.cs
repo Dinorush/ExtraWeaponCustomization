@@ -40,14 +40,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         {
             if (!source.IsLocallyOwned) return;
 
-            ExplosionFXData fxData = new() { position = position, color = eBase.GlowColor };
+            ExplosionFXData fxData = new() { position = position, soundID = eBase.SoundID, color = eBase.GlowColor };
             fxData.radius.Set(eBase.Radius, MaxRadius);
             fxData.duration.Set(eBase.GlowDuration, MaxGlowDuration);
             FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
             DoExplosionDamage(position, direction, source, falloffMod, eBase, directLimb);
         }
     
-        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, Color color, float duration)
+        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, uint soundID, Color color, float duration)
         {
             // Sound
             if (Configuration.PlayExplosionSFX)
@@ -55,7 +55,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 _soundShotOverride++;
                 if (_soundShotOverride > Configuration.ExplosionSFXShotOverride || Clock.Time - _lastSoundTime > Configuration.ExplosionSFXCooldown)
                 {
-                    CellSound.Post(EVENTS.STICKYMINEEXPLODE, position);
+                    CellSound.Post(soundID, position);
                     _soundShotOverride = 0;
                     _lastSoundTime = Clock.Time;
                 }
@@ -159,6 +159,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Agent? agent = damageable.GetBaseAgent();
             if (agent?.Type == AgentType.Player)
             {
+                if (agent == eBase.Weapon.Owner)
+                {
+                    if (!eBase.DamageOwner)
+                        return;
+                }
+                else if (!eBase.DamageFriendly)
+                    return;
+
                 GuiManager.CrosshairLayer.PopFriendlyTarget();
                 // Seems like the damageable is always the base, but just in case
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
@@ -266,6 +274,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         public Vector3 position;
         public UFloat16 radius;
+        public uint soundID;
         public LowResColor color;
         public UFloat16 duration;
     }

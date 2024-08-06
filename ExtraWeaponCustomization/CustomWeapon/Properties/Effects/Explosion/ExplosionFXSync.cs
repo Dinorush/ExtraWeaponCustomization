@@ -11,6 +11,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             ExplosionManager.Internal_ReceiveExplosionFX(
                 packet.position,
                 packet.radius.Get(ExplosionManager.MaxRadius),
+                packet.soundID,
                 packet.color,
                 packet.duration.Get(ExplosionManager.MaxGlowDuration)
                 );
