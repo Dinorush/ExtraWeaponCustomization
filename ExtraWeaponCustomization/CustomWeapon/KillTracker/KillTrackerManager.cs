@@ -3,11 +3,8 @@ using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Dependencies;
-using ExtraWeaponCustomization.Utils;
-using Gear;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
 {
@@ -58,14 +55,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
             if (enemy == null) return null;
 
             TempWrapper.SetAgent(enemy);
-            if (!_shownHits.ContainsKey(TempWrapper))
-            {
-                EWCLogger.Error("Detected kill, but don't have a hit registered for the target!");
-                return null;
-            }
-            else if (_shownHits[TempWrapper])
+            if (!_shownHits.ContainsKey(TempWrapper) || _shownHits[TempWrapper])
                 return null;
 
+            _shownHits[TempWrapper] = true;
             return _lastHits[TempWrapper];
         }
     }

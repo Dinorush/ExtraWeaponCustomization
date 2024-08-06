@@ -1,4 +1,5 @@
 ﻿using Agents;
+using Enemies;
 using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
@@ -6,7 +7,6 @@ using ExtraWeaponCustomization.Utils;
 using Gear;
 using HarmonyLib;
 using SNetwork;
-using UnityEngine;
 using static Weapon;
 
 namespace ExtraWeaponCustomization.Patches
@@ -61,12 +61,18 @@ namespace ExtraWeaponCustomization.Patches
             // Bot/other player filter. All CWC behavior is handled client-side.
             if (!weaponRayData.owner.IsLocallyOwned && (!SNet.IsMaster || !weaponRayData.owner.Owner.IsBot)) return;
 
-            CustomWeaponComponent? cwc = weaponRayData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
             IDamageable? damageable = DamageableUtil.GetDamageableFromData(weaponRayData);
             IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
+
+            CustomWeaponComponent? cwc = weaponRayData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
+            if (cwc == null)
+            {
+                Agent? agent = damageable?.GetBaseAgent();
+                if (agent != null && agent.Type == AgentType.Enemy && agent.Alive)
+                    KillTrackerManager.ClearHit(agent.TryCast<EnemyAgent>()!);
+                return;
+            }
 
             // Correct piercing damage back to base damage to apply damage mods
             if (damageable != null && damageSearchID != 0)
