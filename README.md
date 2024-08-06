@@ -6,7 +6,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Ammo Mod: Modifies the magazine/reserve ammo counts.
 - Damage Mod: Applies a damage modifier.
 - Damage Mod Per Target: Applies a damage modifier unique to each target. [Hit, Damage]
-- Damage Over Time: Applies a damage over time effect. [Hit]
+- Damage Over Time: Applies a damage over time effect. [Hit, Damage]
 - Explosive: Causes explosions where bullets land. [Bullet Landed, Hit, Kill]
 - Fire Rate Mod: Applies a fire rate modifier.
 - Health Mod: Modifies the user's health.
