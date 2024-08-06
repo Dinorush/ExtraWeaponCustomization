@@ -21,7 +21,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
             _shownHits.Remove(TempWrapper);
         }
 
-        public static void RegisterHit(WeaponPreHitEnemyContext hitContext, bool kill)
+        public static void RegisterHit(WeaponPreHitEnemyContext hitContext)
         {
             EnemyAgent? enemy = hitContext.Damageable.GetBaseAgent()?.TryCast<EnemyAgent>();
             if (enemy == null || !hitContext.Weapon.Owner.IsLocallyOwned) return;
@@ -37,7 +37,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
             {
                 AgentWrapper wrapper = new(enemy);
                 _lastHits[wrapper] = hitContext;
-                _shownHits[wrapper] = kill;
+                _shownHits[wrapper] = false;
             }
         }
 

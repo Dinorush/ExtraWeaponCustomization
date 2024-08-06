@@ -221,9 +221,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 );
             eBase.CWC.Invoke(hitContext);
 
-            bool willKill = limb.m_base.WillDamageKill(precDamage);
-            KillTrackerManager.RegisterHit(hitContext, willKill);
-            limb.ShowHitIndicator(precDamage > damage, willKill, position, armorMulti < 1f);
+            KillTrackerManager.RegisterHit(hitContext);
+            limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), position, armorMulti < 1f);
 
             DamageSync.Send(data, SNet_ChannelType.GameNonCritical);
         }

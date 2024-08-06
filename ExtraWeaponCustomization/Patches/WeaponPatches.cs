@@ -123,7 +123,7 @@ namespace ExtraWeaponCustomization.Patches
                     );
 
                 cwc.Invoke(hitContext);
-                KillTrackerManager.RegisterHit(hitContext, limb.m_base.WillDamageKill(weaponRayData.damage));
+                KillTrackerManager.RegisterHit(hitContext);
             }
             else
                 cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, cwc.Weapon));

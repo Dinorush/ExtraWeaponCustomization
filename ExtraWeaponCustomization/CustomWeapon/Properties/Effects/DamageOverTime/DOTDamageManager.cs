@@ -59,9 +59,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 );
             dotBase.CWC.Invoke(hitContext);
 
-            bool willKill = limb.m_base.WillDamageKill(precDamage);
-            limb.ShowHitIndicator(precDamage > damage, willKill, hitContext.Position, armorMulti < 1f);
-            KillTrackerManager.RegisterHit(hitContext, willKill);
+            KillTrackerManager.RegisterHit(hitContext);
+            limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f);
 
             Sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
