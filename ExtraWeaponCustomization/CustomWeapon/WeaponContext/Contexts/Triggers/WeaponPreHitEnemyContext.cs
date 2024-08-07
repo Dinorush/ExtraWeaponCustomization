@@ -23,11 +23,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
             DamageType = flag;
         }
 
-        public WeaponPreHitEnemyContext(WeaponHitData data, float additionalDist, Dam_EnemyDamageLimb limb, BulletWeapon weapon, DamageType flag = DamageType.Any)
+        public WeaponPreHitEnemyContext(WeaponHitData data, float additionalDist, float backstab, Dam_EnemyDamageLimb limb, BulletWeapon weapon, DamageType flag = DamageType.Any)
             : base(data, additionalDist, weapon, limb.TryCast<IDamageable>())
         {
-            Backstab = limb.ApplyDamageFromBehindBonus(1f, data.rayHit.point, data.fireDir.normalized);
-
+            Backstab = backstab;
             Damage = data.damage * Falloff;
             Damage = limb.ApplyWeakspotAndArmorModifiers(Damage, data.precisionMulti);
             Damage *= Backstab;

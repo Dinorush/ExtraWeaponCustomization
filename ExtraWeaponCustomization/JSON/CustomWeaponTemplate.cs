@@ -28,6 +28,7 @@ namespace ExtraWeaponCustomization.JSON
                     new ArmorPierce(),
                     new AutoAim(),
                     new AutoTrigger(),
+                    new BackstabMulti(),
                     new EnforceFireRate(),
                     new HoldBurst(),
                     new PierceMulti(),

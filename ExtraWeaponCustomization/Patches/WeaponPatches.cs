@@ -52,7 +52,7 @@ namespace ExtraWeaponCustomization.Patches
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void HitCallback(ref WeaponHitData weaponRayData, bool doDamage, float additionalDis, uint damageSearchID, bool allowDirectionalBonus)
+        private static void HitCallback(ref WeaponHitData weaponRayData, bool doDamage, float additionalDis, uint damageSearchID, ref bool allowDirectionalBonus)
         {
             CachedHitCWC = null;
             // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
@@ -87,10 +87,10 @@ namespace ExtraWeaponCustomization.Patches
                 weaponRayData.precisionMulti = _origHitPrecision;
             }
 
-            ApplyEWCBulletHit(cwc, damageable, ref weaponRayData, additionalDis, damageSearchID != 0, ref _origHitDamage);
+            ApplyEWCBulletHit(cwc, damageable, ref weaponRayData, additionalDis, damageSearchID != 0, ref _origHitDamage, ref allowDirectionalBonus);
         }
 
-        public static void ApplyEWCBulletHit(CustomWeaponComponent cwc, IDamageable? damageable, ref WeaponHitData weaponRayData, float additionalDis, bool pierce, ref float pierceDamage)
+        public static void ApplyEWCBulletHit(CustomWeaponComponent cwc, IDamageable? damageable, ref WeaponHitData weaponRayData, float additionalDis, bool pierce, ref float pierceDamage, ref bool doBackstab)
         {
             CachedHitCWC = cwc;
             
@@ -114,16 +114,26 @@ namespace ExtraWeaponCustomization.Patches
             if (agent != null && agent.Type == AgentType.Enemy && agent.Alive)
             {
                 Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>()!;
+
+                float backstab = limb.ApplyDamageFromBehindBonus(1f, weaponRayData.rayHit.point, weaponRayData.fireDir.normalized);
+                WeaponBackstabContext backContext = new(cwc.Weapon);
+                cwc.Invoke(backContext);
+
                 WeaponPreHitEnemyContext hitContext = new(
                     weaponRayData,
                     additionalDis,
+                    backstab.Map(1f, 2f, 1f, backContext.Value),
                     limb,
                     cwc.Weapon,
                     DamageType.Bullet
-                    );
-
+                );
                 cwc.Invoke(hitContext);
                 KillTrackerManager.RegisterHit(hitContext);
+
+                if (backContext.Value > 1f)
+                    weaponRayData.damage *= hitContext.Backstab / backstab;
+                else
+                    doBackstab = false;
             }
             else
                 cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, cwc.Weapon));

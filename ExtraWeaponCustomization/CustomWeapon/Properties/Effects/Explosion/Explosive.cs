@@ -62,7 +62,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 }
                 else
                 {
-                    CacheBackstab = 1f;
+                    CacheBackstab = 0f;
                     WeaponPreHitContext context = (WeaponPreHitContext)tContext.context;
                     Vector3 position = context.Position;
                     if (context.Damageable != null)

@@ -1,4 +1,5 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+using System;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
@@ -8,18 +9,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         {
             get
             {
-                return _value * (_overrideMod >= 0 ? _overrideMod : _addMod * _multMod);
+                return Math.Max(_min, _value * (_overrideMod >= 0 ? _overrideMod : _addMod * _multMod));
             }
         }
 
-        private readonly float _value = 0;
+        private readonly float _value;
+        private float _min;
         private float _addMod = 1f;
         private float _multMod = 1f;
         private float _overrideMod = -1f;
 
-        public StackMod(float value)
+        public StackMod(float value, float min = 0)
         {
             _value = value;
+            _min = min;
+        }
+
+        public void SetMin(float min)
+        {
+            _min = min;
         }
 
         public void AddMod(float mod, StackType type)

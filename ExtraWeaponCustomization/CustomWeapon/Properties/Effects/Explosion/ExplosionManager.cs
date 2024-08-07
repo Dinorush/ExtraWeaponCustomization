@@ -1,5 +1,4 @@
 ﻿using Agents;
-using AK;
 using CharacterDestruction;
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
@@ -200,7 +199,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMult, 1f) : 1f;
             float backstabMulti = 1f;
             if (!eBase.IgnoreBackstab)
-                backstabMulti = eBase.CacheBackstab > 0f ? eBase.CacheBackstab : limb.ApplyDamageFromBehindBonus(1f, position, direction);
+            {
+                if (eBase.CacheBackstab > 0f)
+                    backstabMulti = eBase.CacheBackstab;
+                else
+                {
+                    WeaponBackstabContext backContext = new(eBase.Weapon);
+                    eBase.CWC.Invoke(backContext);
+                    backstabMulti = limb.ApplyDamageFromBehindBonus(1f, position, direction).Map(1f, 2f, 1f, backContext.Value);
+                }
+            }
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
