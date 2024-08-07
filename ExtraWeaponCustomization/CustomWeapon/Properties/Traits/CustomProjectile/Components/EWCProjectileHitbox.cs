@@ -25,7 +25,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private readonly HashSet<int> _hitEnts = new();
         private WeaponHitData _hitData = new();
         private int _entityLayer;
-        private int _worldLayer;
         private bool _enabled = false;
 
         // Variables
@@ -39,7 +38,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         // Static
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
+        private static float s_velMagnitude;
         private readonly static HashSet<int> s_playerCheck = new();
+        private const float SightCheckMinSize = 0.5f;
+        private const float CollisionInitialMinSize = 2f;
 
 #pragma warning disable CS8618
         // Hidden null warnings since other methods will initialize members prior to Update
@@ -64,7 +66,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
 
             _entityLayer = LayerManager.MASK_ENEMY_DAMAGABLE;
-            _worldLayer = 0;
             _initialPlayers.Clear();
             int ownerID = _weapon.Owner.GetInstanceID();
             if (projBase.DamageOwner)
@@ -86,8 +87,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
             if (projBase.HitSize == projBase.HitSizeWorld)
                 _entityLayer |= EWCProjectileManager.MaskWorld;
-            else
-                _worldLayer = EWCProjectileManager.MaskWorld;
 
             _hitEnts.Clear();
             if (_weapon.ArchetypeData.PiercingBullets && _weapon.ArchetypeData.PiercingDamageCountLimit > 1)
@@ -112,6 +111,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _basePrecision = _hitData.precisionMulti;
             _distanceMoved = 0;
             _lastFixedTime = Time.fixedTime;
+
+            CheckCollisionInitial();
         }
 
         public void Die()
@@ -132,13 +133,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
             s_ray.origin = position;
             s_ray.direction = velocityDelta;
+            s_velMagnitude = Math.Max(velocityDelta.magnitude, 0.01f);
 
             s_playerCheck.Clear();
-            CheckCollision(_settings.HitSize, _entityLayer);
+            CheckCollision();
             if (_pierceCount <= 0) return;
 
-            if (_worldLayer != 0)
-                CheckCollision(_settings.HitSizeWorld, _worldLayer);
+            CheckCollisionWorld();
 
             // Player moves on fixed time so only remove on fixed time
             if (_lastFixedTime != Time.fixedTime && _initialPlayers.Count != 0)
@@ -150,30 +151,42 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _distanceMoved += velocityDelta.magnitude;
         }
 
-        private void CheckCollision(float size, int layerMask)
+        private void CheckCollision()
         {
             RaycastHit[] hits;
-            if (size == 0)
-                hits = Physics.RaycastAll(s_ray, 1f, layerMask);
+            if (_settings!.HitSize == 0)
+                hits = Physics.RaycastAll(s_ray, s_velMagnitude, _entityLayer);
             else
-                hits = Physics.SphereCastAll(s_ray, size, 1f, layerMask);
+                hits = Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer);
 
+            bool checkLOS = _settings.HitSize >= SightCheckMinSize;
             Array.Sort(hits, DistanceCompare);
             foreach (RaycastHit hit in hits)
             {
+                if (checkLOS && Physics.Linecast(s_ray.origin, hit.point, EWCProjectileManager.MaskWorld)) continue;
+
                 s_rayHit = hit;
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
 
                 if (damageable != null)
                     DoDamage(damageable);
-                else // Hit a wall
-                {
-                    BulletHit(null);
-                    _base.Die();
-                    return;
-                }
 
                 if (_pierceCount <= 0) break;
+            }
+        }
+
+        private void CheckCollisionWorld()
+        {
+            bool hit;
+            if (_settings!.HitSizeWorld == 0)
+                hit = Physics.Raycast(s_ray, out s_rayHit, s_velMagnitude, EWCProjectileManager.MaskWorld);
+            else
+                hit = Physics.SphereCast(s_ray, _settings!.HitSizeWorld, out s_rayHit, s_velMagnitude, EWCProjectileManager.MaskWorld);
+
+            if (hit)
+            {
+                BulletHit(null);
+                _base.Die();
             }
         }
 
@@ -181,6 +194,36 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         {
             if (a.distance == b.distance) return 0;
             return a.distance < b.distance ? -1 : 1;
+        }
+
+        private void CheckCollisionInitial()
+        {
+            if (_settings!.HitSize < CollisionInitialMinSize) return;
+
+            Vector3 pos = _weapon.Owner.Position;
+            Collider[] colliders = Physics.OverlapSphere(pos, _settings.HitSize, _entityLayer);
+            PriorityQueue<RaycastHit, float> hitQueue = new();
+
+            s_ray.origin = pos;
+            foreach (var collider in colliders)
+            {
+                if (Physics.Linecast(pos, collider.transform.position, EWCProjectileManager.MaskWorld)) continue;
+
+                s_ray.direction = collider.transform.position - pos;
+                if (!collider.Raycast(s_ray, out RaycastHit hit, _settings.HitSize)) continue;
+
+                hitQueue.Enqueue(hit, hit.distance);
+            }
+
+            while (hitQueue.TryDequeue(out s_rayHit, out var _))
+            {
+                IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
+
+                if (damageable != null)
+                    DoDamage(damageable);
+
+                if (_pierceCount <= 0) break;
+            }
         }
 
         private void DoDamage(IDamageable damageable, bool cast = false)
@@ -246,9 +289,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
             DoImpactFX(damageable);
 
-            WeaponPatches.ApplyEWCBulletHit(_baseCWC!, damageable, ref _hitData, _distanceMoved, _pierce, ref _baseDamage);
+            bool backstab = false;
+            WeaponPatches.ApplyEWCBulletHit(_baseCWC!, damageable, ref _hitData, _distanceMoved, _pierce, ref _baseDamage, ref backstab);
             float damage = _hitData.damage * _hitData.Falloff(_distanceMoved + _hitData.rayHit.distance);
-            damageable?.BulletDamage(damage, _hitData.owner, _hitData.rayHit.point, _hitData.fireDir, _hitData.rayHit.normal, allowDirectionalBonus: true, _hitData.staggerMulti, _hitData.precisionMulti);
+            damageable?.BulletDamage(damage, _hitData.owner, _hitData.rayHit.point, _hitData.fireDir, _hitData.rayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
         }
     }
 }
