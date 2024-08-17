@@ -5,6 +5,8 @@ using ExtraWeaponCustomization.Utils;
 using Gear;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using UnityEngine;
 using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
@@ -31,7 +33,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public bool LockWhileEmpty { get; set; } = true;
         public bool TagOnly { get; set; } = false;
         public bool IgnoreInvisibility { get; set; } = false;
-        public bool TargetBody { get; set; } = false;
+        TargetingMode TargetMode { get; set; } = TargetingMode.Normal;
         public bool FavorLookPoint { get; set; } = false;
 
         public CrosshairHitIndicator? _reticle;
@@ -44,10 +46,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private float _progress;
         private float _lastUpdateTime;
 
+        private float _weakspotDetectionTick;
+        private Dam_EnemyDamageLimb? _weakspotLimb;
+        private Transform? _weakspotTarget;
+        private readonly List<Collider> _bodyList = new();
+        private readonly List<Collider> _weakspotList = new();
+
         private static readonly ColliderComparer _colliderComparer = new();
 
-        private static Ray _ray;
-        private static RaycastHit _raycastHit;
+        private static Ray s_ray;
+        private static RaycastHit s_raycastHit;
 
         private readonly Color _targetedColor = new(1.2f, 0.3f, 0.1f, 1f);
         private readonly Color _passiveLocked = new(0.8f, 0.3f, 0.2f, 1f);
@@ -79,21 +87,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             // Prioritize aim if looking at the locked enemy
             if (FavorLookPoint)
             {
-                _ray.origin = _camera.Position;
-                _ray.direction = context.Data.fireDir;
-                if (Physics.Raycast(_ray, out _raycastHit, 100f, LayerManager.MASK_BULLETWEAPON_RAY))
+                s_ray.origin = _camera.Position;
+                s_ray.direction = context.Data.fireDir;
+                if (Physics.Raycast(s_ray, out s_raycastHit, 100f, LayerManager.MASK_BULLETWEAPON_RAY))
                 {
-                    Agent? agent = DamageableUtil.GetDamageableFromRayHit(_raycastHit)?.GetBaseAgent();
+                    Agent? agent = DamageableUtil.GetDamageableFromRayHit(s_raycastHit)?.GetBaseAgent();
                     if (agent != null && agent.Alive && agent == _target)
                         return; // Cancel auto aim (just shoot where user is aiming)
                 }
             }
 
             if (UseAutoAim)
-            {
-                Vector3 trgtPos = TargetBody ? _target!.AimTargetBody.position : _target!.AimTarget.position;
-                context.Data.fireDir = (trgtPos - _camera.Position).normalized;
-            }
+                context.Data.fireDir = (GetTargetPos() - _camera.Position).normalized;
         }
 
         public void Invoke(WeaponPostSetupContext context)
@@ -186,8 +191,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 _target = CheckForTarget();
                 _hasTarget = _target != null;
 
-                if (ResetOnNewTarget && _hasTarget && _target != _lastTarget)
-                    _progress = 0;
+                if (_hasTarget && _target != _lastTarget)
+                {
+                    if (TargetMode == TargetingMode.Weakspot)
+                        ResetWeakspotLists();
+                    if (ResetOnNewTarget)
+                        _progress = 0;
+                }
             }
 
             // Prevents statements at the top of the func from doing div by 0
@@ -202,10 +212,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private void UpdateAnimate()
         {
             if (_target != null)
-            {
-                Vector3 trgtPos = TargetBody ? _target!.AimTargetBody.position : _target!.AimTarget.position;
-                _reticleHolder!.transform.position = _camera!.m_camera.WorldToScreenPoint(trgtPos);
-            }
+                _reticleHolder!.transform.position = _camera!.m_camera.WorldToScreenPoint(GetTargetPos());
 
             if (UseAutoAim)
             {
@@ -295,7 +302,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             Collider[] colliders = Physics.OverlapSphere(position, Range, LayerManager.MASK_SENTRYGUN_DETECTION_TARGETS);
             _colliderComparer.Set(forward, position);
-            Array.Sort(colliders, 0, colliders.Length, _colliderComparer);
+            Array.Sort(colliders, _colliderComparer);
 
             // Go through colliders by order of minimum angle (enemies closest to aim point are prioritized)
             foreach (Collider collider in colliders)
@@ -320,6 +327,80 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return null;
         }
 
+        private Vector3 GetTargetPos()
+        {
+            if (_target == null) return Vector3.zero;
+
+            UpdateWeakspotLimb();
+
+            return TargetMode switch
+            {
+                TargetingMode.Body => _target.AimTarget.position,
+                TargetingMode.Weakspot => _weakspotTarget!.position,
+                _ => _target.AimTarget.position,
+            };
+        }
+
+        private void ResetWeakspotLists()
+        {
+            _weakspotList.Clear();
+            _bodyList.Clear();
+            _weakspotLimb = null;
+            if (_target == null) return;
+
+            _weakspotTarget = _target.AimTarget;
+            foreach (Collider collider in _target.GetComponentsInChildren<Collider>())
+            {
+                Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
+                if (limb != null && limb.m_health > 0)
+                {
+                    if (limb.m_type == eLimbDamageType.Weakspot)
+                        _weakspotList.Add(collider);
+                    else
+                        _bodyList.Add(collider);
+                }
+            }
+        }
+
+        private void UpdateWeakspotLimb()
+        {
+            if (TargetMode != TargetingMode.Weakspot) return;
+
+            if (_weakspotList.Count == 0)
+            {
+                _weakspotTarget = _target!.AimTarget;
+                return;
+            }
+
+            if (_weakspotLimb != null && _weakspotLimb.m_health > 0 && Clock.Time < _weakspotDetectionTick) return;
+            _weakspotDetectionTick = Clock.Time + 0.1f;
+
+            _colliderComparer.Set(_camera!.CameraRayDir, _camera!.Position);
+            _weakspotList.Sort(_colliderComparer);
+            _weakspotList.Reverse();
+
+            for (int i = _weakspotList.Count - 1; i >= 0; i--)
+            {
+                Dam_EnemyDamageLimb weakspot = _weakspotList[i].GetComponent<Dam_EnemyDamageLimb>();
+                if (weakspot == null || weakspot.m_health <= 0)
+                {
+                    _weakspotList.RemoveAt(i);
+                    continue;
+                }
+
+                s_ray.direction = weakspot.transform.position - _camera.Position;
+                s_ray.origin = _camera.Position;
+                _weakspotList[i].Raycast(s_ray, out s_raycastHit, (weakspot.transform.position - _camera.Position).magnitude);
+
+                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)))
+                {
+                    _weakspotTarget = _weakspotList[i].transform;
+                    _weakspotLimb = weakspot;
+                    return;
+                }
+            }
+        }
+
         public override IWeaponProperty Clone()
         {
             AutoAim copy = new()
@@ -336,7 +417,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 LockWhileEmpty = LockWhileEmpty,
                 TagOnly = TagOnly,
                 IgnoreInvisibility = IgnoreInvisibility,
-                TargetBody = TargetBody,
+                TargetMode = TargetMode,
                 FavorLookPoint = FavorLookPoint
             };
             return copy;
@@ -358,7 +439,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(LockWhileEmpty), LockWhileEmpty);
             writer.WriteBoolean(nameof(TagOnly), TagOnly);
             writer.WriteBoolean(nameof(IgnoreInvisibility), IgnoreInvisibility);
-            writer.WriteBoolean(nameof(TargetBody), TargetBody);
+            writer.WriteString(nameof(TargetMode), TargetMode.ToString());
             writer.WriteBoolean(nameof(FavorLookPoint), FavorLookPoint);
             writer.WriteEndObject();
         }
@@ -407,7 +488,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     IgnoreInvisibility = reader.GetBoolean();
                     break;
                 case "targetbody":
-                    TargetBody = reader.GetBoolean();
+                    if (reader.GetBoolean())
+                        TargetMode = TargetingMode.Body;
+                    break;
+                case "targetingmode":
+                case "targetmode":
+                    TargetMode = reader.GetString().ToEnum(TargetingMode.Normal);
                     break;
                 case "favorlookpoint":
                 case "favourlookpoint":
@@ -418,7 +504,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             }
         }
 
-        sealed class ColliderComparer : IComparer
+        sealed class ColliderComparer : IComparer<Collider>
         {
             Vector3 _forward;
             Vector3 _position;
@@ -428,13 +514,22 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 _position = position;
             }
 
-            public int Compare(object? x, object? y)
+            public int Compare(Collider? x, Collider? y)
             {
-                // OverlapSphere never returns null colliders, so assuming non-null
-                Vector3 xPos = ((Collider)x!).transform.position;
-                Vector3 yPos = ((Collider)y!).transform.position;
+                if (x == null) return 1;
+                else if (y == null) return -1;
+
+                Vector3 xPos = x.transform.position;
+                Vector3 yPos = y.transform.position;
                 return Vector3.Angle(_forward, xPos - _position) < Vector3.Angle(_forward, yPos - _position) ? -1 : 1;
             }
+        }
+
+        enum TargetingMode
+        {
+            Normal,
+            Body,
+            Weakspot
         }
     }
 }
