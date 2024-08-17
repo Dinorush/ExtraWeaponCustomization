@@ -114,6 +114,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 {
                     EWCLogger.Warning(GetType().Name + " only allows triggers of the following types or subtypes: " + string.Join(", ", _validTriggers));
                     Trigger.Activate.RemoveAt(i);
+                    continue;
                 }
 
                 if (Trigger.Activate[i] is not IDamageTypeTrigger typeTrigger) continue;
@@ -124,6 +125,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 {
                     EWCLogger.Warning(GetType().Name + " cannot have a hit trigger damage type matching " + _blacklistType.ToString());
                     Trigger.Activate.RemoveAt(i);
+                    continue;
                 }
             }
 
