@@ -18,6 +18,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Armor Pierce: Pierces armor or modifies bullet damage dealt to armor.
 - Auto Aim: Automatically fire toward targets.
 - Auto Trigger: Hold the trigger to fire. [Semi or Burst weapons only]
+- Backstab Multi: Applies a multiplier to backstab damage.
 - Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Automatic weapons only]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst weapons only]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced.
