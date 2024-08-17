@@ -50,7 +50,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         }
         public float DecelDelay { get; set; } = 0f;
         public float AccelExponent { get; set; } = 1f;
-        private bool _useContinuousGrowth = true;
+        private bool _useContinuousGrowth = false;
 
         private TriggerCoordinator? _coordinator;
         public TriggerCoordinator? ResetTrigger
