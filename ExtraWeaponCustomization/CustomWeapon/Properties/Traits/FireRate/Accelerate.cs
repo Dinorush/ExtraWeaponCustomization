@@ -34,9 +34,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             get { return _endFireRate; }
             set { _endFireRate = Math.Max(0.001f, value); }
         }
-        private float _accelTime = 1f;
         public float EndDamageMod { get; set; } = 1f;
         public StackType DamageStackLayer { get; set; } = StackType.Multiply;
+        private float _accelTime = 1f;
         public float AccelTime
         {
             get { return _accelTime; }
@@ -50,6 +50,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         }
         public float DecelDelay { get; set; } = 0f;
         public float AccelExponent { get; set; } = 1f;
+        private bool _useContinuousGrowth = true;
 
         private TriggerCoordinator? _coordinator;
         public TriggerCoordinator? ResetTrigger
@@ -68,6 +69,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private float _resetProgress = 0f;
         private float _resetUpdateTime = 0f;
+        private bool _calculateGrowthFactor = true;
         private CustomWeaponComponent? _cachedCWC;
 
         private void UpdateProgress(BulletWeapon weapon)
@@ -108,7 +110,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _lastUpdateTime = Clock.Time;
 
             // Apply accelerated fire rate
-            float startFireRate = 1f/Math.Max(CustomWeaponData.MinShotDelay, context.Weapon.m_archeType.ShotDelay());
+            float startFireRate = 1f / Math.Max(CustomWeaponData.MinShotDelay, context.Weapon.m_archeType.ShotDelay());
             context.FireRate = CalculateCurrentFireRate(startFireRate);
         }
 
@@ -146,6 +148,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private float CalculateCurrentFireRate(float startFireRate)
         {
+            if (_useContinuousGrowth)
+            {
+                CalculateGrowthFactor(startFireRate);
+                float fireRate = (float) Math.Exp(AccelExponent * _progress) * startFireRate;
+                return startFireRate < EndFireRate ? Math.Min(fireRate, EndFireRate) : Math.Max(EndFireRate, fireRate);
+            }
             return UnityEngine.Mathf.Lerp(startFireRate, EndFireRate, (float) Math.Pow(_progress, AccelExponent));
         }
 
@@ -163,6 +171,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 DamageStackLayer = DamageStackLayer,
                 AccelTime = AccelTime,
                 AccelExponent = AccelExponent,
+                _useContinuousGrowth = _useContinuousGrowth,
                 DecelTime = DecelTime,
                 DecelDelay = DecelDelay,
                 ResetTrigger = ResetTrigger?.Clone()
@@ -179,7 +188,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(EndDamageMod), EndDamageMod);
             writer.WriteString(nameof(DamageStackLayer), DamageStackLayer.ToString());
             writer.WriteNumber(nameof(AccelTime), AccelTime);
-            writer.WriteNumber(nameof(AccelExponent), AccelExponent);
+            if (_useContinuousGrowth)
+                writer.WriteString(nameof(AccelExponent), "e");
+            else
+                writer.WriteNumber(nameof(AccelExponent), AccelExponent);
             writer.WriteNumber(nameof(DecelTime), DecelTime);
             writer.WriteNumber(nameof(DecelDelay), DecelDelay);
             writer.WriteString(nameof(ResetTrigger), "Invalid");
@@ -212,7 +224,17 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "accelexponent":
                 case "exponent":
-                    AccelExponent = reader.GetSingle();
+                    if (reader.TokenType == JsonTokenType.String)
+                    {
+                        string check = reader.GetString()!.ToLowerInvariant();
+                        if (check == "e")
+                            _useContinuousGrowth = true;
+                    }
+                    else
+                    {
+                        AccelExponent = reader.GetSingle();
+                        _useContinuousGrowth = false;
+                    }
                     break;
                 case "deceltime":
                     DecelTime = reader.GetSingle();
@@ -227,6 +249,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 default:
                     break;
             }
+        }
+
+        private void CalculateGrowthFactor(float startFireRate)
+        {
+            if (!_calculateGrowthFactor) return;
+            _calculateGrowthFactor = false;
+            AccelExponent = (float) Math.Log(EndFireRate / startFireRate);
         }
     }
 }
