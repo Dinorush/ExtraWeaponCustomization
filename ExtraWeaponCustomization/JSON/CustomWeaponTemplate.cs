@@ -35,7 +35,8 @@ namespace ExtraWeaponCustomization.JSON
                     new CustomWeapon.Properties.Traits.Projectile(),
                     new ReserveClip(),
                     new ThickBullet(),
-                    new TumorMulti()
+                    new TumorMulti(),
+                    new WallPierce()
                 }
             };
             return data;

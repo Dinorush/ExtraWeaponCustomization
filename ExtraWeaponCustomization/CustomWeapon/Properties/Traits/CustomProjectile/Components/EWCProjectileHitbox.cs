@@ -25,6 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private readonly HashSet<int> _hitEnts = new();
         private WeaponHitData _hitData = new();
         private int _entityLayer;
+        private bool _hitWorld;
         private bool _enabled = false;
 
         // Variables
@@ -65,7 +66,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             Vector3 pos = _weapon.Owner.Position;
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
 
-            _entityLayer = LayerManager.MASK_ENEMY_DAMAGABLE;
+            _entityLayer = LayerManager.MASK_MELEE_ATTACK_TARGETS;
             _initialPlayers.Clear();
             int ownerID = _weapon.Owner.GetInstanceID();
             if (projBase.DamageOwner)
@@ -87,6 +88,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
             if (projBase.HitSize == projBase.HitSizeWorld)
                 _entityLayer |= EWCProjectileManager.MaskWorld;
+
+            _hitWorld = !cwc.HasProperty(typeof(WallPierce));
 
             _hitEnts.Clear();
             if (_weapon.ArchetypeData.PiercingBullets && _weapon.ArchetypeData.PiercingDamageCountLimit > 1)
@@ -139,7 +142,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             CheckCollision();
             if (_pierceCount <= 0) return;
 
-            CheckCollisionWorld();
+            if (_hitWorld)
+                CheckCollisionWorld();
 
             // Player moves on fixed time so only remove on fixed time
             if (_lastFixedTime != Time.fixedTime && _initialPlayers.Count != 0)
@@ -163,7 +167,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             Array.Sort(hits, DistanceCompare);
             foreach (RaycastHit hit in hits)
             {
-                if (checkLOS && Physics.Linecast(s_ray.origin, hit.point, EWCProjectileManager.MaskWorld)) continue;
+                if (checkLOS && _hitWorld && Physics.Linecast(s_ray.origin, hit.point, EWCProjectileManager.MaskWorld)) continue;
 
                 s_rayHit = hit;
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
@@ -249,6 +253,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
                 else if (!agent.Alive)
                     return false;
             }
+
+            if (!_hitWorld && !WallPierce.IsTargetReachable(_weapon.Owner.CourseNode, agent?.CourseNode)) return false;
 
             if (!_pierce) return true;
 
