@@ -26,6 +26,7 @@ Adds additional gun mechanics for rundown developers to use. These include:
 - Reserve Clip: Combines reserve ammo with the magazine.
 - Thick Bullet: Gives bullets a bigger entity hitbox.
 - Tumor Multi: Applies a multiplier to tumor damage.
+- Wall Pierce: Bullets can damage enemies through walls.
 
 Additional details for customizing/implementing these can be found on the wiki:
 
