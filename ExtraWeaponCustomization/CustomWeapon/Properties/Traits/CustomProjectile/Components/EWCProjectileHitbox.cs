@@ -167,7 +167,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             Array.Sort(hits, DistanceCompare);
             foreach (RaycastHit hit in hits)
             {
-                if (checkLOS && _hitWorld && Physics.Linecast(s_ray.origin, hit.point, EWCProjectileManager.MaskWorld)) continue;
+                if (checkLOS && _hitWorld && Physics.Linecast(hit.point, hit.point + hit.normal * _settings.HitSize, EWCProjectileManager.MaskWorld)) continue;
 
                 s_rayHit = hit;
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
