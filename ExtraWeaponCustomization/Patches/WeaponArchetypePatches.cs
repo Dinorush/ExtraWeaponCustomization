@@ -133,7 +133,6 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null) return;
 
             cwc.Invoke(new WeaponPostStopFiringContext(__instance.m_weapon!));
-            cwc.CancelShot = true;
         }
     }
 }
