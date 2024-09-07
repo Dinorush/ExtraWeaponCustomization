@@ -55,7 +55,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 context.Data.rayHit = s_rayHit;
                 if (BulletWeapon.BulletHit(context.Data, true, 0, context.Weapon.m_damageSearchID, true))
                     _pierceCount--;
-
+                
                 if (_pierceCount <= 0) return;
             }
         }
@@ -146,7 +146,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private static bool AlreadyHit(Collider collider, uint searchID)
         {
-            return DamageableUtil.GetDamageableFromCollider(collider)?.GetBaseDamagable()?.TempSearchID != searchID;
+            return DamageableUtil.GetDamageableFromCollider(collider)?.GetBaseDamagable()?.TempSearchID == searchID;
         }
 
         public override IWeaponProperty Clone()

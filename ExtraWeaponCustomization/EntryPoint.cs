@@ -15,7 +15,7 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate;
 
 namespace ExtraWeaponCustomization;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.8.2")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "1.8.3")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOPartialDataUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
