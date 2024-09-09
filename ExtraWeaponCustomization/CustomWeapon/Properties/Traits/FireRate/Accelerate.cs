@@ -125,6 +125,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             UpdateProgress(context.Weapon);
         }
 
+        public void Invoke(WeaponTriggerContext context) => ResetTrigger?.Invoke(context);
+
         public void TriggerReset()
         {
             // Reset acceleration
