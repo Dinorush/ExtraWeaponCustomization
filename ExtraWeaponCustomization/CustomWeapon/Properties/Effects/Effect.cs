@@ -8,8 +8,7 @@ using ExtraWeaponCustomization.Utils;
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public abstract class Effect : 
-        ITriggerCallback,
-        IWeaponProperty<WeaponTriggerContext>
+        ITriggerCallback
     {
         public bool AllowStack { get; } = true;
 
