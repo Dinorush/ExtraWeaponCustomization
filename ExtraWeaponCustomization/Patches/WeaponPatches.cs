@@ -37,7 +37,7 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponWieldContext(__instance));
+            cwc.Invoke(new WeaponWieldContext());
             cwc.RefreshSoundDelay();
             _lastSearchID = 0;
         }
@@ -97,14 +97,14 @@ namespace ExtraWeaponCustomization.Patches
             if (damageable != null)
             {
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
-                WeaponDamageContext damageContext = new(weaponRayData.damage, weaponRayData.precisionMulti, damageable, cwc.Weapon);
+                WeaponDamageContext damageContext = new(weaponRayData.damage, weaponRayData.precisionMulti, damageable);
                 cwc.Invoke(damageContext);
                 weaponRayData.damage = damageContext.Damage.Value;
                 weaponRayData.precisionMulti = damageContext.Precision.Value;
 
                 if (pierce)
                 {
-                    WeaponPierceContext pierceContext = new(pierceDamage, damageable, cwc.Weapon);
+                    WeaponPierceContext pierceContext = new(pierceDamage, damageable);
                     cwc.Invoke(pierceContext);
                     pierceDamage = pierceContext.Value;
                 }
@@ -116,7 +116,7 @@ namespace ExtraWeaponCustomization.Patches
                 Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>()!;
 
                 float backstab = limb.ApplyDamageFromBehindBonus(1f, weaponRayData.rayHit.point, weaponRayData.fireDir.normalized);
-                WeaponBackstabContext backContext = new(cwc.Weapon);
+                WeaponBackstabContext backContext = new();
                 cwc.Invoke(backContext);
 
                 WeaponPreHitEnemyContext hitContext = new(
@@ -124,11 +124,10 @@ namespace ExtraWeaponCustomization.Patches
                     additionalDis,
                     backstab.Map(1f, 2f, 1f, backContext.Value),
                     limb,
-                    cwc.Weapon,
                     DamageType.Bullet
                 );
                 cwc.Invoke(hitContext);
-                KillTrackerManager.RegisterHit(hitContext);
+                KillTrackerManager.RegisterHit(cwc.Weapon, hitContext);
 
                 if (backContext.Value > 1f)
                     weaponRayData.damage *= hitContext.Backstab / backstab;
@@ -136,7 +135,7 @@ namespace ExtraWeaponCustomization.Patches
                     doBackstab = false;
             }
             else
-                cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis, cwc.Weapon));
+                cwc.Invoke(new WeaponPreHitContext(weaponRayData, additionalDis));
         }
     }
 }

@@ -35,7 +35,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            BulletWeapon weapon = triggerList[0].context.Weapon;
+            BulletWeapon weapon = CWC.Weapon;
+
             float triggers = triggerList.Sum(context => context.triggerAmt);
             _clipBuffer += ClipChange * triggers;
             _reserveBuffer += ReserveChange * triggers;

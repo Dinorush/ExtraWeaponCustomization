@@ -49,18 +49,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostSetupContext context)
         {
-            _cachedRayDist = context.Weapon.MaxRayDist;
-            context.Weapon.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
+            _cachedRayDist = CWC.Weapon.MaxRayDist;
+            CWC.Weapon.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            context.Weapon.MaxRayDist = _cachedRayDist;
+            CWC.Weapon.MaxRayDist = _cachedRayDist;
         }
 
         public void Invoke(WeaponPostRayContext context)
         {
-            if (!context.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || context.Weapon.Owner.Owner.IsBot)) return;
+            if (!CWC.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || CWC.Weapon.Owner.Owner.IsBot)) return;
 
             context.Result = false;
             context.Data.maxRayDist = 0f;
@@ -80,23 +80,23 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 return;
             }
 
-            _cachedCWC ??= context.Weapon.GetComponent<CustomWeaponComponent>();
+            _cachedCWC ??= CWC.Weapon.GetComponent<CustomWeaponComponent>();
             if (VisualLerpDist > 0)
-                comp.SetVisualPosition(context.Weapon.MuzzleAlign.position, visualDist);
+                comp.SetVisualPosition(CWC.Weapon.MuzzleAlign.position, visualDist);
             comp.Hitbox.Init(_cachedCWC, this);
         }
 
         // Cancel tracer FX
         public void Invoke(WeaponPostFireContext context)
         {
-            if (!context.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || context.Weapon.Owner.Owner.IsBot)) return;
+            if (!CWC.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || CWC.Weapon.Owner.Owner.IsBot)) return;
 
-            CancelTracerFX(context.Weapon, context.Weapon.TryCast<Shotgun>() != null);
+            CancelTracerFX(CWC.Weapon, CWC.Weapon.TryCast<Shotgun>() != null);
         }
 
         public void Invoke(WeaponPostFireContextSync context)
         {
-            CancelTracerFX(context.Weapon, context.Weapon.TryCast<ShotgunSynced>() != null);
+            CancelTracerFX(CWC.Weapon, CWC.Weapon.TryCast<ShotgunSynced>() != null);
         }
 
         private void CancelTracerFX(BulletWeapon weapon, bool isShotgun)

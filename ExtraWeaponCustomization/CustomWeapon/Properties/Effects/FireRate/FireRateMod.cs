@@ -28,8 +28,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             float mod = ConvertTriggersToMod(contexts);
             _expireTimes.Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
 
-            BulletWeapon weapon = contexts[0].context.Weapon;
-            FireRateModManager.SendInstance(weapon.Owner.Owner, PlayerAmmoStorage.GetSlotFromAmmoType(weapon.AmmoType), mod);
+            FireRateModManager.SendInstance(CWC.Weapon.Owner.Owner, PlayerAmmoStorage.GetSlotFromAmmoType(CWC.Weapon.AmmoType), mod);
         }
 
         public void Invoke(WeaponFireRateContext context)

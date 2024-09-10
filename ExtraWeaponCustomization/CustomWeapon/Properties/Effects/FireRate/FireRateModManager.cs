@@ -39,7 +39,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate
                 return;
             }
 
-            cwc.Invoke(new WeaponFireRateModContextSync(mod, cwc.Weapon));
+            cwc.Invoke(new WeaponFireRateModContextSync(mod));
         }
     }
 

@@ -1,17 +1,14 @@
-﻿using Gear;
-using Player;
+﻿using Player;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
     public class WeaponPostAmmoPackContext : IWeaponContext
     {
         public PlayerAmmoStorage AmmoStorage { get; set; }
-        public BulletWeapon Weapon { get; }
 
-        public WeaponPostAmmoPackContext(PlayerAmmoStorage ammoStorage, BulletWeapon weapon)
+        public WeaponPostAmmoPackContext(PlayerAmmoStorage ammoStorage)
         {
             AmmoStorage = ammoStorage;
-            Weapon = weapon;
         }
     }
 }

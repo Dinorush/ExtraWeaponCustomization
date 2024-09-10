@@ -89,7 +89,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             if (projBase.HitSize == projBase.HitSizeWorld)
                 _entityLayer |= EWCProjectileManager.MaskWorld;
 
-            _hitWorld = !cwc.HasProperty(typeof(WallPierce));
+            _hitWorld = !cwc.HasTrait(typeof(WallPierce));
 
             _hitEnts.Clear();
             if (_weapon.ArchetypeData.PiercingBullets && _weapon.ArchetypeData.PiercingDamageCountLimit > 1)

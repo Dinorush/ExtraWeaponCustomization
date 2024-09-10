@@ -30,8 +30,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public float GlowDuration { get; set; } = 0.05f;
 
         public float CacheBackstab { get; private set; } = 0f;
-        public CustomWeaponComponent CWC { get; private set; }
-        public BulletWeapon Weapon { get; private set; }
 
 #pragma warning disable CS8618
         public Explosive()
@@ -44,12 +42,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public override void TriggerReset() {}
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            if (Weapon == null)
-            {
-                Weapon = triggerList[0].context.Weapon;
-                CWC = Weapon.GetComponent<CustomWeaponComponent>();
-            }
-
             foreach (TriggerContext tContext in triggerList)
             {
                 // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage

@@ -28,10 +28,10 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPreFireContextSync(__instance));
+            cwc.Invoke(new WeaponPreFireContextSync());
             cwc.UpdateStoredFireRate(__instance.m_archeType);
             cwc.ModifyFireRate(__instance);
-            cwc.Invoke(new WeaponPostFireContextSync(__instance));
+            cwc.Invoke(new WeaponPostFireContextSync());
         }
     }
 }

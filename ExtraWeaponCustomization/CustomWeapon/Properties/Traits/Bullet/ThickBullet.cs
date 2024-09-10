@@ -27,7 +27,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             context.Result = false;
 
-            _pierceCount = context.Weapon.ArchetypeData.PiercingBullets ? context.Weapon.ArchetypeData.PiercingDamageCountLimit : 1;
+            _pierceCount = CWC.Weapon.ArchetypeData.PiercingBullets ? CWC.Weapon.ArchetypeData.PiercingDamageCountLimit : 1;
 
             Vector3 wallPos; // Used to determine bounds for thick bullets and line of sight checks
             if (Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, EWCProjectileManager.MaskWorld))
@@ -46,14 +46,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             foreach (RaycastHit hit in results)
             {
                 if (hit.distance == 0) continue;
-                if (AlreadyHit(hit.collider, context.Weapon.m_damageSearchID)) continue;
+                if (AlreadyHit(hit.collider, CWC.Weapon.m_damageSearchID)) continue;
                 if (!CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos)) continue;
 
                 s_rayHit = hit;
                 CheckDirectHit(ref s_rayHit);
 
                 context.Data.rayHit = s_rayHit;
-                if (BulletWeapon.BulletHit(context.Data, true, 0, context.Weapon.m_damageSearchID, true))
+                if (BulletWeapon.BulletHit(context.Data, true, 0, CWC.Weapon.m_damageSearchID, true))
                     _pierceCount--;
                 
                 if (_pierceCount <= 0) return;
@@ -78,13 +78,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             while (hitQueue.TryDequeue(out s_rayHit, out _))
             {
-                if (AlreadyHit(s_rayHit.collider, context.Weapon.m_damageSearchID)) continue;
+                if (AlreadyHit(s_rayHit.collider, CWC.Weapon.m_damageSearchID)) continue;
                 if (!CheckLineOfSight(s_rayHit.collider, ray.origin, wallPos)) continue;
 
                 CheckDirectHit(ref s_rayHit);
 
                 context.Data.rayHit = s_rayHit;
-                if (BulletWeapon.BulletHit(context.Data, true, 0, context.Weapon.m_damageSearchID, true))
+                if (BulletWeapon.BulletHit(context.Data, true, 0, CWC.Weapon.m_damageSearchID, true))
                     _pierceCount--;
 
                 if (_pierceCount <= 0) break;

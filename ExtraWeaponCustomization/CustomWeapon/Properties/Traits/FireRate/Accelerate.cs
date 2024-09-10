@@ -71,20 +71,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private float _resetProgress = 0f;
         private float _resetUpdateTime = 0f;
         private bool _calculateGrowthFactor = true;
-        private CustomWeaponComponent? _cachedCWC;
 
-        private void UpdateProgress(BulletWeapon weapon)
+        private void UpdateProgress()
         {
             _resetProgress = _progress;
             _resetUpdateTime = _lastUpdateTime;
 
-            _cachedCWC ??= weapon.GetComponent<CustomWeaponComponent>();
+            CWC.Weapon.GetComponent<CustomWeaponComponent>();
 
             if (_lastUpdateTime == 0f)
                 _lastUpdateTime = Clock.Time;
 
             float delta = Clock.Time - _lastUpdateTime;
-            float accelTime = Math.Min(1f / _cachedCWC.CurrentFireRate, delta);
+            float accelTime = Math.Min(1f / CWC.CurrentFireRate, delta);
 
             _progress = Math.Min(_progress + accelTime / AccelTime, 1f);
 
@@ -98,7 +97,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPreStartFireContext context)
         {
-            UpdateProgress(context.Weapon);   
+            UpdateProgress();   
         }
 
         // Runs on every shot fired. Don't need to do a full UpdateProgress since we know the player is
@@ -111,7 +110,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _lastUpdateTime = Clock.Time;
 
             // Apply accelerated fire rate
-            float startFireRate = 1f / Math.Max(CustomWeaponData.MinShotDelay, context.Weapon.m_archeType.ShotDelay());
+            float startFireRate = 1f / Math.Max(CustomWeaponData.MinShotDelay, CWC.Weapon.m_archeType.ShotDelay());
             context.FireRate = CalculateCurrentFireRate(startFireRate);
         }
 
@@ -123,7 +122,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPreFireContextSync context)
         {
-            UpdateProgress(context.Weapon);
+            UpdateProgress();
         }
 
         public void Invoke(WeaponTriggerContext context) => ResetTrigger?.Invoke(context);

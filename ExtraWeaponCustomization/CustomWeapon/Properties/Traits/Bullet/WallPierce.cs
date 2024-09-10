@@ -22,7 +22,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (!Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, LayerManager.MASK_BULLETWEAPON_PIERCING_PASS)) return;
 
             IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
-            if (damageable == null || !IsTargetReachable(context.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode)) return;
+            if (damageable == null || !IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode)) return;
 
             context.Result = true;
             context.Data.rayHit = s_rayHit;

@@ -1,5 +1,4 @@
 ﻿using Enemies;
-using Gear;
 using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
@@ -13,7 +12,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         public float Falloff { get; }
         public float Backstab { get; }
 
-        public WeaponPostKillContext(WeaponPreHitEnemyContext hitContext) : base(hitContext.Weapon, hitContext.DamageType)
+        public WeaponPostKillContext(WeaponPreHitEnemyContext hitContext) : base(hitContext.DamageType)
         {
             Enemy = hitContext.Damageable.GetBaseAgent().TryCast<EnemyAgent>()!;
 

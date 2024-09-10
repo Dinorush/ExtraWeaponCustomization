@@ -8,7 +8,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostSetupContext>
     {
         public void Invoke(WeaponPostSetupContext context) {
-            context.Weapon.m_archeType.m_triggerNeedsPress = false;
+            CWC.Weapon.m_archeType.m_triggerNeedsPress = false;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

@@ -35,7 +35,7 @@ namespace ExtraWeaponCustomization.Patches
 
             if (_cachedComponent == null) return;
 
-            WeaponRecoilContext context = new(_cachedWeapon!);
+            WeaponRecoilContext context = new();
             _cachedComponent.Invoke(context);
             if (context.Value == 1f) return;
 

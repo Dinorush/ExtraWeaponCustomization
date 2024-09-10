@@ -26,15 +26,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContext context)
         {
-            BulletWeaponArchetype archetype = context.Weapon.m_archeType;
+            BulletWeaponArchetype archetype = CWC.Weapon.m_archeType;
             if (_cachedCWC == null)
-                _cachedCWC = context.Weapon.GetComponent<CustomWeaponComponent>();
+                _cachedCWC = CWC.Weapon.GetComponent<CustomWeaponComponent>();
             float shotDelay = 1f / _cachedCWC.CurrentFireRate;
 
             // Hit callback runs and applies damage bonus before this one, so we can safely reduce the buffer
-            int extraShots = GetShotsInBuffer(context.Weapon);
-            if (_cachedCWC.HasProperty(typeof(ReserveClip)))
-                PlayerBackpackManager.GetBackpack(context.Weapon.Owner.Owner).AmmoStorage.UpdateBulletsInPack(context.Weapon.AmmoType, -extraShots);
+            int extraShots = GetShotsInBuffer(CWC.Weapon);
+            if (_cachedCWC.HasTrait(typeof(ReserveClip)))
+                PlayerBackpackManager.GetBackpack(CWC.Weapon.Owner.Owner).AmmoStorage.UpdateBulletsInPack(CWC.Weapon.AmmoType, -extraShots);
             else
                 archetype.m_weapon.m_clip -= extraShots;
             _shotBuffer -= extraShots;
@@ -44,25 +44,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             _lastShotTime = Clock.Time;
             // Need to update ammo since we modified the clip
-            context.Weapon.UpdateAmmoStatus();
+            CWC.Weapon.UpdateAmmoStatus();
         }
 
         public void Invoke(WeaponDamageContext context)
         {
             // Won't apply on the first shot (no time delta available to use)
-            context.Damage.AddMod(1f + GetShotsInBuffer(context.Weapon), Effects.StackType.Multiply);
+            context.Damage.AddMod(1f + GetShotsInBuffer(CWC.Weapon), Effects.StackType.Multiply);
         }
 
         public void Invoke(WeaponRecoilContext context)
         {
             // Won't apply on the first shot (no time delta available to use)
-            context.AddMod(1f + GetShotsInBuffer(context.Weapon), Effects.StackType.Multiply);
+            context.AddMod(1f + GetShotsInBuffer(CWC.Weapon), Effects.StackType.Multiply);
         }
 
         private int GetShotsInBuffer(BulletWeapon weapon)
         {
             int cap = weapon.GetCurrentClip();
-            if (_cachedCWC?.HasProperty(typeof(ReserveClip)) == true)
+            if (_cachedCWC?.HasTrait(typeof(ReserveClip)) == true)
                 cap = PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetBulletsInPack(weapon.AmmoType);
           
             return Math.Min(cap, (int)_shotBuffer);

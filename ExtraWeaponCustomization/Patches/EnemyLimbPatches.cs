@@ -20,7 +20,7 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null || __instance.m_type != eLimbDamageType.Armor) return;
 
             _cachedArmor = __instance.m_armorDamageMulti;
-            WeaponArmorContext context = new(_cachedArmor, cwc.Weapon);
+            WeaponArmorContext context = new(_cachedArmor);
             cwc.Invoke(context);
             __instance.m_armorDamageMulti = context.ArmorMulti;
         }

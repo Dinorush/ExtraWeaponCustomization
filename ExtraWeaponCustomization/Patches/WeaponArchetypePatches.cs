@@ -33,7 +33,7 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null) return true;
 
             cwc.CancelShot = false;
-            WeaponPreStartFireContext context = new(__instance.m_weapon!);
+            WeaponPreStartFireContext context = new();
             cwc.Invoke(context);
             cwc.UpdateStoredFireRate(__instance); // Need to update prior to firing to predict weapon sound delay
             if (!context.Allow)
@@ -59,7 +59,7 @@ namespace ExtraWeaponCustomization.Patches
                 return;
             }
 
-            cwc.Invoke(new WeaponPostStartFireContext(__instance.m_weapon!));
+            cwc.Invoke(new WeaponPostStartFireContext());
         }
 
         [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnFireShot))]
@@ -73,12 +73,12 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null) return true;
             if (cwc.CancelShot) return false;
 
-            WeaponFireCancelContext context = new(__instance.m_weapon!);
+            WeaponFireCancelContext context = new();
             cwc.Invoke(context);
             if (!context.Allow)
                 cwc.StoreCancelShot();
             else
-                cwc.Invoke(new WeaponPreFireContext(__instance.m_weapon!));
+                cwc.Invoke(new WeaponPreFireContext());
 
             return context.Allow;
         }
@@ -93,7 +93,7 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
             if (cwc == null || cwc.CancelShot) return;
 
-            cwc.Invoke(new WeaponPostFireContext(__instance.m_weapon!));
+            cwc.Invoke(new WeaponPostFireContext());
         }
 
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.PostFireCheck))]
@@ -134,7 +134,7 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPostStopFiringContext(__instance.m_weapon!));
+            cwc.Invoke(new WeaponPostStopFiringContext());
         }
     }
 }

@@ -5,12 +5,17 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
 using ExtraWeaponCustomization.Utils;
 using ExtraWeaponCustomization.JSON;
+using Gear;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public abstract class Effect : 
         ITriggerCallback
     {
+#pragma warning disable CS8618 // Set when registered to a CWC
+        public CustomWeaponComponent CWC { get; set; }
+#pragma warning restore CS8618
+        public BulletWeapon Weapon => CWC.Weapon;
         public bool AllowStack { get; } = true;
 
         private TriggerCoordinator? _coordinator;

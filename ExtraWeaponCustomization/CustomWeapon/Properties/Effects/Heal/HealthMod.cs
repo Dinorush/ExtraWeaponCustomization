@@ -19,7 +19,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public override void TriggerApply(List<TriggerContext> contexts)
         {
             float cap = CapRel >= 0f ? CapRel : Math.Sign(HealthChangeRel);
-            PlayerAgent owner = contexts[0].context.Weapon.Owner;
+            PlayerAgent owner = CWC.Weapon.Owner;
             float heal = HealthChangeRel * owner.Damage.HealthMax;
             heal *= contexts.Sum(context => context.triggerAmt);
 

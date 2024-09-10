@@ -146,7 +146,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             float distFalloff = damage / eBase.MaxDamage;
             float precisionMult = eBase.PrecisionDamageMulti;
 
-            WeaponDamageContext context = new(damage, precisionMult, damageable, eBase.Weapon);
+            WeaponDamageContext context = new(damage, precisionMult, damageable);
             eBase.CWC.Invoke(context);
             if (!eBase.IgnoreDamageMods)
                 damage = context.Damage.Value;
@@ -204,7 +204,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     backstabMulti = eBase.CacheBackstab;
                 else
                 {
-                    WeaponBackstabContext backContext = new(eBase.Weapon);
+                    WeaponBackstabContext backContext = new();
                     eBase.CWC.Invoke(backContext);
                     backstabMulti = limb.ApplyDamageFromBehindBonus(1f, position, direction).Map(1f, 2f, 1f, backContext.Value);
                 }
@@ -224,12 +224,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 damageable,
                 position,
                 direction,
-                eBase.Weapon,
                 precHit ? DamageType.WeakspotExplosive : DamageType.Explosive
                 );
             eBase.CWC.Invoke(hitContext);
 
-            KillTrackerManager.RegisterHit(hitContext);
+            KillTrackerManager.RegisterHit(eBase.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), position, armorMulti < 1f);
 
             DamageSync.Send(data, SNet_ChannelType.GameNonCritical);

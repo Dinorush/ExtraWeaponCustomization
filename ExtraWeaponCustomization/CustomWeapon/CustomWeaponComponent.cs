@@ -22,7 +22,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public bool CancelShot { get; set; }
 
-        private readonly HashSet<Type> _propertyTypes;
+        private readonly Dictionary<Type, Trait> _traits;
         // When canceling a shot, holds the next shot timer so we can reset back to it
         private float _lastShotTimer = 0f;
         private float _lastBurstTimer = 0f;
@@ -35,7 +35,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
             _contextController = new ContextController();
-            _propertyTypes = new HashSet<Type>();
+            _traits = new Dictionary<Type, Trait>();
 
             BulletWeapon? bulletWeapon = GetComponent<BulletWeapon>();
             if (bulletWeapon == null)
@@ -96,8 +96,10 @@ namespace ExtraWeaponCustomization.CustomWeapon
                 _autoAim ??= autoAim;
 
             _contextController.Register(property);
+            property.CWC = this;
 
-            _propertyTypes.Add(property.GetType());
+            if (property is Trait trait)
+                _traits.TryAdd(property.GetType(), trait);
         }
 
         [HideFromIl2Cpp]
@@ -109,13 +111,13 @@ namespace ExtraWeaponCustomization.CustomWeapon
             foreach (IWeaponProperty property in properties)
                 Register(property);
 
-            Invoke(new WeaponPostSetupContext(Weapon));
+            Invoke(new WeaponPostSetupContext());
         }
 
         public void Clear()
         {
-            Invoke(new WeaponClearContext(Weapon));
-            _propertyTypes.Clear();
+            Invoke(new WeaponClearContext());
+            _traits.Clear();
             _contextController.Clear();
             _autoAim = null;
             _ownerSet = false;
@@ -125,13 +127,15 @@ namespace ExtraWeaponCustomization.CustomWeapon
         }
 
         [HideFromIl2Cpp]
-        public bool HasProperty(Type type) => _propertyTypes.Contains(type);
+        public bool HasTrait(Type type) => _traits.ContainsKey(type);
+        [HideFromIl2Cpp]
+        public Trait GetTrait(Type type) => _traits[type];
 
         public void StoreCancelShot()
         {
             if (!CancelShot)
             {
-                Invoke(new WeaponCancelFireContext(Weapon));
+                Invoke(new WeaponCancelFireContext());
                 CancelShot = true;
             }
         }
@@ -159,11 +163,11 @@ namespace ExtraWeaponCustomization.CustomWeapon
             _lastBurstTimer = archetype.m_nextBurstTimer;
 
             // Invoke callbacks that override base fire rate
-            WeaponFireRateSetContext context = new(Weapon, _fireRate);
+            WeaponFireRateSetContext context = new(_fireRate);
             Invoke(context);
 
             // Invoke callbacks that modify current fire rate
-            WeaponFireRateContext postContext = new(context.FireRate, Weapon);
+            WeaponFireRateContext postContext = new(context.FireRate);
             Invoke(postContext);
 
             if (CurrentFireRate != postContext.Value)

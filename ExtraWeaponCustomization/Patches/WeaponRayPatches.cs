@@ -41,7 +41,7 @@ namespace ExtraWeaponCustomization.Patches
 
             if (_cachedCWC == null) return;
 
-            _cachedCWC.Invoke(new WeaponPreRayContext(weaponRayData, originPos, _cachedCWC.Weapon));
+            _cachedCWC.Invoke(new WeaponPreRayContext(weaponRayData, originPos));
         }
 
         [HarmonyWrapSafe]
@@ -53,7 +53,7 @@ namespace ExtraWeaponCustomization.Patches
 
             if (_cachedCWC == null) return;
 
-            WeaponPostRayContext context = new(weaponRayData, originPos, _cachedCWC.Weapon, __result);
+            WeaponPostRayContext context = new(weaponRayData, originPos, __result);
             _cachedCWC.Invoke(context);
             __result = context.Result;
         }

@@ -23,7 +23,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             {
                 PlayerDataBlock data = GameDataBlockBase<PlayerDataBlock>.GetBlock(1u);
                 float capToPack = 1f;
-                switch (context.Weapon.AmmoType)
+                switch (CWC.Weapon.AmmoType)
                 {
                     case AmmoType.Standard:
                         capToPack = (float)data.AmmoStandardMaxCap / data.AmmoStandardResourcePackMaxCap;
@@ -36,15 +36,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             }
 
             if (CostOfBullet > 0)
-                AmmoCapRel = context.Weapon.ArchetypeData.CostOfBullet / CostOfBullet;
+                AmmoCapRel = CWC.Weapon.ArchetypeData.CostOfBullet / CostOfBullet;
         }
 
         public void Invoke(WeaponPostAmmoInitContext context)
         {
             // Fix the starting ammo for the weapon.
             InventorySlotAmmo slot = context.SlotAmmo;
-            slot.AmmoInPack = (context.Weapon.GetCurrentClip() * slot.CostOfBullet + slot.AmmoInPack) * AmmoCapRel;
-            context.Weapon.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(0, slot.AmmoType));
+            slot.AmmoInPack = (CWC.Weapon.GetCurrentClip() * slot.CostOfBullet + slot.AmmoInPack) * AmmoCapRel;
+            CWC.Weapon.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(0, slot.AmmoType));
         }
 
         public void Invoke(WeaponPreAmmoPackContext context)

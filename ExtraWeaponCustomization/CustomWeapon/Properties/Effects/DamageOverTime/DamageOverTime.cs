@@ -14,8 +14,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     public sealed class DamageOverTime :
         Effect
     {
-        public BulletWeapon Weapon { get; private set; }
-        public CustomWeaponComponent CWC { get; private set; }
         public PlayerAgent Owner => Weapon.Owner;
 
         public float TotalDamage { get; set; } = 0f;
@@ -49,12 +47,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            if (Weapon == null)
-            {
-                Weapon = triggerList[0].context.Weapon;
-                CWC = Weapon.GetComponent<CustomWeaponComponent>();
-            }
-
             foreach (TriggerContext tContext in triggerList)
                 AddDOT((WeaponPreHitEnemyContext)tContext.context, tContext.triggerAmt);
         }
@@ -73,7 +65,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             float backstabMulti = IgnoreBackstab ? 1f : context.Backstab;
             float precisionMulti = PrecisionDamageMulti;
 
-            WeaponDamageContext damageContext = new(damage, precisionMulti, context.Damageable, Weapon);
+            WeaponDamageContext damageContext = new(damage, precisionMulti, context.Damageable);
             CWC.Invoke(damageContext);
             if (!IgnoreDamageMods)
                 damage = damageContext.Damage.Value;

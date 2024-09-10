@@ -1,10 +1,7 @@
-﻿using Gear;
-
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+﻿namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
     public class WeaponPreAmmoUIContext : IWeaponContext
     {
-        public BulletWeapon Weapon { get; }
         public int Clip { get; set; }
         public int Reserve { get; set; }
         public float TotalRel { get; set; }
@@ -13,9 +10,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         public bool ShowRel { get; set; }
         public bool ShowInfinite { get; set; }
 
-        public WeaponPreAmmoUIContext(BulletWeapon weapon, int clip, int reserve, float totalRel, bool showClip, bool showReserve, bool showRel, bool showInfinite)
+        public WeaponPreAmmoUIContext(int clip, int reserve, float totalRel, bool showClip, bool showReserve, bool showRel, bool showInfinite)
         {
-            Weapon = weapon;
             Clip = clip;
             Reserve = reserve;
             TotalRel = totalRel;

@@ -19,7 +19,7 @@ namespace ExtraWeaponCustomization.Patches
             _cachedCWC = __instance.Holder.WieldedItem.GetComponent<CustomWeaponComponent>();
             if (_cachedCWC == null) return;
 
-            _cachedCWC.Invoke(new WeaponAimContext(_cachedCWC.Weapon));
+            _cachedCWC.Invoke(new WeaponAimContext());
         }
 
         [HarmonyPatch(typeof(FPIS_Aim), nameof(FPIS_Aim.Exit))]
@@ -29,7 +29,7 @@ namespace ExtraWeaponCustomization.Patches
         {
             if (_cachedCWC == null) return;
 
-            _cachedCWC.Invoke(new WeaponAimEndContext(_cachedCWC.Weapon));
+            _cachedCWC.Invoke(new WeaponAimEndContext());
         }
     }
 }

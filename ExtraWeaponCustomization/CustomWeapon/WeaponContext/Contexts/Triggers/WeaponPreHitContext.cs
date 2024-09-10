@@ -1,5 +1,4 @@
 ﻿using ExtraWeaponCustomization.Utils;
-using Gear;
 using UnityEngine;
 using static Weapon;
 
@@ -13,7 +12,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
         public Vector3 LocalPosition { get; }
         public IDamageable? Damageable { get; }
 
-        public WeaponPreHitContext(Vector3 position, Vector3 direction, float falloff, BulletWeapon weapon, IDamageable? damageable = null) : base(weapon, DamageType.Bullet)
+        public WeaponPreHitContext(Vector3 position, Vector3 direction, float falloff, IDamageable? damageable = null) : base(DamageType.Bullet)
         {
             Position = position;
             Direction = direction;
@@ -22,7 +21,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
             Damageable = damageable;
         }
 
-        public WeaponPreHitContext(WeaponHitData data, float additionalDist, BulletWeapon weapon, IDamageable? damageable = null) :
-            this(data.rayHit.point, data.fireDir.normalized, data.Falloff(additionalDist), weapon, damageable) {}
+        public WeaponPreHitContext(WeaponHitData data, float additionalDist, IDamageable? damageable = null) :
+            this(data.rayHit.point, data.fireDir.normalized, data.Falloff(additionalDist), damageable) {}
     }
 }

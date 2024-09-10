@@ -1,14 +1,9 @@
-﻿using Gear;
-
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+﻿namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
     public sealed class WeaponPostStopFiringContext : IWeaponContext
     {
-        public BulletWeapon Weapon { get; }
-
-        public WeaponPostStopFiringContext(BulletWeapon weapon)
+        public WeaponPostStopFiringContext()
         {
-            Weapon = weapon;
         }
     }
 }

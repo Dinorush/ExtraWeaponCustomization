@@ -24,14 +24,13 @@ namespace ExtraWeaponCustomization.Dependencies
         {
             if (delay > MAX_DELAY) return;
 
-            WeaponPreHitEnemyContext? hitContext = KillTrackerManager.GetKillHitContext(enemy);
+            (BulletWeapon Weapon, WeaponPreHitEnemyContext Context)? hitContext = KillTrackerManager.GetKillHitContext(enemy);
             if (hitContext == null) return;
 
-            BulletWeapon weapon = hitContext.Weapon;
-            CustomWeaponComponent? cwc = weapon.GetComponent<CustomWeaponComponent>();
+            CustomWeaponComponent? cwc = hitContext.Value.Weapon.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPostKillContext(hitContext));
+            cwc.Invoke(new WeaponPostKillContext(hitContext.Value.Context));
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using Gear;
-using Player;
+﻿using Player;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
@@ -7,13 +6,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
     {
         public PlayerAmmoStorage AmmoStorage { get; set; }
         public InventorySlotAmmo SlotAmmo { get; set; }
-        public BulletWeapon Weapon { get; }
 
-        public WeaponPostAmmoInitContext(PlayerAmmoStorage ammoStorage, InventorySlotAmmo slotAmmo, BulletWeapon weapon)
+        public WeaponPostAmmoInitContext(PlayerAmmoStorage ammoStorage, InventorySlotAmmo slotAmmo)
         {
             AmmoStorage = ammoStorage;
             SlotAmmo = slotAmmo;
-            Weapon = weapon;
         }
     }
 }

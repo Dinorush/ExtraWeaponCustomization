@@ -1,9 +1,13 @@
-﻿using System.Text.Json;
+﻿using Gear;
+using System.Text.Json;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public abstract class Trait : IWeaponProperty
     {
+#pragma warning disable CS8618 // Set when registered to a CWC
+        public CustomWeaponComponent CWC { get; set; }
+#pragma warning restore CS8618
         public bool AllowStack { get; } = false;
 
         public abstract IWeaponProperty Clone();

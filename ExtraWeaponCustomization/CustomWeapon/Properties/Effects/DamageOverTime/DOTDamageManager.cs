@@ -54,12 +54,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 damageable,
                 limb.DamageTargetPos,
                 limb.DamageTargetPos - limb.m_base.Owner.Position,
-                dotBase.Weapon!,
                 precHit ? DamageType.WeakspotDOT : DamageType.DOT
                 );
             dotBase.CWC.Invoke(hitContext);
 
-            KillTrackerManager.RegisterHit(hitContext);
+            KillTrackerManager.RegisterHit(dotBase.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f);
 
             Sync.Send(data, SNet_ChannelType.GameNonCritical);
