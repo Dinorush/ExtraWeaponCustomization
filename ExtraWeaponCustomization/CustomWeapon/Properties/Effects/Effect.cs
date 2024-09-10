@@ -4,6 +4,7 @@ using System.Text.Json;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
 using ExtraWeaponCustomization.Utils;
+using ExtraWeaponCustomization.JSON;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
@@ -46,30 +47,30 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public abstract IWeaponProperty Clone();
 
-        public abstract void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options);
-        protected void SerializeTrigger(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public abstract void Serialize(Utf8JsonWriter writer);
+        protected void SerializeTrigger(Utf8JsonWriter writer)
         {
             if (Trigger != null)
             {
                 writer.WritePropertyName(nameof(Trigger));
-                JsonSerializer.Serialize(writer, Trigger, options);
+                EWCJson.Serialize(writer, Trigger);
             }
             else
                 writer.WriteString(nameof(Trigger), "Invalid");
         }
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch(property)
             {
                 case "triggertype":
                 case "trigger":
-                    Trigger = JsonSerializer.Deserialize<TriggerCoordinator>(ref reader, options);
+                    Trigger = EWCJson.Deserialize<TriggerCoordinator>(ref reader);
                     VerifyTriggers();
                     break;
                 case "resettriggertype":
                 case "resettrigger":
-                    _resetTrigger = JsonSerializer.Deserialize<ITrigger>(ref reader, options);
+                    _resetTrigger = EWCJson.Deserialize<ITrigger>(ref reader);
                     EWCLogger.Warning(
                         "\"ResetTrigger\" as an Effect field is deprecated and will not be supported in a future version. " +
                         "Please port it to the Trigger object."

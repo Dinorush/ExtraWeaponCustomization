@@ -1,5 +1,6 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.JSON;
 using ExtraWeaponCustomization.Utils;
 using FX_EffectSystem;
 using Gear;
@@ -140,7 +141,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return copy;
         }
 
-        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -155,7 +156,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(ModelScale), ModelScale);
             writer.WriteBoolean(nameof(EnableTrail), EnableTrail);
             writer.WritePropertyName(nameof(GlowColor));
-            JsonSerializer.Serialize(writer, GlowColor, options);
+            EWCJson.Serialize(writer, GlowColor);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
@@ -164,7 +165,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property.ToLowerInvariant())
             {
@@ -209,7 +210,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "glowcolor":
                 case "color":
-                    GlowColor = JsonSerializer.Deserialize<Color>(ref reader, options);
+                    GlowColor = EWCJson.Deserialize<Color>(ref reader);
                     break;
                 case "glowrange":
                 case "range":

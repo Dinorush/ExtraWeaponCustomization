@@ -41,19 +41,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             return copy;
         }
 
-        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(HealthChangeRel), HealthChangeRel);
             writer.WriteNumber(nameof(CapRel), CapRel);
-            SerializeTrigger(writer, options);
+            SerializeTrigger(writer);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader, options);
+            base.DeserializeProperty(property, ref reader);
             switch (property)
             {
                 case "healthchangerel":

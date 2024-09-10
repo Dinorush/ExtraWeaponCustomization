@@ -43,12 +43,22 @@ namespace ExtraWeaponCustomization.JSON
             return JsonSerializer.Deserialize<T>(json, _setting);
         }
 
+        public static T? Deserialize<T>(ref Utf8JsonReader reader)
+        {
+            return JsonSerializer.Deserialize<T>(ref reader, _setting);
+        }
+
         public static object? Deserialize(Type type, string json)
         {
             return JsonSerializer.Deserialize(json, type, _setting);
         }
 
         public static string Serialize<T>(T value)
+        {
+            return JsonSerializer.Serialize(value, _setting);
+        }
+
+        public static string Serialize<T>(Utf8JsonWriter writer, T value)
         {
             return JsonSerializer.Serialize(value, _setting);
         }

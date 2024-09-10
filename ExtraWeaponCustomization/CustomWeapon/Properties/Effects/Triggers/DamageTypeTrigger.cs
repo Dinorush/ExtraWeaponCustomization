@@ -23,7 +23,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
                 && hitContext.DamageType.HasFlag(DamageType) ? 1f : 0f;
         }
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch(property)
             {

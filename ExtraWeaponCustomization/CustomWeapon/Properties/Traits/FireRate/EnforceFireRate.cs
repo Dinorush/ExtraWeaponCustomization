@@ -73,13 +73,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return new EnforceFireRate();
         }
 
-        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options) {}
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
     }
 }

@@ -1,6 +1,7 @@
 ﻿using AK;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.JSON;
 using Gear;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -101,7 +102,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             return copy;
         }
 
-        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -120,14 +121,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WritePropertyName(nameof(GlowColor));
-            JsonSerializer.Serialize(writer, GlowColor, options);
+            EWCJson.Serialize(writer, GlowColor);
             writer.WriteNumber(nameof(GlowDuration), GlowDuration);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader, options);
+            base.DeserializeProperty(property, ref reader);
             switch (property)
             {
                 case "maxdamage":
@@ -188,7 +189,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     break;
                 case "glowcolor":
                 case "color":
-                    GlowColor = JsonSerializer.Deserialize<Color>(ref reader, options);
+                    GlowColor = EWCJson.Deserialize<Color>(ref reader);
                     break;
                 case "glowduration":
                 case "duration":

@@ -21,7 +21,7 @@ namespace ExtraWeaponCustomization.JSON.Converters
 
                 string property = reader.GetString()!;
                 reader.Read();
-                instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader, options);
+                instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
             }
 
             throw new JsonException("Expected EndObject token");
@@ -29,7 +29,7 @@ namespace ExtraWeaponCustomization.JSON.Converters
 
         public override void Write(Utf8JsonWriter writer, IWeaponProperty value, JsonSerializerOptions options)
         {
-            value.Serialize(writer, options);
+            value.Serialize(writer);
         }
 
         private static IWeaponProperty? CreatePropertyInstance(Utf8JsonReader reader)

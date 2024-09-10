@@ -1,6 +1,7 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using ExtraWeaponCustomization.JSON;
 using ExtraWeaponCustomization.Utils;
 using Gear;
 using System;
@@ -181,7 +182,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return copy;
         }
 
-        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -200,7 +201,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -246,7 +247,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "resettriggertype":
                 case "resettrigger":
-                    ResetTrigger = JsonSerializer.Deserialize<TriggerCoordinator>(ref reader, options);
+                    ResetTrigger = EWCJson.Deserialize<TriggerCoordinator>(ref reader);
                     break;
                 default:
                     break;

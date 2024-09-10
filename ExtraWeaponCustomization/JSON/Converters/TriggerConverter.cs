@@ -28,7 +28,7 @@ namespace ExtraWeaponCustomization.JSON.Converters
                 string property = reader.GetString()!;
 
                 reader.Read();
-                trigger.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader, options);
+                trigger.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
             }
 
             throw new JsonException("Expected EndObject token");

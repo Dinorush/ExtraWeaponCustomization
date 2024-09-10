@@ -80,7 +80,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             return copy;
         }
 
-        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -88,13 +88,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(ReserveChange), ReserveChange);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
-            SerializeTrigger(writer, options);
+            SerializeTrigger(writer);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader, options);
+            base.DeserializeProperty(property, ref reader);
             switch (property)
             {
                 case "clipchange":

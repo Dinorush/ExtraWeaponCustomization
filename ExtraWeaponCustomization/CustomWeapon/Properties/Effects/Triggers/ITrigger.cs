@@ -7,7 +7,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
     {
         string Name { get; }
         float Invoke(WeaponTriggerContext context);
-        void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options);
+        void DeserializeProperty(string property, ref Utf8JsonReader reader);
 
         public static ITrigger? GetTrigger(string? triggerName)
         {

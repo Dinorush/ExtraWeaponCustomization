@@ -15,6 +15,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
             return context is TContext ? 1f : 0f;
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options) { }
+        public void DeserializeProperty(string property, ref Utf8JsonReader reader) { }
     }
 }

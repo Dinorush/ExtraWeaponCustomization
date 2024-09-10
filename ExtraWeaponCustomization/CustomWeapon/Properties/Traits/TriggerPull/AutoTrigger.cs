@@ -11,7 +11,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             context.Weapon.m_archeType.m_triggerNeedsPress = false;
         }
 
-        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
@@ -23,6 +23,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             return new AutoTrigger();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options) {}
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
     }
 }

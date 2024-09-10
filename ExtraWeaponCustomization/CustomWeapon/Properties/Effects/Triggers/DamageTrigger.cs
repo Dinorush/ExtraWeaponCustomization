@@ -20,9 +20,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
             return 0f;
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader, options);
+            base.DeserializeProperty(property, ref reader);
             switch (property)
             {
                 case "cap":

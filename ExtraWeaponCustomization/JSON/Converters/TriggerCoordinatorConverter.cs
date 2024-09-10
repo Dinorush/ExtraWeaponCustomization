@@ -16,7 +16,7 @@ namespace ExtraWeaponCustomization.JSON.Converters
             // Simple trigger case (just one activation trigger)
             if (reader.TokenType == JsonTokenType.String)
             {
-                ITrigger? trigger = JsonSerializer.Deserialize<ITrigger>(ref reader, options);
+                ITrigger? trigger = EWCJson.Deserialize<ITrigger>(ref reader);
                 if (trigger != null)
                     coordinator.Activate.Add(trigger);
                 else
@@ -30,7 +30,7 @@ namespace ExtraWeaponCustomization.JSON.Converters
             ITrigger? customTrigger = null;
             try
             {
-                customTrigger = JsonSerializer.Deserialize<ITrigger>(ref reader, options);
+                customTrigger = EWCJson.Deserialize<ITrigger>(ref reader);
             }
             catch (JsonException) { }
 
@@ -86,7 +86,7 @@ namespace ExtraWeaponCustomization.JSON.Converters
         {
             if (reader.TokenType == JsonTokenType.String || reader.TokenType == JsonTokenType.StartObject)
             {
-                ITrigger? trigger = JsonSerializer.Deserialize<ITrigger>(ref reader, options);
+                ITrigger? trigger = EWCJson.Deserialize<ITrigger>(ref reader);
                 if (trigger == null) return null;
                 return new List<ITrigger>() { trigger };
             }
@@ -96,7 +96,7 @@ namespace ExtraWeaponCustomization.JSON.Converters
                 reader.Read();
                 while (reader.TokenType != JsonTokenType.EndArray)
                 {
-                    ITrigger? trigger = JsonSerializer.Deserialize<ITrigger>(ref reader, options);
+                    ITrigger? trigger = EWCJson.Deserialize<ITrigger>(ref reader);
                     reader.Read();
                     if (trigger == null) return null;
                     result.Add(trigger);

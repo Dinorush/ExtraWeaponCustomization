@@ -77,24 +77,24 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             Trigger = triggerMod.Trigger?.Clone();
         }
 
-        public abstract void WriteName(Utf8JsonWriter writer, JsonSerializerOptions options);
+        public abstract void WriteName(Utf8JsonWriter writer);
 
-        public override void Serialize(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
-            WriteName(writer, options);
+            WriteName(writer);
             writer.WriteNumber(nameof(Mod), Mod);
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
-            SerializeTrigger(writer, options);
+            SerializeTrigger(writer);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader, options);
+            base.DeserializeProperty(property, ref reader);
             switch (property)
             {
                 case "mod":

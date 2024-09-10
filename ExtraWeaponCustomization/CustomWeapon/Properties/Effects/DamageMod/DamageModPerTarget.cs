@@ -91,7 +91,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             return copy;
         }
 
-        public override void WriteName(Utf8JsonWriter writer, JsonSerializerOptions options)
+        public override void WriteName(Utf8JsonWriter writer)
         {
             writer.WriteString("Name", GetType().Name);
         }
