@@ -18,7 +18,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreStartFireContext>,
-        IWeaponProperty<WeaponPreFireContext>,
+        IWeaponProperty<WeaponFireCancelContext>,
         IWeaponProperty<WeaponPreRayContext>
     {
         public bool HipActive { get; set; } = false;
@@ -68,7 +68,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             context.Allow &= !RequireLock || UseAutoAim;
         }
 
-        public void Invoke(WeaponPreFireContext context)
+        public void Invoke(WeaponFireCancelContext context)
         {
             // We don't want to stop burst weapons from firing mid-burst, but we do want to stop fully automatic weapons.
             if (context.Weapon.ArchetypeData.FireMode == eWeaponFireMode.Burst && !context.Weapon.m_archeType.BurstIsDone())

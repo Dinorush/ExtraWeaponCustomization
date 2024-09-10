@@ -96,10 +96,21 @@ namespace ExtraWeaponCustomization.Patches
         [HarmonyPostfix]
         private static void ReloadCallback(PlayerInventoryBase __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_wieldedItem?.TryCast<BulletWeapon>()?.GetComponent<CustomWeaponComponent>();
+            CustomWeaponComponent? cwc = __instance.m_wieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
             cwc.Invoke(new WeaponPostReloadContext(cwc.Weapon));
+        }
+
+        [HarmonyPatch(typeof(PlayerInventoryLocal), nameof(PlayerInventoryLocal.TriggerReload))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void ReloadStartCallback(PlayerInventoryLocal __instance)
+        {
+            CustomWeaponComponent? cwc = __instance.m_wieldedItem?.GetComponent<CustomWeaponComponent>();
+            if (cwc == null || !cwc.Weapon.IsReloading) return;
+
+            cwc.Invoke(new WeaponReloadStartContext(cwc.Weapon));
         }
 
         [HarmonyPatch(typeof(PlayerAmmoStorage), nameof(PlayerAmmoStorage.FillAllClips))]

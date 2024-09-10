@@ -16,7 +16,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
             triggerName = triggerName.ToLowerInvariant().Replace(" ", null).Replace("on", null);
             return triggerName switch
             {
+                "prefire" or "preshot" => new BasicTrigger<WeaponPreFireContext>(PreFire),
                 "fire" or "shot" => new BasicTrigger<WeaponPostFireContext>(Fire),
+                "aim" or "zoomin" => new BasicTrigger<WeaponAimContext>(Aim),
+                "aimend" or "zoomout" => new BasicTrigger<WeaponAimEndContext>(AimEnd),
+                "reloadstart" => new BasicTrigger<WeaponReloadStartContext>(ReloadStart),
                 "reload" => new BasicTrigger<WeaponPostReloadContext>(Reload),
                 "wield" => new BasicTrigger<WeaponWieldContext>(Wield),
                 "bulletlanded" or "landedbullet" => new DamageTypeTrigger<WeaponPreHitContext>(BulletLanded, DamageType.Bullet),
@@ -27,7 +31,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
             };
         }
 
+        public const string PreFire = "PreFire";
         public const string Fire = "Fire";
+        public const string Aim = "Aim";
+        public const string AimEnd = "AimEnd";
+        public const string ReloadStart = "ReloadStart";
         public const string Reload = "Reload";
         public const string Wield = "Wield";
         public const string BulletLanded = "BulletLanded";

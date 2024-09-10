@@ -73,10 +73,12 @@ namespace ExtraWeaponCustomization.Patches
             if (cwc == null) return true;
             if (cwc.CancelShot) return false;
 
-            WeaponPreFireContext context = new(__instance.m_weapon!);
+            WeaponFireCancelContext context = new(__instance.m_weapon!);
             cwc.Invoke(context);
             if (!context.Allow)
                 cwc.StoreCancelShot();
+            else
+                cwc.Invoke(new WeaponPreFireContext(__instance.m_weapon!));
 
             return context.Allow;
         }

@@ -1,6 +1,4 @@
 ﻿using Gear;
-using static Weapon;
-using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {

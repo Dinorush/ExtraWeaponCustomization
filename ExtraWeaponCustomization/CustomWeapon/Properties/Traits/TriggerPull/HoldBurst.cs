@@ -7,7 +7,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     public sealed class HoldBurst :
         Trait,
         IWeaponProperty<WeaponPostStartFireContext>,
-        IWeaponProperty<WeaponPreFireContext>
+        IWeaponProperty<WeaponFireCancelContext>
     {
         public int ShotsUntilCancel = 1;
 
@@ -21,7 +21,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _burstMaxCount = archetype.m_burstCurrentCount;
         }
 
-        public void Invoke(WeaponPreFireContext context)
+        public void Invoke(WeaponFireCancelContext context)
         {
             if (context.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
             BWA_Burst archetype = context.Weapon.m_archeType.TryCast<BWA_Burst>()!;
