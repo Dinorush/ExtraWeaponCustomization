@@ -1,6 +1,4 @@
-﻿using Gear;
-
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
+﻿namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
 {
     public interface IWeaponContext
     {

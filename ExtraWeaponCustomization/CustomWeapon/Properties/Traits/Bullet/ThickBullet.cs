@@ -12,6 +12,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     internal class ThickBullet : 
         Trait,
+        IGunProperty,
         IWeaponProperty<WeaponPostRayContext>
     {
         public float HitSize { get; set; } = 0f;
@@ -46,14 +47,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             foreach (RaycastHit hit in results)
             {
                 if (hit.distance == 0) continue;
-                if (AlreadyHit(hit.collider, CWC.Weapon.m_damageSearchID)) continue;
+                if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
                 if (!CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos)) continue;
 
                 s_rayHit = hit;
                 CheckDirectHit(ref s_rayHit);
 
-                context.Data.rayHit = s_rayHit;
-                if (BulletWeapon.BulletHit(context.Data, true, 0, CWC.Weapon.m_damageSearchID, true))
+                context.Data.RayHit = s_rayHit;
+                if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
                     _pierceCount--;
                 
                 if (_pierceCount <= 0) return;
@@ -78,13 +79,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             while (hitQueue.TryDequeue(out s_rayHit, out _))
             {
-                if (AlreadyHit(s_rayHit.collider, CWC.Weapon.m_damageSearchID)) continue;
+                if (AlreadyHit(s_rayHit.collider, CWC.Gun!.m_damageSearchID)) continue;
                 if (!CheckLineOfSight(s_rayHit.collider, ray.origin, wallPos)) continue;
 
                 CheckDirectHit(ref s_rayHit);
 
-                context.Data.rayHit = s_rayHit;
-                if (BulletWeapon.BulletHit(context.Data, true, 0, CWC.Weapon.m_damageSearchID, true))
+                context.Data.RayHit = s_rayHit;
+                if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
                     _pierceCount--;
 
                 if (_pierceCount <= 0) break;

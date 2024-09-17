@@ -1,5 +1,5 @@
 ﻿using ExtraWeaponCustomization.JSON;
-using ExtraWeaponCustomization.Utils;
+using ExtraWeaponCustomization.Utils.Log;
 using Gear;
 using GTFO.API.Utilities;
 using MTFO.API;
@@ -16,9 +16,11 @@ namespace ExtraWeaponCustomization.CustomWeapon
     {
         public static readonly CustomWeaponManager Current = new();
 
-        private readonly Dictionary<string, HashSet<uint>> _fileToIDs = new();
-        private readonly Dictionary<uint, CustomWeaponData> _customData = new();
-        private readonly List<BulletWeapon> _listenCWs = new();
+        private readonly Dictionary<string, HashSet<uint>> _fileToGuns = new();
+        private readonly Dictionary<string, HashSet<uint>> _fileToMelees = new();
+        private readonly Dictionary<uint, CustomWeaponData> _customGunData = new();
+        private readonly Dictionary<uint, CustomWeaponData> _customMeleeData = new();
+        private readonly List<ItemEquippable> _listenCWs = new();
 
         private readonly LiveEditListener _liveEditListener;
 
@@ -26,15 +28,24 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         public override string ToString()
         {
-            return "Printing manager: " + _customData.ToString();
+            return "Printing manager: " + _customGunData.ToString();
         }
 
         public void AddCustomWeaponData(CustomWeaponData? data, string file)
         {
             if (data == null) return;
 
-            _fileToIDs[file].Add(data.ArchetypeID);
-            _customData[data.ArchetypeID] = data;
+            if (data.ArchetypeID != 0)
+            {
+                _fileToGuns[file].Add(data.ArchetypeID);
+                _customGunData[data.ArchetypeID] = data;
+            }
+
+            if (data.MeleeArchetypeID != 0)
+            {
+                _fileToMelees[file].Add(data.MeleeArchetypeID);
+                _customMeleeData[data.MeleeArchetypeID] = data;
+            }
         }
 
         private void FileChanged(LiveEditEventArgs e)
@@ -50,19 +61,21 @@ namespace ExtraWeaponCustomization.CustomWeapon
         private void FileDeleted(LiveEditEventArgs e)
         {
             EWCLogger.Warning($"LiveEdit File Removed: {e.FullPath}");
-            foreach (uint id in _fileToIDs[e.FullPath])
-                _customData.Remove(id);
-
-            for (int i = _listenCWs.Count - 1; i >= 0; i--)
+            if (!_fileToGuns.ContainsKey(e.FullPath))
             {
-                if (_listenCWs[i] != null)
-                    _listenCWs[i].GetComponent<CustomWeaponComponent>()?.Clear();
-                else
-                    _listenCWs.RemoveAt(i);
+                PrintCustomIDs();
+                return;
             }
 
-            _fileToIDs.Remove(e.FullPath);
+            foreach (uint id in _fileToGuns[e.FullPath])
+                _customGunData.Remove(id);
+            _fileToGuns.Remove(e.FullPath);
 
+            foreach (uint id in _fileToMelees[e.FullPath])
+                _customMeleeData.Remove(id);
+            _fileToMelees.Remove(e.FullPath);
+            
+            ResetCWCs();
             PrintCustomIDs();
         }
 
@@ -78,12 +91,20 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
         private void ReadFileContent(string file, string content)
         {
-            if (!_fileToIDs.ContainsKey(file))
-                _fileToIDs[file] = new HashSet<uint>();
+            if (!_fileToGuns.ContainsKey(file))
+            {
+                _fileToGuns[file] = new HashSet<uint>();
+                _fileToMelees[file] = new HashSet<uint>();
+            }
 
-            HashSet<uint> fileIDs = _fileToIDs[file];
+            HashSet<uint> fileIDs = _fileToGuns[file];
             foreach (uint id in fileIDs)
-                _customData.Remove(id);
+                _customGunData.Remove(id);
+            fileIDs.Clear();
+
+            fileIDs = _fileToMelees[file];
+            foreach (uint id in fileIDs)
+                _customMeleeData.Remove(id);
             fileIDs.Clear();
 
             List<CustomWeaponData?>? dataList = null;
@@ -101,18 +122,25 @@ namespace ExtraWeaponCustomization.CustomWeapon
 
             foreach (CustomWeaponData? data in dataList)
             {
-                if (data != null && _customData.ContainsKey(data.ArchetypeID))
-                    EWCLogger.Warning("Duplicate archetype ID " + data.ArchetypeID + " found. Previous name: " + _customData[data.ArchetypeID].Name + ", new name: " + data.Name);
-                AddCustomWeaponData(data, file);
+                if (data != null)
+                {
+                    if (data.ArchetypeID != 0 && _customGunData.ContainsKey(data.ArchetypeID))
+                        EWCLogger.Warning("Duplicate archetype ID " + data.ArchetypeID + " found. Previous name: " + _customGunData[data.ArchetypeID].Name + ", new name: " + data.Name);
+                    if (data.MeleeArchetypeID != 0 && _customMeleeData.ContainsKey(data.MeleeArchetypeID))
+                        EWCLogger.Warning("Duplicate melee archetype ID " + data.MeleeArchetypeID + " found. Previous name: " + _customMeleeData[data.MeleeArchetypeID].Name + ", new name: " + data.Name);
+                    
+                    AddCustomWeaponData(data, file);
+                }
             }
 
             // Re-apply changes to listening CWCs
             ResetCWCs();
         }
 
-        public CustomWeaponData? GetCustomWeaponData(uint ArchetypeID) => _customData.ContainsKey(ArchetypeID) ? _customData[ArchetypeID] : null;
+        public CustomWeaponData? GetCustomGunData(uint id) => _customGunData.GetValueOrDefault(id);
+        public CustomWeaponData? GetCustomMeleeData(uint id) => _customMeleeData.GetValueOrDefault(id);
 
-        public void AddWeaponListener(BulletWeapon weapon)
+        public void AddWeaponListener(ItemEquippable weapon)
         {
             // Prevent duplicates (not using IL2CPP list so don't trust Contains)
             if (_listenCWs.Any(listener => listener.GetInstanceID() == weapon.GetInstanceID())) return;
@@ -132,7 +160,13 @@ namespace ExtraWeaponCustomization.CustomWeapon
                     CustomWeaponComponent cwc = _listenCWs[i].GetComponent<CustomWeaponComponent>();
                     cwc?.Clear();
 
-                    CustomWeaponData? data = GetCustomWeaponData(_listenCWs[i].ArchetypeID);
+                    bool isGun = _listenCWs[i].TryCast<BulletWeapon>() != null;
+                    CustomWeaponData? data;
+                    if (isGun)
+                        data = GetCustomGunData(_listenCWs[i].ArchetypeID);
+                    else
+                        data = GetCustomMeleeData(_listenCWs[i].MeleeArchetypeData.persistentID);
+
                     if (data != null)
                     {
                         if (cwc == null)
@@ -170,7 +204,11 @@ namespace ExtraWeaponCustomization.CustomWeapon
         private void PrintCustomIDs()
         {
             StringBuilder builder = new("Found custom blocks for archetype IDs: ");
-            builder.AppendJoin(", ", _customData.Keys.ToImmutableSortedSet());
+            builder.AppendJoin(", ", _customGunData.Keys.ToImmutableSortedSet());
+            EWCLogger.Log(builder.ToString());
+            builder.Clear();
+            builder.Append("Found custom blocks for melee archetype IDs: ");
+            builder.AppendJoin(", ", _customMeleeData.Keys.ToImmutableSortedSet());
             EWCLogger.Log(builder.ToString());
         }
 

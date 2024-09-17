@@ -7,7 +7,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public class AmmoCap :
         Trait,
-        IWeaponProperty<WeaponPostSetupContext>,
+        IGunProperty,
+        IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponPostAmmoInitContext>,
         IWeaponProperty<WeaponPreAmmoPackContext>
     {
@@ -17,7 +18,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private const float DefaultPackConv = 5f;
 
-        public void Invoke(WeaponPostSetupContext context)
+        public void Invoke(WeaponSetupContext context)
         {
             if (AmmopackRefillRel > 0)
             {
@@ -33,10 +34,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                         break;
                 }
                 AmmoCapRel = AmmopackRefillRel * DefaultPackConv * capToPack;
+                AmmopackRefillRel = 0;
             }
 
             if (CostOfBullet > 0)
+            {
                 AmmoCapRel = CWC.Weapon.ArchetypeData.CostOfBullet / CostOfBullet;
+                CostOfBullet = 0;
+            }
         }
 
         public void Invoke(WeaponPostAmmoInitContext context)

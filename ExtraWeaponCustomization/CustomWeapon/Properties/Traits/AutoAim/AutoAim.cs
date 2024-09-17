@@ -2,7 +2,6 @@
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
-using Gear;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +14,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class AutoAim : 
         Trait,
-        IWeaponProperty<WeaponPostSetupContext>,
+        IGunProperty,
+        IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>,
@@ -70,7 +70,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponFireCancelContext context)
         {
             // We don't want to stop burst weapons from firing mid-burst, but we do want to stop fully automatic weapons.
-            if (CWC.Weapon.ArchetypeData.FireMode == eWeaponFireMode.Burst && !CWC.Weapon.m_archeType.BurstIsDone())
+            if (CWC.Gun!.ArchetypeData.FireMode == eWeaponFireMode.Burst && !CWC.Gun!.m_archeType.BurstIsDone())
                 return;
 
             context.Allow &= !RequireLock || UseAutoAim;
@@ -81,7 +81,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (_camera == null) return;
 
             // Ignore pierced shots
-            if (context.Data.maxRayDist < CWC.Weapon.MaxRayDist) return;
+            if (context.Data.maxRayDist < CWC.Gun!.MaxRayDist) return;
 
             // Prioritize aim if looking at the locked enemy
             if (FavorLookPoint)
@@ -100,23 +100,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 context.Data.fireDir = (GetTargetPos() - _camera.Position).normalized;
         }
 
-        public void Invoke(WeaponPostSetupContext context)
+        public void Invoke(WeaponSetupContext context)
         {
             _reticle = AutoAimReticle.Reticle;
-            _reticle.SetVisible(true);
             _reticleHolder = AutoAimReticle.ReticleHolder;
+            CWC.AutoAim = this;
+            OnEnable();
         }
 
         public void Invoke(WeaponClearContext _)
         {
             OnDisable();
+            CWC.AutoAim = null;
         }
 
         public void Update() 
         {
             if (_reticle == null) return;
 
-            _camera ??= CWC.Weapon.Owner?.FPSCamera;
+            _camera ??= CWC.Gun!.Owner?.FPSCamera;
 
             bool hasTarget = _hasTarget;
             UpdateDetection();
@@ -262,7 +264,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 );
         }
 
-        private bool HasAmmo => CWC.Weapon.GetCurrentClip() > 0 && CWC.Weapon.IsReloading == false;
+        private bool HasAmmo => CWC.Gun!.GetCurrentClip() > 0 && CWC.Gun!.IsReloading == false;
         private bool CanLock => LockWhileEmpty || HasAmmo;
         private bool LockedTarget => _target != null && _progress == 1f;
         private bool AutoAimActive => HasAmmo && (

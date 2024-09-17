@@ -1,4 +1,5 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using HarmonyLib;
@@ -59,7 +60,7 @@ namespace ExtraWeaponCustomization.Patches
                 return;
             }
 
-            cwc.Invoke(new WeaponPostStartFireContext());
+            cwc.Invoke(StaticContext<WeaponPostStartFireContext>.Instance);
         }
 
         [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnFireShot))]
@@ -78,7 +79,7 @@ namespace ExtraWeaponCustomization.Patches
             if (!context.Allow)
                 cwc.StoreCancelShot();
             else
-                cwc.Invoke(new WeaponPreFireContext());
+                cwc.Invoke(StaticContext<WeaponPreFireContext>.Instance);
 
             return context.Allow;
         }
@@ -93,7 +94,7 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
             if (cwc == null || cwc.CancelShot) return;
 
-            cwc.Invoke(new WeaponPostFireContext());
+            cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
         }
 
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.PostFireCheck))]
@@ -134,7 +135,7 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPostStopFiringContext());
+            cwc.Invoke(StaticContext<WeaponPostStopFiringContext>.Instance);
         }
     }
 }

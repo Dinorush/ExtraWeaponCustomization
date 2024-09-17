@@ -1,6 +1,4 @@
-﻿using Agents;
-using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.KillTracker;
+﻿using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using HarmonyLib;
 
@@ -12,9 +10,10 @@ namespace ExtraWeaponCustomization.Patches
         private static float _cachedArmor = 0f;
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.BulletDamage))]
+        [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.MeleeDamage))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void Pre_BulletDamage(Dam_EnemyDamageLimb __instance)
+        private static void Pre_Damage(Dam_EnemyDamageLimb __instance)
         {
             CustomWeaponComponent? cwc = WeaponPatches.CachedHitCWC;
             if (cwc == null || __instance.m_type != eLimbDamageType.Armor) return;
@@ -26,23 +25,14 @@ namespace ExtraWeaponCustomization.Patches
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.BulletDamage))]
+        [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.MeleeDamage))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void Post_BulletDamage(Dam_EnemyDamageLimb __instance)
+        private static void Post_Damage(Dam_EnemyDamageLimb __instance)
         {
             if (WeaponPatches.CachedHitCWC == null || __instance.m_type != eLimbDamageType.Armor) return;
 
             __instance.m_armorDamageMulti = _cachedArmor;
-        }
-
-        [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.MeleeDamage))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void Post_MeleeDamage(Dam_EnemyDamageLimb __instance, Agent sourceAgent)
-        {
-            if (!sourceAgent.IsLocallyOwned) return;
-
-            KillTrackerManager.ClearHit(__instance.m_base.Owner);
         }
     }
 }

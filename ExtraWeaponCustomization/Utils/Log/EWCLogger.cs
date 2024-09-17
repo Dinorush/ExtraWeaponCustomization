@@ -1,6 +1,6 @@
 ﻿using BepInEx.Logging;
 
-namespace ExtraWeaponCustomization.Utils
+namespace ExtraWeaponCustomization.Utils.Log
 {
     internal static class EWCLogger
     {

@@ -2,7 +2,6 @@
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Dependencies;
-using Gear;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -41,7 +40,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         public DamageOverTime()
         {
             Trigger ??= new(ITrigger.GetTrigger(ITrigger.Hit)!);
-            SetValidTriggers(DamageType.DOT, ITrigger.Hit, ITrigger.Damage);
+            SetValidTriggers(DamageType.DOT, ITrigger.Hit, ITrigger.Damage, ITrigger.Charge);
         }
 #pragma warning restore CS8618
 

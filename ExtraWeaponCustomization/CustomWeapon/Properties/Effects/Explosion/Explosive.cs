@@ -2,7 +2,6 @@
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.JSON;
-using Gear;
 using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
@@ -31,13 +30,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public float CacheBackstab { get; private set; } = 0f;
 
-#pragma warning disable CS8618
         public Explosive()
         {
             Trigger ??= new(ITrigger.GetTrigger(ITrigger.BulletLanded)!);
-            SetValidTriggers(DamageType.Explosive, ITrigger.Hit, ITrigger.BulletLanded, ITrigger.Kill);
+            SetValidTriggers(DamageType.Explosive, ITrigger.BulletLanded, ITrigger.Hit, ITrigger.Damage, ITrigger.Charge, ITrigger.Kill);
         }
-#pragma warning restore CS8618
 
         public override void TriggerReset() {}
         public override void TriggerApply(List<TriggerContext> triggerList)
@@ -45,13 +42,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             foreach (TriggerContext tContext in triggerList)
             {
                 // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage
-                if (Weapon.m_damageSearchID > 0 && Weapon.m_damageSearchID - 1 == DamageUtil.SearchID)
+                if (CWC.Gun != null && CWC.Gun.m_damageSearchID > 0 && CWC.Gun.m_damageSearchID - 1 == DamageUtil.SearchID)
                     DamageUtil.IncrementSearchID();
 
                 if (tContext.context is WeaponPostKillContext killContext)
                 {
                     CacheBackstab = killContext.Backstab;
-                    ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, null);
+                    ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, tContext.triggerAmt, null);
                 }
                 else
                 {
@@ -64,7 +61,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     if (context is WeaponPreHitEnemyContext enemyContext)
                         CacheBackstab = enemyContext.Backstab;
 
-                    ExplosionManager.DoExplosion(position, context.Direction, Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, context.Damageable);
+                    ExplosionManager.DoExplosion(position, context.Direction, Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, tContext.triggerAmt, context.Damageable);
                 }
             }
         }
@@ -111,6 +108,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
+            SerializeTrigger(writer);
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WritePropertyName(nameof(GlowColor));
             EWCJson.Serialize(writer, GlowColor);

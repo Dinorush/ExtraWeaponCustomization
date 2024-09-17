@@ -8,6 +8,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class ReserveClip :
         Trait,
+        IGunProperty,
         IWeaponProperty<WeaponPostAmmoPackContext>,
         IWeaponProperty<WeaponPreAmmoUIContext>,
         IWeaponProperty<WeaponPostStartFireContext>,
@@ -16,7 +17,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostStartFireContext context)
         {
             if (CWC.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
-            BWA_Burst archetype = CWC.Weapon.m_archeType.TryCast<BWA_Burst>()!;
+            BWA_Burst archetype = CWC.Gun!.m_archeType.TryCast<BWA_Burst>()!;
 
             int bullets = CWC.Weapon.GetCurrentClip() + PlayerBackpackManager.GetBulletsInPack(CWC.Weapon.AmmoType, CWC.Weapon.Owner.Owner);
             archetype.m_burstCurrentCount = Math.Min(archetype.m_burstMax, bullets);
@@ -24,7 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostAmmoPackContext context)
         {
-            BulletWeapon weapon = CWC.Weapon;
+            BulletWeapon weapon = CWC.Gun!;
             if (weapon.Owner.Inventory.WieldedItem != CWC.Weapon)
             {
                 weapon.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(weapon.GetCurrentClip(), weapon.AmmoType));

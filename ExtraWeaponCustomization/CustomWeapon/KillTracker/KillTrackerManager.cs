@@ -3,7 +3,6 @@ using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Dependencies;
-using Gear;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,7 +10,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
 {
     public static class KillTrackerManager
     {
-        private static readonly Dictionary<AgentWrapper, (BulletWeapon Weapon, WeaponPreHitEnemyContext Context)> _lastHits = new();
+        private static readonly Dictionary<AgentWrapper, (ItemEquippable Weapon, WeaponPreHitEnemyContext Context)> _lastHits = new();
         private static readonly Dictionary<AgentWrapper, bool> _shownHits = new();
         private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
@@ -22,7 +21,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
             _shownHits.Remove(TempWrapper);
         }
 
-        public static void RegisterHit(BulletWeapon weapon, WeaponPreHitEnemyContext hitContext)
+        public static void RegisterHit(ItemEquippable weapon, WeaponPreHitEnemyContext hitContext)
         {
             EnemyAgent? enemy = hitContext.Damageable.GetBaseAgent()?.TryCast<EnemyAgent>();
             if (enemy == null || !weapon.Owner.IsLocallyOwned) return;
@@ -42,7 +41,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
             }
         }
 
-        public static (BulletWeapon, WeaponPreHitEnemyContext)? GetKillHitContext(Agent? enemy)
+        public static (ItemEquippable, WeaponPreHitEnemyContext)? GetKillHitContext(Agent? enemy)
         {
             _lastHits.Keys
                 .Where(wrapper => wrapper.Agent == null || _lastHits[wrapper].Weapon == null)

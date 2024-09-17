@@ -11,7 +11,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
 
         public override float Invoke(WeaponTriggerContext context)
         {
-            if (context is WeaponPreHitEnemyContext hitContext && hitContext.DamageType.HasFlag(DamageType))
+            if (context is WeaponPreHitEnemyContext hitContext
+                && !hitContext.DamageType.HasFlag(BlacklistType)
+                && hitContext.DamageType.HasFlag(DamageType))
             {
                 if (Cap > 0)
                     return Math.Min(Cap, hitContext.Damage);

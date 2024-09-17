@@ -1,7 +1,6 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using Gear;
 using Player;
 using System.Collections.Generic;
 using System.Text.Json;

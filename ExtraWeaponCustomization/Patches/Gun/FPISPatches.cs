@@ -1,4 +1,5 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using FirstPersonItem;
 using HarmonyLib;
@@ -19,7 +20,7 @@ namespace ExtraWeaponCustomization.Patches
             _cachedCWC = __instance.Holder.WieldedItem.GetComponent<CustomWeaponComponent>();
             if (_cachedCWC == null) return;
 
-            _cachedCWC.Invoke(new WeaponAimContext());
+            _cachedCWC.Invoke(StaticContext<WeaponAimContext>.Instance);
         }
 
         [HarmonyPatch(typeof(FPIS_Aim), nameof(FPIS_Aim.Exit))]
@@ -29,7 +30,7 @@ namespace ExtraWeaponCustomization.Patches
         {
             if (_cachedCWC == null) return;
 
-            _cachedCWC.Invoke(new WeaponAimEndContext());
+            _cachedCWC.Invoke(StaticContext<WeaponAimEndContext>.Instance);
         }
     }
 }

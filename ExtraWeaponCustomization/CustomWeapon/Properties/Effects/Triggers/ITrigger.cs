@@ -16,15 +16,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
             triggerName = triggerName.ToLowerInvariant().Replace(" ", null).Replace("on", null);
             return triggerName switch
             {
-                "prefire" or "preshot" => new BasicTrigger<WeaponPreFireContext>(PreFire),
-                "fire" or "shot" => new BasicTrigger<WeaponPostFireContext>(Fire),
+                "prefire" or "preshot" or "preswing" => new BasicTrigger<WeaponPreFireContext>(PreFire),
+                "fire" or "shot" or "swing" => new BasicTrigger<WeaponPostFireContext>(Fire),
                 "aim" or "zoomin" => new BasicTrigger<WeaponAimContext>(Aim),
                 "aimend" or "zoomout" => new BasicTrigger<WeaponAimEndContext>(AimEnd),
-                "reloadstart" => new BasicTrigger<WeaponReloadStartContext>(ReloadStart),
+                "reloadstart" or "startreload" => new BasicTrigger<WeaponReloadStartContext>(ReloadStart),
                 "reload" => new BasicTrigger<WeaponPostReloadContext>(Reload),
                 "wield" => new BasicTrigger<WeaponWieldContext>(Wield),
-                "bulletlanded" or "landedbullet" => new DamageTypeTrigger<WeaponPreHitContext>(BulletLanded, DamageType.Bullet),
+                "bulletlanded" or "landedbullet" or "meleelanded" or "landedmelee" => new DamageTypeTrigger<WeaponPreHitContext>(BulletLanded, DamageType.Bullet),
                 string hit when hit.Contains("hit") => new DamageTypeTrigger<WeaponPreHitEnemyContext>(Hit, ResolveDamageType(triggerName)),
+                string charge when charge.Contains("charge") => new ChargeTrigger(ResolveDamageType(triggerName)),
                 string damage when damage.Contains("damage") => new DamageTrigger(ResolveDamageType(triggerName)),
                 string kill when kill.Contains("kill") => new DamageTypeTrigger<WeaponPostKillContext>(Kill, ResolveDamageType(triggerName)),
                 _ => null
@@ -40,6 +41,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
         public const string Wield = "Wield";
         public const string BulletLanded = "BulletLanded";
         public const string Hit = "Hit";
+        public const string Charge = "Charge";
         public const string Damage = "Damage";
         public const string Kill = "Kill";
 
@@ -59,7 +61,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
             DamageType flag = DamageType.Any;
             if (name.Contains("prec") || name.Contains("weakspot"))
                 flag |= DamageType.Weakspot;
-            if (name.Contains("bullet"))
+            if (name.Contains("bullet") || name.Contains("melee"))
                 flag |= DamageType.Bullet;
             else if (name.Contains("explo"))
                 flag |= DamageType.Explosive;

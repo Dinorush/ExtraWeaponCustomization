@@ -2,8 +2,9 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using GTFO.API.JSON.Converters;
-using ExtraWeaponCustomization.Utils;
 using ExtraWeaponCustomization.JSON.Converters;
+using ExtraWeaponCustomization.Utils.Log;
+using ExtraWeaponCustomization.Dependencies;
 
 namespace ExtraWeaponCustomization.JSON
 {
@@ -21,9 +22,10 @@ namespace ExtraWeaponCustomization.JSON
         static EWCJson()
         {
             _setting.Converters.Add(new JsonStringEnumConverter());
-            _setting.Converters.Add(new WeaponPropertyConverter());
             _setting.Converters.Add(new TriggerConverter());
             _setting.Converters.Add(new TriggerCoordinatorConverter());
+            _setting.Converters.Add(new WeaponPropertyConverter());
+            _setting.Converters.Add(new PropertyListConverter());
             _setting.Converters.Add(new ColorConverter());
 
             if (MTFOPartialDataUtil.IsLoaded)
@@ -58,9 +60,9 @@ namespace ExtraWeaponCustomization.JSON
             return JsonSerializer.Serialize(value, _setting);
         }
 
-        public static string Serialize<T>(Utf8JsonWriter writer, T value)
+        public static void Serialize<T>(Utf8JsonWriter writer, T value)
         {
-            return JsonSerializer.Serialize(value, _setting);
+            JsonSerializer.Serialize(writer, value, _setting);
         }
     }
 }

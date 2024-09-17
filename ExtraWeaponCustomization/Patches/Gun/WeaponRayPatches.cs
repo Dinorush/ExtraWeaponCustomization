@@ -14,6 +14,7 @@ namespace ExtraWeaponCustomization.Patches
     internal static class WeaponRayPatches
     {
         public static BulletWeapon? CachedWeapon = null;
+        private static HitData s_hitData = new();
 
         [HarmonyTargetMethod]
         private static MethodBase FindWeaponRayFunc(Harmony harmony)
@@ -41,7 +42,9 @@ namespace ExtraWeaponCustomization.Patches
 
             if (_cachedCWC == null) return;
 
-            _cachedCWC.Invoke(new WeaponPreRayContext(weaponRayData, originPos));
+            s_hitData.Setup(weaponRayData);
+            _cachedCWC.Invoke(new WeaponPreRayContext(s_hitData, originPos));
+            s_hitData.Apply();
         }
 
         [HarmonyWrapSafe]
@@ -53,9 +56,11 @@ namespace ExtraWeaponCustomization.Patches
 
             if (_cachedCWC == null) return;
 
-            WeaponPostRayContext context = new(weaponRayData, originPos, __result);
+            s_hitData.Setup(weaponRayData);
+            WeaponPostRayContext context = new(s_hitData, originPos, __result);
             _cachedCWC.Invoke(context);
             __result = context.Result;
+            s_hitData.Apply();
         }
     }
 }

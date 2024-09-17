@@ -1,5 +1,4 @@
 ﻿using ExtraWeaponCustomization.Networking;
-using ExtraWeaponCustomization.Utils;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate
 {

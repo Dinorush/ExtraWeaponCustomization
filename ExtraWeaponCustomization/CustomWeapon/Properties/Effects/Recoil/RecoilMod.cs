@@ -7,6 +7,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class RecoilMod :
         TriggerMod,
+        IGunProperty,
         IWeaponProperty<WeaponRecoilContext>
     {
         private readonly Queue<TriggerInstance> _expireTimes = new();

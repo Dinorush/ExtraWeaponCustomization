@@ -11,6 +11,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class AmmoMod :
         Effect,
+        IGunProperty,
         IWeaponProperty<WeaponPreFireContext>
     {
         public float ClipChange { get; set; } = 0;
@@ -35,7 +36,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            BulletWeapon weapon = CWC.Weapon;
+            BulletWeapon weapon = CWC.Gun!;
 
             float triggers = triggerList.Sum(context => context.triggerAmt);
             _clipBuffer += ClipChange * triggers;

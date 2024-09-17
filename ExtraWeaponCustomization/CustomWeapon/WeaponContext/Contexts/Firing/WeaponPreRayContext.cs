@@ -1,16 +1,16 @@
-﻿using UnityEngine;
-using static Weapon;
+﻿using ExtraWeaponCustomization.Utils;
+using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
     public sealed class WeaponPreRayContext : IWeaponContext
     {
-        public WeaponHitData Data { get; }
+        public HitData Data { get; }
         public Vector3 Position { get; }
 
-        public WeaponPreRayContext(WeaponHitData weaponHitData, Vector3 position)
+        public WeaponPreRayContext(HitData hitData, Vector3 position)
         {
-            Data = weaponHitData;
+            Data = hitData;
             Position = position;
         }
     }

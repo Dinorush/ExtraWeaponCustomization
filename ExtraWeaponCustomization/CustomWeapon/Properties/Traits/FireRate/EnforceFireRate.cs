@@ -8,6 +8,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class EnforceFireRate :
         Trait,
+        IGunProperty,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponDamageContext>,
@@ -26,15 +27,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContext context)
         {
-            BulletWeaponArchetype archetype = CWC.Weapon.m_archeType;
+            BulletWeaponArchetype archetype = CWC.Gun!.m_archeType;
             if (_cachedCWC == null)
                 _cachedCWC = CWC.Weapon.GetComponent<CustomWeaponComponent>();
             float shotDelay = 1f / _cachedCWC.CurrentFireRate;
 
             // Hit callback runs and applies damage bonus before this one, so we can safely reduce the buffer
-            int extraShots = GetShotsInBuffer(CWC.Weapon);
+            int extraShots = GetShotsInBuffer(CWC.Gun!);
             if (_cachedCWC.HasTrait(typeof(ReserveClip)))
-                PlayerBackpackManager.GetBackpack(CWC.Weapon.Owner.Owner).AmmoStorage.UpdateBulletsInPack(CWC.Weapon.AmmoType, -extraShots);
+                PlayerBackpackManager.GetBackpack(CWC.Gun!.Owner.Owner).AmmoStorage.UpdateBulletsInPack(CWC.Gun!.AmmoType, -extraShots);
             else
                 archetype.m_weapon.m_clip -= extraShots;
             _shotBuffer -= extraShots;
@@ -44,19 +45,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             _lastShotTime = Clock.Time;
             // Need to update ammo since we modified the clip
-            CWC.Weapon.UpdateAmmoStatus();
+            CWC.Gun!.UpdateAmmoStatus();
         }
 
         public void Invoke(WeaponDamageContext context)
         {
             // Won't apply on the first shot (no time delta available to use)
-            context.Damage.AddMod(1f + GetShotsInBuffer(CWC.Weapon), Effects.StackType.Multiply);
+            context.Damage.AddMod(1f + GetShotsInBuffer(CWC.Gun!), Effects.StackType.Multiply);
         }
 
         public void Invoke(WeaponRecoilContext context)
         {
             // Won't apply on the first shot (no time delta available to use)
-            context.AddMod(1f + GetShotsInBuffer(CWC.Weapon), Effects.StackType.Multiply);
+            context.AddMod(1f + GetShotsInBuffer(CWC.Gun!), Effects.StackType.Multiply);
         }
 
         private int GetShotsInBuffer(BulletWeapon weapon)

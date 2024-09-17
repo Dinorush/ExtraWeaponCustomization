@@ -1,6 +1,6 @@
 ﻿using System;
-using static Weapon;
 using UnityEngine;
+using ExtraWeaponCustomization.Utils;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
@@ -22,8 +22,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
             DamageType = flag;
         }
 
-        public WeaponPreHitEnemyContext(WeaponHitData data, float additionalDist, float backstab, Dam_EnemyDamageLimb limb, DamageType flag = DamageType.Any)
-            : base(data, additionalDist, limb.TryCast<IDamageable>())
+        public WeaponPreHitEnemyContext(HitData data, float backstab, Dam_EnemyDamageLimb limb, DamageType flag = DamageType.Any)
+            : base(data)
         {
             Backstab = backstab;
             Damage = data.damage * Falloff;

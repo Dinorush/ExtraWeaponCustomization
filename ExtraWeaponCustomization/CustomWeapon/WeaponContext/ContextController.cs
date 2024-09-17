@@ -1,6 +1,7 @@
 using ExtraWeaponCustomization.CustomWeapon.Properties;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils;
+using ExtraWeaponCustomization.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
     {
         private readonly Dictionary<Type, IContextList> _allContextLists = new();
 
-        public ContextController()
+        public ContextController(bool isGun)
         {
-            RegisterAllContexts();
+            if (isGun)
+                RegisterGunContexts();
+            else
+                RegisterMeleeContexts();
         }
 
         private interface IContextList
@@ -50,7 +54,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
                 if (_entries.Contains(contextedProperty))
                     return false;
 
-                if (!property.AllowStack && _entries.Any(containedProperty => containedProperty.GetType() == contextedProperty.GetType()))
+                if (property is Trait && _entries.Any(containedProperty => containedProperty.GetType() == contextedProperty.GetType()))
                     return false;
 
                 _entries.Add(contextedProperty);
@@ -136,7 +140,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             _allContextLists.TryAdd(typeof(TContext), new ContextList<TContext>(this));
         }
 
-        private void RegisterAllContexts()
+        private void RegisterGunContexts()
         {
             RegisterContext<WeaponTriggerContext>();
             RegisterContext<WeaponDamageTypeContext>();
@@ -171,7 +175,27 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponRecoilContext>();
 
             RegisterContext<WeaponClearContext>();
-            RegisterContext<WeaponPostSetupContext>();
+            RegisterContext<WeaponSetupContext>();
+        }
+
+        private void RegisterMeleeContexts()
+        {
+            RegisterContext<WeaponTriggerContext>();
+            RegisterContext<WeaponDamageTypeContext>();
+            RegisterContext<WeaponPostKillContext>();
+            RegisterContext<WeaponPostFireContext>();
+            RegisterContext<WeaponPreFireContext>();
+            RegisterContext<WeaponPreHitContext>();
+            RegisterContext<WeaponPreHitEnemyContext>();
+            RegisterContext<WeaponWieldContext>();
+
+            RegisterContext<WeaponArmorContext>();
+            RegisterContext<WeaponBackstabContext>();
+            RegisterContext<WeaponDamageContext>();
+            RegisterContext<WeaponFireRateContext>();
+
+            RegisterContext<WeaponClearContext>();
+            RegisterContext<WeaponSetupContext>();
         }
 
         internal void ChangeToSyncContexts()
@@ -182,6 +206,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             RegisterContext<WeaponFireRateModContextSync>();
             RegisterContext<WeaponPreFireContextSync>();
             RegisterContext<WeaponPostFireContextSync>();
+            RegisterContext<WeaponAudioSwapContextSync>();
+            RegisterContext<WeaponTempPropertiesContextSync>();
         }
     }
 }

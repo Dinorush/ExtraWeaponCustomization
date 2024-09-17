@@ -9,7 +9,6 @@ using Player;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using static Weapon;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components
 {
@@ -23,7 +22,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private BulletWeapon _weapon;
         private readonly HashSet<int> _initialPlayers = new();
         private readonly HashSet<int> _hitEnts = new();
-        private WeaponHitData _hitData = new();
+        private HitData _hitData = new();
         private int _entityLayer;
         private bool _hitWorld;
         private bool _enabled = false;
@@ -61,7 +60,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _enabled = true;
             _settings = projBase;
             _baseCWC = cwc;
-            _weapon = cwc.Weapon;
+            _weapon = cwc.Gun!;
 
             Vector3 pos = _weapon.Owner.Position;
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
@@ -291,14 +290,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _hitData.damage = _baseDamage;
             _hitData.precisionMulti = _basePrecision;
             _hitData.fireDir = s_ray.direction.normalized;
-            _hitData.rayHit = s_rayHit;
+            _hitData.RayHit = s_rayHit;
+            _hitData.SetFalloff(_distanceMoved);
 
             DoImpactFX(damageable);
 
             bool backstab = false;
-            WeaponPatches.ApplyEWCBulletHit(_baseCWC!, damageable, ref _hitData, _distanceMoved, _pierce, ref _baseDamage, ref backstab);
-            float damage = _hitData.damage * _hitData.Falloff(_distanceMoved + _hitData.rayHit.distance);
-            damageable?.BulletDamage(damage, _hitData.owner, _hitData.rayHit.point, _hitData.fireDir, _hitData.rayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
+            WeaponPatches.ApplyEWCHit(_baseCWC!, damageable, _hitData, _pierce, ref _baseDamage, ref backstab);
+            float damage = _hitData.damage * _hitData.falloff;
+            damageable?.BulletDamage(damage, _hitData.owner, _hitData.hitPos, _hitData.fireDir, _hitData.RayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
         }
     }
 }

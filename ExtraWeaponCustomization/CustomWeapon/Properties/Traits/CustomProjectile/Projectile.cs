@@ -2,6 +2,7 @@
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.JSON;
 using ExtraWeaponCustomization.Utils;
+using ExtraWeaponCustomization.Utils.Log;
 using FX_EffectSystem;
 using Gear;
 using SNetwork;
@@ -13,7 +14,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class Projectile :
         Trait,
-        IWeaponProperty<WeaponPostSetupContext>,
+        IGunProperty,
+        IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPostRayContext>,
         IWeaponProperty<WeaponPostFireContext>,
@@ -47,20 +49,20 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
 
-        public void Invoke(WeaponPostSetupContext context)
+        public void Invoke(WeaponSetupContext context)
         {
-            _cachedRayDist = CWC.Weapon.MaxRayDist;
-            CWC.Weapon.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
+            _cachedRayDist = CWC.Gun!.MaxRayDist;
+            CWC.Gun!.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CWC.Weapon.MaxRayDist = _cachedRayDist;
+            CWC.Gun!.MaxRayDist = _cachedRayDist;
         }
 
         public void Invoke(WeaponPostRayContext context)
         {
-            if (!CWC.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || CWC.Weapon.Owner.Owner.IsBot)) return;
+            if (!CWC.Gun!.Owner.IsLocallyOwned && (!SNet.IsMaster || CWC.Gun!.Owner.Owner.IsBot)) return;
 
             context.Result = false;
             context.Data.maxRayDist = 0f;
@@ -80,23 +82,23 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 return;
             }
 
-            _cachedCWC ??= CWC.Weapon.GetComponent<CustomWeaponComponent>();
+            _cachedCWC ??= CWC.Gun!.GetComponent<CustomWeaponComponent>();
             if (VisualLerpDist > 0)
-                comp.SetVisualPosition(CWC.Weapon.MuzzleAlign.position, visualDist);
+                comp.SetVisualPosition(CWC.Gun!.MuzzleAlign.position, visualDist);
             comp.Hitbox.Init(_cachedCWC, this);
         }
 
         // Cancel tracer FX
         public void Invoke(WeaponPostFireContext context)
         {
-            if (!CWC.Weapon.Owner.IsLocallyOwned && (!SNet.IsMaster || CWC.Weapon.Owner.Owner.IsBot)) return;
+            if (!CWC.Gun!.Owner.IsLocallyOwned && (!SNet.IsMaster || CWC.Gun!.Owner.Owner.IsBot)) return;
 
-            CancelTracerFX(CWC.Weapon, CWC.Weapon.TryCast<Shotgun>() != null);
+            CancelTracerFX(CWC.Gun!, CWC.Gun!.TryCast<Shotgun>() != null);
         }
 
         public void Invoke(WeaponPostFireContextSync context)
         {
-            CancelTracerFX(CWC.Weapon, CWC.Weapon.TryCast<ShotgunSynced>() != null);
+            CancelTracerFX(CWC.Gun!, CWC.Gun!.TryCast<ShotgunSynced>() != null);
         }
 
         private void CancelTracerFX(BulletWeapon weapon, bool isShotgun)

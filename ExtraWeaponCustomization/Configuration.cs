@@ -2,7 +2,6 @@
 using BepInEx;
 using System.IO;
 using GTFO.API.Utilities;
-using System;
 using ExtraWeaponCustomization.CustomWeapon;
 
 namespace ExtraWeaponCustomization

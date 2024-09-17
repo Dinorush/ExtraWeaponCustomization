@@ -1,27 +1,22 @@
-﻿using static Weapon;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ExtraWeaponCustomization.Utils
 {
     internal static class DamageableUtil
     {
-        public static IDamageable? GetDamageableFromData(WeaponHitData data)
-        {
-            return GetDamageableFromRayHit(data.rayHit);
-        }
+        public static IDamageable? GetDamageableFromRayHit(RaycastHit rayHit) => GetDamageableFromCollider(rayHit.collider);
 
-        public static IDamageable? GetDamageableFromCollider(Collider collider)
-        {
-            GameObject? gameObject = collider.gameObject;
-            if (gameObject == null) return null;
+        public static IDamageable? GetDamageableFromCollider(Collider collider) => GetDamageableFromGO(collider.gameObject);
 
-            IDamageable? colliderDamageable = gameObject.GetComponent<ColliderMaterial>()?.Damageable;
+        public static IDamageable? GetDamageableFromGO(GameObject? go)
+        {
+            if (go == null) return null;
+
+            IDamageable? colliderDamageable = go.GetComponent<ColliderMaterial>()?.Damageable;
             if (colliderDamageable != null)
                 return colliderDamageable;
 
-            return gameObject.GetComponent<IDamageable>();
+            return go.GetComponent<IDamageable>();
         }
-
-        public static IDamageable? GetDamageableFromRayHit(RaycastHit rayHit) => GetDamageableFromCollider(rayHit.collider);
     }
 }

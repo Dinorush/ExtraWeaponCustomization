@@ -1,7 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
-using ExtraWeaponCustomization.Utils;
 using ExtraWeaponCustomization.Dependencies;
 using GTFO.API;
 using Il2CppInterop.Runtime.Injection;
@@ -12,6 +11,9 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.M
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Heal;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate;
+using ExtraWeaponCustomization.Utils.Log;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.TempProp;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Audio;
 
 namespace ExtraWeaponCustomization;
 
@@ -52,8 +54,10 @@ internal sealed class EntryPoint : BasePlugin
         DOTDamageManager.Init();
         HealManager.Init();
         FireRateModManager.Init();
+        AudioSwapManager.Init();
+        TempPropertiesManager.Init();
         KillAPIWrapper.Init();
         EWCProjectileManager.Init();
-        CustomWeaponManager.Current.GetCustomWeaponData(0); // Just want to make it get custom weapon data on startup, need to call something
+        CustomWeaponManager.Current.GetCustomGunData(0); // Just want to make it get custom weapon data on startup, need to call something
     }
 }

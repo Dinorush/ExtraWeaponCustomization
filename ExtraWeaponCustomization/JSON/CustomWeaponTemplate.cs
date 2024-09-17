@@ -22,10 +22,12 @@ namespace ExtraWeaponCustomization.JSON
                     new FireRateMod(),
                     new HealthMod(),
                     new RecoilMod(),
+                    new TempProperties(),
 
                     new Accelerate(),
                     new AmmoCap(),
                     new ArmorPierce(),
+                    new AudioSwap(),
                     new AutoAim(),
                     new AutoTrigger(),
                     new BackstabMulti(),

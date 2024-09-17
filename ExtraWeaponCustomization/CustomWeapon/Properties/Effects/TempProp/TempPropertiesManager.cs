@@ -1,31 +1,30 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils.Log;
 using Player;
 using SNetwork;
 using static SNetwork.SNetStructs;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.TempProp
 {
-    public static class FireRateModManager
+    public static class TempPropertiesManager
     {
-        private readonly static FireRateModSync _sync = new();
-        public const float MaxMod = 256f;
+        private readonly static TempPropertiesSync _sync = new();
 
         internal static void Init()
         {
             _sync.Setup();
         }
 
-        public static void SendInstance(SNet_Player source, InventorySlot slot, float mod)
+        public static void SendInstance(SNet_Player source, InventorySlot slot)
         {
-            TriggerInstanceData data = default;
+            TriggerData data = default;
             data.source.SetPlayer(source);
             data.slot = slot;
-            data.mod.Set(mod, MaxMod);
             _sync.Send(data);
         }
 
-        internal static void Internal_ReceiveInstance(SNet_Player source, InventorySlot slot, float mod)
+        internal static void Internal_ReceiveInstance(SNet_Player source, InventorySlot slot)
         {
             if (!PlayerBackpackManager.TryGetBackpack(source, out var backpack)) return;
             if (!backpack.TryGetBackpackItem(slot, out var item)) return;
@@ -39,14 +38,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate
                 return;
             }
 
-            cwc.Invoke(new WeaponFireRateModContextSync(mod));
+            cwc.Invoke(StaticContext<WeaponTempPropertiesContextSync>.Instance);
         }
     }
 
-    public struct TriggerInstanceData
+    public struct TriggerData
     {
         public pPlayer source;
         public InventorySlot slot;
-        public UFloat16 mod;
     }
 }

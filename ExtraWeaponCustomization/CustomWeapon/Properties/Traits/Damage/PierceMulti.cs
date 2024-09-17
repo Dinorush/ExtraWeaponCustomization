@@ -6,6 +6,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     internal class PierceMulti : 
         Trait,
+        IGunProperty,
         IWeaponProperty<WeaponPierceContext>
     {
         public float PierceDamageMulti { get; set; } = 1f;

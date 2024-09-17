@@ -1,6 +1,5 @@
 ﻿using ExtraWeaponCustomization.Utils;
 using UnityEngine;
-using static Weapon;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
@@ -21,7 +20,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
             Damageable = damageable;
         }
 
-        public WeaponPreHitContext(WeaponHitData data, float additionalDist, IDamageable? damageable = null) :
-            this(data.rayHit.point, data.fireDir.normalized, data.Falloff(additionalDist), damageable) {}
+        public WeaponPreHitContext(HitData data) :
+            this(data.hitPos, data.fireDir.normalized, data.falloff, data.damageable) {}
     }
 }

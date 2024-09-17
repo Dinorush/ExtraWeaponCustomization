@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text.Json;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
-using ExtraWeaponCustomization.Utils;
 using ExtraWeaponCustomization.JSON;
 using Gear;
+using ExtraWeaponCustomization.Utils.Log;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
@@ -15,8 +15,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 #pragma warning disable CS8618 // Set when registered to a CWC
         public CustomWeaponComponent CWC { get; set; }
 #pragma warning restore CS8618
-        public BulletWeapon Weapon => CWC.Weapon;
-        public bool AllowStack { get; } = true;
+        public ItemEquippable Weapon => CWC.Weapon;
 
         private TriggerCoordinator? _coordinator;
         public TriggerCoordinator? Trigger
@@ -32,10 +31,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         private string[]? _validTriggers;
         private DamageType _blacklistType = DamageType.Invalid;
-
-        // Backwards compatibility with pre-Trigger overhaul | Remove when no longer supported
-        private float _cooldown = 0f;
-        private ITrigger? _resetTrigger;
 
         public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
 
@@ -73,37 +68,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     Trigger = EWCJson.Deserialize<TriggerCoordinator>(ref reader);
                     VerifyTriggers();
                     break;
-                case "resettriggertype":
-                case "resettrigger":
-                    _resetTrigger = EWCJson.Deserialize<ITrigger>(ref reader);
-                    EWCLogger.Warning(
-                        "\"ResetTrigger\" as an Effect field is deprecated and will not be supported in a future version. " +
-                        "Please port it to the Trigger object."
-                        );
-                    break;
-                case "cooldown":
-                    _cooldown = reader.GetSingle();
-                    EWCLogger.Warning(
-                        "\"Cooldown\" as an Effect field is deprecated and will not be supported in a future version. " +
-                        "Please port it to the Trigger object."
-                        );
-                    break;
-            }
-
-            // Backwards compatibility with pre-Trigger overhaul | Remove when no longer supported
-            if (Trigger != null)
-            {
-                if (_cooldown > 0)
-                {
-                    Trigger.Cooldown = _cooldown;
-                    _cooldown = 0;
-                }
-
-                if (_resetTrigger != null)
-                {
-                    Trigger.Reset = new() { _resetTrigger };
-                    _resetTrigger = null;
-                }
             }
         }
 

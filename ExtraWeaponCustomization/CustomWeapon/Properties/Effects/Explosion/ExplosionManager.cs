@@ -35,7 +35,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             ExplosionEffectPooling.Initialize();
         }
 
-        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, IDamageable? directLimb = null)
+        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, IDamageable? directLimb = null)
         {
             if (!source.IsLocallyOwned) return;
 
@@ -43,7 +43,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             fxData.radius.Set(eBase.Radius, MaxRadius);
             fxData.duration.Set(eBase.GlowDuration, MaxGlowDuration);
             FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
-            DoExplosionDamage(position, direction, source, falloffMod, eBase, directLimb);
+            DoExplosionDamage(position, direction, source, falloffMod, eBase, triggerAmt, directLimb);
         }
     
         internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, uint soundID, Color color, float duration)
@@ -74,7 +74,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             }
         }
 
-        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, IDamageable? directLimb = null)
+        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt, IDamageable? directLimb = null)
         {
             DamageUtil.IncrementSearchID();
             var searchID = DamageUtil.SearchID;
@@ -87,7 +87,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 {
                     if (directBase != null)
                         directBase.TempSearchID = searchID;
-                    SendExplosionDamage(directLimb, position, direction, 0, source, falloffMod, explosiveBase);
+                    SendExplosionDamage(directLimb, position, direction, 0, source, falloffMod, explosiveBase, triggerAmt);
                 }
             }
 
@@ -136,14 +136,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 }
 
                 damBase.TempSearchID = searchID;
-                SendExplosionDamage(limb, targetPosition, direction, Vector3.Distance(position, targetPosition), source, falloffMod, explosiveBase);
+                SendExplosionDamage(limb, targetPosition, direction, Vector3.Distance(position, targetPosition), source, falloffMod, explosiveBase, triggerAmt);
             }
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, float distance, PlayerAgent source, float falloffMod, Explosive eBase)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, float distance, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)
         {
             float damage = distance.Map(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage);
             float distFalloff = damage / eBase.MaxDamage;
+            damage *= triggerAmt;
             float precisionMult = eBase.PrecisionDamageMulti;
 
             WeaponDamageContext context = new(damage, precisionMult, damageable);

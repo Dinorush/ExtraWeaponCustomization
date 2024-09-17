@@ -5,10 +5,20 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class AutoTrigger : 
         Trait,
-        IWeaponProperty<WeaponPostSetupContext>
+        IGunProperty,
+        IWeaponProperty<WeaponSetupContext>,
+        IWeaponProperty<WeaponClearContext>
     {
-        public void Invoke(WeaponPostSetupContext context) {
-            CWC.Weapon.m_archeType.m_triggerNeedsPress = false;
+        private bool _cachedTrigger;
+
+        public void Invoke(WeaponSetupContext context) {
+            _cachedTrigger = CWC.Gun!.m_archeType.m_triggerNeedsPress;
+            CWC.Gun.m_archeType.m_triggerNeedsPress = false;
+        }
+
+        public void Invoke(WeaponClearContext context)
+        {
+            CWC.Gun!.m_archeType.m_triggerNeedsPress = _cachedTrigger;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

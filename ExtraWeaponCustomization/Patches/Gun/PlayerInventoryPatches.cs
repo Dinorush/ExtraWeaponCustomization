@@ -1,4 +1,5 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon;
+using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using HarmonyLib;
@@ -99,7 +100,7 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.m_wieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.Invoke(new WeaponPostReloadContext());
+            cwc.Invoke(StaticContext<WeaponPostReloadContext>.Instance);
         }
 
         [HarmonyPatch(typeof(PlayerInventoryLocal), nameof(PlayerInventoryLocal.TriggerReload))]
@@ -110,7 +111,7 @@ namespace ExtraWeaponCustomization.Patches
             CustomWeaponComponent? cwc = __instance.m_wieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null || !cwc.Weapon.IsReloading) return;
 
-            cwc.Invoke(new WeaponReloadStartContext());
+            cwc.Invoke(StaticContext<WeaponReloadStartContext>.Instance);
         }
 
         [HarmonyPatch(typeof(PlayerAmmoStorage), nameof(PlayerAmmoStorage.FillAllClips))]

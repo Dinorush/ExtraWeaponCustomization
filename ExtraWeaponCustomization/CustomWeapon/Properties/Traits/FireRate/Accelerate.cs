@@ -3,7 +3,6 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.JSON;
 using ExtraWeaponCustomization.Utils;
-using Gear;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -13,6 +12,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     public class Accelerate :
         Trait,
         ITriggerCallback,
+        IGunProperty,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireRateSetContext>,
         IWeaponProperty<WeaponCancelFireContext>,
@@ -110,7 +110,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _lastUpdateTime = Clock.Time;
 
             // Apply accelerated fire rate
-            float startFireRate = 1f / Math.Max(CustomWeaponData.MinShotDelay, CWC.Weapon.m_archeType.ShotDelay());
+            float startFireRate = 1f / Math.Max(CustomWeaponData.MinShotDelay, CWC.Gun!.m_archeType.ShotDelay());
             context.FireRate = CalculateCurrentFireRate(startFireRate);
         }
 

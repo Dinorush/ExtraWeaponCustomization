@@ -1,9 +1,10 @@
 ﻿using BepInEx.Unity.IL2CPP;
+using ExtraWeaponCustomization.Utils.Log;
 using System;
 using System.Linq;
 using System.Reflection;
 
-namespace ExtraWeaponCustomization.Utils
+namespace ExtraWeaponCustomization.Dependencies
 {
     internal static class MTFOUtil
     {

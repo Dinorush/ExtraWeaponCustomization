@@ -6,6 +6,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     public sealed class HoldBurst :
         Trait,
+        IGunProperty,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>
     {
@@ -16,7 +17,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostStartFireContext context)
         {
             if (CWC.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
-            BWA_Burst archetype = CWC.Weapon.m_archeType.TryCast<BWA_Burst>()!;
+            BWA_Burst archetype = CWC.Gun!.m_archeType.TryCast<BWA_Burst>()!;
             // Can't use archetype.m_burstMax in case clip < max burst count
             _burstMaxCount = archetype.m_burstCurrentCount;
         }
@@ -24,7 +25,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponFireCancelContext context)
         {
             if (CWC.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
-            BWA_Burst archetype = CWC.Weapon.m_archeType.TryCast<BWA_Burst>()!;
+            BWA_Burst archetype = CWC.Gun!.m_archeType.TryCast<BWA_Burst>()!;
 
             if (_burstMaxCount - archetype.m_burstCurrentCount >= ShotsUntilCancel && !archetype.m_fireHeld)
             {

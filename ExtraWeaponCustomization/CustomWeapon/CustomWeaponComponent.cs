@@ -13,16 +13,24 @@ namespace ExtraWeaponCustomization.CustomWeapon
 {
     public sealed class CustomWeaponComponent : MonoBehaviour
     {
-        public BulletWeapon Weapon { get; private set; }
+        public readonly ItemEquippable Weapon;
+        public readonly BulletWeapon? Gun;
+        public readonly MeleeWeaponFirstPerson? Melee;
 
-        private readonly ContextController _contextController;
+        private readonly PropertyController _propertyController;
 
         private AutoAim? _autoAim;
+        [HideFromIl2Cpp]
+        internal AutoAim? AutoAim
+        {
+            get { return _autoAim; }
+            set { _autoAim = value; if (_ownerSet) _autoAim?.OnEnable(); }
+        }
+
         private bool _ownerSet;
 
         public bool CancelShot { get; set; }
 
-        private readonly Dictionary<Type, Trait> _traits;
         // When canceling a shot, holds the next shot timer so we can reset back to it
         private float _lastShotTimer = 0f;
         private float _lastBurstTimer = 0f;
@@ -34,19 +42,23 @@ namespace ExtraWeaponCustomization.CustomWeapon
         private readonly float _burstDelay;
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
-            _contextController = new ContextController();
-            _traits = new Dictionary<Type, Trait>();
+            ItemEquippable? item = GetComponent<ItemEquippable>();
+            if (item == null)
+                throw new ArgumentException("Parent Object", "Custom Weapon Component was added to an object without an ItemEquippable component.");
+            Weapon = item;
+            Gun = item.TryCast<BulletWeapon>();
+            Melee = item.TryCast<MeleeWeaponFirstPerson>();
 
-            BulletWeapon? bulletWeapon = GetComponent<BulletWeapon>();
-            if (bulletWeapon == null)
-                throw new ArgumentException("Parent Object", "Custom Weapon Component was added to an object without a BulletWeapon component.");
-            Weapon = bulletWeapon;
+            _propertyController = new(Gun != null);
 
-            _fireRate = 1f / Math.Max(Weapon.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
-            _lastFireRate = _fireRate;
-            CurrentFireRate = _fireRate;
-            _burstDelay = Weapon.m_archeType.BurstDelay();
-            CurrentBurstDelay = _burstDelay;
+            if (Gun != null)
+            {
+                _fireRate = 1f / Math.Max(Gun.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+                _lastFireRate = _fireRate;
+                CurrentFireRate = _fireRate;
+                _burstDelay = Gun.m_archeType.BurstDelay();
+                CurrentBurstDelay = _burstDelay;
+            }
             _ownerSet = false;
         }
 
@@ -63,8 +75,8 @@ namespace ExtraWeaponCustomization.CustomWeapon
         {
             // Bots need full behavior but bots are pain and use different functions so idc for now
             Clear();
-            _contextController.ChangeToSyncContexts();
-            Register(CustomWeaponManager.Current.GetCustomWeaponData(Weapon.ArchetypeID));
+            _propertyController.ChangeToSyncContexts();
+            Register(CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID));
             _autoAim = null;
         }
 
@@ -87,20 +99,7 @@ namespace ExtraWeaponCustomization.CustomWeapon
         }
 
         [HideFromIl2Cpp]
-        public void Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
-
-        [HideFromIl2Cpp]
-        public void Register(IWeaponProperty property)
-        {
-            if (property is AutoAim autoAim)
-                _autoAim ??= autoAim;
-
-            _contextController.Register(property);
-            property.CWC = this;
-
-            if (property is Trait trait)
-                _traits.TryAdd(property.GetType(), trait);
-        }
+        public void Invoke<TContext>(TContext context) where TContext : IWeaponContext => _propertyController.Invoke(context);
 
         [HideFromIl2Cpp]
         public void Register(CustomWeaponData? data)
@@ -108,17 +107,13 @@ namespace ExtraWeaponCustomization.CustomWeapon
             if (data == null) return;
 
             List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
-            foreach (IWeaponProperty property in properties)
-                Register(property);
-
-            Invoke(new WeaponPostSetupContext());
+            _propertyController.Init(this, new PropertyList(properties));
         }
 
         public void Clear()
         {
-            Invoke(new WeaponClearContext());
-            _traits.Clear();
-            _contextController.Clear();
+            Invoke(StaticContext<WeaponClearContext>.Instance);
+            _propertyController.Clear();
             _autoAim = null;
             _ownerSet = false;
             CurrentFireRate = _fireRate;
@@ -126,16 +121,22 @@ namespace ExtraWeaponCustomization.CustomWeapon
             Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
+
         [HideFromIl2Cpp]
-        public bool HasTrait(Type type) => _traits.ContainsKey(type);
+        internal void Activate(PropertyNode node) => _propertyController.SetActive(node, true);
         [HideFromIl2Cpp]
-        public Trait GetTrait(Type type) => _traits[type];
+        internal void Deactivate(PropertyNode node) => _propertyController.SetActive(node, false);
+
+        [HideFromIl2Cpp]
+        public bool HasTrait(Type type) => _propertyController.HasTrait(type);
+        [HideFromIl2Cpp]
+        public Trait GetTrait(Type type) => _propertyController.GetTrait(type);
 
         public void StoreCancelShot()
         {
             if (!CancelShot)
             {
-                Invoke(new WeaponCancelFireContext());
+                Invoke(StaticContext<WeaponCancelFireContext>.Instance);
                 CancelShot = true;
             }
         }

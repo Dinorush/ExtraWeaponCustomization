@@ -10,6 +10,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
     internal class WallPierce : 
         Trait,
+        IGunProperty,
         IWeaponProperty<WeaponPostRayContext>
     {
         private static RaycastHit s_rayHit;
@@ -17,7 +18,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostRayContext context)
         {
             if (!context.Result) return;
-            if (context.Data.rayHit.collider.gameObject.IsInLayerMask(LayerManager.MASK_BULLETWEAPON_PIERCING_PASS)) return;
+            if (context.Data.RayHit.collider.gameObject.IsInLayerMask(LayerManager.MASK_BULLETWEAPON_PIERCING_PASS)) return;
 
             if (!Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, LayerManager.MASK_BULLETWEAPON_PIERCING_PASS)) return;
 
@@ -25,7 +26,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             if (damageable == null || !IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode)) return;
 
             context.Result = true;
-            context.Data.rayHit = s_rayHit;
+            context.Data.RayHit = s_rayHit;
         }
 
         internal static bool IsTargetReachable(AIG_CourseNode? source, AIG_CourseNode? target)

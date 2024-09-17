@@ -8,7 +8,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 #pragma warning disable CS8618 // Set when registered to a CWC
         public CustomWeaponComponent CWC { get; set; }
 #pragma warning restore CS8618
-        public bool AllowStack { get; } = false;
 
         public abstract IWeaponProperty Clone();
         public abstract void Serialize(Utf8JsonWriter writer);
