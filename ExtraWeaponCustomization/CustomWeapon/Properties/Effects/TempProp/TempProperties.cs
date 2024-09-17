@@ -17,9 +17,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
     {
         public PropertyList? Properties { get; set; }
         private List<ITriggerCallback>? _callbackProperties;
-        public bool OverrideBase { get; set; } = false;
-        public bool ResetTriggersOnEnd { get; set; } = false;
         public float Duration { get; set; } = 0f;
+        public bool Override { get; set; } = false;
+        public bool ResetTriggersOnEnd { get; set; } = false;
 
         internal PropertyNode? Node { get; set; }
 
@@ -86,7 +86,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             {
                 Properties = Properties?.Clone(),
                 Duration = Duration,
-                OverrideBase = OverrideBase,
+                Override = Override,
                 ResetTriggersOnEnd = ResetTriggersOnEnd,
                 Trigger = Trigger?.Clone()
             };
@@ -94,7 +94,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             if (copy.Properties != null)
             {
                 copy.Properties.Owner = copy;
-                copy.Properties.Override = OverrideBase;
+                copy.Properties.Override = Override;
                 foreach (var property in copy.Properties.Properties)
                 {
                     if (property is ITriggerCallback trigger)
@@ -121,7 +121,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 writer.WriteEndArray();
             }
             writer.WriteNumber(nameof(Duration), Duration);
-            writer.WriteBoolean(nameof(OverrideBase), OverrideBase);
+            writer.WriteBoolean(nameof(Override), Override);
             writer.WriteBoolean(nameof(ResetTriggersOnEnd), ResetTriggersOnEnd);
             SerializeTrigger(writer);
             writer.WriteEndObject();
@@ -144,8 +144,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 case "duration":
                     Duration = reader.GetSingle();
                     break;
-                case "overridebase":
-                    OverrideBase = reader.GetBoolean();
+                case "override":
+                    Override = reader.GetBoolean();
                     break;
                 case "resettriggersonend":
                     ResetTriggersOnEnd = reader.GetBoolean();
