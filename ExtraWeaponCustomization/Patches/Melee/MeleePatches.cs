@@ -18,6 +18,7 @@ namespace ExtraWeaponCustomization.Patches.Melee
         [HarmonyPostfix]
         private static void SetupCallback(MeleeWeaponFirstPerson __instance)
         {
+            CachedCharge = 0f;
             CustomWeaponManager.Current.AddWeaponListener(__instance);
             CustomWeaponData? data = CustomWeaponManager.Current.GetCustomMeleeData(__instance.MeleeArchetypeData.persistentID);
             if (data == null) return;
@@ -33,10 +34,19 @@ namespace ExtraWeaponCustomization.Patches.Melee
         [HarmonyPostfix]
         private static void UpdateCurrentWeapon(MeleeWeaponFirstPerson __instance)
         {
+            CachedCharge = 0f;
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
             cwc.Invoke(StaticContext<WeaponWieldContext>.Instance);
+        }
+
+        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.OnUnWield))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void ClearCharge(MeleeWeaponFirstPerson __instance)
+        {
+            CachedCharge = 0f;
         }
 
         private readonly static HitData s_hitData = new();
