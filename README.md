@@ -19,10 +19,10 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Armor Pierce: Pierces armor or modifies bullet damage dealt to armor.
 - Audio Swap: Toggles audio on a trigger. [Gun]
 - Auto Aim: Automatically fire toward targets. [Gun]
-- Auto Trigger: Hold the trigger to fire. [Semi or Burst Gun]
+- Auto Trigger: Hold the trigger to fire. [Semi, Burst]
 - Backstab Multi: Applies a multiplier to backstab damage.
-- Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Automatic Gun]
-- Hold Burst: Releasing the trigger ends a burst early. [Burst Gun]
+- Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Auto]
+- Hold Burst: Releasing the trigger ends a burst early. [Burst]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
 - Projectile: Fires a projectile instead of a hitscan bullet. [Gun]
 - Reserve Clip: Combines reserve ammo with the magazine. [Gun]
