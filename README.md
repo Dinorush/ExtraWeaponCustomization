@@ -11,7 +11,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Fire Rate Mod: Applies a fire rate modifier.
 - Health Mod: Modifies the user's health.
 - Recoil Mod: Applies a recoil modifier. [Gun]
-- Temp Properties: Temporarily adds another set of Traits and Effects.
+- Temp Properties: Temporarily adds another set of properties.
 
 #### Traits - Innate gun behavior modifications
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
