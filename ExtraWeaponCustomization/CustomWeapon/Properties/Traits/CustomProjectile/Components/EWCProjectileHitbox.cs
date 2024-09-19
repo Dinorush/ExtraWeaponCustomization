@@ -62,7 +62,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _baseCWC = cwc;
             _weapon = cwc.Gun!;
 
-            Vector3 pos = _weapon.Owner.Position;
+            Vector3 pos = _weapon.Owner.FPSCamera.Position;
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
 
             _entityLayer = LayerManager.MASK_MELEE_ATTACK_TARGETS;
@@ -115,6 +115,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _lastFixedTime = Time.fixedTime;
 
             CheckCollisionInitial();
+            CheckCollisionInitialWorld();
         }
 
         public void Die()
@@ -227,6 +228,31 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
                 if (_pierceCount <= 0) break;
             }
+        }
+
+        private void CheckCollisionInitialWorld()
+        {
+            if (_settings!.HitSizeWorld == 0) return;
+
+            Vector3 pos = _weapon.Owner.FPSCamera.Position;
+            Collider[] colliders = Physics.OverlapSphere(pos, _settings.HitSizeWorld, EWCProjectileManager.MaskWorld);
+            if (colliders.Length == 0) return;
+
+            s_rayHit.distance = float.MaxValue;
+            s_ray.origin = pos;
+            foreach (var collider in colliders)
+            {
+                s_ray.direction = collider.transform.position - pos;
+                if (!collider.Raycast(s_ray, out var hit, _settings.HitSizeWorld)) continue;
+
+                if (hit.distance < s_rayHit.distance)
+                    s_rayHit = hit;
+            }
+
+            if (s_rayHit.distance == float.MaxValue) return;
+
+            BulletHit(null);
+            _base.Die();
         }
 
         private void DoDamage(IDamageable damageable, bool cast = false)
