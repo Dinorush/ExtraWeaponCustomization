@@ -54,7 +54,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private bool _useContinuousGrowth = false;
 
         private TriggerCoordinator? _coordinator;
-        public TriggerCoordinator? ResetTrigger
+        public TriggerCoordinator? Trigger
         {
             get => _coordinator;
             set
@@ -125,7 +125,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             UpdateProgress();
         }
 
-        public void Invoke(WeaponTriggerContext context) => ResetTrigger?.Invoke(context);
+        public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
 
         public void TriggerReset()
         {
@@ -176,7 +176,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 _useContinuousGrowth = _useContinuousGrowth,
                 DecelTime = DecelTime,
                 DecelDelay = DecelDelay,
-                ResetTrigger = ResetTrigger?.Clone()
+                Trigger = Trigger?.Clone()
             };
             return copy;
         }
@@ -196,7 +196,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 writer.WriteNumber(nameof(AccelExponent), AccelExponent);
             writer.WriteNumber(nameof(DecelTime), DecelTime);
             writer.WriteNumber(nameof(DecelDelay), DecelDelay);
-            writer.WriteString(nameof(ResetTrigger), "Invalid");
+            writer.WriteString("ResetTrigger", "Invalid");
             writer.WriteEndObject();
         }
 
@@ -246,7 +246,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 case "resettriggertype":
                 case "resettrigger":
-                    ResetTrigger = EWCJson.Deserialize<TriggerCoordinator>(ref reader);
+                    Trigger = EWCJson.Deserialize<TriggerCoordinator>(ref reader);
                     break;
                 default:
                     break;

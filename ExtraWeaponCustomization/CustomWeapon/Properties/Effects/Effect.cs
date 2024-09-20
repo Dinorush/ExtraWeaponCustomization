@@ -4,7 +4,6 @@ using System.Text.Json;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
 using ExtraWeaponCustomization.JSON;
-using Gear;
 using ExtraWeaponCustomization.Utils.Log;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects

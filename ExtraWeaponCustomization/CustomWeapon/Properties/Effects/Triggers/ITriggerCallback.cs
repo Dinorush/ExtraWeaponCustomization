@@ -12,6 +12,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
 
     public interface ITriggerCallback : IWeaponProperty<WeaponTriggerContext>
     {
+        public TriggerCoordinator? Trigger { get; set; }
         public abstract void TriggerApply(List<TriggerContext> triggerList);
         public abstract void TriggerReset();
     }
