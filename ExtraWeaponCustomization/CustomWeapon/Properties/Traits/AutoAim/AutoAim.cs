@@ -1,8 +1,8 @@
 ﻿using Agents;
+using AIGraph;
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,12 +49,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private Dam_EnemyDamageLimb? _weakspotLimb;
         private Transform? _weakspotTarget;
         private readonly List<Collider> _bodyList = new();
-        private readonly List<Collider> _weakspotList = new();
-
-        private static readonly ColliderComparer _colliderComparer = new();
+        private readonly List<(Collider collider, Dam_EnemyDamageLimb limb)> _weakspotList = new();
 
         private static Ray s_ray;
         private static RaycastHit s_raycastHit;
+        private readonly static List<(EnemyAgent, float)> s_searchCache = new(50);
+        private readonly static Queue<AIG_CourseNode> s_searchQueue = new();
+        private const float SearchIgnoreAngleDist = 4f;
 
         private readonly Color _targetedColor = new(1.2f, 0.3f, 0.1f, 1f);
         private readonly Color _passiveLocked = new(0.8f, 0.3f, 0.2f, 1f);
@@ -83,6 +84,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             // Ignore pierced shots
             if (context.Data.maxRayDist < CWC.Gun!.MaxRayDist) return;
 
+            if (!UseAutoAim) return;
+
             // Prioritize aim if looking at the locked enemy
             if (FavorLookPoint)
             {
@@ -91,13 +94,12 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 if (Physics.Raycast(s_ray, out s_raycastHit, 100f, LayerManager.MASK_BULLETWEAPON_RAY))
                 {
                     Agent? agent = DamageableUtil.GetDamageableFromRayHit(s_raycastHit)?.GetBaseAgent();
-                    if (agent != null && agent.Alive && agent == _target)
+                    if (agent != null && agent.Alive && (!RequireLock || agent == _target))
                         return; // Cancel auto aim (just shoot where user is aiming)
                 }
             }
 
-            if (UseAutoAim)
-                context.Data.fireDir = (GetTargetPos() - _camera.Position).normalized;
+            context.Data.fireDir = (GetTargetPos() - _camera.Position).normalized;
         }
 
         public void Invoke(WeaponSetupContext context)
@@ -204,7 +206,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             else if (_target != null && LockTime <= 0)
                 _progress = 1f;
 
-            _detectionTick = Time.time + 0.1f;
+            _detectionTick = Time.time + Configuration.AutoAimTickDelay;
         }
 
         private void UpdateAnimate()
@@ -280,49 +282,80 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             // Check if any part of the target is still valid
             Vector3 position = _camera!.Position;
-            Vector3 forward = _camera!.CameraRayDir;
-            foreach (Collider collider in _target.GetComponentsInChildren<Collider>())
-            {
-                Vector3 targetPos = collider.transform.position;
-                Vector3 up = targetPos + Vector3.up * 0.4f;
-                Vector3 left = targetPos + Vector3.left * 0.4f;
-                Vector3 to = targetPos - position;
-                if (Vector3.Angle(forward, to) < Angle && !Physics.Linecast(position, targetPos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS) && !Physics.Linecast(position, up, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS) && !Physics.Linecast(position, left, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
-                    return true;
-            }
-            return false;
+            Vector3 targetPos = GetTargetPos();
+            Vector3 diff = targetPos - position;
+            return diff.sqrMagnitude < Range * Range && Vector3.Angle(_camera!.CameraRayDir, diff) < Angle
+                && !Physics.Linecast(position, targetPos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS);
         }
 
         private EnemyAgent? CheckForTarget()
         {
             Vector3 position = _camera!.Position;
-            Vector3 forward = _camera!.CameraRayDir;
+            Vector3 forward = _camera.CameraRayDir;
 
-            Collider[] colliders = Physics.OverlapSphere(position, Range, LayerManager.MASK_SENTRYGUN_DETECTION_TARGETS);
-            _colliderComparer.Set(forward, position);
-            Array.Sort(colliders, _colliderComparer);
+            AIG_CourseNode origin = CWC.Weapon.Owner.CourseNode;
+            AIG_SearchID.IncrementSearchID();
+            ushort searchID = AIG_SearchID.SearchID;
+            double sqrRange = Range * Range;
 
-            // Go through colliders by order of minimum angle (enemies closest to aim point are prioritized)
-            foreach (Collider collider in colliders)
+            s_searchQueue.Enqueue(origin);
+            origin.m_searchID = searchID;
+            while (s_searchQueue.TryDequeue(out AIG_CourseNode? node))
             {
-                Vector3 pos = collider.transform.position;
-                Vector3 to = pos - position;
-                // Sorted by this, so if any are bigger, no valid colliders remain
-                if (Vector3.Angle(forward, to) >= Angle)
-                    return null;
+                foreach (AIG_CoursePortal portal in node.m_portals)
+                {
+                    AIG_CourseNode oppositeNode = portal.GetOppositeNode(node);
+                    Vector3 diff = portal.Position - position;
+                    float width = portal.Gate.GetBoundingSize().x * 0.5f;
+                    double sqrSearchRange = (Range + width) * (Range + width);
+                    float sqrIgnoreAngle = (SearchIgnoreAngleDist + width) * (SearchIgnoreAngleDist + width);
 
-                Vector3 up = pos + Vector3.up * 0.4f;
-                Vector3 left = pos + Vector3.left * 0.4f;
-                if (Physics.Linecast(position, pos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS) || Physics.Linecast(position, up, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS) || Physics.Linecast(position, left, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
-                    continue;
+                    if (oppositeNode.m_searchID != searchID
+                        && diff.sqrMagnitude < sqrSearchRange
+                        && (diff.sqrMagnitude < sqrIgnoreAngle || (Angle > 60 || Vector3.Dot(diff, forward) > 0)))
+                    {
+                        oppositeNode.m_searchID = searchID;
+                        s_searchQueue.Enqueue(oppositeNode);
+                    }
+                }
 
-                EnemyAgent? enemyAgent = collider.GetComponent<IDamageable>()?.GetBaseAgent()?.TryCast<EnemyAgent>();
-                if (enemyAgent == null) continue;
+                foreach (EnemyAgent enemy in node.m_enemiesInNode)
+                {
+                    if (enemy == null || !enemy.Alive || ((enemy.RequireTagForDetection || TagOnly) && !enemy.IsTagged && !IgnoreInvisibility))
+                        continue;
 
-                if (((!enemyAgent.RequireTagForDetection && !TagOnly) || enemyAgent.IsTagged || IgnoreInvisibility) && enemyAgent.Alive)
-                    return enemyAgent;
+                    Vector3 targetPos = TargetMode == TargetingMode.Body ? enemy.AimTargetBody.position : enemy.AimTarget.position;
+                    Vector3 diff = targetPos - position;
+                    float angle = Vector3.Angle(forward, diff);
+                    if (diff.sqrMagnitude >= sqrRange || angle >= Angle)
+                        continue;
+
+                    s_searchCache.Add((enemy, angle));
+                }
             }
+
+            s_searchCache.Sort(AngleCompare);
+            foreach ((EnemyAgent enemy, _) in s_searchCache)
+            {
+                Vector3 targetPos = TargetMode == TargetingMode.Body ? enemy.AimTargetBody.position : enemy.AimTarget.position;
+                if (!Physics.Linecast(position, targetPos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                {
+                    s_searchCache.Clear();
+                    s_searchQueue.Clear();
+                    return enemy;
+                }
+            }
+            s_searchCache.Clear();
+            s_searchQueue.Clear();
+
+            if (CheckTargetValid())
+                return _target;
             return null;
+        }
+
+        private static int AngleCompare((EnemyAgent, float angle) x, (EnemyAgent, float angle) y)
+        {
+            return x.angle < y.angle ? -1 : 1;
         }
 
         private Vector3 GetTargetPos()
@@ -333,7 +366,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             return TargetMode switch
             {
-                TargetingMode.Body => _target.AimTarget.position,
+                TargetingMode.Body => _target.AimTargetBody.position,
                 TargetingMode.Weakspot => _weakspotTarget!.position,
                 _ => _target.AimTarget.position,
             };
@@ -353,7 +386,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 if (limb != null && limb.m_health > 0)
                 {
                     if (limb.m_type == eLimbDamageType.Weakspot)
-                        _weakspotList.Add(collider);
+                        _weakspotList.Add((collider, limb));
                     else
                         _bodyList.Add(collider);
                 }
@@ -371,32 +404,41 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             }
 
             if (_weakspotLimb != null && _weakspotLimb.m_health > 0 && Clock.Time < _weakspotDetectionTick) return;
-            _weakspotDetectionTick = Clock.Time + 0.1f;
+            _weakspotDetectionTick = Clock.Time + Configuration.AutoAimTickDelay;
 
-            _colliderComparer.Set(_camera!.CameraRayDir, _camera!.Position);
-            _weakspotList.Sort(_colliderComparer);
+            _weakspotList.Sort(WeakspotCompare);
             _weakspotList.Reverse();
 
             for (int i = _weakspotList.Count - 1; i >= 0; i--)
             {
-                Dam_EnemyDamageLimb weakspot = _weakspotList[i].GetComponent<Dam_EnemyDamageLimb>();
+                Dam_EnemyDamageLimb weakspot = _weakspotList[i].limb;
                 if (weakspot == null || weakspot.m_health <= 0)
                 {
                     _weakspotList.RemoveAt(i);
                     continue;
                 }
+                Collider collider = _weakspotList[i].collider;
 
-                s_ray.direction = weakspot.transform.position - _camera.Position;
+                s_ray.direction = weakspot.transform.position - _camera!.Position;
                 s_ray.origin = _camera.Position;
-                _weakspotList[i].Raycast(s_ray, out s_raycastHit, (weakspot.transform.position - _camera.Position).magnitude);
+                collider.Raycast(s_ray, out s_raycastHit, (weakspot.transform.position - _camera.Position).magnitude);
 
-                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)))
+                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)) && !Physics.Linecast(_camera.Position, weakspot.transform.position, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
                 {
-                    _weakspotTarget = _weakspotList[i].transform;
+                    _weakspotTarget = collider.transform;
                     _weakspotLimb = weakspot;
                     return;
                 }
             }
+        }
+
+        private int WeakspotCompare((Collider? collider, Dam_EnemyDamageLimb) x, (Collider? collider, Dam_EnemyDamageLimb) y)
+        {
+            if (x.collider == null) return 1;
+            if (y.collider == null) return -1;
+            float angleX = Vector3.Angle(_camera!.CameraRayDir, x.collider.transform.position);
+            float angleY = Vector3.Angle(_camera!.CameraRayDir, y.collider.transform.position);
+            return angleX < angleY ? -1 : 1;
         }
 
         public override IWeaponProperty Clone()
@@ -499,27 +541,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     break;
                 default:
                     break;
-            }
-        }
-
-        sealed class ColliderComparer : IComparer<Collider>
-        {
-            Vector3 _forward;
-            Vector3 _position;
-            public void Set(Vector3 forward, Vector3 position)
-            {
-                _forward = forward;
-                _position = position;
-            }
-
-            public int Compare(Collider? x, Collider? y)
-            {
-                if (x == null) return 1;
-                else if (y == null) return -1;
-
-                Vector3 xPos = x.transform.position;
-                Vector3 yPos = y.transform.position;
-                return Vector3.Angle(_forward, xPos - _position) < Vector3.Angle(_forward, yPos - _position) ? -1 : 1;
             }
         }
 
