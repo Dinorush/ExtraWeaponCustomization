@@ -45,6 +45,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             _activeRoutine ??= CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(DeactivateAfterDelay()));
 
             TempPropertiesManager.SendInstance(CWC.Weapon.Owner.Owner, PlayerAmmoStorage.GetSlotFromAmmoType(CWC.Weapon.AmmoType));
+            if (_callbackProperties != null)
+                foreach (var callback in _callbackProperties)
+                    if (callback.Trigger != null)
+                        callback.TriggerApply(contexts);
         }
 
         public void Invoke(WeaponTempPropertiesContextSync context)
