@@ -43,7 +43,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         public float VisualLerpDist { get; set; } = 5f;
         public float Lifetime { get; set; } = 20f;
 
-        private CustomWeaponComponent? _cachedCWC;
         private float _cachedRayDist;
 
         private static Ray s_ray;
@@ -82,10 +81,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                 return;
             }
 
-            _cachedCWC ??= CWC.Gun!.GetComponent<CustomWeaponComponent>();
             if (VisualLerpDist > 0)
                 comp.SetVisualPosition(CWC.Gun!.MuzzleAlign.position, visualDist);
-            comp.Hitbox.Init(_cachedCWC, this);
+            comp.Hitbox.Init(CWC, this);
         }
 
         // Cancel tracer FX

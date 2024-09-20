@@ -166,10 +166,13 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             Array.Sort(hits, DistanceCompare);
             foreach (RaycastHit hit in hits)
             {
+                if (hit.distance == 0) continue;
+
+                IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
+                if (AlreadyHit(damageable))
                 if (checkLOS && _hitWorld && Physics.Linecast(hit.point, hit.point + hit.normal * _settings.HitSize, EWCProjectileManager.MaskWorld)) continue;
 
                 s_rayHit = hit;
-                IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
 
                 if (damageable != null)
                     DoDamage(damageable);
@@ -201,17 +204,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
         private void CheckCollisionInitial()
         {
-            if (_settings!.HitSize < CollisionInitialMinSize) return;
+            if (_settings!.HitSize == 0) return;
 
-            Vector3 pos = _weapon.Owner.Position;
+            Vector3 pos = _weapon.Owner.FPSCamera.Position;
             Collider[] colliders = Physics.OverlapSphere(pos, _settings.HitSize, _entityLayer);
             PriorityQueue<RaycastHit, float> hitQueue = new();
 
             s_ray.origin = pos;
             foreach (var collider in colliders)
             {
-                if (Physics.Linecast(pos, collider.transform.position, EWCProjectileManager.MaskWorld)) continue;
-
                 s_ray.direction = collider.transform.position - pos;
                 if (!collider.Raycast(s_ray, out RaycastHit hit, _settings.HitSize)) continue;
 
@@ -221,6 +222,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             while (hitQueue.TryDequeue(out s_rayHit, out var _))
             {
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
+                if (AlreadyHit(damageable)) continue;
+                if (Physics.Linecast(pos, s_rayHit.collider.transform.position, EWCProjectileManager.MaskWorld)) continue;
 
                 if (damageable != null)
                     DoDamage(damageable);
@@ -257,16 +260,23 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
             if (!_pierce) return true;
 
-            MonoBehaviour? baseDamageable = damageable.GetBaseDamagable().TryCast<MonoBehaviour>();
+            
+
+            return true;
+        }
+
+        private bool AlreadyHit(IDamageable? damageable)
+        {
+            MonoBehaviour? baseDamageable = damageable?.GetBaseDamagable().TryCast<MonoBehaviour>();
             if (baseDamageable != null)
             {
                 if (_hitEnts.Contains(baseDamageable.GetInstanceID()))
-                    return false;
+                    return true;
                 else
                     _hitEnts.Add(baseDamageable.GetInstanceID());
             }
 
-            return true;
+            return false;
         }
 
         private void DoImpactFX(IDamageable? damageable)
