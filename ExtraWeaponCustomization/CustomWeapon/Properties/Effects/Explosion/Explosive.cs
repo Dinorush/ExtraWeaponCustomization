@@ -55,7 +55,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                     CacheBackstab = 0f;
                     WeaponPreHitContext context = (WeaponPreHitContext)tContext.context;
                     Vector3 position = context.Position;
-                    if (context.Damageable != null)
+                    if (context.Damageable != null && context.Damageable.GetBaseAgent() != null)
                         position = context.LocalPosition + context.Damageable.GetBaseAgent().Position;
 
                     if (context is WeaponPreHitEnemyContext enemyContext)

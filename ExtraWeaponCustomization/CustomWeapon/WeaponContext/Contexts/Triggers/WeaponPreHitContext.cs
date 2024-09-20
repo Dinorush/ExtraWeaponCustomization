@@ -16,7 +16,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
             Position = position;
             Direction = direction;
             Falloff = falloff;
-            LocalPosition = position - damageable?.GetBaseAgent().Position ?? Vector3.zero;
+            LocalPosition = position - damageable?.GetBaseAgent()?.Position ?? Vector3.zero;
             Damageable = damageable;
         }
 
