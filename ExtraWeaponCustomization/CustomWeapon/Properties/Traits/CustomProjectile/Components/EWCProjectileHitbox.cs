@@ -164,8 +164,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             {
                 // Get all enemies inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
-                List<(EnemyAgent, RaycastHit hit)> hits = SearchUtil.GetHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), SearchSettings);
-                s_hits.AddRange(hits.ConvertAll(pair => pair.hit));
+                List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), SearchSettings);
+                foreach ((EnemyAgent, RaycastHit hit) pair in hits)
+                    s_hits.Add(pair.hit);
                 foreach (var hit in Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer))
                     if (hit.distance > 0)
                         s_hits.Add(hit);
