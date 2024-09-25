@@ -6,7 +6,7 @@ namespace ExtraWeaponCustomization.Utils
     {
         public static IDamageable? GetDamageableFromRayHit(RaycastHit rayHit) => GetDamageableFromCollider(rayHit.collider);
 
-        public static IDamageable? GetDamageableFromCollider(Collider collider) => GetDamageableFromGO(collider.gameObject);
+        public static IDamageable? GetDamageableFromCollider(Collider? collider) => collider == null ? null : GetDamageableFromGO(collider.gameObject);
 
         public static IDamageable? GetDamageableFromGO(GameObject? go)
         {
