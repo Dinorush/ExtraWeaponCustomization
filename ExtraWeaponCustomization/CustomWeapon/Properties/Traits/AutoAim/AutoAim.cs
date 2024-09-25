@@ -55,7 +55,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         private static RaycastHit s_raycastHit;
         private readonly static List<(EnemyAgent, float)> s_searchCache = new(50);
         private readonly static Queue<AIG_CourseNode> s_searchQueue = new();
-        private const float SearchIgnoreAngleDist = 4f;
 
         private readonly Color _targetedColor = new(1.2f, 0.3f, 0.1f, 1f);
         private readonly Color _passiveLocked = new(0.8f, 0.3f, 0.2f, 1f);
@@ -290,72 +289,45 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private EnemyAgent? CheckForTarget()
         {
-            Vector3 position = _camera!.Position;
-            Vector3 forward = _camera.CameraRayDir;
+            // s_ray may get changed by other functions, so to ensure it remains the same, use a local one
+            Ray ray = new(_camera!.Position, _camera!.CameraRayDir);
 
-            AIG_CourseNode origin = CWC.Weapon.Owner.CourseNode;
-            AIG_SearchID.IncrementSearchID();
-            ushort searchID = AIG_SearchID.SearchID;
-            double sqrRange = Range * Range;
+            // Get the enemies in range and sort them by angle to their AimTargets
+            List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, Range, Angle, CWC.Weapon.Owner.CourseNode);
+            List<(EnemyAgent, float angle)> angles = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetSearchTargetPos(enemy) - ray.origin)));
+            angles.Sort(AngleCompare);
 
-            s_searchQueue.Enqueue(origin);
-            origin.m_searchID = searchID;
-            while (s_searchQueue.TryDequeue(out AIG_CourseNode? node))
-            {
-                foreach (AIG_CoursePortal portal in node.m_portals)
-                {
-                    AIG_CourseNode oppositeNode = portal.GetOppositeNode(node);
-                    Vector3 diff = portal.Position - position;
-                    float width = portal.Gate.GetBoundingSize().x * 0.5f;
-                    double sqrSearchRange = (Range + width) * (Range + width);
-                    float sqrIgnoreAngle = (SearchIgnoreAngleDist + width) * (SearchIgnoreAngleDist + width);
-
-                    if (oppositeNode.m_searchID != searchID
-                        && diff.sqrMagnitude < sqrSearchRange
-                        && (diff.sqrMagnitude < sqrIgnoreAngle || (Angle > 60 || Vector3.Dot(diff, forward) > 0)))
-                    {
-                        oppositeNode.m_searchID = searchID;
-                        s_searchQueue.Enqueue(oppositeNode);
-                    }
-                }
-
-                foreach (EnemyAgent enemy in node.m_enemiesInNode)
-                {
-                    if (enemy == null || !enemy.Alive || ((enemy.RequireTagForDetection || TagOnly) && !enemy.IsTagged && !IgnoreInvisibility))
-                        continue;
-
-                    Vector3 targetPos = TargetMode == TargetingMode.Body ? enemy.AimTargetBody.position : enemy.AimTarget.position;
-                    Vector3 diff = targetPos - position;
-                    float angle = Vector3.Angle(forward, diff);
-                    if (diff.sqrMagnitude >= sqrRange || angle >= Angle)
-                        continue;
-
-                    s_searchCache.Add((enemy, angle));
-                }
-            }
-
-            s_searchCache.Sort(AngleCompare);
-            foreach ((EnemyAgent enemy, _) in s_searchCache)
-            {
-                Vector3 targetPos = TargetMode == TargetingMode.Body ? enemy.AimTargetBody.position : enemy.AimTarget.position;
-                if (!Physics.Linecast(position, targetPos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
-                {
-                    s_searchCache.Clear();
-                    s_searchQueue.Clear();
-                    return enemy;
-                }
-            }
-            s_searchCache.Clear();
-            s_searchQueue.Clear();
-
+            // New targets scanned don't check weakspots for performance.
+            // Still, we want to consider current target's weakspots (since it's already cached and feels better).
             if (CheckTargetValid())
-                return _target;
+            {
+                float targetAngle = Vector3.Angle(ray.direction, GetTargetPos() - ray.origin);
+                foreach ((EnemyAgent enemy, float angle) in angles)
+                {
+                    if (angle >= targetAngle) return _target;
+                    if (!Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                        return enemy;
+                }
+            }
+            else
+            {
+                foreach ((EnemyAgent enemy, _) in angles)
+                    if (!Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                        return enemy;
+            }
+
             return null;
         }
 
         private static int AngleCompare((EnemyAgent, float angle) x, (EnemyAgent, float angle) y)
         {
+            if (x.angle == y.angle) return 0;
             return x.angle < y.angle ? -1 : 1;
+        }
+
+        private Vector3 GetSearchTargetPos(EnemyAgent enemy)
+        {
+            return TargetMode == TargetingMode.Body ? enemy.AimTargetBody.position : enemy.AimTarget.position;
         }
 
         private Vector3 GetTargetPos()

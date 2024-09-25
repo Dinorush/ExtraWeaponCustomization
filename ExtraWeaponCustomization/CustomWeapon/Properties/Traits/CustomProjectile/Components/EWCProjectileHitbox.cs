@@ -1,4 +1,5 @@
 ﻿using Agents;
+using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using ExtraWeaponCustomization.Patches;
 using ExtraWeaponCustomization.Utils;
@@ -39,9 +40,10 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
         private static float s_velMagnitude;
+        private const SearchSetting SearchSettings = SearchSetting.CacheHit;
+        private readonly static List<RaycastHit> s_hits = new(50);
         private readonly static HashSet<int> s_playerCheck = new();
         private const float SightCheckMinSize = 0.5f;
-        private const float CollisionInitialMinSize = 2f;
 
 #pragma warning disable CS8618
         // Hidden null warnings since other methods will initialize members prior to Update
@@ -114,7 +116,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
             _distanceMoved = 0;
             _lastFixedTime = Time.fixedTime;
 
-            CheckCollisionInitial();
             CheckCollisionInitialWorld();
         }
 
@@ -157,20 +158,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
         private void CheckCollision()
         {
-            RaycastHit[] hits;
             if (_settings!.HitSize == 0)
-                hits = Physics.RaycastAll(s_ray, s_velMagnitude, _entityLayer);
+                s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, _entityLayer));
             else
-                hits = Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer);
+            {
+                // Get all enemies inside the sphere as well as any we collide with on the cast.
+                // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
+                List<(EnemyAgent, RaycastHit hit)> hits = SearchUtil.GetHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), SearchSettings);
+                s_hits.AddRange(hits.ConvertAll(pair => pair.hit));
+                foreach (var hit in Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer))
+                    if (hit.distance > 0)
+                        s_hits.Add(hit);
+            }
 
             bool checkLOS = _settings.HitSize >= SightCheckMinSize;
-            Array.Sort(hits, DistanceCompare);
-            foreach (RaycastHit hit in hits)
+            s_hits.Sort(DistanceCompare);
+            foreach (RaycastHit hit in s_hits)
             {
-                if (hit.distance == 0) continue;
-
-                IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
-                if (AlreadyHit(damageable))
+                IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
+                if (AlreadyHit(damageable)) continue;
                 if (checkLOS && _hitWorld && Physics.Linecast(hit.point, hit.point + hit.normal * _settings.HitSize, EWCProjectileManager.MaskWorld)) continue;
 
                 s_rayHit = hit;
@@ -180,6 +186,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
 
                 if (_pierceCount <= 0) break;
             }
+            s_hits.Clear();
         }
 
         private void CheckCollisionWorld()
@@ -201,36 +208,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
         {
             if (a.distance == b.distance) return 0;
             return a.distance < b.distance ? -1 : 1;
-        }
-
-        private void CheckCollisionInitial()
-        {
-            if (_settings!.HitSize == 0) return;
-
-            Vector3 pos = _weapon.Owner.FPSCamera.Position;
-            Collider[] colliders = Physics.OverlapSphere(pos, _settings.HitSize, _entityLayer);
-            PriorityQueue<RaycastHit, float> hitQueue = new();
-
-            s_ray.origin = pos;
-            foreach (var collider in colliders)
-            {
-                s_ray.direction = collider.transform.position - pos;
-                if (!collider.Raycast(s_ray, out RaycastHit hit, _settings.HitSize)) continue;
-
-                hitQueue.Enqueue(hit, hit.distance);
-            }
-
-            while (hitQueue.TryDequeue(out s_rayHit, out var _))
-            {
-                IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
-                if (AlreadyHit(damageable)) continue;
-                if (Physics.Linecast(pos, s_rayHit.collider.transform.position, EWCProjectileManager.MaskWorld)) continue;
-
-                if (damageable != null)
-                    DoDamage(damageable);
-
-                if (_pierceCount <= 0) break;
-            }
         }
 
         private void CheckCollisionInitialWorld()
@@ -282,25 +259,14 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjecti
                     return false;
             }
 
-            if (!_hitWorld && !WallPierce.IsTargetReachable(_weapon.Owner.CourseNode, agent?.CourseNode)) return false;
-
-            if (!_pierce) return true;
-
-            
-
-            return true;
+            return _hitWorld || WallPierce.IsTargetReachable(_weapon.Owner.CourseNode, agent?.CourseNode);
         }
 
         private bool AlreadyHit(IDamageable? damageable)
         {
             MonoBehaviour? baseDamageable = damageable?.GetBaseDamagable().TryCast<MonoBehaviour>();
             if (baseDamageable != null)
-            {
-                if (_hitEnts.Contains(baseDamageable.GetInstanceID()))
-                    return true;
-                else
-                    _hitEnts.Add(baseDamageable.GetInstanceID());
-            }
+                return !_hitEnts.Add(baseDamageable.GetInstanceID());
 
             return false;
         }

@@ -14,6 +14,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostRayContext>
     {
         private static RaycastHit s_rayHit;
+        private static Queue<AIG_CourseNode> s_nodeQueue = new();
 
         public void Invoke(WeaponPostRayContext context)
         {
@@ -36,12 +37,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
             AIG_SearchID.IncrementSearchID();
             ushort searchID = AIG_SearchID.SearchID;
-            Queue<AIG_CourseNode> queue = new Queue<AIG_CourseNode>();
-            queue.Enqueue(source);
+            s_nodeQueue.Enqueue(source);
 
-            while (queue.Count > 0)
+            while (s_nodeQueue.Count > 0)
             {
-                AIG_CourseNode current = queue.Dequeue();
+                AIG_CourseNode current = s_nodeQueue.Dequeue();
                 current.m_searchID = searchID;
                 foreach (AIG_CoursePortal portal in current.m_portals)
                 {
@@ -53,11 +53,15 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
                     }
                     AIG_CourseNode nextNode = portal.GetOppositeNode(current);
                     if (nextNode.m_searchID == searchID) continue;
-                    if (nextNode.NodeID == target.NodeID) return true;
-                    queue.Enqueue(nextNode);
+                    if (nextNode.NodeID == target.NodeID)
+                    {
+                        s_nodeQueue.Clear();
+                        return true;
+                    }
+                    s_nodeQueue.Enqueue(nextNode);
                 }
             }
-
+            s_nodeQueue.Clear();
             return false;
         }
 

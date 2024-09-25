@@ -1,4 +1,5 @@
 ﻿using Agents;
+using AIGraph;
 using CharacterDestruction;
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
@@ -7,10 +8,11 @@ using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Dependencies;
 using ExtraWeaponCustomization.Networking.Structs;
 using ExtraWeaponCustomization.Utils;
+using ExtraWeaponCustomization.Utils.Log;
 using Player;
 using SNetwork;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
@@ -24,6 +26,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         private static float _lastSoundTime = 0f;
         private static int _soundShotOverride = 0;
+        private const SearchSetting SearchSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
         public const float MaxRadius = 1024f;
         public const float MaxStagger = 16384f; // 2^14
         public const float MaxGlowDuration = 50f;
@@ -76,67 +79,26 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt, IDamageable? directLimb = null)
         {
-            DamageUtil.IncrementSearchID();
-            var searchID = DamageUtil.SearchID;
-
-            if (directLimb != null)
+            AIG_CourseNode? node = SearchUtil.GetCourseNode(position, source);
+            if (node == null)
             {
-                IDamageable? directBase = directLimb.GetBaseDamagable();
-                Agent? agent = directLimb.GetBaseAgent();
-                if (agent == null || agent.Alive)
-                {
-                    if (directBase != null)
-                        directBase.TempSearchID = searchID;
-                    SendExplosionDamage(directLimb, position, direction, 0, source, falloffMod, explosiveBase, triggerAmt);
-                }
+                EWCLogger.Error($"Unable to find node containing position [{position}] for an explosion.");
+                return;
             }
 
-            var colliders = Physics.OverlapSphere(position, explosiveBase.Radius, LayerManager.MASK_EXPLOSION_TARGETS);
-            if (colliders.Length < 1)
-                return;
-
-            // Loop over colliders in order of distance to make sure we do the most possible damage and hit the correct limb.
-            // Not 100% consistent with expectations, but good enough.
-            foreach (Collider collider in colliders.OrderBy(
-                    t => t.GetComponent<IDamageable>() != null ?
-                        Vector3.SqrMagnitude(position - t.GetComponent<IDamageable>().DamageTargetPos)
-                      : float.MaxValue)
-                )
+            SearchUtil.SightBlockLayer = LayerManager.MASK_EXPLOSION_BLOCKERS;
+            List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetHitsInRange(new Ray(position, direction), explosiveBase.Radius, 180f, node, SearchSettings);
+            foreach ((EnemyAgent _, RaycastHit hit) in hits)
             {
-                IDamageable? limb = collider.GetComponent<IDamageable>();
-                if (limb == null)
-                    continue;
-
-                Vector3 targetPosition = limb.DamageTargetPos;
-
-                IDamageable? damBase = limb.GetBaseDamagable();
-                if (damBase == null)
-                    continue;
-
-                if (damBase.TempSearchID == searchID)
-                    continue;
-
-                Agent? agent = damBase.GetBaseAgent();
-                if (agent != null && !agent.Alive)
-                    continue;
-
-                // Ensure there is nothing between the explosion and this target
-                if (Physics.Linecast(position, targetPosition, out RaycastHit hit, LayerManager.MASK_EXPLOSION_BLOCKERS))
-                {
-                    if (hit.collider == null)
-                        continue;
-
-                    if (hit.collider.gameObject == null)
-                        continue;
-
-                    if (hit.collider.gameObject.GetInstanceID() != collider.gameObject.GetInstanceID())
-                        continue;
-
-                    targetPosition = hit.point;
-                }
-
-                damBase.TempSearchID = searchID;
-                SendExplosionDamage(limb, targetPosition, direction, Vector3.Distance(position, targetPosition), source, falloffMod, explosiveBase, triggerAmt);
+                SendExplosionDamage(
+                    hit.collider.GetComponent<IDamageable>(),
+                    hit.point,
+                    direction,
+                    hit.distance,
+                    source,
+                    falloffMod,
+                    explosiveBase,
+                    triggerAmt);
             }
         }
 

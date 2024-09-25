@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System;
 using Gear;
 using Agents;
+using Enemies;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 {
@@ -47,7 +48,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             foreach (RaycastHit hit in results)
             {
                 if (hit.distance == 0) continue;
-                if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
+                if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID))  continue;
                 if (!CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos)) continue;
 
                 s_rayHit = hit;
@@ -64,27 +65,19 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
         // Check for enemies within the initial sphere (if hitsize is big enough)
         private void CheckCollisionInitial(WeaponPostRayContext context, Vector3 wallPos)
         {
-            Ray ray = default;
-            ray.origin = Weapon.s_ray.origin;
-            Collider[] colliders = Physics.OverlapSphere(ray.origin, HitSize, LayerManager.MASK_ENEMY_DAMAGABLE);
-            PriorityQueue<RaycastHit, float> hitQueue = new();
+            Vector3 origin = Weapon.s_ray.origin;
+            List<(EnemyAgent, RaycastHit hit)> hits = SearchUtil.GetHitsInRange(Weapon.s_ray, HitSize, 180f, CWC.Weapon.Owner.CourseNode);
+            hits.Sort(SortUtil.SearchDistance);
 
-            foreach (var collider in colliders)
+            foreach (var pair in hits)
             {
-                ray.direction = collider.transform.position - ray.origin;
-                if (!collider.Raycast(ray, out RaycastHit hit, HitSize)) continue;
+                RaycastHit hit = pair.hit;
+                if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
+                if (!CheckLineOfSight(hit.collider, origin, wallPos)) continue;
 
-                hitQueue.Enqueue(hit, hit.distance);
-            }
+                CheckDirectHit(ref hit);
 
-            while (hitQueue.TryDequeue(out s_rayHit, out _))
-            {
-                if (AlreadyHit(s_rayHit.collider, CWC.Gun!.m_damageSearchID)) continue;
-                if (!CheckLineOfSight(s_rayHit.collider, ray.origin, wallPos)) continue;
-
-                CheckDirectHit(ref s_rayHit);
-
-                context.Data.RayHit = s_rayHit;
+                context.Data.RayHit = hit;
                 if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
                     _pierceCount--;
 
@@ -101,20 +94,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             float increment = Math.Max(0.1f, Math.Min(HitSize, remainingDist) / 10f);
 
             Vector3 colliderPos = collider.transform.position;
-            Ray ray = Weapon.s_ray;
-            ray.origin = startPos;
+            Vector3 origin = startPos;
 
-            float checkDist = (ray.origin - colliderPos).magnitude;
-            float maxCheckDist = checkDist;
+            float checkDistSqr = (origin - colliderPos).sqrMagnitude;
+            float maxCheckDistSqr = checkDistSqr;
             int count = 0;
-            while (remainingDist >= 0.1f && checkDist <= maxCheckDist)
+            while (remainingDist >= 0.1f && checkDistSqr <= maxCheckDistSqr)
             {
-                ray.direction = collider.transform.position - ray.origin;
-                if (!Physics.Raycast(ray, out var temp, checkDist, EWCProjectileManager.MaskWorld))
+                if (!Physics.Linecast(origin, collider.transform.position, EWCProjectileManager.MaskWorld))
                     return true;
 
-                ray.origin += Weapon.s_ray.direction * increment;
-                checkDist = (ray.origin - colliderPos).magnitude;
+                origin += Weapon.s_ray.direction * increment;
+                checkDistSqr = (origin - colliderPos).sqrMagnitude;
                 remainingDist -= increment;
                 count++;
             }
@@ -147,7 +138,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private static bool AlreadyHit(Collider collider, uint searchID)
         {
-            return DamageableUtil.GetDamageableFromCollider(collider)?.GetBaseDamagable()?.TempSearchID == searchID;
+            return searchID != 0 && DamageableUtil.GetDamageableFromCollider(collider)?.GetBaseDamagable()?.TempSearchID == searchID;
         }
 
         public override IWeaponProperty Clone()
