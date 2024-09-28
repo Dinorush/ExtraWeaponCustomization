@@ -176,6 +176,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
 
             RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponSetupContext>();
+            RegisterContext<WeaponOwnerSetContext>();
         }
 
         private void RegisterMeleeContexts()
@@ -203,10 +204,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
             _allContextLists.Clear();
             RegisterContext<WeaponFireRateContext>();
             RegisterContext<WeaponFireRateSetContext>();
-            RegisterContext<WeaponFireRateModContextSync>();
             RegisterContext<WeaponPreFireContextSync>();
             RegisterContext<WeaponPostFireContextSync>();
-            RegisterContext<WeaponAudioSwapContextSync>();
             RegisterContext<WeaponTempPropertiesContextSync>();
         }
     }

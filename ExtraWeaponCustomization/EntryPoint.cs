@@ -10,10 +10,8 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Heal;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.FireRate;
 using ExtraWeaponCustomization.Utils.Log;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.TempProp;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.Audio;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 
 namespace ExtraWeaponCustomization;
 
@@ -53,9 +51,7 @@ internal sealed class EntryPoint : BasePlugin
         ExplosionManager.Init();
         DOTDamageManager.Init();
         HealManager.Init();
-        FireRateModManager.Init();
-        AudioSwapManager.Init();
-        TempPropertiesManager.Init();
+        TriggerManager.Init();
         KillAPIWrapper.Init();
         EWCProjectileManager.Init();
         CustomWeaponManager.Current.GetCustomGunData(0); // Just want to make it get custom weapon data on startup, need to call something

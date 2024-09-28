@@ -9,7 +9,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
         public float Min { get; set; } = 0f;
         public float Max { get; set; } = 1f;
         public bool Scale { get; set; } = true;
-        public ChargeTrigger(DamageType type = DamageType.Any) : base(ITrigger.Charge, type) {}
+        public ChargeTrigger(DamageType type = DamageType.Any) : base(TriggerName.Charge, type) {}
 
         public override float Invoke(WeaponTriggerContext context)
         {

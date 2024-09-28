@@ -1,8 +1,6 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.TempProp;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.JSON;
-using Player;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -13,8 +11,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 {
     public sealed class TempProperties :
         Effect,
+        ITriggerCallbackSync,
         IWeaponProperty<WeaponTempPropertiesContextSync>
     {
+        public ushort SyncID { get; set; }
+
         public PropertyList? Properties { get; set; }
         private List<ITriggerCallback>? _callbackProperties;
         public float Duration { get; set; } = 0f;
@@ -26,8 +27,44 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
         private Coroutine? _activeRoutine;
         private float _endTime;
 
+        public override void TriggerApply(List<TriggerContext> contexts)
+        {
+            if (Properties == null) return;
+
+            TriggerApplySync();
+            TriggerManager.SendInstance(this);
+            
+            if (_callbackProperties != null)
+                foreach (var callback in _callbackProperties)
+                    if (callback.Trigger == null)
+                        callback.TriggerApply(contexts);
+        }
+
+        public void TriggerApplySync(float mod = 1f)
+        {
+            if (Properties == null) return;
+
+            _endTime = Clock.Time + Duration;
+            _activeRoutine ??= CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(DeactivateAfterDelay()));
+        }
+
         public override void TriggerReset()
         {
+            if (Properties == null) return;
+
+            TriggerResetSync();
+            TriggerManager.SendReset(this);
+
+            if (_callbackProperties != null)
+                foreach (var callback in _callbackProperties)
+                    if (callback.Trigger == null)
+                        callback.TriggerReset();
+        }
+
+        public void TriggerResetSync()
+        {
+            if (Properties == null) return;
+
             _endTime = 0;
             if (_activeRoutine != null)
             {
@@ -35,20 +72,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
                 RemoveProperties();
             }
             _activeRoutine = null;
-        }
-
-        public override void TriggerApply(List<TriggerContext> contexts)
-        {
-            if (Properties == null) return;
-
-            _endTime = Clock.Time + Duration;
-            _activeRoutine ??= CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(DeactivateAfterDelay()));
-
-            TempPropertiesManager.SendInstance(CWC.Weapon.Owner.Owner, PlayerAmmoStorage.GetSlotFromAmmoType(CWC.Weapon.AmmoType));
-            if (_callbackProperties != null)
-                foreach (var callback in _callbackProperties)
-                    if (callback.Trigger != null)
-                        callback.TriggerApply(contexts);
         }
 
         public void Invoke(WeaponTempPropertiesContextSync context)

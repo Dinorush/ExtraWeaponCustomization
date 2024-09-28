@@ -7,7 +7,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
     public sealed class DamageTrigger : DamageTypeTrigger<WeaponPreHitEnemyContext>
     {
         public float Cap { get; set; } = 0f;
-        public DamageTrigger(DamageType type = DamageType.Any) : base(ITrigger.Damage, type) {}
+        public DamageTrigger(DamageType type = DamageType.Any) : base(TriggerName.Damage, type) {}
 
         public override float Invoke(WeaponTriggerContext context)
         {

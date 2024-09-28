@@ -1,5 +1,4 @@
 ﻿using Agents;
-using AIGraph;
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;
@@ -15,6 +14,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
     public sealed class AutoAim : 
         Trait,
         IGunProperty,
+        IWeaponProperty<WeaponOwnerSetContext>,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreStartFireContext>,
@@ -53,8 +53,6 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
 
         private static Ray s_ray;
         private static RaycastHit s_raycastHit;
-        private readonly static List<(EnemyAgent, float)> s_searchCache = new(50);
-        private readonly static Queue<AIG_CourseNode> s_searchQueue = new();
 
         private readonly Color _targetedColor = new(1.2f, 0.3f, 0.1f, 1f);
         private readonly Color _passiveLocked = new(0.8f, 0.3f, 0.2f, 1f);
@@ -106,6 +104,11 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
             _reticle = AutoAimReticle.Reticle;
             _reticleHolder = AutoAimReticle.ReticleHolder;
             CWC.AutoAim = this;
+            OnEnable();
+        }
+
+        public void Invoke(WeaponOwnerSetContext context)
+        {
             OnEnable();
         }
 

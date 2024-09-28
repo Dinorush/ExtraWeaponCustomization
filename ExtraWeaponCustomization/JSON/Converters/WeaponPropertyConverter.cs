@@ -1,4 +1,6 @@
 ﻿using ExtraWeaponCustomization.CustomWeapon.Properties;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
+using ExtraWeaponCustomization.Utils.Log;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -53,6 +55,12 @@ namespace ExtraWeaponCustomization.JSON.Converters
                 string? name = reader.GetString();
                 if (name == null) throw new JsonException("Name field cannot be empty in weapon property.");
                 name = name.Replace(" ", "");
+                
+                if (name.ToLowerInvariant() == "audioswap")
+                {
+                    EWCLogger.Warning("AudioSwap name is deprecated and will be unsupported in the future. Please change to DataSwap.");
+                    return new DataSwap();
+                }
 
                 Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
                 if (type == null) throw new JsonException("Unable to find corresponding weapon property for \"" + name + "\"");

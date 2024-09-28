@@ -1,4 +1,6 @@
-﻿namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+
+namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
 {
     public abstract class WeaponDamageTypeContext : WeaponTriggerContext
     {

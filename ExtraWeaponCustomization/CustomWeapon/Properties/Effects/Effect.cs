@@ -28,18 +28,18 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
             }
         }
 
-        private string[]? _validTriggers;
+        private TriggerName[]? _validTriggers;
         private DamageType _blacklistType = DamageType.Invalid;
 
         public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
 
-        protected void SetValidTriggers(DamageType flag = DamageType.Invalid, params string[] names)
+        protected void SetValidTriggers(DamageType flag = DamageType.Invalid, params TriggerName[] names)
         {
             _validTriggers = names;
             _blacklistType = flag;
             VerifyTriggers();
         }
-        protected void SetValidTriggers(params string[] names) => SetValidTriggers(DamageType.Invalid, names);
+        protected void SetValidTriggers(params TriggerName[] names) => SetValidTriggers(DamageType.Invalid, names);
 
         public abstract void TriggerApply(List<TriggerContext> triggerList);
         public abstract void TriggerReset();
@@ -76,7 +76,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
             for (int i = Trigger.Activate.Count - 1; i >= 0; i--)
             {
-                string name = Trigger.Activate[i].Name;
+                TriggerName name = Trigger.Activate[i].Name;
                 // If the trigger isn't of the valid class, remove it
                 if (_validTriggers != null && !_validTriggers.Contains(name))
                 {

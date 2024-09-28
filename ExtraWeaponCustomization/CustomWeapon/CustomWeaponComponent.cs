@@ -1,5 +1,6 @@
 ﻿using AK;
 using ExtraWeaponCustomization.CustomWeapon.Properties;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
@@ -38,8 +39,8 @@ namespace ExtraWeaponCustomization.CustomWeapon
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
 
-        private readonly float _fireRate;
-        private readonly float _burstDelay;
+        private float _fireRate;
+        private float _burstDelay;
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
             ItemEquippable? item = GetComponent<ItemEquippable>();
@@ -67,8 +68,8 @@ namespace ExtraWeaponCustomization.CustomWeapon
         {
             if (_ownerSet) return;
 
-            _autoAim?.OnEnable();
             _ownerSet = true;
+            Invoke(StaticContext<WeaponOwnerSetContext>.Instance);
         }
 
         public void SetToSync()
@@ -121,7 +122,6 @@ namespace ExtraWeaponCustomization.CustomWeapon
             Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
-
         [HideFromIl2Cpp]
         internal void Activate(PropertyNode node) => _propertyController.SetActive(node, true);
         [HideFromIl2Cpp]
@@ -131,6 +131,9 @@ namespace ExtraWeaponCustomization.CustomWeapon
         public bool HasTrait(Type type) => _propertyController.HasTrait(type);
         [HideFromIl2Cpp]
         public Trait GetTrait(Type type) => _propertyController.GetTrait(type);
+
+        [HideFromIl2Cpp]
+        internal ITriggerCallbackSync GetTriggerSync(ushort id) => _propertyController.GetTriggerSync(id);
 
         public void StoreCancelShot()
         {
@@ -176,6 +179,16 @@ namespace ExtraWeaponCustomization.CustomWeapon
                 CurrentFireRate = Math.Clamp(postContext.Value, 0.001f, CustomWeaponData.MaxFireRate);
                 CurrentBurstDelay = _burstDelay * _fireRate / CurrentFireRate;
                 RefreshSoundDelay();
+            }
+        }
+
+        public void RefreshArchetypeCache()
+        {
+            if (Gun != null)
+            {
+                _fireRate = 1f / Math.Max(Gun.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+                _burstDelay = Gun.m_archeType.BurstDelay();
+                UpdateStoredFireRate(Gun.m_archeType);
             }
         }
 

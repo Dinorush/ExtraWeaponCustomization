@@ -39,8 +39,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 #pragma warning disable CS8618
         public DamageOverTime()
         {
-            Trigger ??= new(ITrigger.GetTrigger(ITrigger.Hit)!);
-            SetValidTriggers(DamageType.DOT, ITrigger.Hit, ITrigger.Damage, ITrigger.Charge);
+            Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
+            SetValidTriggers(DamageType.DOT, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 #pragma warning restore CS8618
 

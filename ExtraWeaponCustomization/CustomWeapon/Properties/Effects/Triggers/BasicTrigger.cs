@@ -5,8 +5,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
 {
     public sealed class BasicTrigger<TContext> : ITrigger where TContext : WeaponTriggerContext
     {
-        public string Name { get; }
-        public BasicTrigger(string name)
+        public TriggerName Name { get; }
+        public BasicTrigger(TriggerName name)
         {
             Name = name;
         }

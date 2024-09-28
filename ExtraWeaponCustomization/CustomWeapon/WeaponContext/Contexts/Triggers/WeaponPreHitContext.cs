@@ -1,4 +1,5 @@
-﻿using ExtraWeaponCustomization.Utils;
+﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using ExtraWeaponCustomization.Utils;
 using UnityEngine;
 
 namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts

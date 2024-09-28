@@ -7,9 +7,9 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
     {
         public DamageType DamageType { get; set; }
         public DamageType BlacklistType { get; set; }
-        public string Name { get; }
+        public TriggerName Name { get; }
 
-        public DamageTypeTrigger(string name, DamageType type = DamageType.Any, DamageType blacklistType = DamageType.Invalid)
+        public DamageTypeTrigger(TriggerName name, DamageType type = DamageType.Any, DamageType blacklistType = DamageType.Invalid)
         {
             Name = name;
             DamageType = type;

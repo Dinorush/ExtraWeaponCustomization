@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
 {
     [Flags]
     public enum DamageType

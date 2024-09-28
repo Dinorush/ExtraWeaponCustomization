@@ -17,8 +17,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public DamageModPerTarget()
         {
-            Trigger ??= new(ITrigger.GetTrigger(ITrigger.Hit)!);
-            SetValidTriggers(ITrigger.Hit, ITrigger.Damage, ITrigger.Charge);
+            Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
+            SetValidTriggers(TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 
         public override void TriggerReset()

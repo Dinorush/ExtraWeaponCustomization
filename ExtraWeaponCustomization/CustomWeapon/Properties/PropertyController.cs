@@ -4,6 +4,8 @@ using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using System;
 using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using ExtraWeaponCustomization.Utils.Log;
 
 namespace ExtraWeaponCustomization.CustomWeapon.Properties
 {
@@ -29,6 +31,7 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties
         private readonly LinkedList<PropertyNode> _overrideStack = new();
         private readonly Dictionary<Type, Trait> _activeTraits = new();
         private readonly Queue<(PropertyNode, bool)> _activateQueue = new();
+        private readonly List<ITriggerCallbackSync> _syncList = new(1);
 
         public PropertyController(bool isGun)
         {
@@ -93,7 +96,25 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties
                 RemoveInvalidProperties(child, isGun);
         }
 
-        internal void ChangeToSyncContexts() => _contextController.ChangeToSyncContexts();
+        internal void ChangeToSyncContexts()
+        {
+            _contextController.ChangeToSyncContexts();
+        }
+
+        private void RegisterSyncProperties(PropertyNode node)
+        {
+            foreach (var property in node.List.Properties)
+            {
+                if (property is ITriggerCallbackSync syncProperty)
+                {
+                    syncProperty.SyncID = (ushort) _syncList.Count;
+                    _syncList.Add(syncProperty);
+                }
+            }
+
+            foreach (var child in node.Children)
+                RegisterSyncProperties(child);
+        }
 
         public void Clear()
         {
@@ -104,6 +125,16 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties
 
         public bool HasTrait(Type type) => _activeTraits.ContainsKey(type);
         public Trait GetTrait(Type type) => _activeTraits[type];
+        internal ITriggerCallbackSync GetTriggerSync(ushort id)
+        {
+            if (_syncList.Count <= id)
+            {
+                EWCLogger.Error("Synced property with ID " + id + " was requested but doesn't exist. Filling with blank properties.");
+                while (_syncList.Count <= id)
+                    _syncList.Add(TriggerCallbackSyncDummy.Instance);
+            }
+            return _syncList[id];
+        }
 
         public void SetActive(PropertyNode node, bool active) => _activateQueue.Enqueue((node, active));
 

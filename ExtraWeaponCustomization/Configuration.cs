@@ -34,7 +34,7 @@ namespace ExtraWeaponCustomization
         {
             configFile.Reload();
             string section = "Auto Aim Settings";
-            AutoAimTickDelay = (float)configFile[section, "Tick Delay"].BoxedValue;
+            AutoAimTickDelay = (float)configFile[section, "Search Cooldown"].BoxedValue;
 
             section = "Explosion Settings";
             ShowExplosionEffect = (bool)configFile[section, "Show Effect"].BoxedValue;
@@ -47,17 +47,16 @@ namespace ExtraWeaponCustomization
         private static void BindAll(ConfigFile config)
         {
             string section = "Auto Aim Settings";
-            AutoAimTickDelay = config.Bind(section, "Search Cooldown", AutoAimTickDelay, "Time between attempted searches to acquire a target.").Value;
+            AutoAimTickDelay = config.Bind(section, "Search Cooldown", AutoAimTickDelay, "Time between attempted searches to acquire targets.").Value;
 
             section = "Explosion Settings";
             ShowExplosionEffect = config.Bind(section, "Show Effect", ShowExplosionEffect, "Enables explosion visual FX.").Value;
             PlayExplosionSFX = config.Bind(section, "Play Sound", PlayExplosionSFX, "Enables explosion sound FX.").Value;
-            ExplosionSFXCooldown = config.Bind(section, "SFX Cooldown", ExplosionSFXCooldown, "Minimum cooldown between explosion sound effects, to prevent obnoxiously loud sounds.").Value;
-            ExplosionSFXShotOverride = config.Bind(section, "Shots to Override SFX Cooldown", ExplosionSFXShotOverride, "Amount of shots fired before another explosion visual effect is forced, regardless of cooldown.\nSmaller numbers let fast-firing weapons and shotguns spawn more effects in a short span of time.").Value;
+            ExplosionSFXCooldown = config.Bind(section, "SFX Cooldown", ExplosionSFXCooldown, "Minimum time between explosion sound effects, to prevent obnoxiously loud sounds.").Value;
+            ExplosionSFXShotOverride = config.Bind(section, "Shots to Override SFX Cooldown", ExplosionSFXShotOverride, "Amount of shots fired before another explosion sound effect is forced, regardless of cooldown.\nSmaller numbers let fast-firing weapons and shotguns make more sounds in a short span of time.").Value;
 
             section = "Tools";
             ForceCreateTemplate = config.Bind(section, "Force Create Template", false, "Creates the template file again.");
-            CheckAndRefreshTemplate();
         }
 
         private static void CheckAndRefreshTemplate()

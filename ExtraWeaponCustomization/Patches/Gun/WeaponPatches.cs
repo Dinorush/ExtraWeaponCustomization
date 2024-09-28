@@ -2,6 +2,7 @@
 using Enemies;
 using ExtraWeaponCustomization.CustomWeapon;
 using ExtraWeaponCustomization.CustomWeapon.KillTracker;
+using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
 using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
 using ExtraWeaponCustomization.Utils;

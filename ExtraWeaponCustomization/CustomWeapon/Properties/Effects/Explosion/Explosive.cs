@@ -32,8 +32,8 @@ namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
 
         public Explosive()
         {
-            Trigger ??= new(ITrigger.GetTrigger(ITrigger.BulletLanded)!);
-            SetValidTriggers(DamageType.Explosive, ITrigger.BulletLanded, ITrigger.Hit, ITrigger.Damage, ITrigger.Charge, ITrigger.Kill);
+            Trigger ??= new(ITrigger.GetTrigger(TriggerName.BulletLanded));
+            SetValidTriggers(DamageType.Explosive, TriggerName.BulletLanded, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge, TriggerName.Kill);
         }
 
         public override void TriggerReset() {}
