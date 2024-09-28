@@ -1,6 +1,6 @@
 ﻿using SNetwork;
 
-namespace ExtraWeaponCustomization.Networking
+namespace EWC.Networking
 {
     public abstract class SyncedEventMasterOnly<T> : SyncedEvent<T> where T : struct
     {

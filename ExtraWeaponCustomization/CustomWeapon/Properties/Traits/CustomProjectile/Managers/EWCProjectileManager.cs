@@ -1,8 +1,8 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
+﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers
+namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
     public static class EWCProjectileManager
     {

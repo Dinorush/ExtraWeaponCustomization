@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Traits
 {
     public static class AutoAimReticle
     {

@@ -1,7 +1,7 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class AutoTrigger : 
         Trait,

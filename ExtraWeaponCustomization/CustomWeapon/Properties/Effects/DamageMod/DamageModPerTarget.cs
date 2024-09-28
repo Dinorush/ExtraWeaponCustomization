@@ -1,12 +1,12 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.ObjectWrappers;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using Agents;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class DamageModPerTarget : 
         TriggerMod,

@@ -1,9 +1,9 @@
 ﻿using System;
 using UnityEngine;
-using ExtraWeaponCustomization.Utils;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using EWC.Utils;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public sealed class WeaponPreHitEnemyContext : WeaponPreHitContext
     {

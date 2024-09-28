@@ -1,7 +1,7 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties;
+﻿using EWC.CustomWeapon.Properties;
 using System.Collections.Generic;
 
-namespace ExtraWeaponCustomization.CustomWeapon
+namespace EWC.CustomWeapon
 {
     public class CustomWeaponData
     {

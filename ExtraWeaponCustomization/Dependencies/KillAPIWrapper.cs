@@ -1,11 +1,11 @@
 ﻿using Enemies;
-using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.KillTracker;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon;
+using EWC.CustomWeapon.KillTracker;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using KillIndicatorFix;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.Dependencies
+namespace EWC.Dependencies
 {
     public static class KillAPIWrapper
     {

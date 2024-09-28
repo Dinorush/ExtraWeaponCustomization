@@ -2,9 +2,9 @@
 using BepInEx;
 using System.IO;
 using GTFO.API.Utilities;
-using ExtraWeaponCustomization.CustomWeapon;
+using EWC.CustomWeapon;
 
-namespace ExtraWeaponCustomization
+namespace EWC
 {
     internal static class Configuration
     {

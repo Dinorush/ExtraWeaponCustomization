@@ -1,15 +1,15 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using UnityEngine;
 using System.Text.Json;
-using ExtraWeaponCustomization.Utils;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.Utils;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using System.Collections.Generic;
 using System;
 using Gear;
 using Agents;
 using Enemies;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Traits
 {
     internal class ThickBullet : 
         Trait,

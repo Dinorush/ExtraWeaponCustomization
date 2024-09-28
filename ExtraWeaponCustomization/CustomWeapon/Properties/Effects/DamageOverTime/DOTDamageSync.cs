@@ -1,8 +1,8 @@
 ﻿using Enemies;
-using ExtraWeaponCustomization.Networking;
+using EWC.Networking;
 using Player;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     internal sealed class DOTDamageSync : SyncedEventMasterOnly<DOTData>
     {

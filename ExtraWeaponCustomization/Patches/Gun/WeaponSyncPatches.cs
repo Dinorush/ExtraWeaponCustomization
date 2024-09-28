@@ -1,9 +1,9 @@
-﻿using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using HarmonyLib;
 
-namespace ExtraWeaponCustomization.Patches
+namespace EWC.Patches
 {
     [HarmonyPatch]
     internal static class WeaponSyncPatches

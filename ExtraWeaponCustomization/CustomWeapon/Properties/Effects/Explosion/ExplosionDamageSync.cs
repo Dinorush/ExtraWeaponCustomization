@@ -1,8 +1,8 @@
-﻿using ExtraWeaponCustomization.Networking;
+﻿using EWC.Networking;
 using Enemies;
 using Player;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     internal sealed class ExplosionDamageSync : SyncedEventMasterOnly<ExplosionDamageData>
     {

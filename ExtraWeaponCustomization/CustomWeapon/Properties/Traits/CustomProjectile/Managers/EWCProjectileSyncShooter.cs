@@ -1,6 +1,6 @@
-﻿using ExtraWeaponCustomization.Networking;
+﻿using EWC.Networking;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers
+namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
     internal sealed class EWCProjectileSyncShooter : SyncedEvent<ProjectileDataShooter>
     {

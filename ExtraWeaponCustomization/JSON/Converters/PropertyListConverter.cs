@@ -1,10 +1,10 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties;
+﻿using EWC.CustomWeapon.Properties;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ExtraWeaponCustomization.JSON.Converters
+namespace EWC.JSON.Converters
 {
     public sealed class PropertyListConverter : JsonConverter<PropertyList>
     {

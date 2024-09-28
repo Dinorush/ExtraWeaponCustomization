@@ -1,12 +1,12 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using UnityEngine;
 using System.Text.Json;
-using ExtraWeaponCustomization.Utils;
+using EWC.Utils;
 using AIGraph;
 using LevelGeneration;
 using System.Collections.Generic;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Traits
 {
     internal class WallPierce : 
         Trait,

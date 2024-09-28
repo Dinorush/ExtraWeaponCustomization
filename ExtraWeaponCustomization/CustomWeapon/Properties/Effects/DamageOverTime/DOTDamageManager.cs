@@ -1,16 +1,16 @@
 ﻿using Agents;
 using CharacterDestruction;
 using Enemies;
-using ExtraWeaponCustomization.CustomWeapon.KillTracker;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Dependencies;
+using EWC.CustomWeapon.KillTracker;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
 using Player;
 using SNetwork;
 using System;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public static class DOTDamageManager
     {

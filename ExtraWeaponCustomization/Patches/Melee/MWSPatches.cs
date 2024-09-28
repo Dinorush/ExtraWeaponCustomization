@@ -1,10 +1,10 @@
-﻿using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
+﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext;
 using Gear;
 using HarmonyLib;
 
-namespace ExtraWeaponCustomization.Patches.Melee
+namespace EWC.Patches.Melee
 {
     [HarmonyPatch]
     internal static class MWSPatches

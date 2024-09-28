@@ -1,12 +1,12 @@
-using ExtraWeaponCustomization.CustomWeapon.Properties;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Utils.Log;
+using EWC.CustomWeapon.Properties;
+using EWC.CustomWeapon.Properties.Traits;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
+namespace EWC.CustomWeapon.WeaponContext
 {
     public sealed class ContextController
     {

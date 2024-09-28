@@ -1,8 +1,8 @@
-﻿using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
+﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.Properties.Effects;
+using EWC.CustomWeapon.Properties.Traits;
 
-namespace ExtraWeaponCustomization.JSON
+namespace EWC.JSON
 {
     internal static class CustomWeaponTemplate
     {

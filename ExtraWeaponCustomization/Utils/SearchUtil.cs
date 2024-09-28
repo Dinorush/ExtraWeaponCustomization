@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.Utils
+namespace EWC.Utils
 {
     [Flags]
     internal enum SearchSetting

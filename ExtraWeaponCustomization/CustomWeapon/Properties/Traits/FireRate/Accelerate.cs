@@ -1,13 +1,13 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.JSON;
-using ExtraWeaponCustomization.Utils;
+﻿using EWC.CustomWeapon.Properties.Effects;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.JSON;
+using EWC.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Traits
 {
     public class Accelerate :
         Trait,

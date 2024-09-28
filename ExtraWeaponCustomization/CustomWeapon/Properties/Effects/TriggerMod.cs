@@ -1,11 +1,11 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.Utils;
+﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public abstract class TriggerMod :
         Effect

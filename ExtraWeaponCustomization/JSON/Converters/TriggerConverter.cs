@@ -1,9 +1,9 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ExtraWeaponCustomization.JSON.Converters
+namespace EWC.JSON.Converters
 {
     public sealed class TriggerConverter : JsonConverter<ITrigger>
     {

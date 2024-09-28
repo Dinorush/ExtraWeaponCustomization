@@ -1,13 +1,13 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
+﻿using EWC.CustomWeapon.WeaponContext;
 using System.Collections.Generic;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.Properties.Effects;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.Utils.Log;
+using EWC.CustomWeapon.Properties.Traits;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.Utils.Log;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties
+namespace EWC.CustomWeapon.Properties
 {
     internal sealed class PropertyNode
     {

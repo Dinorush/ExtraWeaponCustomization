@@ -2,21 +2,21 @@
 using AIGraph;
 using CharacterDestruction;
 using Enemies;
-using ExtraWeaponCustomization.CustomWeapon.KillTracker;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Dependencies;
-using ExtraWeaponCustomization.Networking.Structs;
-using ExtraWeaponCustomization.Utils;
-using ExtraWeaponCustomization.Utils.Log;
+using EWC.CustomWeapon.KillTracker;
+using EWC.CustomWeapon.Properties.Effects.EEC_Explosion;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
+using EWC.Networking.Structs;
+using EWC.Utils;
+using EWC.Utils.Log;
 using Player;
 using SNetwork;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public static class ExplosionManager
     {

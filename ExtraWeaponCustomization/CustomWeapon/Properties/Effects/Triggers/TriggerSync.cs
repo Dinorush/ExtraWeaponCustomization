@@ -1,6 +1,6 @@
-﻿using ExtraWeaponCustomization.Networking;
+﻿using EWC.Networking;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
+namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     internal sealed class TriggerSync : SyncedEvent<TriggerInstanceData>
     {

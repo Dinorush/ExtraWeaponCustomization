@@ -1,12 +1,12 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Text.Json;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
-using ExtraWeaponCustomization.JSON;
-using ExtraWeaponCustomization.Utils.Log;
+using EWC.JSON;
+using EWC.Utils.Log;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public abstract class Effect : 
         ITriggerCallback

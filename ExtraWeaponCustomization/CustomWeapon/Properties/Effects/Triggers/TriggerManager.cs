@@ -1,9 +1,9 @@
-﻿using ExtraWeaponCustomization.Utils.Log;
+﻿using EWC.Utils.Log;
 using Player;
 using SNetwork;
 using static SNetwork.SNetStructs;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
+namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public static class TriggerManager
     {

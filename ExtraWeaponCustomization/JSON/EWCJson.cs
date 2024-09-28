@@ -2,11 +2,11 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using GTFO.API.JSON.Converters;
-using ExtraWeaponCustomization.JSON.Converters;
-using ExtraWeaponCustomization.Utils.Log;
-using ExtraWeaponCustomization.Dependencies;
+using EWC.JSON.Converters;
+using EWC.Utils.Log;
+using EWC.Dependencies;
 
-namespace ExtraWeaponCustomization.JSON
+namespace EWC.JSON
 {
     public static class EWCJson
     {

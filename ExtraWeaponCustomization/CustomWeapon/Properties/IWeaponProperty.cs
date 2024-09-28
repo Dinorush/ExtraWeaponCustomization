@@ -1,7 +1,7 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
+﻿using EWC.CustomWeapon.WeaponContext;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties
+namespace EWC.CustomWeapon.Properties
 {
     public interface IWeaponProperty
     {

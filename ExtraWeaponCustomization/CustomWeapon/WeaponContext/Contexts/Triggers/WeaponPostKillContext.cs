@@ -1,7 +1,7 @@
 ﻿using Enemies;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public sealed class WeaponPostKillContext : WeaponDamageTypeContext
     {

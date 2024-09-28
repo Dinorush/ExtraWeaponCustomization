@@ -1,8 +1,8 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
+namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     // Used by CWCs in the event that client has incorrect Sync properties
     public sealed class TriggerCallbackSyncDummy : ITriggerCallbackSync

@@ -1,11 +1,11 @@
-﻿using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using GameData;
 using Gear;
 using HarmonyLib;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.Patches
+namespace EWC.Patches
 {
     [HarmonyPatch]
     internal static class WeaponRecoilPatches

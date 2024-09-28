@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Linq;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
+namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public sealed class TriggerCoordinator
     {

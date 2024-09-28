@@ -8,7 +8,7 @@ using Player;
 using System;
 using System.Collections.Generic;
 
-namespace ExtraWeaponCustomization.Dependencies
+namespace EWC.Dependencies
 {
     internal static class EXPAPIWrapper
     {

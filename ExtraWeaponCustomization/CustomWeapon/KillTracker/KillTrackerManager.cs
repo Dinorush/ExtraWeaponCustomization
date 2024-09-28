@@ -1,12 +1,12 @@
 ﻿using Agents;
 using Enemies;
-using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Dependencies;
+using EWC.CustomWeapon.ObjectWrappers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ExtraWeaponCustomization.CustomWeapon.KillTracker
+namespace EWC.CustomWeapon.KillTracker
 {
     public static class KillTrackerManager
     {

@@ -1,12 +1,12 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Heal;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Properties.Effects.Heal;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using Player;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class HealthMod :
         Effect

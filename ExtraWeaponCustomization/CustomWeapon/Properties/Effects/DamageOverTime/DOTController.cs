@@ -1,4 +1,4 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.ObjectWrappers;
+﻿using EWC.CustomWeapon.ObjectWrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Linq;
 using UnityEngine;
 using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class DOTController
     {

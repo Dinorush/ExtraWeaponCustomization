@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace ExtraWeaponCustomization.Networking.Structs
+namespace EWC.Networking.Structs
 {
     public struct LowResColor
     {

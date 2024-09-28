@@ -1,11 +1,11 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using Il2CppInterop.Runtime.Attributes;
 using System;
 using System.Collections;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components
+namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 {
     public abstract class EWCProjectileComponentBase : MonoBehaviour
     {

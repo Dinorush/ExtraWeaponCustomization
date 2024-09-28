@@ -1,14 +1,14 @@
 ﻿using Agents;
 using Enemies;
-using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.KillTracker;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
-using ExtraWeaponCustomization.Utils;
+using EWC.CustomWeapon;
+using EWC.CustomWeapon.KillTracker;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext;
+using EWC.Utils;
 using Gear;
 using HarmonyLib;
 
-namespace ExtraWeaponCustomization.Patches.Melee
+namespace EWC.Patches.Melee
 {
     [HarmonyPatch]
     internal static class MeleePatches

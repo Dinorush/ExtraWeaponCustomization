@@ -1,19 +1,19 @@
 ﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
-using ExtraWeaponCustomization.Dependencies;
+using EWC.Dependencies;
 using GTFO.API;
 using Il2CppInterop.Runtime.Injection;
-using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Heal;
-using ExtraWeaponCustomization.Utils.Log;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon;
+using EWC.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers;
+using EWC.CustomWeapon.Properties.Effects;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
+using EWC.CustomWeapon.Properties.Effects.Heal;
+using EWC.Utils.Log;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 
-namespace ExtraWeaponCustomization;
+namespace EWC;
 
 [BepInPlugin("Dinorush." + MODNAME, MODNAME, "2.0.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]

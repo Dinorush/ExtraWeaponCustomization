@@ -1,6 +1,6 @@
 ﻿using Agents;
 
-namespace ExtraWeaponCustomization.CustomWeapon.ObjectWrappers
+namespace EWC.CustomWeapon.ObjectWrappers
 {
     internal class AgentWrapper : KeyWrapper
     {

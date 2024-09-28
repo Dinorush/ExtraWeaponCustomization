@@ -3,7 +3,7 @@ using Player;
 using UnityEngine;
 using static Weapon;
 
-namespace ExtraWeaponCustomization.Utils
+namespace EWC.Utils
 {
     public sealed class HitData
     {

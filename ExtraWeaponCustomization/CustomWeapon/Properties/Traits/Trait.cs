@@ -1,7 +1,7 @@
 ﻿using Gear;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Traits
 {
     public abstract class Trait : IWeaponProperty
     {

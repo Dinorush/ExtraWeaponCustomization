@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers
+namespace EWC.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers
 {
     public struct LazyTimer
     {

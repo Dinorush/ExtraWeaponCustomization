@@ -1,8 +1,8 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.JSON;
-using ExtraWeaponCustomization.Utils;
-using ExtraWeaponCustomization.Utils.Log;
+﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.JSON;
+using EWC.Utils;
+using EWC.Utils.Log;
 using FX_EffectSystem;
 using Gear;
 using SNetwork;
@@ -10,7 +10,7 @@ using System;
 using System.Text.Json;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class Projectile :
         Trait,

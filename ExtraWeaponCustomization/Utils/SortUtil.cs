@@ -1,7 +1,7 @@
 ﻿using Enemies;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.Utils
+namespace EWC.Utils
 {
     internal static class SortUtil
     {

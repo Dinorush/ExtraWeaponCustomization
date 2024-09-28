@@ -1,6 +1,6 @@
-﻿using ExtraWeaponCustomization.Networking;
+﻿using EWC.Networking;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     internal sealed class ExplosionFXSync : SyncedEvent<ExplosionFXData>
     {

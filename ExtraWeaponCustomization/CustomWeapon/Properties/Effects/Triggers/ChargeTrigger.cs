@@ -1,8 +1,8 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.Patches.Melee;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Patches.Melee;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers
+namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public sealed class ChargeTrigger : DamageTypeTrigger<WeaponPreHitEnemyContext>
     {

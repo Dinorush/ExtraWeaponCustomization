@@ -1,6 +1,6 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.JSON;
+﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.JSON;
 using GameData;
 using Gear;
 using Player;
@@ -10,7 +10,7 @@ using System.Text.Json;
 using UnityEngine;
 using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class DataSwap : 
         Trait,

@@ -1,8 +1,8 @@
 ﻿using Agents;
 using Enemies;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
-using ExtraWeaponCustomization.Patches;
-using ExtraWeaponCustomization.Utils;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.Patches;
+using EWC.Utils;
 using FX_EffectSystem;
 using GameData;
 using Gear;
@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components
+namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 {
     public sealed class EWCProjectileHitbox
     {

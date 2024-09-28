@@ -1,8 +1,8 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.Utils;
+﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.Utils;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public class WeaponPreHitContext : WeaponDamageTypeContext
     {

@@ -1,4 +1,4 @@
-﻿namespace ExtraWeaponCustomization.CustomWeapon.ObjectWrappers
+﻿namespace EWC.CustomWeapon.ObjectWrappers
 {
     internal abstract class KeyWrapper
     {

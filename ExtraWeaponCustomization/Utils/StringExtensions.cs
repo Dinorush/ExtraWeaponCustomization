@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExtraWeaponCustomization.Utils
+namespace EWC.Utils
 {
     internal static class StringExtensions
     {

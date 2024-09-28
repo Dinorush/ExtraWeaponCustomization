@@ -1,11 +1,11 @@
-﻿using ExtraWeaponCustomization.CustomWeapon;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.WeaponContext;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using HarmonyLib;
 using Player;
 
-namespace ExtraWeaponCustomization.Patches
+namespace EWC.Patches
 {
     [HarmonyPatch]
     internal static class PlayerInventoryPatches

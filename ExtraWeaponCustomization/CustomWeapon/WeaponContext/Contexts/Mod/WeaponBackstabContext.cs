@@ -1,4 +1,4 @@
-﻿namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+﻿namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     internal class WeaponBackstabContext : WeaponStackModContext
     {

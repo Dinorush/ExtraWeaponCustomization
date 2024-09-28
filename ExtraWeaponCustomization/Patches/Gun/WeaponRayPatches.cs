@@ -1,14 +1,14 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
-using ExtraWeaponCustomization.CustomWeapon;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon;
 using HarmonyLib;
 using static Weapon;
 using UnityEngine;
 using System.Reflection;
 using System;
 using Gear;
-using ExtraWeaponCustomization.Utils;
+using EWC.Utils;
 
-namespace ExtraWeaponCustomization.Patches
+namespace EWC.Patches
 {
     [HarmonyPatch]
     internal static class WeaponRayPatches

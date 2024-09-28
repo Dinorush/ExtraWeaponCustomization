@@ -1,4 +1,4 @@
-﻿namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+﻿namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public abstract class WeaponTriggerContext : IWeaponContext
     {

@@ -1,7 +1,7 @@
 ﻿using Gear;
 using HarmonyLib;
 
-namespace ExtraWeaponCustomization.Patches
+namespace EWC.Patches
 {
     [HarmonyPatch]
     internal static class ShotgunPatches

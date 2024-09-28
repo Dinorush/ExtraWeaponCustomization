@@ -1,5 +1,5 @@
-﻿using ExtraWeaponCustomization.JSON;
-using ExtraWeaponCustomization.Utils.Log;
+﻿using EWC.JSON;
+using EWC.Utils.Log;
 using Gear;
 using GTFO.API.Utilities;
 using MTFO.API;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 
-namespace ExtraWeaponCustomization.CustomWeapon
+namespace EWC.CustomWeapon
 {
     public sealed class CustomWeaponManager
     {

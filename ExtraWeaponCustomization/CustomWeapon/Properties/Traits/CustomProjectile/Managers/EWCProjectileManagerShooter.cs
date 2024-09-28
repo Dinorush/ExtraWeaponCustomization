@@ -1,10 +1,10 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Components;
+﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using UnityEngine;
 using System.Collections.Generic;
 using SNetwork;
-using ExtraWeaponCustomization.Networking.Structs;
+using EWC.Networking.Structs;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Traits.CustomProjectile.Managers
+namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
     public class EWCProjectileManagerShooter
     {

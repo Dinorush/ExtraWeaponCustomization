@@ -1,13 +1,13 @@
 ﻿using System;
 using Player;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 using System.Collections.Generic;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
 using Gear;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class AmmoMod :
         Effect,

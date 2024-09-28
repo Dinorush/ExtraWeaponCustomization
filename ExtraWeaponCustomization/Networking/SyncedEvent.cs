@@ -1,7 +1,7 @@
 ﻿using GTFO.API;
 using SNetwork;
 
-namespace ExtraWeaponCustomization.Networking
+namespace EWC.Networking
 {
     public abstract class SyncedEvent<T> where T : struct
     {

@@ -1,9 +1,9 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
+﻿using EWC.CustomWeapon.Properties.Effects;
+using EWC.CustomWeapon.Properties.Traits;
 using System;
 using System.Collections.Generic;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties
+namespace EWC.CustomWeapon.Properties
 {
     public sealed class PropertyList
     {

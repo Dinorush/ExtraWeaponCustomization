@@ -1,4 +1,4 @@
-﻿namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext
+﻿namespace EWC.CustomWeapon.WeaponContext
 {
     public interface IWeaponContext
     {

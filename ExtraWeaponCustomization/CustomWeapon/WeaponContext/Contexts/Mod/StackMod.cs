@@ -1,7 +1,7 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+﻿using EWC.CustomWeapon.Properties.Effects;
 using System;
 
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public sealed class StackMod
     {

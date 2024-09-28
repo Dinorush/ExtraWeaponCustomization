@@ -1,6 +1,6 @@
-﻿using ExtraWeaponCustomization.CustomWeapon.Properties.Effects;
+﻿using EWC.CustomWeapon.Properties.Effects;
 
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public abstract class WeaponStackModContext : IWeaponContext
     {

@@ -1,16 +1,16 @@
 ﻿using AK;
-using ExtraWeaponCustomization.CustomWeapon.Properties;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Effects.Triggers;
-using ExtraWeaponCustomization.CustomWeapon.Properties.Traits;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext;
-using ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.Properties;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Traits;
+using EWC.CustomWeapon.WeaponContext;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using Il2CppInterop.Runtime.Attributes;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon
+namespace EWC.CustomWeapon
 {
     public sealed class CustomWeaponComponent : MonoBehaviour
     {

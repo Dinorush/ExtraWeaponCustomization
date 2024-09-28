@@ -1,11 +1,11 @@
 ﻿using BepInEx.Unity.IL2CPP;
-using ExtraWeaponCustomization.Utils.Log;
+using EWC.Utils.Log;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
-namespace ExtraWeaponCustomization.Dependencies
+namespace EWC.Dependencies
 {
     internal static class MTFOPartialDataUtil
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExtraWeaponCustomization.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class DOTInstance
     {

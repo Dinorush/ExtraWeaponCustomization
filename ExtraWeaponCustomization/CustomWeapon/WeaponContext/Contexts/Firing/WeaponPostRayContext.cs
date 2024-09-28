@@ -1,7 +1,7 @@
-﻿using ExtraWeaponCustomization.Utils;
+﻿using EWC.Utils;
 using UnityEngine;
 
-namespace ExtraWeaponCustomization.CustomWeapon.WeaponContext.Contexts
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public sealed class WeaponPostRayContext : IWeaponContext
     {
