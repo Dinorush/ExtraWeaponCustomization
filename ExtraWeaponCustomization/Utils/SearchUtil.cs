@@ -14,7 +14,8 @@ namespace EWC.Utils
         None = 0,
         Alloc = 1,
         CacheHit = 2,
-        CheckLOS = 4
+        CheckLOS = 4,
+        CheckDoors = 8
     }
 
     internal static class SearchUtil
@@ -84,6 +85,9 @@ namespace EWC.Utils
                 foreach (AIG_CoursePortal portal in node.m_portals)
                 {
                     AIG_CourseNode oppositeNode = portal.GetOppositeNode(node);
+                    if (settings.HasFlag(SearchSetting.CheckDoors) && !portal.IsTraversable)
+                        continue;
+
                     if (oppositeNode.m_searchID != searchID && PortalInRange(ray, range, angle, portal))
                     {
                         oppositeNode.m_searchID = searchID;
@@ -144,6 +148,12 @@ namespace EWC.Utils
 
         public static List<EnemyAgent> GetEnemiesInRange(Ray ray, float range, float angle, AIG_CourseNode origin, SearchSetting settings = SearchSetting.None)
         {
+            if (range == 0 || angle == 0)
+            {
+                s_enemyCache.Clear();
+                return settings.HasFlag(SearchSetting.Alloc) ? new List<EnemyAgent>() : s_enemyCache;
+            }
+
             CacheEnemiesInRange(ray, range, angle, origin, settings);
             if (settings.HasFlag(SearchSetting.Alloc))
                 return s_combinedCache.ConvertAll(pair => pair.Item1);
@@ -156,6 +166,12 @@ namespace EWC.Utils
 
         public static List<(EnemyAgent enemy, RaycastHit hit)> GetHitsInRange(Ray ray, float range, float angle, AIG_CourseNode origin, SearchSetting settings = SearchSetting.CacheHit)
         {
+            if (range == 0 || angle == 0)
+            {
+                s_combinedCache.Clear();
+                return settings.HasFlag(SearchSetting.Alloc) ? new List<(EnemyAgent, RaycastHit)>() : s_combinedCache;
+            }
+
             settings |= SearchSetting.CacheHit;
             CacheEnemiesInRange(ray, range, angle, origin, settings);
             if (settings.HasFlag(SearchSetting.Alloc))
