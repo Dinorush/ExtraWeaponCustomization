@@ -298,7 +298,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             DoImpactFX(damageable);
 
-            bool backstab = false;
+            bool backstab = true;
             WeaponPatches.ApplyEWCHit(_baseCWC!, damageable, _hitData, _pierce, ref _baseDamage, ref backstab);
             float damage = _hitData.damage * _hitData.falloff;
             damageable?.BulletDamage(damage, _hitData.owner, _hitData.hitPos, _hitData.fireDir, _hitData.RayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
