@@ -87,9 +87,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
             }
 
-            if (projBase.HitSize == projBase.HitSizeWorld)
-                _entityLayer |= EWCProjectileManager.MaskWorld;
-
             _hitWorld = !cwc.HasTrait(typeof(WallPierce));
 
             _hitEnts.Clear();
