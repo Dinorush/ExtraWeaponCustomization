@@ -41,7 +41,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (_pierceCount == 0) return;
 
-            RaycastHit[] results = Physics.SphereCastAll(Weapon.s_ray, HitSize, (Weapon.s_ray.origin - wallPos).magnitude, LayerManager.MASK_ENEMY_DAMAGABLE);
+            RaycastHit[] results = Physics.SphereCastAll(Weapon.s_ray, HitSize, (Weapon.s_ray.origin - wallPos).magnitude, LayerManager.MASK_MELEE_ATTACK_TARGETS);
             if (results.Length == 0) return;
             Array.Sort(results, DistanceCompare);
 
