@@ -1,10 +1,12 @@
 ﻿using Agents;
 using Enemies;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
 using Player;
 using SNetwork;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using UnityEngine;
 
@@ -16,7 +18,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponPreFireContextSync>,
         IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponPostFireContextSync>
+        IWeaponProperty<WeaponPostFireContextSync>,
+        IWeaponProperty<WeaponStealthUpdateContext>
     {
         public float FakeAlertRadius { get; set; } = 0f;
         public float AlertRadius { get; set; } = 0f;
@@ -24,15 +27,25 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float WakeUpRadius { get; set; } = 0f;
         public bool CrossDoors { get; set; } = false;
 
+        private readonly Dictionary<AgentWrapper, float> _alertProgress = new();
+
         private readonly static List<EnemyAgent> s_wakeupList = new();
         private readonly static List<EnemyAgent> s_alertList = new();
         private readonly static List<EnemyAgent> s_fakeAlertList = new();
 
         private static NM_NoiseData s_noiseData = new();
-        private static Agent.NoiseType s_cachedNoise = Agent.NoiseType.None;
-        private static float s_cachedTimestamp = 0f;
+        private static Agent.NoiseType s_cachedNoise;
+        private static float s_cachedTimestamp;
         private static Ray s_ray;
         private const SearchSetting SearchSettings = SearchSetting.CheckDoors;
+
+        private const float InstantWakeupProgress = 1000f;
+        // Based on R6Mono
+        private const float InstantWakeupOutput = 1000f;
+        private const float WakeupOutput = 1.1f;
+        private const float AlertOutput = 0.95f;
+
+        private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
 
         public void Invoke(WeaponPreFireContext context)
         {
@@ -56,6 +69,31 @@ namespace EWC.CustomWeapon.Properties.Traits
             OverrideSound();
         }
 
+        public void Invoke(WeaponStealthUpdateContext context)
+        {
+            if (AlertRadius <= WakeUpRadius) return;
+
+            TempWrapper.SetAgent(context.Enemy);
+            if (!_alertProgress.TryGetValue(TempWrapper, out float progress)) return;
+
+            if (progress >= InstantWakeupProgress)
+            {
+                context.Output = InstantWakeupOutput;
+                _alertProgress.Remove(TempWrapper);
+                return;
+            }
+
+            if (!context.Detecting)
+            {
+                _alertProgress.Remove(TempWrapper);
+                return;
+            }
+
+            float output = progress >= 1f ? WakeupOutput : AlertOutput;
+            if (output > context.Output)
+                context.Output = output;
+        }
+
         private void OverrideSound()
         {
             if (!SNet.IsMaster) return;
@@ -65,6 +103,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             owner.m_noiseTimestamp = s_cachedTimestamp;
 
             s_noiseData.noiseMaker = owner.TryCast<INM_NoiseMaker>()!;
+            s_noiseData.position = owner.Position;
 
             bool runAlert = AlertRadius > WakeUpRadius;
             bool runFakeAlert = FakeAlertRadius > AlertRadius && FakeAlertRadius > WakeUpRadius;
@@ -72,6 +111,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_ray.origin = owner.IsLocallyOwned ? Weapon.s_ray.origin : owner.EyePosition;
             s_ray.direction = owner.IsLocallyOwned ? owner.FPSCamera.CameraRayDir : CWC.Weapon.MuzzleAlign.forward;
 
+            // Cache enemies
             if (runFakeAlert)
             {
                 s_fakeAlertList.Clear();
@@ -80,6 +120,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (runAlert)
             {
+                foreach (AgentWrapper wrapper in _alertProgress.Keys.Where(key => key.Agent == null || !key.Agent.Alive).ToList())
+                    _alertProgress.Remove(wrapper);
                 s_alertList.Clear();
                 s_alertList.AddRange(SearchUtil.GetEnemiesInRange(s_ray, AlertRadius, 180f, owner.CourseNode, SearchSettings));
             }
@@ -87,40 +129,76 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_wakeupList.Clear();
             s_wakeupList.AddRange(SearchUtil.GetEnemiesInRange(s_ray, WakeUpRadius, 180f, owner.CourseNode, SearchSettings));
 
+            Vector3 pos = owner.Position;
+
+            // Instant wakeup
             s_noiseData.type = NM_NoiseType.InstaDetect;
-            foreach (var enemy in s_wakeupList)
+            for (int i = s_wakeupList.Count - 1; i >= 0; --i)
             {
-                if (!CrossDoors && enemy.CourseNode.NodeID != owner.CourseNode.NodeID)
-                    continue;
+                EnemyAgent enemy = s_wakeupList[i];
                 if (runAlert)
                     RemoveFromList(enemy, s_alertList);
                 if (runFakeAlert)
                     RemoveFromList(enemy, s_fakeAlertList);
-                enemy.TryCast<INM_Listener>()!.ListenerDetectNoise(ref s_noiseData, 0f);
+                if (!EnemyCanHear(enemy))
+                    continue;
+
+                TempWrapper.SetAgent(enemy);
+                if (!_alertProgress.ContainsKey(TempWrapper))
+                    _alertProgress.Add(new AgentWrapper(enemy), 0);
+
+                _alertProgress[TempWrapper] += InstantWakeupProgress;
             }
 
-            foreach (var enemy in s_alertList)
+            // Standard alert (like walking)
+            for (int i = s_alertList.Count - 1; i >= 0; --i)
             {
-                if (!CrossDoors && enemy.CourseNode.NodeID != owner.CourseNode.NodeID)
-                    continue;
+                EnemyAgent enemy = s_alertList[i];
                 if (runFakeAlert)
                     RemoveFromList(enemy, s_fakeAlertList);
-                AgentTarget target = enemy.AI.m_behaviourData.GetTarget(owner);
-                target.m_noiseDetectWindowTimeTotal += AlertAmount;
+                if (!EnemyCanHear(enemy))
+                    continue;
+
+                TempWrapper.SetAgent(enemy);
+                if (!_alertProgress.ContainsKey(TempWrapper))
+                    _alertProgress.Add(new AgentWrapper(enemy), 0);
+
+                EnemyDetection detection = enemy.AI.m_detection;
+                // If the enemy is asleep, make them alert (could do this by setting progress > 0 but sounds icky)
+                if (detection.m_noiseDetectionStatus == EnemyDetection.DetectionStatus.Deactivated)
+                    detection.m_statusTimerEnd = 0;
+                // If the enemy is alert (not transitioning), then add progress
+                else if (detection.m_noiseDetectionOn)
+                    _alertProgress[TempWrapper] += AlertAmount;
             }
 
-            s_noiseData.type = NM_NoiseType.PulseOnly;
+            // Fake pulse
             foreach (var enemy in s_fakeAlertList)
             {
-                if (!CrossDoors && enemy.CourseNode.NodeID != owner.CourseNode.NodeID)
+                if (!EnemyCanHear(enemy))
                     continue;
-                enemy.TryCast<INM_Listener>()!.ListenerDetectNoise(ref s_noiseData, 0f);
+
+                enemy.AI.m_locomotion.Hibernate.Heartbeat(0.5f, CWC.Weapon.Owner.Position);
             }
+        }
+
+        private bool EnemyCanHear(EnemyAgent enemy)
+        {
+            if (!enemy.ListenerReady) return false;
+
+            PlayerAgent owner = CWC.Weapon.Owner;
+            if (!CrossDoors && enemy.CourseNode.NodeID != owner.CourseNode.NodeID) return false;
+
+            float weaponDist = enemy.EnemyDetectionData.weaponDetectionDistanceMax;
+            if ((owner.Position - enemy.Position).sqrMagnitude >= weaponDist * weaponDist) return false;
+
+            return true;
         }
 
         private void RemoveFromList(EnemyAgent remove, List<EnemyAgent> list)
         {
-            for (int i = 0; i < list.Count; i++)
+            // Imagine doing list.Remove(enemy) when il2cpp exists
+            for (int i = list.Count - 1; i >= 0; --i)
             {
                 if (remove.GetInstanceID() == list[i].GetInstanceID())
                 {
@@ -137,7 +215,8 @@ namespace EWC.CustomWeapon.Properties.Traits
                 FakeAlertRadius = FakeAlertRadius,
                 AlertRadius = AlertRadius,
                 AlertAmount = AlertAmount,
-                WakeUpRadius = WakeUpRadius
+                WakeUpRadius = WakeUpRadius,
+                CrossDoors = CrossDoors
             };
             return copy;
         }
@@ -150,6 +229,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(AlertRadius), AlertRadius);
             writer.WriteNumber(nameof(AlertAmount), AlertAmount);
             writer.WriteNumber(nameof(WakeUpRadius), WakeUpRadius);
+            writer.WriteBoolean(nameof(CrossDoors), CrossDoors);
             writer.WriteEndObject();
         }
 

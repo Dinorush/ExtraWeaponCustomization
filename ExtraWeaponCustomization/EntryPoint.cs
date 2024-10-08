@@ -12,6 +12,8 @@ using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using EWC.CustomWeapon.Properties.Effects.Heal;
 using EWC.Utils.Log;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.Utils;
+using EWC.Patches.Native;
 
 namespace EWC;
 
@@ -30,6 +32,7 @@ internal sealed class EntryPoint : BasePlugin
         EWCLogger.Log("Loading " + MODNAME);
 
         new Harmony(MODNAME).PatchAll();
+        EnemyDetectionPatches.ApplyNativePatch();
         Configuration.Init();
         LevelAPI.OnLevelCleanup += LevelAPI_OnLevelCleanup;
         AssetAPI.OnStartupAssetsLoaded += AssetAPI_OnStartupAssetsLoaded;
@@ -48,6 +51,8 @@ internal sealed class EntryPoint : BasePlugin
         ClassInjector.RegisterTypeInIl2Cpp<CustomWeaponComponent>();
         ClassInjector.RegisterTypeInIl2Cpp<EWCProjectileComponentBase>();
         ClassInjector.RegisterTypeInIl2Cpp<EWCProjectileComponentShooter>();
+
+        LayerUtil.Init();
         ExplosionManager.Init();
         DOTDamageManager.Init();
         HealManager.Init();
