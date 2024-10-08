@@ -64,6 +64,8 @@ namespace EWC.CustomWeapon.Properties.Traits
                 _archetype.SetOwner(CWC.Weapon.Owner);
             else if (_cachedArchetype != null && _cachedArchetype.m_owner == null)
                 _cachedArchetype.SetOwner(CWC.Weapon.Owner);
+
+            ResetERDComponent();
         }
 
         public void Invoke(WeaponSetupContext context)
@@ -150,6 +152,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (CWC.Gun!.Owner?.IsLocallyOwned == true)
                 {
                     _archetype.SetOwner(CWC.Gun.Owner); // Why does this set audio delay
+                    ResetERDComponent();
                     CWC.RefreshSoundDelay();
                 }
             }
@@ -215,21 +218,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             float clipCost = CWC.Gun!.GetCurrentClip() * slotAmmo.CostOfBullet;
             int clipSize = CWC.Gun!.ClipSize;
 
-            // ExtraRecoilData compatibility
-            CustomRecoilComponent? recoilComp = CWC.Gun.GetComponent<CustomRecoilComponent>();
-            CustomRecoilData? newData = CustomRecoilManager.Current.GetCustomRecoilData(newBlock.persistentID);
-            if (recoilComp != null)
-                recoilComp.Data = newData ?? new CustomRecoilData();
-            else if (newData != null)
-            {
-                recoilComp = CWC.Gun.gameObject.AddComponent<CustomRecoilComponent>();
-                recoilComp.Data = newData;
-            }
-
             CWC.Gun.ArchetypeData = newBlock;
             CopyArchetypeVars(newArch, oldArch);
             CWC.Gun.m_archeType = newArch;
             CWC.RefreshArchetypeCache();
+            ResetERDComponent();
 
             slotAmmo.Setup(newBlock.CostOfBullet, CWC.Gun.ClipSize);
             int newClipSize = CWC.Gun.ClipSize;
@@ -325,6 +318,20 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 if (start)
                     gun.TriggerBurstFireAudio();
+            }
+        }
+
+        private void ResetERDComponent()
+        {
+            // ExtraRecoilData compatibility
+            CustomRecoilComponent? recoilComp = CWC.Weapon.GetComponent<CustomRecoilComponent>();
+            CustomRecoilData? newData = CustomRecoilManager.Current.GetCustomRecoilData(CWC.Weapon.ArchetypeID);
+            if (recoilComp != null)
+                recoilComp.Data = newData ?? new CustomRecoilData();
+            else if (newData != null)
+            {
+                recoilComp = CWC.Weapon.gameObject.AddComponent<CustomRecoilComponent>();
+                recoilComp.Data = newData;
             }
         }
 
