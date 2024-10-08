@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
+using ExtraRecoilData.CustomRecoil;
 using GameData;
 using Gear;
 using Player;
@@ -213,6 +214,17 @@ namespace EWC.CustomWeapon.Properties.Traits
             int clip = CWC.Gun!.GetCurrentClip();
             float clipCost = CWC.Gun!.GetCurrentClip() * slotAmmo.CostOfBullet;
             int clipSize = CWC.Gun!.ClipSize;
+
+            // ExtraRecoilData compatibility
+            CustomRecoilComponent? recoilComp = CWC.Gun.GetComponent<CustomRecoilComponent>();
+            CustomRecoilData? newData = CustomRecoilManager.Current.GetCustomRecoilData(newBlock.persistentID);
+            if (recoilComp != null)
+                recoilComp.Data = newData ?? new CustomRecoilData();
+            else if (newData != null)
+            {
+                recoilComp = CWC.Gun.gameObject.AddComponent<CustomRecoilComponent>();
+                recoilComp.Data = newData;
+            }
 
             CWC.Gun.ArchetypeData = newBlock;
             CopyArchetypeVars(newArch, oldArch);
