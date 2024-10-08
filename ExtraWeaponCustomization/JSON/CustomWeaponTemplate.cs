@@ -36,6 +36,7 @@ namespace EWC.JSON
                     new PierceMulti(),
                     new CustomWeapon.Properties.Traits.Projectile(),
                     new ReserveClip(),
+                    new Silence(),
                     new ThickBullet(),
                     new TumorMulti(),
                     new WallPierce()
