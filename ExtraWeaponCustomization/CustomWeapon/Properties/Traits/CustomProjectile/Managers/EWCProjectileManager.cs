@@ -20,21 +20,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         public const float MaxGlowRange = 1024f;
         public const float MaxLifetime = 1024f;
 
-        public static int MaskEntityAndWorld { get; private set; }
-        public static int MaskWorld { get; private set; }
-        public static int MaskEntity { get; private set; }
-        public static int MaskOwner { get; private set; }
-        public static int MaskFriendly { get; private set; }
-
         internal static void Init()
         {
             Shooter.Init();
             _destroySync.Setup();
-            MaskOwner = LayerMask.GetMask("PlayerMover");
-            MaskFriendly = LayerMask.GetMask("PlayerSynced");
-            MaskEntity = LayerMask.GetMask("PlayerMover", "PlayerSynced", "EnemyDamagable");
-            MaskWorld = LayerMask.GetMask("Default", "Default_NoGraph", "Default_BlockGraph", "ProjectileBlocker", "Dynamic");
-            MaskEntityAndWorld = MaskEntity | MaskWorld;
         }
 
         internal static void Reset()

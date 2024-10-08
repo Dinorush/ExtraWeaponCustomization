@@ -73,12 +73,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (projBase.DamageOwner)
             {
                 _initialPlayers.Add(ownerID);
-                _entityLayer |= EWCProjectileManager.MaskOwner;
+                _entityLayer |= LayerUtil.MaskOwner;
             }
 
             if (projBase.DamageFriendly)
             {
-                _entityLayer |= EWCProjectileManager.MaskFriendly;
+                _entityLayer |= LayerUtil.MaskFriendly;
                 foreach (PlayerAgent agent in PlayerManager.PlayerAgentsInLevel)
                 {
                     Vector3 diff = agent.Position - pos;
@@ -159,11 +159,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, _entityLayer));
             else
             {
-                // Get all enemies inside the sphere as well as any we collide with on the cast.
+                // Get all enemies/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
                 List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), SearchSettings);
                 foreach ((EnemyAgent, RaycastHit hit) pair in hits)
                     s_hits.Add(pair.hit);
+                s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f));
+
+                // Get all enemies/locks ahead of the projectile
                 foreach (var hit in Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer))
                     if (hit.distance > 0)
                         s_hits.Add(hit);
@@ -174,8 +177,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             foreach (RaycastHit hit in s_hits)
             {
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
+                if (damageable == null) continue;
                 if (AlreadyHit(damageable)) continue;
-                if (checkLOS && _hitWorld && Physics.Linecast(hit.point, hit.point + hit.normal * _settings.HitSize, EWCProjectileManager.MaskWorld)) continue;
+
+                if (checkLOS && _hitWorld
+                 && Physics.Linecast(hit.point, hit.point + hit.normal * _settings.HitSize, out s_rayHit, LayerUtil.MaskWorld)
+                 && s_rayHit.collider.gameObject.GetInstanceID() != hit.collider.gameObject.GetInstanceID()) // Needed for locks
+                    continue;
 
                 s_rayHit = hit;
 
@@ -191,9 +199,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             bool hit;
             if (_settings!.HitSizeWorld == 0)
-                hit = Physics.Raycast(s_ray, out s_rayHit, s_velMagnitude, EWCProjectileManager.MaskWorld);
+                hit = Physics.Raycast(s_ray, out s_rayHit, s_velMagnitude, LayerUtil.MaskWorld);
             else
-                hit = Physics.SphereCast(s_ray, _settings!.HitSizeWorld, out s_rayHit, s_velMagnitude, EWCProjectileManager.MaskWorld);
+                hit = Physics.SphereCast(s_ray, _settings!.HitSizeWorld, out s_rayHit, s_velMagnitude, LayerUtil.MaskWorld);
 
             if (hit)
             {
@@ -213,7 +221,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_settings!.HitSizeWorld == 0) return;
 
             Vector3 pos = _weapon.Owner.FPSCamera.Position;
-            Collider[] colliders = Physics.OverlapSphere(pos, _settings.HitSizeWorld, EWCProjectileManager.MaskWorld);
+            Collider[] colliders = Physics.OverlapSphere(pos, _settings.HitSizeWorld, LayerUtil.MaskWorld);
             if (colliders.Length == 0) return;
 
             s_rayHit.distance = float.MaxValue;

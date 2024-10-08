@@ -2,7 +2,6 @@
 using UnityEngine;
 using System.Text.Json;
 using EWC.Utils;
-using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using System.Collections.Generic;
 using System;
 using Gear;
@@ -32,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             _pierceCount = CWC.Weapon.ArchetypeData.PiercingBullets ? CWC.Weapon.ArchetypeData.PiercingDamageCountLimit : 1;
 
             Vector3 wallPos; // Used to determine bounds for thick bullets and line of sight checks
-            if (Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, EWCProjectileManager.MaskWorld))
+            if (Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, LayerUtil.MaskWorld))
                 wallPos = s_rayHit.point;
             else
                 wallPos = Weapon.s_ray.origin + context.Data.fireDir * context.Data.maxRayDist;
@@ -48,8 +47,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             foreach (RaycastHit hit in results)
             {
                 if (hit.distance == 0) continue;
-                if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID))  continue;
-                if (!CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos)) continue;
+
+                IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
+                if (damageable == null) continue;
+                if (AlreadyHit(damageable, CWC.Gun!.m_damageSearchID))  continue;
+                if (!CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos, true)) continue;
 
                 s_rayHit = hit;
                 CheckDirectHit(ref s_rayHit);
@@ -83,10 +85,25 @@ namespace EWC.CustomWeapon.Properties.Traits
 
                 if (_pierceCount <= 0) break;
             }
+
+            List<RaycastHit> lockHits = SearchUtil.GetLockHitsInRange(Weapon.s_ray, HitSize, 180f);
+            lockHits.Sort(SortUtil.RaycastDistance);
+
+            foreach (var hit in lockHits)
+            {
+                if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
+                if (!CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
+
+                context.Data.RayHit = hit;
+                if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
+                    _pierceCount--;
+
+                if (_pierceCount <= 0) break;
+            }
         }
 
         // Naive LOS check to ensure that some point on the bullet line can see the enemy
-        private bool CheckLineOfSight(Collider collider, Vector3 startPos, Vector3 endPos)
+        private bool CheckLineOfSight(Collider collider, Vector3 startPos, Vector3 endPos, bool checkLock = false)
         {
             if (HitSize < SightCheckMinSize) return true;
 
@@ -101,7 +118,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             int count = 0;
             while (remainingDist >= 0.1f && checkDistSqr <= maxCheckDistSqr)
             {
-                if (!Physics.Linecast(origin, collider.transform.position, EWCProjectileManager.MaskWorld))
+                if (!Physics.Linecast(origin, collider.transform.position, out s_rayHit, LayerUtil.MaskWorld))
+                    return true;
+                else if (checkLock && collider.gameObject.GetInstanceID() == s_rayHit.collider.gameObject.GetInstanceID())
                     return true;
 
                 origin += Weapon.s_ray.direction * increment;
@@ -134,6 +153,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (a.distance == b.distance) return 0;
             return a.distance < b.distance ? -1 : 1;
+        }
+
+        private static bool AlreadyHit(IDamageable damageable, uint searchID)
+        {
+            return searchID != 0 && damageable.GetBaseDamagable()?.TempSearchID == searchID;
         }
 
         private static bool AlreadyHit(Collider collider, uint searchID)

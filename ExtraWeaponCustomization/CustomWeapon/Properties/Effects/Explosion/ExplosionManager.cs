@@ -87,9 +87,24 @@ namespace EWC.CustomWeapon.Properties.Effects
                 return;
             }
 
+            Ray ray = new(position, direction);
             SearchUtil.SightBlockLayer = LayerManager.MASK_EXPLOSION_BLOCKERS;
-            List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetHitsInRange(new Ray(position, direction), explosiveBase.Radius, 180f, node, SearchSettings);
+            List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetHitsInRange(ray, explosiveBase.Radius, 180f, node, SearchSettings);
             foreach ((EnemyAgent _, RaycastHit hit) in hits)
+            {
+                SendExplosionDamage(
+                    hit.collider.GetComponent<IDamageable>(),
+                    hit.point,
+                    direction,
+                    hit.distance,
+                    source,
+                    falloffMod,
+                    explosiveBase,
+                    triggerAmt);
+            }
+
+            List<RaycastHit> lockHits = SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, SearchSettings);
+            foreach (RaycastHit hit in lockHits)
             {
                 SendExplosionDamage(
                     hit.collider.GetComponent<IDamageable>(),

@@ -20,9 +20,11 @@ namespace EWC.Utils
 
     internal static class SearchUtil
     {
-        public static readonly List<EnemyAgent> s_enemyCache = new();
-        public static readonly List<(EnemyAgent, RaycastHit)> s_combinedCache = new();
+        private static readonly List<EnemyAgent> s_enemyCache = new();
+        private static readonly List<(EnemyAgent, RaycastHit)> s_combinedCache = new();
         private static readonly Queue<AIG_CourseNode> s_nodeQueue = new();
+
+        private static readonly List<RaycastHit> s_lockCache = new();
 
         public static int SightBlockLayer = 0;
 
@@ -148,17 +150,14 @@ namespace EWC.Utils
 
         public static List<EnemyAgent> GetEnemiesInRange(Ray ray, float range, float angle, AIG_CourseNode origin, SearchSetting settings = SearchSetting.None)
         {
+            s_enemyCache.Clear();
             if (range == 0 || angle == 0)
-            {
-                s_enemyCache.Clear();
                 return settings.HasFlag(SearchSetting.Alloc) ? new List<EnemyAgent>() : s_enemyCache;
-            }
 
             CacheEnemiesInRange(ray, range, angle, origin, settings);
             if (settings.HasFlag(SearchSetting.Alloc))
                 return s_combinedCache.ConvertAll(pair => pair.Item1);
 
-            s_enemyCache.Clear();
             foreach ((EnemyAgent enemy, _) in s_combinedCache)
                 s_enemyCache.Add(enemy);
             return s_enemyCache;
@@ -179,6 +178,36 @@ namespace EWC.Utils
 
             return s_combinedCache;
         }
+
+        public static List<RaycastHit> GetLockHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.None)
+        {
+            s_lockCache.Clear();
+            if (range == 0 || angle == 0)
+                return settings.HasFlag(SearchSetting.Alloc) ? new List<RaycastHit>() : s_lockCache;
+
+            Collider[] colliders = Physics.OverlapSphere(ray.origin, range, LayerUtil.MaskDynamic);
+            Vector3 origDir = ray.direction;
+            foreach (Collider collider in colliders)
+            {
+                IDamageable? damageable = DamageableUtil.GetDamageableFromCollider(collider);
+                if (damageable == null) continue;
+
+                if (settings.HasFlag(SearchSetting.CheckLOS)
+                 && Physics.Linecast(ray.origin, damageable.DamageTargetPos, out s_rayHit, SightBlockLayer)
+                 && s_rayHit.collider.gameObject.GetInstanceID() != collider.gameObject.GetInstanceID())
+                    continue;
+
+                ray.direction = damageable.DamageTargetPos - ray.origin;
+                if (collider.Raycast(ray, out s_rayHit, range) && Vector3.Angle(ray.direction, origDir) < angle)
+                    s_lockCache.Add(s_rayHit);
+            }
+
+            if (settings.HasFlag(SearchSetting.Alloc))
+                return new(s_lockCache);
+
+            return s_lockCache;
+        }
+
 
         private static bool HasCluster(AIG_VoxelNodePillar pillar)
         {
