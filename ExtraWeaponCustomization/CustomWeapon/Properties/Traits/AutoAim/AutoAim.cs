@@ -285,9 +285,19 @@ namespace EWC.CustomWeapon.Properties.Traits
             // Check if any part of the target is still valid
             Vector3 position = _camera!.Position;
             Vector3 targetPos = GetTargetPos();
-            Vector3 diff = targetPos - position;
-            return diff.sqrMagnitude < Range * Range && Vector3.Angle(_camera!.CameraRayDir, diff) < Angle
-                && !Physics.Linecast(position, targetPos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS);
+            if (Physics.Linecast(position, targetPos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS)) return false;
+
+            foreach (var collider in _target.GetComponentsInChildren<Collider>())
+            {
+                Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
+                if (limb?.IsDestroyed == true) continue;
+
+                Vector3 diff = collider.ClosestPoint(position) - position;
+                float sqrDist = diff.sqrMagnitude;
+                if (sqrDist < Range * Range && Vector3.Angle(_camera!.CameraRayDir, diff) < Angle)
+                    return true;
+            }
+            return false;
         }
 
         private EnemyAgent? CheckForTarget()
