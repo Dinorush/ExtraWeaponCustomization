@@ -17,15 +17,16 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
 - Ammo Cap: Adjust the value used to calculate ammopack refills and starting ammo. [Gun]
 - Armor Pierce: Pierces armor or modifies bullet damage dealt to armor.
-- Audio Swap: Toggles audio on a trigger. [Gun]
 - Auto Aim: Automatically fire toward targets. [Gun]
 - Auto Trigger: Hold the trigger to fire. [Semi, Burst]
 - Backstab Multi: Applies a multiplier to backstab damage.
+- Data Swap: Toggles archetype and audio on a trigger. [Gun]
 - Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Auto]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
 - Projectile: Fires a projectile instead of a hitscan bullet. [Gun]
 - Reserve Clip: Combines reserve ammo with the magazine. [Gun]
+- Silence: Modifies the stealth properties for firing. [Gun]
 - Thick Bullet: Gives bullets a bigger entity hitbox. [Gun]
 - Tumor Multi: Applies a multiplier to tumor damage.
 - Wall Pierce: Bullets can damage enemies through walls. [Gun]
