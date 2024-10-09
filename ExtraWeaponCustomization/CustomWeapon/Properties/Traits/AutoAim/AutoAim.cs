@@ -318,14 +318,16 @@ namespace EWC.CustomWeapon.Properties.Traits
                 foreach ((EnemyAgent enemy, float angle) in angles)
                 {
                     if (angle >= targetAngle) return _target;
-                    if (!Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                    if ((IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged)
+                     && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
                         return enemy;
                 }
             }
             else
             {
                 foreach ((EnemyAgent enemy, _) in angles)
-                    if (!Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                    if ((IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged)
+                     && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
                         return enemy;
             }
 
