@@ -25,7 +25,7 @@ namespace EWC.Utils
             { 
                 _rayHit = value;
                 hitPos = _rayHit.point;
-                damageable = _rayHit.collider != null ? DamageableUtil.GetDamageableFromRayHit(_rayHit) : null;
+                damageable = DamageableUtil.GetDamageableFromRayHit(_rayHit);
             }
         }
 
