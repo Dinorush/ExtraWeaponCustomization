@@ -44,6 +44,8 @@ namespace EWC.Utils
         public void Setup(WeaponHitData hitData, float additionalDist = 0)
         {
             _weaponHitData = hitData;
+            _meleeWeapon = null;
+
             damage = hitData.damage;
             damageFalloff = hitData.damageFalloff;
             precisionMulti = hitData.precisionMulti;
@@ -57,7 +59,9 @@ namespace EWC.Utils
 
         public void Setup(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData)
         {
+            _weaponHitData = null;
             _meleeWeapon = melee;
+
             damage = melee.m_damageToDeal;
             precisionMulti = melee.m_precisionMultiToDeal;
             staggerMulti = melee.m_staggerMultiToDeal;
