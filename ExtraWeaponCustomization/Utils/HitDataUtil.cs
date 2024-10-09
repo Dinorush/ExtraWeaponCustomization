@@ -51,8 +51,8 @@ namespace EWC.Utils
             owner = hitData.owner;
             fireDir = hitData.fireDir;
             maxRayDist = hitData.maxRayDist;
-            SetFalloff(additionalDist);
             RayHit = hitData.rayHit;
+            SetFalloff(additionalDist);
         }
 
         public void Setup(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData)
