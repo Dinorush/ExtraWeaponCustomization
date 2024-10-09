@@ -23,6 +23,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             data.source.SetPlayer(caller.CWC.Weapon.Owner.Owner);
             data.slot = PlayerAmmoStorage.GetSlotFromAmmoType(caller.CWC.Weapon.AmmoType);
             data.mod.Set(mod, MaxMod);
+            data.id = caller.SyncID;
             _triggerSync.Send(data);
         }
 
@@ -47,6 +48,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             TriggerResetData data = default;
             data.source.SetPlayer(caller.CWC.Weapon.Owner.Owner);
             data.slot = PlayerAmmoStorage.GetSlotFromAmmoType(caller.CWC.Weapon.AmmoType);
+            data.id = caller.SyncID;
             _resetSync.Send(data);
         }
 
