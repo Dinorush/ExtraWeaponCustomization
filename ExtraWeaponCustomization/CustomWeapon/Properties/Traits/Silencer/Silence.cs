@@ -71,8 +71,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponStealthUpdateContext context)
         {
-            if (AlertRadius <= WakeUpRadius) return;
-
             TempWrapper.SetAgent(context.Enemy);
             if (!_alertProgress.TryGetValue(TempWrapper, out float progress)) return;
 
