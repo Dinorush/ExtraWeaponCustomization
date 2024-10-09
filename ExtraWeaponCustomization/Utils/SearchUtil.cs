@@ -234,7 +234,7 @@ namespace EWC.Utils
                     return agent.CourseNode;
 
                 foreach (var voxelNode in pillar.m_nodes)
-                    if (voxelNode.ClusterID != 0 && AIG_NodeCluster.TryGetNodeCluster(voxelNode.ClusterID, out var nodeCluster))
+                    if (voxelNode.ClusterID != 0 && AIG_NodeCluster.TryGetNodeCluster(voxelNode.ClusterID, out var nodeCluster) && nodeCluster.CourseNode != null)
                         return nodeCluster.CourseNode;
             }
             return agent.CourseNode;
