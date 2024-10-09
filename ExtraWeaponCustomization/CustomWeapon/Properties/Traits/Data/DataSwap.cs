@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
-using ExtraRecoilData.CustomRecoil;
 using GameData;
 using Gear;
 using Player;
@@ -321,19 +320,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
         }
 
-        private void ResetERDComponent()
-        {
-            // ExtraRecoilData compatibility
-            CustomRecoilComponent? recoilComp = CWC.Weapon.GetComponent<CustomRecoilComponent>();
-            CustomRecoilData? newData = CustomRecoilManager.Current.GetCustomRecoilData(CWC.Weapon.ArchetypeID);
-            if (recoilComp != null)
-                recoilComp.Data = newData ?? new CustomRecoilData();
-            else if (newData != null)
-            {
-                recoilComp = CWC.Weapon.gameObject.AddComponent<CustomRecoilComponent>();
-                recoilComp.Data = newData;
-            }
-        }
+        private void ResetERDComponent() => ExtraRecoilData.API.ChangeAPI.ChangeERDComponent(CWC.Weapon.ArchetypeID, CWC.Gun!);
 
         public override void Serialize(Utf8JsonWriter writer)
         {

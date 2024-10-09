@@ -30,7 +30,6 @@ namespace EWC.CustomWeapon.Properties
         private readonly ContextController _contextController;
         private readonly LinkedList<PropertyNode> _overrideStack = new();
         private readonly Dictionary<Type, Trait> _activeTraits = new();
-        private readonly Queue<(PropertyNode, bool)> _activateQueue = new();
         private readonly List<ITriggerCallbackSync> _syncList = new(1);
 
         public PropertyController(bool isGun)
@@ -38,17 +37,7 @@ namespace EWC.CustomWeapon.Properties
             _contextController = new(isGun);
         }
 
-        public void Invoke<TContext>(TContext context) where TContext : IWeaponContext
-        {
-            _contextController.Invoke(context);
-            while (_activateQueue.TryDequeue(out (PropertyNode node, bool active) call))
-            {
-                if (call.active)
-                    Activate(call.node);
-                else
-                    Deactivate(call.node);
-            }
-        }
+        public void Invoke<TContext>(TContext context) where TContext : IWeaponContext =>  _contextController.Invoke(context);
 
         public void Init(CustomWeaponComponent cwc, PropertyList? baseList)
         {
@@ -136,7 +125,13 @@ namespace EWC.CustomWeapon.Properties
             return _syncList[id];
         }
 
-        public void SetActive(PropertyNode node, bool active) => _activateQueue.Enqueue((node, active));
+        public void SetActive(PropertyNode node, bool active)
+        {
+            if (active)
+                Activate(node);
+            else
+                Deactivate(node);
+        }
 
         private void Activate(PropertyNode node)
         {

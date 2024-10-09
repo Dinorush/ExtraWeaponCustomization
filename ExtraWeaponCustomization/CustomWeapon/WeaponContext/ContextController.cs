@@ -73,8 +73,9 @@ namespace EWC.CustomWeapon.WeaponContext
 
             public void Invoke(TContext context, List<Exception> exceptions)
             {
-                foreach (IWeaponProperty<TContext> property in _entries)
+                for (int i = 0; i < _entries.Count; i++)
                 {
+                    IWeaponProperty<TContext> property = _entries[i];
                     try
                     {
                         property.Invoke(context);
