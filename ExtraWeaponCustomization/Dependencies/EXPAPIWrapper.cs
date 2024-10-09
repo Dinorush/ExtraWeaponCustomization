@@ -17,7 +17,12 @@ namespace EWC.Dependencies
         private const string CacheKey = "EndskApi";
         private const string EnemyKillKey = "EnemyKillCallbacks";
 
-        public static bool HasEXP => IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
+        public readonly static bool HasEXP;
+
+        static EXPAPIWrapper()
+        {
+            HasEXP = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
+        }
 
         public static void ApplyMod(ref float damage)
         {
