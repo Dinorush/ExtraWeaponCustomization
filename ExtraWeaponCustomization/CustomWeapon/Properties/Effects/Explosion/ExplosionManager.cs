@@ -3,11 +3,9 @@ using AIGraph;
 using CharacterDestruction;
 using Enemies;
 using EWC.CustomWeapon.KillTracker;
-using EWC.CustomWeapon.Properties.Effects.EEC_Explosion;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
-using EWC.Networking.Structs;
 using EWC.Utils;
 using EWC.Utils.Log;
 using Player;
@@ -20,62 +18,24 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public static class ExplosionManager
     {
-        public static readonly Color FlashColor = new(1, 0.2f, 0, 1);
-
-        internal static ExplosionFXSync FXSync { get; private set; } = new();
         internal static ExplosionDamageSync DamageSync { get; private set; } = new();
 
-        private static float _lastSoundTime = 0f;
-        private static int _soundShotOverride = 0;
         private const SearchSetting SearchSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
         public const float MaxRadius = 1024f;
         public const float MaxStagger = 16384f; // 2^14
-        public const float MaxGlowDuration = 50f;
 
         internal static void Init()
         {
             DamageSync.Setup();
-            FXSync.Setup();
-            ExplosionEffectPooling.Initialize();
+            ExplosionFXManager.Init();
         }
 
         public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, IDamageable? directLimb = null)
         {
             if (!source.IsLocallyOwned) return;
 
-            ExplosionFXData fxData = new() { position = position, soundID = eBase.SoundID, color = eBase.GlowColor };
-            fxData.radius.Set(eBase.Radius, MaxRadius);
-            fxData.duration.Set(eBase.GlowDuration, MaxGlowDuration);
-            FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
+            ExplosionFXManager.DoExplosionFX(position, eBase);
             DoExplosionDamage(position, direction, source, falloffMod, eBase, triggerAmt, directLimb);
-        }
-    
-        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, uint soundID, Color color, float duration)
-        {
-            // Sound
-            if (Configuration.PlayExplosionSFX)
-            {
-                _soundShotOverride++;
-                if (_soundShotOverride > Configuration.ExplosionSFXShotOverride || Clock.Time - _lastSoundTime > Configuration.ExplosionSFXCooldown)
-                {
-                    CellSound.Post(soundID, position);
-                    _soundShotOverride = 0;
-                    _lastSoundTime = Clock.Time;
-                }
-            }
-
-            // Lighting
-            if (Configuration.ShowExplosionEffect)
-            {
-                ExplosionEffectPooling.TryDoEffect(new ExplosionEffectData()
-                {
-                    position = position,
-                    flashColor = color,
-                    intensity = 5.0f,
-                    range = radius,
-                    duration = duration
-                });
-            }
         }
 
         internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt, IDamageable? directLimb = null)
@@ -253,14 +213,5 @@ namespace EWC.CustomWeapon.Properties.Effects
         public LowResVector3 localPosition;
         public UFloat16 damage;
         public UFloat16 staggerMult;
-    }
-
-    public struct ExplosionFXData
-    {
-        public Vector3 position;
-        public UFloat16 radius;
-        public uint soundID;
-        public LowResColor color;
-        public UFloat16 duration;
     }
 }

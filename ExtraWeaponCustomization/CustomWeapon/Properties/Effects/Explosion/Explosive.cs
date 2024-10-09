@@ -25,8 +25,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageFriendly { get; set; } = true;
         public bool DamageOwner { get; set; } = true;
         public uint SoundID { get; set; } = EVENTS.STICKYMINEEXPLODE;
-        public Color GlowColor { get; set; } = ExplosionManager.FlashColor;
-        public float GlowDuration { get; set; } = 0.05f;
+        public Color GlowColor { get; set; } = new(1, 0.2f, 0, 1);
+        public float GlowDuration { get; set; } = 0.1f;
+        public float GlowFadeDuration { get; set; } = 0.1f;
 
         public float CacheBackstab { get; private set; } = 0f;
 
@@ -86,6 +87,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 SoundID = SoundID,
                 GlowColor = GlowColor,
                 GlowDuration = GlowDuration,
+                GlowFadeDuration = GlowFadeDuration,
                 Trigger = Trigger?.Clone()
             };
             return copy;
@@ -113,6 +115,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WritePropertyName(nameof(GlowColor));
             EWCJson.Serialize(writer, GlowColor);
             writer.WriteNumber(nameof(GlowDuration), GlowDuration);
+            writer.WriteNumber(nameof(GlowFadeDuration), GlowFadeDuration);
             writer.WriteEndObject();
         }
 
@@ -184,6 +187,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "glowduration":
                 case "duration":
                     GlowDuration = reader.GetSingle();
+                    break;
+                case "glowfadeduration":
+                case "fadeduration":
+                    GlowFadeDuration = reader.GetSingle();
                     break;
                 default:
                     break;

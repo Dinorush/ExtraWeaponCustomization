@@ -49,5 +49,6 @@ namespace EWC.CustomWeapon.Properties.Effects.EEC_Explosion
         public float intensity;
         public float range;
         public float duration;
+        public float fadeDuration;
     }
 }

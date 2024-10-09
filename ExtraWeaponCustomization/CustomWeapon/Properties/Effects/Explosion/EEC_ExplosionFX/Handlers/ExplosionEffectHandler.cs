@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EWC.Utils;
+using System;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers
@@ -10,6 +11,9 @@ namespace EWC.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers
         private EffectLight? _light;
         private Timer _timer;
         private bool _effectOnGoing = false;
+
+        private float _initIntensity;
+        private float _fadeDuration;
 
         internal void DoEffect(ExplosionEffectData data)
         {
@@ -25,17 +29,22 @@ namespace EWC.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers
 
             _light.Color = data.flashColor;
             _light.Range = data.range;
-            _light.Intensity = data.intensity;
+            _light.Intensity = _initIntensity = data.intensity;
             _timer.Reset(data.duration);
+            _fadeDuration = data.fadeDuration;
             _effectOnGoing = true;
+        }
+
+        private void Update()
+        {
+            if (_effectOnGoing && _fadeDuration > 0 && _light != null)
+                _light.Intensity = _timer.PassedTime.Map(_timer.Duration - _fadeDuration, _timer.Duration, _initIntensity, 0f);
         }
 
         private void FixedUpdate()
         {
             if (_effectOnGoing && _timer.TickAndCheckDone())
-            {
                 OnDone();
-            }
         }
 
         private void OnDone()
