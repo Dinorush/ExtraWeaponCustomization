@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
 using EWC.JSON;
 using GameData;
 using Gear;
@@ -320,7 +321,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
         }
 
-        private void ResetERDComponent() => ExtraRecoilData.API.ChangeAPI.ChangeERDComponent(CWC.Weapon.ArchetypeID, CWC.Gun!);
+        private void ResetERDComponent() => ERDAPIWrapper.ChangeCustomRecoil(CWC.Weapon.ArchetypeID, CWC.Gun!);
 
         public override void Serialize(Utf8JsonWriter writer)
         {

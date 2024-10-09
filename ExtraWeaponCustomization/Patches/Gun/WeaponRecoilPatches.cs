@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
 using GameData;
 using Gear;
 using HarmonyLib;
@@ -24,7 +25,7 @@ namespace EWC.Patches
             _cachedComponent = __instance.GetComponent<CustomWeaponComponent>();
         }
 
-        [HarmonyAfter("Dinorush.ExtraRecoilData")]
+        [HarmonyAfter(ERDAPIWrapper.PLUGIN_GUID)]
         [HarmonyPatch(typeof(FPS_RecoilSystem), nameof(FPS_RecoilSystem.ApplyRecoil))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
