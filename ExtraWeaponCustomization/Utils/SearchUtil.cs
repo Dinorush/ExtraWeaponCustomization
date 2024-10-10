@@ -108,7 +108,7 @@ namespace EWC.Utils
                     foreach (var collider in enemy.GetComponentsInChildren<Collider>())
                     {
                         Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
-                        if (limb?.IsDestroyed == true) continue;
+                        if (limb == null || limb.IsDestroyed) continue;
 
                         Vector3 trgtPos = collider.ClosestPoint(ray.origin);
                         float sqrDist = (trgtPos - ray.origin).sqrMagnitude;
