@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private float _endLifetime;
         private Coroutine? _inactiveRoutine;
-        protected Vector3 _baseVelocity;
+        protected Vector3 _baseDir;
         protected Vector3 _velocity;
         protected float _accel;
         protected float _accelExpo;
@@ -62,7 +62,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _endLifetime = Time.time + lifetime;
             _position = position;
             _velocity = velocity;
-            _baseVelocity = velocity;
+            _baseDir = velocity.normalized;
             _accel = Mathf.Approximately(accel, 1f) ? 1f : accel; // Explicitly check for approx 1 so can skip accel calculations
             _accelExpo = accelExpo;
             _accelTime = accelTime == 0 ? 0.001f : accelTime;
@@ -90,7 +90,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_lerpProgress == 1f)
             {
                 _positionVisual = _position;
-                _dirVisual = _velocity.sqrMagnitude > 0.001f ? _velocity : _baseVelocity.normalized * .01f;
+                _dirVisual = _velocity.sqrMagnitude > 0.01f ? _velocity : _baseDir * .01f;
                 return;
             }
 
@@ -103,7 +103,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         protected virtual void Update()
         {
-            Vector3 deltaVel = _velocity.sqrMagnitude > 0.0001f ? _velocity * Time.deltaTime : _baseVelocity.normalized * .01f;
+            Vector3 deltaVel = _velocity.sqrMagnitude > 0.01f ? _velocity * Time.deltaTime : _baseDir * .01f;
             Hitbox.Update(_position, deltaVel);
             if (!enabled) return; // Died by hitbox
 

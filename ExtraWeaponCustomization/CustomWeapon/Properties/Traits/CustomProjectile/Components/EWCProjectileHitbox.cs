@@ -126,7 +126,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             if (!_enabled) return;
 
-            if (_settings == null)
+            if (_settings == null || _weapon == null)
             {
                 _base.Die();
                 return;
@@ -134,7 +134,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             s_ray.origin = position;
             s_ray.direction = velocityDelta;
-            s_velMagnitude = Math.Max(velocityDelta.magnitude, 0.01f);
+            s_velMagnitude = Math.Max(velocityDelta.magnitude, 0.03f);
 
             s_playerCheck.Clear();
             CheckCollision();
