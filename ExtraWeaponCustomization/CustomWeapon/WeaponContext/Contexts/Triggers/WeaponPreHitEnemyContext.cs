@@ -23,7 +23,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             DamageType = flag;
         }
 
-        public WeaponPreHitEnemyContext(HitData data, float backstab, Dam_EnemyDamageLimb limb, DamageType flag = DamageType.Any)
+        public WeaponPreHitEnemyContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb, DamageType flag = DamageType.Any)
             : base(data)
         {
             Backstab = backstab;
@@ -31,7 +31,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             Damage = limb.ApplyWeakspotAndArmorModifiers(Damage, data.precisionMulti);
             Damage *= Backstab;
             Damage = Math.Min(Damage, limb.m_base.HealthMax);
-            if (limb.DestructionType == eLimbDestructionType.Custom)
+            if (!bypassTumor && limb.DestructionType == eLimbDestructionType.Custom)
                 Damage = Math.Min(Damage, limb.m_healthMax);
 
             DamageType = flag;

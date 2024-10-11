@@ -50,7 +50,15 @@ namespace EWC.Patches
         private static float s_origHitDamage = 0;
         private static float s_origHitPrecision = 0;
         private readonly static HitData s_hitData = new();
-        public static CustomWeaponComponent? CachedHitCWC { get; private set; }
+
+        private static CustomWeaponComponent? _cachedHitCWC = null;
+        public static CustomWeaponComponent? CachedHitCWC
+        {
+            get { return _cachedHitCWC; }
+            set { _cachedHitCWC = value; CachedBypassTumorCap = false; }
+        }
+
+        public static bool CachedBypassTumorCap { get; private set; } = false;
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyWrapSafe]
@@ -97,7 +105,7 @@ namespace EWC.Patches
         public static void ApplyEWCHit(CustomWeaponComponent cwc, IDamageable? damageable, HitData hitData, bool pierce, ref float pierceDamage, ref bool doBackstab)
         {
             CachedHitCWC = cwc;
-            
+
             if (damageable != null)
             {
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
@@ -105,6 +113,7 @@ namespace EWC.Patches
                 cwc.Invoke(damageContext);
                 hitData.damage = damageContext.Damage.Value;
                 hitData.precisionMulti = damageContext.Precision.Value;
+                CachedBypassTumorCap = damageContext.BypassTumorCap;
 
                 if (pierce)
                 {
@@ -125,6 +134,7 @@ namespace EWC.Patches
 
                 WeaponPreHitEnemyContext hitContext = new(
                     hitData,
+                    CachedBypassTumorCap,
                     backstab.Map(1f, 2f, 1f, backContext.Value),
                     limb,
                     DamageType.Bullet

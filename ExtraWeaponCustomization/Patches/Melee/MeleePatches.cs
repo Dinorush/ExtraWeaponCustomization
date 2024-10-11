@@ -80,6 +80,7 @@ namespace EWC.Patches.Melee
                 Agent? agent = damageable?.GetBaseAgent();
                 if (agent != null && agent.Type == AgentType.Enemy && agent.Alive)
                     KillTrackerManager.ClearHit(agent.TryCast<EnemyAgent>()!);
+                WeaponPatches.CachedHitCWC = null;
                 return;
             }
 

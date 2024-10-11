@@ -92,7 +92,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                     float nextTickTime = lastDot.NextTickTime;
                     lastDot.Destroy();
-                    lastDot = _controller.AddDOT(damage, falloff, precisionMulti, backstabMulti, context.Damageable, this);
+                    lastDot = _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
                     if (lastDot != null)
                     {
                         lastDot.StartWithTargetTime(nextTickTime);
@@ -103,13 +103,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
                 else
                 {
-                    DOTInstance? newDOT = _controller.AddDOT(damage, falloff, precisionMulti, backstabMulti, context.Damageable, this);
+                    DOTInstance? newDOT = _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
                     if (newDOT != null)
                         _lastDOTs[new AgentWrapper(limb.GetBaseAgent())] = newDOT;
                 }
             }
             else
-                _controller.AddDOT(damage, falloff, precisionMulti, backstabMulti, context.Damageable, this);
+                _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
         }
 
         public override IWeaponProperty Clone()

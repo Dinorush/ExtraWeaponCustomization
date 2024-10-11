@@ -37,7 +37,7 @@ namespace EWC.CustomWeapon.Properties
             _contextController = new(isGun);
         }
 
-        public void Invoke<TContext>(TContext context) where TContext : IWeaponContext =>  _contextController.Invoke(context);
+        public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
 
         public void Init(CustomWeaponComponent cwc, PropertyList? baseList)
         {

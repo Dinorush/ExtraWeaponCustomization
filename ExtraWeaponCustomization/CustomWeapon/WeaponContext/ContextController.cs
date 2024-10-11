@@ -125,15 +125,16 @@ namespace EWC.CustomWeapon.WeaponContext
             }
         }
 
-        internal void Invoke<TContext>(TContext context) where TContext : IWeaponContext
+        internal TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext
         {
-            if (!_allContextLists.TryGetValue(typeof(TContext), out IContextList? contextList)) return;
+            if (!_allContextLists.TryGetValue(typeof(TContext), out IContextList? contextList)) return context;
 
             List<Exception> exceptions = new();
             contextList.Invoke(context, exceptions);
 
             foreach (var exception in exceptions)
                 EWCLogger.Error(exception.Message);
+            return context;
         }
 
         internal void RegisterContext<TContext>() where TContext : IWeaponContext

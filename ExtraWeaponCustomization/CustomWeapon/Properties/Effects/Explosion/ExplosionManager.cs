@@ -85,11 +85,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             damage *= triggerAmt;
             float precisionMult = eBase.PrecisionDamageMulti;
 
-            WeaponDamageContext context = new(damage, precisionMult, damageable);
-            eBase.CWC.Invoke(context);
+            WeaponDamageContext damageContext = new(damage, precisionMult, damageable);
+            eBase.CWC.Invoke(damageContext);
             if (!eBase.IgnoreDamageMods)
-                damage = context.Damage.Value;
-            precisionMult = context.Precision.Value;
+                damage = damageContext.Damage.Value;
+            precisionMult = damageContext.Precision.Value;
 
             // 0.001f to account for rounding error
             damage = falloffMod * damage + 0.001f;
@@ -151,7 +151,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
-            if (limb.DestructionType == eLimbDestructionType.Custom)
+            if (!damageContext.BypassTumorCap && limb.DestructionType == eLimbDestructionType.Custom)
                 precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
 
             data.damage.Set(precDamage, limb.m_base.DamageMax);

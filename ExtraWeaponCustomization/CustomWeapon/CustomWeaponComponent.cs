@@ -100,7 +100,7 @@ namespace EWC.CustomWeapon
         }
 
         [HideFromIl2Cpp]
-        public void Invoke<TContext>(TContext context) where TContext : IWeaponContext => _propertyController.Invoke(context);
+        public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _propertyController.Invoke(context);
 
         [HideFromIl2Cpp]
         public void Register(CustomWeaponData? data)

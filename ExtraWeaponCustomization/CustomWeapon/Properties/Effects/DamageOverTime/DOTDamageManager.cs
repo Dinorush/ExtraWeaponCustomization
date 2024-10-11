@@ -22,7 +22,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             Sync.Setup();
         }
 
-        public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, float backstabMulti, DamageOverTime dotBase)
+        public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, bool bypassTumor, float backstabMulti, DamageOverTime dotBase)
         {
             if (!dotBase.Owner.IsLocallyOwned) return;
 
@@ -43,7 +43,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
-            if (limb.DestructionType == eLimbDestructionType.Custom)
+            if (!bypassTumor && limb.DestructionType == eLimbDestructionType.Custom)
                 precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
 
             data.damage.Set(precDamage, limb.m_base.DamageMax);
