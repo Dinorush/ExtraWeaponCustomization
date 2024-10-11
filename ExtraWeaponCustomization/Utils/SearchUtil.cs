@@ -4,6 +4,7 @@ using Enemies;
 using LevelGeneration;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
 namespace EWC.Utils
@@ -118,7 +119,7 @@ namespace EWC.Utils
                         float origDist = sqrDist;
                         if (limb.m_type == eLimbDamageType.Weakspot && sqrDist < sqrRange)
                         {
-                            float newDist = diff.magnitude - WeakspotBufferDist;
+                            float newDist = Math.Max(diff.magnitude - WeakspotBufferDist, 0);
                             sqrDist = newDist * newDist;
                         }
 
@@ -208,7 +209,7 @@ namespace EWC.Utils
 
                 if (settings.HasFlag(SearchSetting.CheckLOS)
                  && Physics.Linecast(ray.origin, damageable.DamageTargetPos, out s_rayHit, SightBlockLayer)
-                 && s_rayHit.collider.gameObject.GetInstanceID() != collider.gameObject.GetInstanceID())
+                 && s_rayHit.collider.gameObject.Pointer != collider.gameObject.Pointer)
                     continue;
 
                 ray.direction = damageable.DamageTargetPos - ray.origin;
@@ -234,7 +235,7 @@ namespace EWC.Utils
         public static AIG_CourseNode GetCourseNode(Vector3 position, Agent agent)
         {
             Vector3 source = agent.Position;
-            if (AIG_GeomorphNodeVolume.TryGetGeomorphVolume(0, Dimension.GetDimensionFromPos(position).DimensionIndex, position, out var volume))
+            if (TryGetGeomorphVolumeSilent(Dimension.GetDimensionFromPos(position).DimensionIndex, position, out var volume))
             {
                 position.y = volume.Position.y;
                 source.y = position.y;
@@ -252,6 +253,35 @@ namespace EWC.Utils
                         return nodeCluster.CourseNode;
             }
             return agent.CourseNode;
+        }
+
+        // Copy-pasted code without logging errors
+        private static bool TryGetGeomorphVolumeSilent(eDimensionIndex dimensionIndex, Vector3 pos, [MaybeNullWhen(false)] out AIG_GeomorphNodeVolume resultingGeoVolume)
+        {
+            resultingGeoVolume = null;
+            LG_Floor currentFloor = Builder.Current.m_currentFloor;
+            if (currentFloor == null) return false;
+            if (!currentFloor.GetDimension(dimensionIndex, out var dimension)) return false;
+            if (dimension.Grid == null || !TryGetCell(dimension.Grid, pos, out LG_Cell? cell)) return false;
+            if (cell.m_grouping == null || cell.m_grouping.m_geoRoot == null) return false;
+
+            resultingGeoVolume = cell.m_grouping.m_geoRoot.m_nodeVolume.TryCast<AIG_GeomorphNodeVolume>();
+            return resultingGeoVolume != null;
+        }
+
+        private static bool TryGetCell(LG_Grid grid, Vector3 pos, [MaybeNullWhen(false)] out LG_Cell cell)
+        {
+            pos -= grid.m_gridPosition;
+            int x = Mathf.RoundToInt((pos.x - grid.m_cellDimHalf) / grid.m_cellDim);
+            int z = Mathf.RoundToInt((pos.z - grid.m_cellDimHalf) / grid.m_cellDim);
+            if (x < 0 || z < 0 || x >= grid.m_sizeX || z >= grid.m_sizeZ)
+            {
+                cell = null;
+                return false;
+            }            
+            
+            cell = grid.GetCell(x, z);
+            return true;
         }
     }
 }

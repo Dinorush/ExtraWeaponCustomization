@@ -198,7 +198,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             // Imagine doing list.Remove(enemy) when il2cpp exists
             for (int i = list.Count - 1; i >= 0; --i)
             {
-                if (remove.GetInstanceID() == list[i].GetInstanceID())
+                if (remove.Pointer == list[i].Pointer)
                 {
                     list.RemoveAt(i);
                     return;

@@ -124,7 +124,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 if (!Physics.Linecast(origin, collider.transform.position, out s_rayHit, LayerUtil.MaskWorld))
                     return true;
-                else if (checkLock && collider.gameObject.GetInstanceID() == s_rayHit.collider.gameObject.GetInstanceID())
+                else if (checkLock && collider.gameObject.Pointer == s_rayHit.collider.gameObject.Pointer)
                     return true;
 
                 origin += Weapon.s_ray.direction * increment;

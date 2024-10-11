@@ -1,6 +1,5 @@
 ﻿using Agents;
 using Enemies;
-using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Patches;
 using EWC.Utils;
 using FX_EffectSystem;
@@ -21,8 +20,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private Projectile? _settings;
         private CustomWeaponComponent _baseCWC;
         private BulletWeapon _weapon;
-        private readonly HashSet<int> _initialPlayers = new();
-        private readonly HashSet<int> _hitEnts = new();
+        private readonly HashSet<IntPtr> _initialPlayers = new();
+        private readonly HashSet<IntPtr> _hitEnts = new();
         private HitData _hitData = new();
         private int _entityLayer;
         private bool _hitWorld;
@@ -42,7 +41,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private static float s_velMagnitude;
         private const SearchSetting SearchSettings = SearchSetting.CacheHit;
         private readonly static List<RaycastHit> s_hits = new(50);
-        private readonly static HashSet<int> s_playerCheck = new();
+        private readonly static HashSet<IntPtr> s_playerCheck = new();
         private const float SightCheckMinSize = 0.5f;
 
 #pragma warning disable CS8618
@@ -69,10 +68,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _entityLayer = LayerManager.MASK_MELEE_ATTACK_TARGETS;
             _initialPlayers.Clear();
-            int ownerID = _weapon.Owner.GetInstanceID();
+            IntPtr ownerPtr = _weapon.Owner.Pointer;
             if (projBase.DamageOwner)
             {
-                _initialPlayers.Add(ownerID);
+                _initialPlayers.Add(ownerPtr);
                 _entityLayer |= LayerUtil.MaskOwner;
             }
 
@@ -82,8 +81,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 foreach (PlayerAgent agent in PlayerManager.PlayerAgentsInLevel)
                 {
                     Vector3 diff = agent.Position - pos;
-                    if (agent.GetInstanceID() != ownerID && Vector3.Dot(dir, diff) > 0)
-                        _initialPlayers.Add(agent.GetInstanceID());
+                    if (agent.Pointer != ownerPtr && Vector3.Dot(dir, diff) > 0)
+                        _initialPlayers.Add(agent.Pointer);
                 }
             }
 
@@ -146,7 +145,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             // Player moves on fixed time so only remove on fixed time
             if (_lastFixedTime != Time.fixedTime && _initialPlayers.Count != 0)
             {
-                _initialPlayers.RemoveWhere(id => !s_playerCheck.Contains(id));
+                _initialPlayers.RemoveWhere(ptr => !s_playerCheck.Contains(ptr));
                 _lastFixedTime = Time.fixedTime;
             }
 
@@ -167,9 +166,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f));
 
                 // Get all enemies/locks ahead of the projectile
-                foreach (var hit in Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer))
-                    if (hit.distance > 0)
-                        s_hits.Add(hit);
+                RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer);
+                for (int i = 0; i < castHits.Length; i++)
+                {
+                    if (castHits[i].distance > 0) // Ignore anything overlapping the sphere (internal search hits these)
+                    {
+                        castHits[i].distance += _settings.HitSize; // Need the full distance to sort hits correctly
+                        s_hits.Add(castHits[i]);
+                    }
+                }
             }
 
             bool checkLOS = _settings.HitSize >= SightCheckMinSize;
@@ -179,10 +184,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                 if (damageable == null) continue;
                 if (AlreadyHit(damageable)) continue;
-
                 if (checkLOS && _hitWorld
-                 && Physics.Linecast(hit.point, hit.point + hit.normal * _settings.HitSize, out s_rayHit, LayerUtil.MaskWorld)
-                 && s_rayHit.collider.gameObject.GetInstanceID() != hit.collider.gameObject.GetInstanceID()) // Needed for locks
+                 && Physics.Linecast(hit.point, s_ray.origin, out s_rayHit, LayerUtil.MaskWorld)
+                 && s_rayHit.collider.gameObject.Pointer != hit.collider.gameObject.Pointer) // Needed for locks
                     continue;
 
                 s_rayHit = hit;
@@ -210,12 +214,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
         }
 
-        private static int DistanceCompare(RaycastHit a, RaycastHit b)
-        {
-            if (a.distance == b.distance) return 0;
-            return a.distance < b.distance ? -1 : 1;
-        }
-
         private void CheckCollisionInitialWorld()
         {
             if (_settings!.HitSizeWorld == 0) return;
@@ -241,7 +239,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _base.Die();
         }
 
-        private void DoDamage(IDamageable damageable, bool cast = false)
+        private void DoDamage(IDamageable damageable)
         {
             if (!ShouldDamage(damageable)) return;
 
@@ -256,9 +254,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Agent? agent = damageable.GetBaseAgent();
             if (agent != null)
             {
-                if (agent.Type == AgentType.Player && _initialPlayers.Contains(agent.GetInstanceID()))
+                if (agent.Type == AgentType.Player && _initialPlayers.Contains(agent.Pointer))
                 {
-                    s_playerCheck.Add(agent.GetInstanceID());
+                    s_playerCheck.Add(agent.Pointer);
                     return false;
                 }
                 else if (!agent.Alive)
@@ -270,11 +268,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private bool AlreadyHit(IDamageable? damageable)
         {
-            MonoBehaviour? baseDamageable = damageable?.GetBaseDamagable().TryCast<MonoBehaviour>();
-            if (baseDamageable != null)
-                return !_hitEnts.Add(baseDamageable.GetInstanceID());
-
-            return false;
+            if (damageable == null) return false;
+            return !_hitEnts.Add(damageable.GetBaseDamagable().Pointer);
         }
 
         private void DoImpactFX(IDamageable? damageable)

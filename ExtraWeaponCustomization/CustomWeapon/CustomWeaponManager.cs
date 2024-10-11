@@ -143,7 +143,7 @@ namespace EWC.CustomWeapon
         public void AddWeaponListener(ItemEquippable weapon)
         {
             // Prevent duplicates (not using IL2CPP list so don't trust Contains)
-            if (_listenCWs.Any(listener => listener.GetInstanceID() == weapon.GetInstanceID())) return;
+            if (_listenCWs.Any(listener => listener.Pointer == weapon.Pointer)) return;
 
             _listenCWs.Add(weapon);
         }

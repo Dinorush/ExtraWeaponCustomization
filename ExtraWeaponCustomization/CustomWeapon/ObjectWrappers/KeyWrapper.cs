@@ -1,22 +1,24 @@
-﻿namespace EWC.CustomWeapon.ObjectWrappers
+﻿using System;
+
+namespace EWC.CustomWeapon.ObjectWrappers
 {
     internal abstract class KeyWrapper
     {
-        public int ID { get; protected set; }
+        public IntPtr Pointer { get; protected set; }
 
-        public KeyWrapper(int id)
+        public KeyWrapper(IntPtr ptr)
         {
-            ID = id;
+            Pointer = ptr;
         }
 
         public override int GetHashCode()
         {
-            return ID;
+            return Pointer.GetHashCode();
         }
 
         public override bool Equals(object? obj)
         {
-            return obj is KeyWrapper wrapper && wrapper.ID == ID;
+            return obj is KeyWrapper wrapper && wrapper.Pointer == Pointer;
         }
     }
 }

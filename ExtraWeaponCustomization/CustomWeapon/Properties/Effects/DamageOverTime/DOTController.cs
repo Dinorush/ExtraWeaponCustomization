@@ -12,7 +12,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         // Used to give a fast reference back to the wrapper used as key in the enemyDots dictionary.
         // Need to access that specific wrapper so we can get the last DOT instance added to it.
-        private readonly Dictionary<int, DOTDamageableWrapper> _idToWrapper = new();
+        private readonly Dictionary<IntPtr, DOTDamageableWrapper> _ptrToWrapper = new();
         private readonly Dictionary<DOTDamageableWrapper, PriorityQueue<DOTInstance, DOTInstance>> _enemyDots = new();
         private readonly DOTComparer _comparer = new();
         private Coroutine? _updateRoutine = null;
@@ -22,15 +22,14 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             if (dotBase.Owner == null) return null;
 
-            int instanceID = damageable.TryCast<MonoBehaviour>()?.GetInstanceID() ?? 0;
-            if (instanceID == 0) return null;
+            IntPtr ptr = damageable.Pointer;
 
             // If the limb doesn't exist in enemyDots, initialize a new Wrapper and add it
             DOTInstance dot = new(totalDamage, falloff, precision, bypassTumor, backstab, dotBase);
-            if (!_idToWrapper.ContainsKey(instanceID))
+            if (!_ptrToWrapper.ContainsKey(ptr))
             {
-                DOTDamageableWrapper wrapper = new(damageable, instanceID);
-                _idToWrapper[instanceID] = wrapper;
+                DOTDamageableWrapper wrapper = new(damageable, ptr);
+                _ptrToWrapper[ptr] = wrapper;
                 _enemyDots[wrapper] = new(_comparer);
                 _enemyDots[wrapper].Enqueue(dot, dot);
                 wrapper.LastInstance = dot;
@@ -39,7 +38,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 // If the limb does exist, try and batch it with the last added DOT on the limb.
                 // Mainly to improve shotgun shot performance, not reliable with more than 1 DOT but doesn't need to be.
-                DOTDamageableWrapper key = _idToWrapper[instanceID];
+                DOTDamageableWrapper key = _ptrToWrapper[ptr];
 
                 if (key.LastInstance?.CanAddInstance(dotBase) == true)
                 {
@@ -108,14 +107,14 @@ namespace EWC.CustomWeapon.Properties.Effects
                 .ToList()
                 .ForEach(wrapper => {
                     _enemyDots.Remove(wrapper);
-                    _idToWrapper.Remove(wrapper.ID);
+                    _ptrToWrapper.Remove(wrapper.Pointer);
                 });
         }
 
         public void Clear()
         {
             _enemyDots.Clear();
-            _idToWrapper.Clear();
+            _ptrToWrapper.Clear();
             if (_updateRoutine != null)
             {
                 CoroutineManager.StopCoroutine(_updateRoutine);
@@ -127,7 +126,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             // Used for batching shotgun hits on same shot
             public DOTInstance? LastInstance { get; set; }
-            public DOTDamageableWrapper(IDamageable damageable, int iD) : base(damageable, iD) {}
+            public DOTDamageableWrapper(IDamageable damageable, IntPtr ptr) : base(damageable, ptr) {}
         }
 
         sealed class DOTComparer : IComparer<DOTInstance>

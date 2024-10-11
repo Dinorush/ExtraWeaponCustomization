@@ -27,8 +27,8 @@ namespace EWC.JSON
             _setting.Converters.Add(new WeaponPropertyConverter());
             _setting.Converters.Add(new PropertyListConverter());
             _setting.Converters.Add(new ColorConverter());
-
-            if (MTFOPartialDataUtil.IsLoaded)
+            
+            if (MTFOPartialDataUtil.HasPData)
             {
                 _setting.Converters.Add(MTFOPartialDataUtil.PersistentIDConverter!);
                 _setting.Converters.Add(MTFOPartialDataUtil.LocalizedTextConverter!);
