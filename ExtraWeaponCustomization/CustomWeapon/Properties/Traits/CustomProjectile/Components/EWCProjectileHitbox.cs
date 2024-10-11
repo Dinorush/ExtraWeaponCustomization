@@ -22,7 +22,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private BulletWeapon _weapon;
         private readonly HashSet<IntPtr> _initialPlayers = new();
         private readonly HashSet<IntPtr> _hitEnts = new();
-        private HitData _hitData = new();
+        private readonly HitData _hitData = new();
         private int _entityLayer;
         private bool _hitWorld;
         private bool _enabled = false;

@@ -85,7 +85,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             gameObject.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
 
-        private void LerpVisualOffset()
+        protected void LerpVisualOffset()
         {
             if (_lerpProgress == 1f)
             {
@@ -112,8 +112,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 Die();
                 return;
             }
-
-            LerpVisualOffset();
         }
 
         public virtual void Die()

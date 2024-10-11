@@ -87,8 +87,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _velocity.y -= _gravityVel;
 
             Vector3 velocity = _velocity * Time.deltaTime;
-            _position += velocity;
             base.Update();
+            if (!enabled) return;
+
+            _position += velocity;
+            LerpVisualOffset();
             s_tempRot.SetLookRotation(_dirVisual);
             _projectile.m_soundPlayer.UpdatePosition(_positionVisual);
             _projectile.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
