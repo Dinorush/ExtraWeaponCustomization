@@ -28,11 +28,10 @@ namespace EWC.JSON
             _setting.Converters.Add(new PropertyListConverter());
             _setting.Converters.Add(new ColorConverter());
             
-            if (MTFOPartialDataUtil.HasPData)
+            if (PDAPIWrapper.HasPData)
             {
-                _setting.Converters.Add(MTFOPartialDataUtil.PersistentIDConverter!);
-                _setting.Converters.Add(MTFOPartialDataUtil.LocalizedTextConverter!);
-                EWCLogger.Log("PartialData support found!");
+                _setting.Converters.Add(PDAPIWrapper.PersistentIDConverter!);
+                _setting.Converters.Add(PDAPIWrapper.LocalizedTextConverter!);
             }
             else
             {

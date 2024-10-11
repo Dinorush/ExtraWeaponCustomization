@@ -19,9 +19,9 @@ namespace EWC;
 
 [BepInPlugin("Dinorush." + MODNAME, MODNAME, "2.2.5")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
-[BepInDependency(MTFOUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
-[BepInDependency(MTFOPartialDataUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency(PDAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(EXPAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(ERDAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 internal sealed class EntryPoint : BasePlugin
@@ -31,6 +31,11 @@ internal sealed class EntryPoint : BasePlugin
     public override void Load()
     {
         EWCLogger.Log("Loading " + MODNAME);
+        if (!MTFOAPIWrapper.HasCustomContent)
+        {
+            EWCLogger.Error("No MTFO datablocks detected. Not loading EWC...");
+            return;
+        }
 
         new Harmony(MODNAME).PatchAll();
         EnemyDetectionPatches.ApplyNativePatch();
