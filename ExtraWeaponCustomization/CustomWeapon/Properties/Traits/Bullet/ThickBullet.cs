@@ -29,20 +29,21 @@ namespace EWC.CustomWeapon.Properties.Traits
             context.Result = false;
 
             _pierceCount = CWC.Weapon.ArchetypeData.PiercingBullets ? CWC.Weapon.ArchetypeData.PiercingDamageCountLimit : 1;
+            bool wallPierce = CWC.HasTrait(typeof(WallPierce));
 
             Vector3 wallPos; // Used to determine bounds for thick bullets and line of sight checks
-            if (Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, LayerUtil.MaskWorld))
+            if (!wallPierce && Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, LayerUtil.MaskWorld))
                 wallPos = s_rayHit.point;
             else
                 wallPos = Weapon.s_ray.origin + context.Data.fireDir * context.Data.maxRayDist;
 
-            CheckCollisionInitial(context, wallPos);
+            CheckCollisionInitial(context, wallPos, wallPierce);
 
             if (_pierceCount == 0) return;
 
             RaycastHit[] results = Physics.SphereCastAll(Weapon.s_ray, HitSize, (Weapon.s_ray.origin - wallPos).magnitude, LayerManager.MASK_MELEE_ATTACK_TARGETS);
             if (results.Length == 0) return;
-            Array.Sort(results, DistanceCompare);
+            SortUtil.SortWithWeakspotBuffer(results);
 
             foreach (RaycastHit hit in results)
             {
@@ -51,7 +52,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                 if (damageable == null) continue;
                 if (AlreadyHit(damageable, CWC.Gun!.m_damageSearchID))  continue;
-                if (!CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos, true)) continue;
+
+                if (wallPierce && !WallPierce.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode)) continue;
+                if (!wallPierce && !CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos, true)) continue;
 
                 s_rayHit = hit;
                 CheckDirectHit(ref s_rayHit);
@@ -65,17 +68,18 @@ namespace EWC.CustomWeapon.Properties.Traits
         }
 
         // Check for enemies within the initial sphere (if hitsize is big enough)
-        private void CheckCollisionInitial(WeaponPostRayContext context, Vector3 wallPos)
+        private void CheckCollisionInitial(WeaponPostRayContext context, Vector3 wallPos, bool wallPierce)
         {
             Vector3 origin = Weapon.s_ray.origin;
-            List<(EnemyAgent, RaycastHit hit)> hits = SearchUtil.GetHitsInRange(Weapon.s_ray, HitSize, 180f, CWC.Weapon.Owner.CourseNode);
+            List<(EnemyAgent enemy, RaycastHit hit)> hits = SearchUtil.GetHitsInRange(Weapon.s_ray, HitSize, 180f, CWC.Weapon.Owner.CourseNode);
             hits.Sort(SortUtil.SearchDistance);
 
             foreach (var pair in hits)
             {
                 RaycastHit hit = pair.hit;
                 if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
-                if (!CheckLineOfSight(hit.collider, origin, wallPos)) continue;
+                if (wallPierce && !WallPierce.IsTargetReachable(CWC.Weapon.Owner.CourseNode, pair.enemy.CourseNode)) continue;
+                if (!wallPierce && !CheckLineOfSight(hit.collider, origin, wallPos)) continue;
 
                 CheckDirectHit(ref hit);
 
@@ -92,7 +96,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             foreach (var hit in lockHits)
             {
                 if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
-                if (!CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
+                if (!wallPierce && !CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
 
                 context.Data.RayHit = hit;
                 if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
@@ -147,12 +151,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (bestHit.distance != float.MaxValue)
                 hit = bestHit;
-        }
-
-        private static int DistanceCompare(RaycastHit a, RaycastHit b)
-        {
-            if (a.distance == b.distance) return 0;
-            return a.distance < b.distance ? -1 : 1;
         }
 
         private static bool AlreadyHit(IDamageable damageable, uint searchID)

@@ -173,7 +173,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             bool checkLOS = _settings.HitSize >= SightCheckMinSize;
-            s_hits.Sort(DistanceCompare);
+            SortUtil.SortWithWeakspotBuffer(s_hits);
             foreach (RaycastHit hit in s_hits)
             {
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);

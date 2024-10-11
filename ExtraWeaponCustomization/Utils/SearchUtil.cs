@@ -27,6 +27,7 @@ namespace EWC.Utils
         private static readonly List<RaycastHit> s_lockCache = new();
 
         public static int SightBlockLayer = 0;
+        public const float WeakspotBufferDist = 0.1f;
 
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
@@ -105,13 +106,22 @@ namespace EWC.Utils
 
                     float minDist = sqrRange;
                     Collider? minCollider = null;
+                    bool casted = false;
                     foreach (var collider in enemy.GetComponentsInChildren<Collider>())
                     {
                         Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
                         if (limb == null || limb.IsDestroyed) continue;
 
                         Vector3 trgtPos = collider.ClosestPoint(ray.origin);
-                        float sqrDist = (trgtPos - ray.origin).sqrMagnitude;
+                        Vector3 diff = trgtPos - ray.origin;
+                        float sqrDist = diff.sqrMagnitude;
+                        float origDist = sqrDist;
+                        if (limb.m_type == eLimbDamageType.Weakspot && sqrDist < sqrRange)
+                        {
+                            float newDist = diff.magnitude - WeakspotBufferDist;
+                            sqrDist = newDist * newDist;
+                        }
+
                         if (sqrDist < minDist && Vector3.Angle(ray.direction, trgtPos - ray.origin) <= angle)
                         {
                             if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, trgtPos, SightBlockLayer)) continue;
@@ -124,12 +134,15 @@ namespace EWC.Utils
                             // If the distance is close to 0, need different logic since raycast will break
                             if (minDist < Epsilon)
                             {
+                                if (origDist > Epsilon) break; // No point in searching further but can use the actual distance
+
                                 s_ray.origin -= ray.direction * Math.Min(0.1f, range/2);
                                 s_ray.direction = trgtPos - s_ray.origin;
                                 if (collider.Raycast(s_ray, out s_rayHit, range))
                                 {
                                     s_rayHit.point = trgtPos;
                                     s_rayHit.distance = 0;
+                                    casted = true;
                                 }
                                 else
                                     minCollider = null;
@@ -137,11 +150,12 @@ namespace EWC.Utils
                                 s_ray.origin = ray.origin;
                                 break; // Can't get lower than 0 distance
                             }
-                            s_ray.direction = trgtPos - ray.origin;
+
+                            s_ray.direction = diff;
                         }
                     }
                     if (minCollider == null) continue;
-                    if (settings.HasFlag(SearchSetting.CacheHit) && minDist >= Epsilon && !minCollider.Raycast(s_ray, out s_rayHit, range)) continue;
+                    if (settings.HasFlag(SearchSetting.CacheHit) && !casted && !minCollider.Raycast(s_ray, out s_rayHit, range)) continue;
 
                     s_combinedCache.Add((enemy, s_rayHit));
                 }
