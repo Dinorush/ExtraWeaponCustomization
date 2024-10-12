@@ -2,6 +2,7 @@
 using AIGraph;
 using Enemies;
 using LevelGeneration;
+using Player;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -23,6 +24,7 @@ namespace EWC.Utils
     {
         private static readonly List<EnemyAgent> s_enemyCache = new();
         private static readonly List<(EnemyAgent, RaycastHit)> s_combinedCache = new();
+        private static readonly List<(PlayerAgent, RaycastHit)> s_combinedCachePlayer = new();
         private static readonly Queue<AIG_CourseNode> s_nodeQueue = new();
 
         private static readonly List<RaycastHit> s_lockCache = new();
@@ -75,6 +77,75 @@ namespace EWC.Utils
             return (localCenter - closest).sqrMagnitude <= reqDist * reqDist;
         }
 
+        private static bool TryGetClosestHit(Ray ray, float range, float angle, Agent agent, out RaycastHit hit, SearchSetting settings)
+        {
+            hit = default;
+            if (agent == null || !agent.Alive) return false;
+
+            s_ray.origin = ray.origin;
+            float sqrRange = range * range;
+            float minDist = sqrRange;
+            Collider? minCollider = null;
+            bool casted = false;
+            foreach (var collider in agent.GetComponentsInChildren<Collider>())
+            {
+                Dam_EnemyDamageLimb? limb = null;
+                if (agent.Type == AgentType.Enemy)
+                {
+                    limb = collider.GetComponent<Dam_EnemyDamageLimb>();
+                    if (limb == null || limb.IsDestroyed) continue;
+                }
+                else if (agent.Type == AgentType.Player && collider.GetComponent<IDamageable>() == null)
+                    continue;
+
+                Vector3 trgtPos = collider.ClosestPoint(ray.origin);
+                Vector3 diff = trgtPos - ray.origin;
+                float sqrDist = diff.sqrMagnitude;
+                float origDist = sqrDist;
+                if (limb?.m_type == eLimbDamageType.Weakspot && sqrDist < sqrRange)
+                {
+                    float newDist = Math.Max(diff.magnitude - WeakspotBufferDist, 0);
+                    sqrDist = newDist * newDist;
+                }
+
+                if (sqrDist < minDist && Vector3.Angle(ray.direction, trgtPos - ray.origin) <= angle)
+                {
+                    if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, trgtPos, SightBlockLayer)) continue;
+
+                    minDist = sqrDist;
+                    minCollider = collider;
+                    // If not caching a hit to the closest collider, can just add the enemy as soon as one is valid
+                    if (!settings.HasFlag(SearchSetting.CacheHit)) break;
+
+                    // If the distance is close to 0, need different logic since raycast will break
+                    if (minDist < Epsilon)
+                    {
+                        if (origDist > Epsilon) break; // No point in searching further but can use the actual distance
+
+                        s_ray.origin -= ray.direction * Math.Min(0.1f, range / 2);
+                        s_ray.direction = trgtPos - s_ray.origin;
+                        if (collider.Raycast(s_ray, out hit, range))
+                        {
+                            hit.point = trgtPos;
+                            hit.distance = 0;
+                            casted = true;
+                        }
+                        else
+                            minCollider = null;
+
+                        s_ray.origin = ray.origin;
+                        break; // Can't get lower than 0 distance
+                    }
+
+                    s_ray.direction = diff;
+                }
+            }
+            if (minCollider == null) return false;
+            if (settings.HasFlag(SearchSetting.CacheHit) && !casted && !minCollider.Raycast(s_ray, out hit, range)) return false;
+
+            return true;
+        }
+
         private static void CacheEnemiesInRange(Ray ray, float range, float angle, AIG_CourseNode origin, SearchSetting settings)
         {
             AIG_SearchID.IncrementSearchID();
@@ -98,66 +169,12 @@ namespace EWC.Utils
                         s_nodeQueue.Enqueue(oppositeNode);
                     }
                 }
-                s_ray.origin = ray.origin;
 
                 foreach (EnemyAgent enemy in node.m_enemiesInNode)
                 {
                     if (enemy == null || !enemy.Alive) continue;
                     if ((ClosestPointOnBounds(enemy.MovingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange) continue;
-
-                    float minDist = sqrRange;
-                    Collider? minCollider = null;
-                    bool casted = false;
-                    foreach (var collider in enemy.GetComponentsInChildren<Collider>())
-                    {
-                        Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
-                        if (limb == null || limb.IsDestroyed) continue;
-
-                        Vector3 trgtPos = collider.ClosestPoint(ray.origin);
-                        Vector3 diff = trgtPos - ray.origin;
-                        float sqrDist = diff.sqrMagnitude;
-                        float origDist = sqrDist;
-                        if (limb.m_type == eLimbDamageType.Weakspot && sqrDist < sqrRange)
-                        {
-                            float newDist = Math.Max(diff.magnitude - WeakspotBufferDist, 0);
-                            sqrDist = newDist * newDist;
-                        }
-
-                        if (sqrDist < minDist && Vector3.Angle(ray.direction, trgtPos - ray.origin) <= angle)
-                        {
-                            if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, trgtPos, SightBlockLayer)) continue;
-                            
-                            minDist = sqrDist;
-                            minCollider = collider;
-                            // If not caching a hit to the closest collider, can just add the enemy as soon as one is valid
-                            if (!settings.HasFlag(SearchSetting.CacheHit)) break;
-
-                            // If the distance is close to 0, need different logic since raycast will break
-                            if (minDist < Epsilon)
-                            {
-                                if (origDist > Epsilon) break; // No point in searching further but can use the actual distance
-
-                                s_ray.origin -= ray.direction * Math.Min(0.1f, range/2);
-                                s_ray.direction = trgtPos - s_ray.origin;
-                                if (collider.Raycast(s_ray, out s_rayHit, range))
-                                {
-                                    s_rayHit.point = trgtPos;
-                                    s_rayHit.distance = 0;
-                                    casted = true;
-                                }
-                                else
-                                    minCollider = null;
-
-                                s_ray.origin = ray.origin;
-                                break; // Can't get lower than 0 distance
-                            }
-
-                            s_ray.direction = diff;
-                        }
-                    }
-                    if (minCollider == null) continue;
-                    if (settings.HasFlag(SearchSetting.CacheHit) && !casted && !minCollider.Raycast(s_ray, out s_rayHit, range)) continue;
-
+                    if (!TryGetClosestHit(ray, range, angle, enemy, out s_rayHit, settings)) continue;
                     s_combinedCache.Add((enemy, s_rayHit));
                 }
             }
@@ -178,7 +195,7 @@ namespace EWC.Utils
             return s_enemyCache;
         }
 
-        public static List<(EnemyAgent enemy, RaycastHit hit)> GetHitsInRange(Ray ray, float range, float angle, AIG_CourseNode origin, SearchSetting settings = SearchSetting.CacheHit)
+        public static List<(EnemyAgent enemy, RaycastHit hit)> GetEnemyHitsInRange(Ray ray, float range, float angle, AIG_CourseNode origin, SearchSetting settings = SearchSetting.CacheHit)
         {
             if (range == 0 || angle == 0)
             {
@@ -221,6 +238,36 @@ namespace EWC.Utils
                 return new(s_lockCache);
 
             return s_lockCache;
+        }
+
+        public static List<(PlayerAgent, RaycastHit)> GetPlayerHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.None)
+        {
+            s_combinedCachePlayer.Clear();
+            if (range == 0 || angle == 0)
+                return settings.HasFlag(SearchSetting.Alloc) ? new List<(PlayerAgent, RaycastHit)>() : s_combinedCachePlayer;
+
+            // Players have one collider; checking LoS can easily put the floor as the closest point, so this uses a custom position
+            float sqrRange = range * range;
+            foreach (PlayerAgent player in PlayerManager.PlayerAgentsInLevel)
+            {
+                if (player == null || !player.Alive) continue;
+                if ((ClosestPointOnBounds(player.m_movingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange) continue;
+                if (player.IsLocallyOwned)
+                {
+                    s_ray.origin = ray.origin;
+                    s_ray.direction = player.Damage.DamageTargetPos - ray.origin;
+                    if (!player.GetComponent<Collider>().Raycast(s_ray, out s_rayHit, range)) continue;
+                    if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, s_rayHit.point, SightBlockLayer)) continue;
+                }
+                else if (!TryGetClosestHit(ray, range, angle, player, out s_rayHit, settings)) continue;
+
+                s_combinedCachePlayer.Add((player, s_rayHit));
+            }
+
+            if (settings.HasFlag(SearchSetting.Alloc))
+                return new(s_combinedCachePlayer);
+
+            return s_combinedCachePlayer;
         }
 
 

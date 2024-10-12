@@ -24,6 +24,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         public const float MaxRadius = 1024f;
         public const float MaxStagger = 16384f; // 2^14
 
+        private readonly static List<RaycastHit> s_hits = new();
+
         internal static void Init()
         {
             DamageSync.Setup();
@@ -49,22 +51,15 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             Ray ray = new(position, direction);
             SearchUtil.SightBlockLayer = LayerManager.MASK_EXPLOSION_BLOCKERS;
-            List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetHitsInRange(ray, explosiveBase.Radius, 180f, node, SearchSettings);
-            foreach ((EnemyAgent _, RaycastHit hit) in hits)
-            {
-                SendExplosionDamage(
-                    hit.collider.GetComponent<IDamageable>(),
-                    hit.point,
-                    direction,
-                    hit.distance,
-                    source,
-                    falloffMod,
-                    explosiveBase,
-                    triggerAmt);
-            }
+            foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(ray, explosiveBase.Radius, 180f, node, SearchSettings))
+                s_hits.Add(hit);
 
-            List<RaycastHit> lockHits = SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, SearchSettings);
-            foreach (RaycastHit hit in lockHits)
+            foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, SearchSettings))
+                s_hits.Add(hit);
+
+            s_hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, SearchSettings));
+
+            foreach (RaycastHit hit in s_hits)
             {
                 SendExplosionDamage(
                     hit.collider.GetComponent<IDamageable>(),
@@ -76,6 +71,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     explosiveBase,
                     triggerAmt);
             }
+            s_hits.Clear();
         }
 
         internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, float distance, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)

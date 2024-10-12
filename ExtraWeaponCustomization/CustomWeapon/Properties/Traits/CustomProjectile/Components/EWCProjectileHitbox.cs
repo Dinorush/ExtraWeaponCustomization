@@ -158,11 +158,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, _entityLayer));
             else
             {
-                // Get all enemies/locks inside the sphere as well as any we collide with on the cast.
+                // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
-                List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), SearchSettings);
+                List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), SearchSettings);
                 foreach ((EnemyAgent, RaycastHit hit) pair in hits)
                     s_hits.Add(pair.hit);
+                List<(PlayerAgent, RaycastHit)> playerHits = SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSize, 180f, SearchSettings);
+                foreach ((PlayerAgent, RaycastHit hit) pair in playerHits)
+                    s_hits.Add(pair.hit);
+
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f));
 
                 // Get all enemies/locks ahead of the projectile
