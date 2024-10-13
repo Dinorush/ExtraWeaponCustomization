@@ -17,7 +17,9 @@ namespace EWC.Utils
         Alloc = 1,
         CacheHit = 2,
         CheckLOS = 4,
-        CheckDoors = 8
+        CheckDoors = 8,
+        CheckOwner = 16,
+        CheckFriendly = 32
     }
 
     internal static class SearchUtil
@@ -240,7 +242,7 @@ namespace EWC.Utils
             return s_lockCache;
         }
 
-        public static List<(PlayerAgent, RaycastHit)> GetPlayerHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.None)
+        public static List<(PlayerAgent, RaycastHit)> GetPlayerHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.CheckFriendly | SearchSetting.CheckOwner)
         {
             s_combinedCachePlayer.Clear();
             if (range == 0 || angle == 0)
@@ -254,12 +256,14 @@ namespace EWC.Utils
                 if ((ClosestPointOnBounds(player.m_movingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange) continue;
                 if (player.IsLocallyOwned)
                 {
+                    if (!settings.HasFlag(SearchSetting.CheckOwner)) continue;
                     s_ray.origin = ray.origin;
                     s_ray.direction = player.Damage.DamageTargetPos - ray.origin;
                     if (!player.GetComponent<Collider>().Raycast(s_ray, out s_rayHit, range)) continue;
                     if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, s_rayHit.point, SightBlockLayer)) continue;
                 }
-                else if (!TryGetClosestHit(ray, range, angle, player, out s_rayHit, settings)) continue;
+                else if (!settings.HasFlag(SearchSetting.CheckFriendly) || !TryGetClosestHit(ray, range, angle, player, out s_rayHit, settings))
+                    continue;
 
                 s_combinedCachePlayer.Add((player, s_rayHit));
             }

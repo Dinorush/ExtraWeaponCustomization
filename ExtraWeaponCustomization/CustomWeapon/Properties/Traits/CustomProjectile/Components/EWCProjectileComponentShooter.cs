@@ -13,7 +13,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private Color _origGlowColor;
         private float _origGlowRange;
-        private Vector3 _baseVelocity;
 
 #pragma warning disable CS8618
         public EWCProjectileComponentShooter(IntPtr ptr) : base(ptr) { }
@@ -24,7 +23,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (enabled) return;
 
             base.Init(ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
-            _baseVelocity = velocity;
 
             _trailRenderer?.Clear();
 
@@ -76,23 +74,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         protected override void Update()
         {
-            _gravityVel += _gravity * Time.deltaTime;
-            if (_accel != 1f)
-            {
-                _accelProgress = Math.Min(_accelProgress + Time.deltaTime / _accelTime, 1f);
-                _velocity = _baseVelocity * Mathf.Lerp(1f, _accel, (float) Math.Pow(_accelProgress, _accelExpo));
-            }
-            else
-                _velocity = _baseVelocity;
-            _velocity.y -= _gravityVel;
-
-            Vector3 velocity = _velocity * Time.deltaTime;
             base.Update();
             if (!enabled) return;
 
-            _position += velocity;
-            LerpVisualOffset();
-            s_tempRot.SetLookRotation(_dirVisual);
             _projectile.m_soundPlayer.UpdatePosition(_positionVisual);
             _projectile.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }

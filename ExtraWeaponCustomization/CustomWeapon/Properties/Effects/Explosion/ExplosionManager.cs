@@ -20,7 +20,8 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         internal static ExplosionDamageSync DamageSync { get; private set; } = new();
 
-        private const SearchSetting SearchSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
+        private const SearchSetting BaseSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
+        private static SearchSetting s_searchSetting = BaseSettings;
         public const float MaxRadius = 1024f;
         public const float MaxStagger = 16384f; // 2^14
 
@@ -50,14 +51,21 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
 
             Ray ray = new(position, direction);
+            s_searchSetting = BaseSettings;
+            if (explosiveBase.DamageOwner)
+                s_searchSetting |= SearchSetting.CheckOwner;
+            if (explosiveBase.DamageFriendly)
+                s_searchSetting |= SearchSetting.CheckFriendly;
+
             SearchUtil.SightBlockLayer = LayerManager.MASK_EXPLOSION_BLOCKERS;
-            foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(ray, explosiveBase.Radius, 180f, node, SearchSettings))
+            foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(ray, explosiveBase.Radius, 180f, node, s_searchSetting))
                 s_hits.Add(hit);
 
-            foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, SearchSettings))
-                s_hits.Add(hit);
+            if (explosiveBase.DamageFriendly || explosiveBase.DamageOwner)
+                foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting))
+                    s_hits.Add(hit);
 
-            s_hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, SearchSettings));
+            s_hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting));
 
             foreach (RaycastHit hit in s_hits)
             {

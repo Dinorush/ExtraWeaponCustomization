@@ -19,6 +19,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private float _endLifetime;
         private Coroutine? _inactiveRoutine;
         protected Vector3 _baseDir;
+        private Vector3 _baseVelocity;
         protected Vector3 _velocity;
         protected float _accel;
         protected float _accelExpo;
@@ -62,6 +63,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _endLifetime = Time.time + lifetime;
             _position = position;
             _velocity = velocity;
+            _baseVelocity = velocity;
             _baseDir = velocity.normalized;
             _accel = Mathf.Approximately(accel, 1f) ? 1f : accel; // Explicitly check for approx 1 so can skip accel calculations
             _accelExpo = accelExpo;
@@ -85,7 +87,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             gameObject.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
 
-        protected void LerpVisualOffset()
+        private void LerpVisualOffset()
         {
             if (_lerpProgress == 1f)
             {
@@ -99,12 +101,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Vector3 lastPos = _positionVisual;
             _positionVisual = _position + Vector3.Lerp(_positionVisualDiff, Vector3.zero, 1f - invLerp * invLerp);
             _dirVisual = _velocity + _positionVisual - lastPos;
+            s_tempRot.SetLookRotation(_dirVisual);
         }
 
         protected virtual void Update()
         {
-            Vector3 deltaVel = _velocity.sqrMagnitude > 0.01f ? _velocity * Time.deltaTime : _baseDir * .01f;
-            Hitbox.Update(_position, deltaVel);
+            Vector3 deltaVel = UpdateVelocity();
+            Vector3 collisionVel = deltaVel.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaVel : _baseDir * EWCProjectileHitbox.MinCollisionDist;
+            Hitbox.Update(_position, collisionVel);
             if (!enabled) return; // Died by hitbox
 
             if (Time.time > _endLifetime)
@@ -112,6 +116,50 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 Die();
                 return;
             }
+
+            _position += deltaVel;
+            LerpVisualOffset();
+        }
+
+        protected Vector3 UpdateVelocity()
+        {
+            float delta = Time.deltaTime;
+            float deltaMod;
+            if (_accel != 1f)
+            {
+                if (_accelProgress == 1f)
+                {
+                    deltaMod = _accel * delta;
+                    _velocity = _baseVelocity * _accel;
+                }
+                else // Need to calculate how much distance was covered including the acceleration
+                {
+                    float trgtProgress = Math.Min(_accelProgress + delta / _accelTime, 1f);
+                    float newExpo = _accelExpo + 1;
+                    float progressMod = (float)(_accelTime * (_accel - 1.0) * (Math.Pow(trgtProgress, newExpo) - Math.Pow(_accelProgress, newExpo)) / newExpo);
+                    if (trgtProgress < 1f)
+                        deltaMod = delta + progressMod;
+                    else
+                    {
+                        float timeToAccel = (1f - _accelProgress) * _accelTime;
+                        deltaMod = progressMod + timeToAccel + _accel * (delta - timeToAccel);
+                    }
+                    _accelProgress = trgtProgress;
+                    _velocity = _baseVelocity * Mathf.Lerp(1f, _accel, Mathf.Pow(_accelProgress, _accelExpo));
+                }
+            }
+            else
+            {
+                _velocity = _baseVelocity;
+                deltaMod = delta;
+            }
+
+            _velocity.y -= _gravityVel;
+            Vector3 result = _velocity * deltaMod;
+            result.y -= 0.5f * _gravity * delta * delta + _gravityVel * delta;
+            _gravityVel += _gravity * delta;
+
+            return result;
         }
 
         public virtual void Die()

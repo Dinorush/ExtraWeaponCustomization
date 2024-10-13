@@ -34,12 +34,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private float _baseDamage;
         private float _basePrecision;
         private float _lastFixedTime;
+        private SearchSetting _searchSettings = SearchSetting.CacheHit;
 
         // Static
+        public const float MinCollisionSqrDist = 0.09f;
+        public const float MinCollisionDist = 0.03f;
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
         private static float s_velMagnitude;
-        private const SearchSetting SearchSettings = SearchSetting.CacheHit;
         private readonly static List<RaycastHit> s_hits = new(50);
         private readonly static HashSet<IntPtr> s_playerCheck = new();
         private const float SightCheckMinSize = 0.5f;
@@ -67,16 +69,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
 
             _entityLayer = LayerManager.MASK_MELEE_ATTACK_TARGETS;
+            _searchSettings = SearchSetting.CacheHit;
             _initialPlayers.Clear();
             IntPtr ownerPtr = _weapon.Owner.Pointer;
             if (projBase.DamageOwner)
             {
+                _searchSettings |= SearchSetting.CheckOwner;
                 _initialPlayers.Add(ownerPtr);
                 _entityLayer |= LayerUtil.MaskOwner;
             }
 
             if (projBase.DamageFriendly)
             {
+                _searchSettings |= SearchSetting.CheckFriendly;
                 _entityLayer |= LayerUtil.MaskFriendly;
                 foreach (PlayerAgent agent in PlayerManager.PlayerAgentsInLevel)
                 {
@@ -133,7 +138,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             s_ray.origin = position;
             s_ray.direction = velocityDelta;
-            s_velMagnitude = Math.Max(velocityDelta.magnitude, 0.03f);
+            s_velMagnitude = Math.Max(velocityDelta.magnitude, MinCollisionDist);
 
             s_playerCheck.Clear();
             CheckCollision();
@@ -160,14 +165,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
-                List<(EnemyAgent, RaycastHit)> hits = SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), SearchSettings);
-                foreach ((EnemyAgent, RaycastHit hit) pair in hits)
-                    s_hits.Add(pair.hit);
-                List<(PlayerAgent, RaycastHit)> playerHits = SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSize, 180f, SearchSettings);
-                foreach ((PlayerAgent, RaycastHit hit) pair in playerHits)
-                    s_hits.Add(pair.hit);
-
+                foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), _searchSettings))
+                    s_hits.Add(hit);
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f));
+
+                if (_settings.DamageFriendly || _settings.DamageOwner)
+                    foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSize, 180f, _searchSettings))
+                        s_hits.Add(hit);
 
                 // Get all enemies/locks ahead of the projectile
                 RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer);
