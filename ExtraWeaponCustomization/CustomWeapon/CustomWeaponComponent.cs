@@ -67,7 +67,7 @@ namespace EWC.CustomWeapon
         // Only runs on local player!
         public void OwnerInit()
         {
-            if (_ownerSet) return;
+            if (_ownerSet || !enabled) return;
 
             _ownerSet = true;
             Invoke(StaticContext<WeaponOwnerSetContext>.Instance);
@@ -108,6 +108,7 @@ namespace EWC.CustomWeapon
         public void Register(CustomWeaponData? data = null)
         {
             if (enabled) return; // Don't want to register data twice
+            enabled = true;
 
             if (data == null)
             {
@@ -117,6 +118,8 @@ namespace EWC.CustomWeapon
 
             List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
             _propertyController.Init(this, new PropertyList(properties));
+            if (Gun?.m_archeType?.m_owner != null)
+                OwnerInit();
         }
 
         public void Clear()
