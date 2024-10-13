@@ -40,6 +40,5 @@
 		<Reference Include="$(PluginsFolder)\**\GTFuckingXP.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\EndskApi.dll" Private="false" />
 	    <Reference Include="$(PluginsFolder)\**\ExtraRecoilData.dll" Private="false" />
-		<Reference Include="$(PluginsFolder)\**\AWOPartialDataFixer.dll" Private="false" />
 	</ItemGroup>
 </Project>

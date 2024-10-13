@@ -1,5 +1,8 @@
-﻿using BepInEx.Unity.IL2CPP;
-using MTFO.Ext.PartialData.JsonConverters;
+﻿using BepInEx;
+using BepInEx.Unity.IL2CPP;
+using EWC.Utils.Log;
+using System;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace EWC.Dependencies
@@ -14,15 +17,36 @@ namespace EWC.Dependencies
 
         static PDAPIWrapper()
         {
-            HasPData = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
+            HasPData = IL2CPPChainloader.Instance.Plugins.TryGetValue(PLUGIN_GUID, out var info);
             if (HasPData)
-                PData_CreateConverters();
+            {
+                if (!PData_CreateConverters(info!))
+                    HasPData = false;
+            }
         }
 
-        private static void PData_CreateConverters()
+        private static bool PData_CreateConverters(PluginInfo info)
         {
-            PersistentIDConverter = new PersistentIDConverter();
-            LocalizedTextConverter = new GTFO.API.JSON.Converters.LocalizedTextConverter();
+            try
+            {
+                var ddAsm = info?.Instance?.GetType()?.Assembly ?? null;
+                if (ddAsm is null)
+                    throw new Exception("Assembly is Missing!");
+
+                var types = ddAsm.GetTypes();
+                var converterType = types.First(t => t.Name == "PersistentIDConverter");
+                if (converterType is null)
+                    throw new Exception("Unable to Find PersistentIDConverter Class");
+
+                PersistentIDConverter = (JsonConverter)Activator.CreateInstance(converterType)!;
+                LocalizedTextConverter = new GTFO.API.JSON.Converters.LocalizedTextConverter();
+            }
+            catch (Exception e)
+            {
+                EWCLogger.Error($"Exception thrown while reading data from MTFO_Extension_PartialData:\n{e}");
+                return false;
+            }
+            return true;
         }
     }
 }
