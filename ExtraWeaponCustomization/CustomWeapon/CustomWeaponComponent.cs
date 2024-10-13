@@ -61,6 +61,7 @@ namespace EWC.CustomWeapon
                 CurrentBurstDelay = _burstDelay;
             }
             _ownerSet = false;
+            enabled = false;
         }
 
         // Only runs on local player!
@@ -76,24 +77,25 @@ namespace EWC.CustomWeapon
         {
             // Bots need full behavior but bots are pain and use different functions so idc for now
             Clear();
+            enabled = true;
             _propertyController.ChangeToSyncContexts();
             Register(CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID));
             _autoAim = null;
         }
 
-        public void Update()
+        private void Update()
         {
             if (_ownerSet)
                 _autoAim?.Update();
         }
 
-        public void OnEnable()
+        private void OnEnable()
         {
             if (_ownerSet)
                 _autoAim?.OnEnable();
         }
 
-        public void OnDisable()
+        private void OnDisable()
         {
             if (_ownerSet)
                 _autoAim?.OnDisable();
@@ -103,9 +105,15 @@ namespace EWC.CustomWeapon
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _propertyController.Invoke(context);
 
         [HideFromIl2Cpp]
-        public void Register(CustomWeaponData? data)
+        public void Register(CustomWeaponData? data = null)
         {
-            if (data == null) return;
+            if (enabled) return; // Don't want to register data twice
+
+            if (data == null)
+            {
+                data = Gun != null ? CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID) : CustomWeaponManager.Current.GetCustomMeleeData(Weapon.MeleeArchetypeData.persistentID);
+                if (data == null) return;
+            }
 
             List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
             _propertyController.Init(this, new PropertyList(properties));
@@ -117,15 +125,16 @@ namespace EWC.CustomWeapon
             _propertyController.Clear();
             _autoAim = null;
             _ownerSet = false;
+            enabled = false;
             CurrentFireRate = _fireRate;
             CurrentBurstDelay = _burstDelay;
             Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
         [HideFromIl2Cpp]
-        internal void Activate(PropertyNode node) => _propertyController.SetActive(node, true);
+        internal void ActivateNode(PropertyNode node) => _propertyController.SetActive(node, true);
         [HideFromIl2Cpp]
-        internal void Deactivate(PropertyNode node) => _propertyController.SetActive(node, false);
+        internal void DeactivateNode(PropertyNode node) => _propertyController.SetActive(node, false);
 
         [HideFromIl2Cpp]
         public bool HasTrait(Type type) => _propertyController.HasTrait(type);

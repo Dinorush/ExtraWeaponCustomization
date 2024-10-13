@@ -93,12 +93,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void ApplyProperties()
         {
-            CWC.Activate(Node!);
+            CWC.ActivateNode(Node!);
         }
 
         private void RemoveProperties()
         {
-            CWC.Deactivate(Node!);
+            CWC.DeactivateNode(Node!);
 
             if (ResetTriggersOnEnd && _callbackProperties != null)
             {

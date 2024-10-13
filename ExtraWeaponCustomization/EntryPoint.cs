@@ -41,14 +41,20 @@ internal sealed class EntryPoint : BasePlugin
         EnemyDetectionPatches.ApplyNativePatch();
         Configuration.Init();
         LevelAPI.OnLevelCleanup += LevelAPI_OnLevelCleanup;
+        LevelAPI.OnEnterLevel += LevelAPI_OnLevelEnter;
         AssetAPI.OnStartupAssetsLoaded += AssetAPI_OnStartupAssetsLoaded;
         EWCLogger.Log("Loaded " + MODNAME);
     }
 
     private void LevelAPI_OnLevelCleanup()
     {
-        CustomWeaponManager.Current.ResetCWCs();
+        CustomWeaponManager.Current.ResetCWCs(false);
         EWCProjectileManager.Reset();
+    }
+
+    private void LevelAPI_OnLevelEnter()
+    {
+        CustomWeaponManager.Current.ActivateCWCs();
     }
 
     private void AssetAPI_OnStartupAssetsLoaded()

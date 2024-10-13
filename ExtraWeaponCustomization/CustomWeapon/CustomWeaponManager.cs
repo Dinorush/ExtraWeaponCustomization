@@ -148,7 +148,7 @@ namespace EWC.CustomWeapon
             _listenCWs.Add(weapon);
         }
 
-        internal void ResetCWCs()
+        internal void ResetCWCs(bool activate = true)
         {
             // Resets CWCs by removing and re-adding all custom data.
             // Not as efficient as implementing a reset function on each property,
@@ -157,7 +157,7 @@ namespace EWC.CustomWeapon
             {
                 if (_listenCWs[i] != null)
                 {
-                    CustomWeaponComponent cwc = _listenCWs[i].GetComponent<CustomWeaponComponent>();
+                    CustomWeaponComponent? cwc = _listenCWs[i].GetComponent<CustomWeaponComponent>();
                     cwc?.Clear();
 
                     bool isGun = _listenCWs[i].TryCast<BulletWeapon>() != null;
@@ -172,9 +172,21 @@ namespace EWC.CustomWeapon
                         if (cwc == null)
                             cwc = _listenCWs[i].gameObject.AddComponent<CustomWeaponComponent>();
 
-                        cwc.Register(data);
+                        if (activate)
+                            cwc.Register(data);
                     }
                 }
+                else
+                    _listenCWs.RemoveAt(i);
+            }
+        }
+
+        internal void ActivateCWCs()
+        {
+            for (int i = _listenCWs.Count - 1; i >= 0; i--)
+            {
+                if (_listenCWs[i] != null)
+                    _listenCWs[i].GetComponent<CustomWeaponComponent>()?.Register();
                 else
                     _listenCWs.RemoveAt(i);
             }
