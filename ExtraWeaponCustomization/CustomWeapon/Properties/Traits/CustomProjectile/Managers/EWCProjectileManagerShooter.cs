@@ -57,7 +57,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             };
             data.dir.Value = dir;
             data.speed.Set(projBase.Speed, EWCProjectileManager.MaxSpeed);
-            data.accel.Set(projBase.AccelScale, EWCProjectileManager.MaxSpeed);
+            data.accel.Set(projBase.AccelScale, EWCProjectileManager.MaxAccel);
             data.accelExpo.Set(projBase.AccelExponent, EWCProjectileManager.MaxAccelExpo);
             data.accelTime.Set(projBase.AccelTime, EWCProjectileManager.MaxAccelTime);
             data.gravity.Set(projBase.Gravity, EWCProjectileManager.MaxGravity);

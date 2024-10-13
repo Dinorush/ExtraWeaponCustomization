@@ -13,6 +13,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         private static readonly EWCProjectileSyncDestroy _destroySync = new();
 
         public const float MaxSpeed = 4096; // 2^12
+        public const float MaxAccel = 256f;
         public const float MaxAccelExpo = 16f;
         public const float MaxAccelTime = 64f;
         public const float MaxGravity = 1024f; // 2^10
