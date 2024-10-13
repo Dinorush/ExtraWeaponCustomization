@@ -89,7 +89,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         // Cancel tracer FX
         public void Invoke(WeaponPostFireContext context)
         {
-            if (!CWC.Gun!.Owner.IsLocallyOwned && (!SNet.IsMaster || CWC.Gun!.Owner.Owner.IsBot)) return;
+            if (!CWC.Gun!.Owner.IsLocallyOwned) return;
 
             CancelTracerFX(CWC.Gun!, CWC.Gun!.TryCast<Shotgun>() != null);
         }
