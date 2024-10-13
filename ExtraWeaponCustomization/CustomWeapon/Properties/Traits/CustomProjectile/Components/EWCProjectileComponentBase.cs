@@ -37,7 +37,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected Vector3 _dirVisual;
 
         protected static Quaternion s_tempRot;
-        public const float VisualLerpDist = 2f;
         private bool _sendDestroy;
         private ushort _id;
 
@@ -74,7 +73,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _id = ID;
         }
 
-        public void SetVisualPosition(Vector3 positionVisual, float lerpDist = VisualLerpDist)
+        public void SetVisualPosition(Vector3 positionVisual, float lerpDist)
         {
             if (_velocity.sqrMagnitude == 0) return;
 
@@ -93,6 +92,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 _positionVisual = _position;
                 _dirVisual = _velocity.sqrMagnitude > 0.01f ? _velocity : _baseDir * .01f;
+                s_tempRot.SetLookRotation(_dirVisual);
                 return;
             }
 
@@ -154,10 +154,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 deltaMod = delta;
             }
 
-            _velocity.y -= _gravityVel;
-            Vector3 result = _velocity * deltaMod;
+            Vector3 result = _baseVelocity * deltaMod;
             result.y -= 0.5f * _gravity * delta * delta + _gravityVel * delta;
             _gravityVel += _gravity * delta;
+            _velocity.y -= _gravityVel;
 
             return result;
         }
