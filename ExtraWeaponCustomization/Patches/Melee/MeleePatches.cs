@@ -44,7 +44,7 @@ namespace EWC.Patches.Melee
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.OnUnWield))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void ClearCharge(MeleeWeaponFirstPerson __instance)
+        private static void ClearCharge()
         {
             CachedCharge = 0f;
         }
