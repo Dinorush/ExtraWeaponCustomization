@@ -8,7 +8,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IWeaponProperty<WeaponBackstabContext>
     {
-        public float BackstabDamageMulti { get; set; } = 1f;
+        public float BackstabDamageMulti { get; private set; } = 1f;
 
         public void Invoke(WeaponBackstabContext context)
         {

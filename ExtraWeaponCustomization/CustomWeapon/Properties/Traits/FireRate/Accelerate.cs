@@ -23,7 +23,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float EndShotDelay
         {
             get { return _endShotDelay; }
-            set
+            private set
             {
                 _endShotDelay = Math.Max(CustomWeaponData.MinShotDelay, value);
                 _endFireRate = 1f / _endShotDelay;
@@ -33,24 +33,24 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float EndFireRate
         {
             get { return _endFireRate; }
-            set { _endFireRate = Math.Max(0.001f, value); }
+            private set { _endFireRate = Math.Max(0.001f, value); }
         }
-        public float EndDamageMod { get; set; } = 1f;
-        public StackType DamageStackLayer { get; set; } = StackType.Multiply;
+        public float EndDamageMod { get; private set; } = 1f;
+        public StackType DamageStackLayer { get; private set; } = StackType.Multiply;
         private float _accelTime = 1f;
         public float AccelTime
         {
             get { return _accelTime; }
-            set { _accelTime = Math.Max(0.001f, value); }
+            private set { _accelTime = Math.Max(0.001f, value); }
         }
         private float _decelTime = 0.001f;
         public float DecelTime
         {
             get { return _decelTime; }
-            set { _decelTime = Math.Max(0.001f, value); }
+            private set { _decelTime = Math.Max(0.001f, value); }
         }
-        public float DecelDelay { get; set; } = 0f;
-        public float AccelExponent { get; set; } = 1f;
+        public float DecelDelay { get; private set; } = 0f;
+        public float AccelExponent { get; private set; } = 1f;
         private bool _useContinuousGrowth = false;
 
         private TriggerCoordinator? _coordinator;

@@ -10,11 +10,11 @@ namespace EWC.CustomWeapon.Properties.Effects
     public abstract class TriggerMod :
         Effect
     {
-        public float Mod { get; set; } = 1f;
-        public float Cap { get; set; } = 0f;
-        public float Duration { get; set; } = 0f;
-        public StackType StackType { get; set; } = StackType.Add;
-        public StackType StackLayer { get; set; } = StackType.Multiply;
+        public float Mod { get; private set; } = 1f;
+        public float Cap { get; private set; } = 0f;
+        public float Duration { get; private set; } = 0f;
+        public StackType StackType { get; private set; } = StackType.Add;
+        public StackType StackLayer { get; private set; } = StackType.Multiply;
 
         private float ClampToCap(float mod)
         {

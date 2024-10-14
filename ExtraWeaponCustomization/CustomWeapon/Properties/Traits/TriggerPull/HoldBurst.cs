@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>
     {
-        public int ShotsUntilCancel = 1;
+        public int ShotsUntilCancel { get; private set; } = 1;
 
         private int _burstMaxCount = 0;
 

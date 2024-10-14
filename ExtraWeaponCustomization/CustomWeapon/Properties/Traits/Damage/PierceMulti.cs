@@ -9,7 +9,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         IGunProperty,
         IWeaponProperty<WeaponPierceContext>
     {
-        public float PierceDamageMulti { get; set; } = 1f;
+        public float PierceDamageMulti { get; private set; } = 1f;
 
         public void Invoke(WeaponPierceContext context)
         {

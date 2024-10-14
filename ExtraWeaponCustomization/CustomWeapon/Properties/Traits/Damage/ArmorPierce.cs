@@ -8,8 +8,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IWeaponProperty<WeaponArmorContext>
     {
-        public float Pierce { get; set; } = 1f;
-        public PierceType Type { get; set; } = PierceType.Pierce;
+        public float Pierce { get; private set; } = 1f;
+        public PierceType Type { get; private set; } = PierceType.Pierce;
 
         public void Invoke(WeaponArmorContext context)
         {

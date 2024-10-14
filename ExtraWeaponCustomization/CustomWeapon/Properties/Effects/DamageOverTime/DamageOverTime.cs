@@ -15,21 +15,21 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public PlayerAgent Owner => Weapon.Owner;
 
-        public float TotalDamage { get; set; } = 0f;
-        public float PrecisionDamageMulti { get; set; } = 0f;
-        public float StaggerDamageMulti { get; set; } = 0f;
-        public float Duration { get; set; } = 0f;
-        public bool Stacks { get; set; } = true;
-        public bool IgnoreFalloff { get; set; } = false;
-        public bool DamageLimb { get; set; } = true;
-        public bool IgnoreArmor { get; set; } = false;
-        public bool IgnoreBackstab { get; set; } = false;
-        public bool IgnoreDamageMods { get; set; } = false;
+        public float TotalDamage { get; private set; } = 0f;
+        public float PrecisionDamageMulti { get; private set; } = 0f;
+        public float StaggerDamageMulti { get; private set; } = 0f;
+        public float Duration { get; private set; } = 0f;
+        public bool Stacks { get; private set; } = true;
+        public bool IgnoreFalloff { get; private set; } = false;
+        public bool DamageLimb { get; private set; } = true;
+        public bool IgnoreArmor { get; private set; } = false;
+        public bool IgnoreBackstab { get; private set; } = false;
+        public bool IgnoreDamageMods { get; private set; } = false;
         private float _tickRate = 2f;
         public float TickRate
         {
             get { return _tickRate; }
-            set { _tickRate = MathF.Max(0.01f, value); }
+            private set { _tickRate = MathF.Max(0.01f, value); }
         }
 
         private readonly DOTController _controller = new();

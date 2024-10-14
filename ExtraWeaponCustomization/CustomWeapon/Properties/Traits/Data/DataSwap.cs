@@ -23,12 +23,12 @@ namespace EWC.CustomWeapon.Properties.Traits
     {
         public ushort SyncID { get; set; }
 
-        public uint ArchetypeID { get; set; } = 0;
-        public uint AudioID { get; set; } = 0;
-        public float Duration { get; set; } = 0f;
-        public bool EndBurst { get; set; } = false;
-        public bool EndCharge { get; set; } = false;
-        public bool KeepMagCost { get; set; } = false;
+        public uint ArchetypeID { get; private set; } = 0;
+        public uint AudioID { get; private set; } = 0;
+        public float Duration { get; private set; } = 0f;
+        public bool EndBurst { get; private set; } = false;
+        public bool EndCharge { get; private set; } = false;
+        public bool KeepMagCost { get; private set; } = false;
 
         private TriggerCoordinator? _coordinator;
         public TriggerCoordinator? Trigger

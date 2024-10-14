@@ -12,9 +12,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostAmmoInitContext>,
         IWeaponProperty<WeaponPreAmmoPackContext>
     {
-        public float AmmoCapRel { get; set; } = 1f;
-        public float AmmopackRefillRel { get; set; } = 0f;
-        public float CostOfBullet { get; set; } = 0f;
+        public float AmmoCapRel { get; private set; } = 1f;
+        public float AmmopackRefillRel { get; private set; } = 0f;
+        public float CostOfBullet { get; private set; } = 0f;
 
         private const float DefaultPackConv = 5f;
 

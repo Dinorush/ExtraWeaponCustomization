@@ -14,10 +14,10 @@ namespace EWC.CustomWeapon.Properties.Effects
         IGunProperty,
         IWeaponProperty<WeaponPreFireContext>
     {
-        public float ClipChange { get; set; } = 0;
-        public float ReserveChange { get; set; } = 0;
-        public bool OverflowToReserve { get; set; } = true;
-        public bool PullFromReserve { get; set; } = false;
+        public float ClipChange { get; private set; } = 0;
+        public float ReserveChange { get; private set; } = 0;
+        public bool OverflowToReserve { get; private set; } = true;
+        public bool PullFromReserve { get; private set; } = false;
 
         private float _clipBuffer = 0;
         private float _reserveBuffer = 0;

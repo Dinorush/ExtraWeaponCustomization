@@ -16,11 +16,11 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public ushort SyncID { get; set; }
 
-        public PropertyList? Properties { get; set; }
+        public PropertyList? Properties { get; private set; }
         private List<ITriggerCallback>? _callbackProperties;
-        public float Duration { get; set; } = 0f;
-        public bool Override { get; set; } = false;
-        public bool ResetTriggersOnEnd { get; set; } = false;
+        public float Duration { get; private set; } = 0f;
+        public bool Override { get; private set; } = false;
+        public bool ResetTriggersOnEnd { get; private set; } = false;
 
         internal PropertyNode? Node { get; set; }
 

@@ -55,7 +55,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
     public interface IDamageTypeTrigger : ITrigger
     {
-        DamageType DamageType { get; set; }
+        DamageType DamageType { get; }
         DamageType BlacklistType { get; set; }
 
         public static DamageType ResolveDamageType(string? name)

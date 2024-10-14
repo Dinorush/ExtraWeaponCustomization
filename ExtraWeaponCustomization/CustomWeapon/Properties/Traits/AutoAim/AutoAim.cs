@@ -21,20 +21,20 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponFireCancelContext>,
         IWeaponProperty<WeaponPreRayContext>
     {
-        public bool HipActive { get; set; } = false;
-        public bool AimActive { get; set; } = true;
-        public float Angle { get; set; } = 0f;
-        public float Range { get; set; } = 0f;
-        public float LockTime { get; set; } = 0f;
-        public float LockDecayTime { get; set; } = 0f;
-        public bool StayOnTarget { get; set; } = false;
-        public bool ResetOnNewTarget { get; set; } = false;
-        public bool RequireLock { get; set; } = false;
-        public bool LockWhileEmpty { get; set; } = true;
-        public bool TagOnly { get; set; } = false;
-        public bool IgnoreInvisibility { get; set; } = false;
+        public bool HipActive { get; private set; } = false;
+        public bool AimActive { get; private set; } = true;
+        public float Angle { get; private set; } = 0f;
+        public float Range { get; private set; } = 0f;
+        public float LockTime { get; private set; } = 0f;
+        public float LockDecayTime { get; private set; } = 0f;
+        public bool StayOnTarget { get; private set; } = false;
+        public bool ResetOnNewTarget { get; private set; } = false;
+        public bool RequireLock { get; private set; } = false;
+        public bool LockWhileEmpty { get; private set; } = true;
+        public bool TagOnly { get; private set; } = false;
+        public bool IgnoreInvisibility { get; private set; } = false;
         TargetingMode TargetMode { get; set; } = TargetingMode.Normal;
-        public bool FavorLookPoint { get; set; } = false;
+        public bool FavorLookPoint { get; private set; } = false;
 
         public CrosshairHitIndicator? _reticle;
         private GameObject? _reticleHolder;

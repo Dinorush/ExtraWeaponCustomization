@@ -15,7 +15,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         IGunProperty,
         IWeaponProperty<WeaponPostRayContext>
     {
-        public float HitSize { get; set; } = 0f;
+        public float HitSize { get; private set; } = 0f;
 
         private int _pierceCount = 0;
 

@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {

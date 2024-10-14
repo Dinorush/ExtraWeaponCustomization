@@ -5,7 +5,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public class DamageTypeTrigger<TContext> : IDamageTypeTrigger where TContext : WeaponDamageTypeContext
     {
-        public DamageType DamageType { get; set; }
+        public DamageType DamageType { get; private set; }
         public DamageType BlacklistType { get; set; }
         public TriggerName Name { get; }
 

@@ -11,8 +11,8 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class HealthMod :
         Effect
     {
-        public float HealthChangeRel { get; set; } = 0f;
-        public float CapRel { get; set; } = -1f;
+        public float HealthChangeRel { get; private set; } = 0f;
+        public float CapRel { get; private set; } = -1f;
 
         public override void TriggerReset() {}
 

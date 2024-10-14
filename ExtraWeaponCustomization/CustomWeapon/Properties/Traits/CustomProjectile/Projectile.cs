@@ -21,27 +21,27 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
     {
-        public ProjectileType ProjectileType { get; set; } = ProjectileType.NotTargetingSmallFast;
-        public float Speed { get; set; } = 0f;
-        public float AccelScale { get; set; } = 1f;
-        public float AccelExponent { get; set; } = 1f;
+        public ProjectileType ProjectileType { get; private set; } = ProjectileType.NotTargetingSmallFast;
+        public float Speed { get; private set; } = 0f;
+        public float AccelScale { get; private set; } = 1f;
+        public float AccelExponent { get; private set; } = 1f;
         private float _accelTime = 0.001f;
         public float AccelTime
         {
             get { return _accelTime; }
-            set { _accelTime = Math.Max(0.001f, value); }
+            private set { _accelTime = Math.Max(0.001f, value); }
         }
-        public float Gravity { get; set; } = 0f;
-        public float HitSize { get; set; } = 0f;
-        public float HitSizeWorld { get; set; } = 0f;
-        public float ModelScale { get; set; } = 1f;
-        public bool EnableTrail { get; set; } = true;
-        public Color GlowColor { get; set; } = Color.black;
-        public float GlowRange { get; set; } = -1f;
-        public bool DamageFriendly { get; set; } = true;
-        public bool DamageOwner { get; set; } = false;
-        public float VisualLerpDist { get; set; } = 5f;
-        public float Lifetime { get; set; } = 20f;
+        public float Gravity { get; private set; } = 0f;
+        public float HitSize { get; private set; } = 0f;
+        public float HitSizeWorld { get; private set; } = 0f;
+        public float ModelScale { get; private set; } = 1f;
+        public bool EnableTrail { get; private set; } = true;
+        public Color GlowColor { get; private set; } = Color.black;
+        public float GlowRange { get; private set; } = -1f;
+        public bool DamageFriendly { get; private set; } = true;
+        public bool DamageOwner { get; private set; } = false;
+        public float VisualLerpDist { get; private set; } = 5f;
+        public float Lifetime { get; private set; } = 20f;
 
         private float _cachedRayDist;
 

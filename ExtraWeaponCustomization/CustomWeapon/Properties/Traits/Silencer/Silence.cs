@@ -21,11 +21,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostFireContextSync>,
         IWeaponProperty<WeaponStealthUpdateContext>
     {
-        public float FakeAlertRadius { get; set; } = 0f;
-        public float AlertRadius { get; set; } = 0f;
-        public float AlertAmount { get; set; } = 0f;
-        public float WakeUpRadius { get; set; } = 0f;
-        public bool CrossDoors { get; set; } = false;
+        public float FakeAlertRadius { get; private set; } = 0f;
+        public float AlertRadius { get; private set; } = 0f;
+        public float AlertAmount { get; private set; } = 0f;
+        public float WakeUpRadius { get; private set; } = 0f;
+        public bool CrossDoors { get; private set; } = false;
 
         private readonly Dictionary<AgentWrapper, float> _alertProgress = new();
 

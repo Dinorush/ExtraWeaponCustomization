@@ -11,23 +11,23 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class Explosive : 
         Effect
     {
-        public float MaxDamage { get; set; } = 0f;
-        public float MinDamage { get; set; } = 0f;
-        public float InnerRadius { get; set; } = 0f;
-        public float Radius { get; set; } = 0f;
-        public float PrecisionDamageMulti { get; set; } = 0f;
-        public float StaggerDamageMulti { get; set; } = 1f;
-        public bool IgnoreFalloff { get; set; } = false;
-        public bool DamageLimb { get; set; } = true;
-        public bool IgnoreArmor { get; set; } = false;
-        public bool IgnoreBackstab { get; set; } = false;
-        public bool IgnoreDamageMods { get; set; } = false;
-        public bool DamageFriendly { get; set; } = true;
-        public bool DamageOwner { get; set; } = true;
-        public uint SoundID { get; set; } = EVENTS.STICKYMINEEXPLODE;
-        public Color GlowColor { get; set; } = new(1, 0.2f, 0, 1);
-        public float GlowDuration { get; set; } = 0.1f;
-        public float GlowFadeDuration { get; set; } = 0.1f;
+        public float MaxDamage { get; private set; } = 0f;
+        public float MinDamage { get; private set; } = 0f;
+        public float InnerRadius { get; private set; } = 0f;
+        public float Radius { get; private set; } = 0f;
+        public float PrecisionDamageMulti { get; private set; } = 0f;
+        public float StaggerDamageMulti { get; private set; } = 1f;
+        public bool IgnoreFalloff { get; private set; } = false;
+        public bool DamageLimb { get; private set; } = true;
+        public bool IgnoreArmor { get; private set; } = false;
+        public bool IgnoreBackstab { get; private set; } = false;
+        public bool IgnoreDamageMods { get; private set; } = false;
+        public bool DamageFriendly { get; private set; } = true;
+        public bool DamageOwner { get; private set; } = true;
+        public uint SoundID { get; private set; } = EVENTS.STICKYMINEEXPLODE;
+        public Color GlowColor { get; private set; } = new(1, 0.2f, 0, 1);
+        public float GlowDuration { get; private set; } = 0.1f;
+        public float GlowFadeDuration { get; private set; } = 0.1f;
 
         public float CacheBackstab { get; private set; } = 0f;
 

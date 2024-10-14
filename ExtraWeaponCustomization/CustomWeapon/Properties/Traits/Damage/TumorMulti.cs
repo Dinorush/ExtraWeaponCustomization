@@ -8,8 +8,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IWeaponProperty<WeaponDamageContext>
     {
-        public float TumorDamageMulti { get; set; } = 1f;
-        public bool BypassCap { get; set; } = false;
+        public float TumorDamageMulti { get; private set; } = 1f;
+        public bool BypassCap { get; private set; } = false;
 
         public void Invoke(WeaponDamageContext context)
         {
