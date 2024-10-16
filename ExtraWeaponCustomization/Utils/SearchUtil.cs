@@ -79,6 +79,19 @@ namespace EWC.Utils
             return (localCenter - closest).sqrMagnitude <= reqDist * reqDist;
         }
 
+        private static bool RaycastEnsured(Collider collider, Vector3 backupOrigin, float range, out RaycastHit hit)
+        {
+            // This should rarely ever fail
+            if (collider.Raycast(s_ray, out hit, range)) return true;
+
+            // I LOVE RAYCAST TO CLOSEST POINT FAILING!!! (it's probably tangent to the collider)
+            Vector3 diff = collider.ClosestPoint(backupOrigin) - collider.bounds.center;
+            Vector3 diffNormal = diff.normalized;
+            s_ray.origin = collider.bounds.center + diff + diffNormal * Mathf.Min(0.1f, range / 2);
+            s_ray.direction = -diffNormal;
+            return collider.Raycast(s_ray, out hit, range);
+        }
+
         private static bool TryGetClosestHit(Ray ray, float range, float angle, Agent agent, out RaycastHit hit, SearchSetting settings)
         {
             hit = default;
@@ -126,7 +139,7 @@ namespace EWC.Utils
 
                         s_ray.origin -= ray.direction * Math.Min(0.1f, range / 2);
                         s_ray.direction = trgtPos - s_ray.origin;
-                        if (collider.Raycast(s_ray, out hit, range))
+                        if (RaycastEnsured(collider, ray.origin, range, out hit))
                         {
                             hit.point = trgtPos;
                             hit.distance = 0;
@@ -135,7 +148,6 @@ namespace EWC.Utils
                         else
                             minCollider = null;
 
-                        s_ray.origin = ray.origin;
                         break; // Can't get lower than 0 distance
                     }
 
@@ -143,7 +155,8 @@ namespace EWC.Utils
                 }
             }
             if (minCollider == null) return false;
-            if (settings.HasFlag(SearchSetting.CacheHit) && !casted && !minCollider.Raycast(s_ray, out hit, range)) return false;
+            if (settings.HasFlag(SearchSetting.CacheHit) && !casted && !RaycastEnsured(minCollider, ray.origin, range, out hit))
+                return false;
 
             return true;
         }
