@@ -19,6 +19,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private int _pierceCount = 0;
 
+        private static Ray s_ray;
         private static RaycastHit s_rayHit;
         private const float SightCheckMinSize = 0.5f;
 
@@ -28,22 +29,22 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             context.Result = false;
 
+            s_ray = Weapon.s_ray;
             _pierceCount = CWC.Weapon.ArchetypeData.PiercingBullets ? CWC.Weapon.ArchetypeData.PiercingDamageCountLimit : 1;
             bool wallPierce = CWC.HasTrait(typeof(WallPierce));
-
+            bool hitWall;
             Vector3 wallPos; // Used to determine bounds for thick bullets and line of sight checks
-            RaycastHit wallHit = default;
-            if (!wallPierce && Physics.Raycast(Weapon.s_ray, out wallHit, context.Data.maxRayDist, LayerUtil.MaskWorld))
-                wallPos = wallHit.point;
+            if ((hitWall = Physics.Raycast(s_ray, out RaycastHit wallRayHit, context.Data.maxRayDist, LayerUtil.MaskWorld)) && !wallPierce)
+                wallPos = wallRayHit.point;
             else
-                wallPos = Weapon.s_ray.origin + context.Data.fireDir * context.Data.maxRayDist;
-            float maxDist = (Weapon.s_ray.origin - wallPos).magnitude;
+                wallPos = s_ray.origin + context.Data.fireDir * context.Data.maxRayDist;
+            float maxDist = (s_ray.origin - wallPos).magnitude;
 
             CheckCollisionInitial(context, wallPos, wallPierce);
 
             if (_pierceCount == 0) return;
 
-            RaycastHit[] results = Physics.SphereCastAll(Weapon.s_ray, HitSize, maxDist, LayerUtil.MaskEnemyDynamic);
+            RaycastHit[] results = Physics.SphereCastAll(s_ray, HitSize, maxDist, LayerUtil.MaskEnemyDynamic);
             if (results.Length != 0)
             {
                 SortUtil.SortWithWeakspotBuffer(results);
@@ -70,7 +71,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 }
             }
 
-            results = Physics.RaycastAll(Weapon.s_ray, maxDist, LayerUtil.MaskFriendly);
+            results = Physics.RaycastAll(s_ray, maxDist, LayerUtil.MaskFriendly);
             if (results.Length != 0)
             {
                 Array.Sort(results, SortUtil.RaycastDistance);
@@ -90,17 +91,17 @@ namespace EWC.CustomWeapon.Properties.Traits
                 }
             }
 
-            if (wallPierce) return;
+            if (!hitWall) return;
 
-            context.Data.RayHit = wallHit;
-            BulletWeapon.BulletHit(context.Data.Apply(Weapon.s_weaponRayData), true, 0, CWC.Gun!.m_damageSearchID, true);
+            context.Data.RayHit = wallRayHit;
+            BulletHit(context.Data);
         }
 
         // Check for enemies within the initial sphere (if hitsize is big enough)
         private void CheckCollisionInitial(WeaponPostRayContext context, Vector3 wallPos, bool wallPierce)
         {
-            Vector3 origin = Weapon.s_ray.origin;
-            List<(EnemyAgent enemy, RaycastHit hit)> hits = SearchUtil.GetEnemyHitsInRange(Weapon.s_ray, HitSize, 180f, CWC.Weapon.Owner.CourseNode);
+            Vector3 origin = s_ray.origin;
+            List<(EnemyAgent enemy, RaycastHit hit)> hits = SearchUtil.GetEnemyHitsInRange(s_ray, HitSize, 180f, CWC.Weapon.Owner.CourseNode);
             hits.Sort(SortUtil.SearchDistance);
 
             foreach (var pair in hits)
@@ -119,7 +120,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (_pierceCount <= 0) break;
             }
 
-            List<RaycastHit> lockHits = SearchUtil.GetLockHitsInRange(Weapon.s_ray, HitSize, 180f);
+            List<RaycastHit> lockHits = SearchUtil.GetLockHitsInRange(s_ray, HitSize, 180f);
             lockHits.Sort(SortUtil.RaycastDistance);
 
             foreach (var hit in lockHits)
@@ -156,7 +157,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 else if (checkLock && collider.gameObject.Pointer == s_rayHit.collider.gameObject.Pointer)
                     return true;
 
-                origin += Weapon.s_ray.direction * increment;
+                origin += s_ray.direction * increment;
                 checkDistSqr = (origin - colliderPos).sqrMagnitude;
                 remainingDist -= increment;
                 count++;
@@ -174,7 +175,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             
             foreach (Collider collider in baseAgent.GetComponentsInChildren<Collider>())
             {
-                if (collider.Raycast(Weapon.s_ray, out var tempHit, (collider.transform.position - Weapon.s_ray.origin).magnitude + 1f) && tempHit.distance < bestHit.distance)
+                if (collider.Raycast(s_ray, out var tempHit, (collider.transform.position - s_ray.origin).magnitude + 1f) && tempHit.distance < bestHit.distance)
                     bestHit = tempHit;
             }
 
