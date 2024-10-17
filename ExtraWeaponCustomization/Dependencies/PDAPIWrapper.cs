@@ -12,7 +12,6 @@ namespace EWC.Dependencies
         public readonly static bool HasPData = false;
 
         public static JsonConverter? PersistentIDConverter { get; private set; } = null;
-        public static JsonConverter? LocalizedTextConverter { get; private set; } = null;
 
         static PDAPIWrapper()
         {
@@ -30,7 +29,6 @@ namespace EWC.Dependencies
                         throw new Exception("Unable to Find PersistentIDConverter Class");
 
                     PersistentIDConverter = (JsonConverter)Activator.CreateInstance(converterType)!;
-                    LocalizedTextConverter = new GTFO.API.JSON.Converters.LocalizedTextConverter();
                     HasPData = true;
                 }
                 catch (Exception e)

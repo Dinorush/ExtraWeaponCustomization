@@ -29,14 +29,7 @@ namespace EWC.JSON
             _setting.Converters.Add(new ColorConverter());
             
             if (PDAPIWrapper.HasPData)
-            {
                 _setting.Converters.Add(PDAPIWrapper.PersistentIDConverter!);
-                _setting.Converters.Add(PDAPIWrapper.LocalizedTextConverter!);
-            }
-            else
-            {
-                _setting.Converters.Add(new LocalizedTextConverter());
-            }
         }
 
         public static T? Deserialize<T>(string json)
