@@ -38,6 +38,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 Apply = Apply != null ? new(Apply) : null,
                 Reset = Reset != null ? new(Reset) : null,
                 Cap = Cap,
+                Threshold = Threshold,
                 Cooldown = Cooldown,
                 Chance = Chance,
                 CooldownOnApply = CooldownOnApply
