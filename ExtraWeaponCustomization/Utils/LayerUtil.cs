@@ -26,6 +26,7 @@ namespace EWC.Utils
             MaskEnemy = LayerMask.GetMask("EnemyDamagable");
             MaskDynamic = LayerMask.GetMask("Dynamic");
 
+            MaskEnemyDynamic = MaskEnemy | MaskDynamic;
             MaskEntity3P = MaskFriendly | MaskEnemy;
             MaskEntity = MaskOwner | MaskEntity3P;
 
