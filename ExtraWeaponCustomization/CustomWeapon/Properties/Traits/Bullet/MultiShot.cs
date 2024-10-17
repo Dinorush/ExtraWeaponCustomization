@@ -37,12 +37,13 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_projectile = CWC.HasTrait(typeof(Projectile));
 
             s_ray.origin = Weapon.s_ray.origin;
-            s_baseDir = IgnoreSpread ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
-            bool isShotgun = !ForceSingleBullet && CWC.Gun!.TryCast<ShotgunSynced>() != null;
+            bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
+            s_baseDir = IgnoreSpread && !isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
+
             int shotgunBullets = 1;
             int coneSize = 0;
             float segmentSize = 0;
-            if (isShotgun)
+            if (isShotgun && !ForceSingleBullet)
             {
                 shotgunBullets = CWC.Weapon.ArchetypeData.ShotgunBulletCount;
                 coneSize = CWC.Weapon.ArchetypeData.ShotgunConeSize;
@@ -75,12 +76,13 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_projectile = CWC.HasTrait(typeof(Projectile));
 
             s_ray.origin = Weapon.s_ray.origin;
-            s_baseDir = IgnoreSpread ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
-            bool isShotgun = !ForceSingleBullet && CWC.Gun!.TryCast<Shotgun>() != null;
+            bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
+            s_baseDir = IgnoreSpread && !isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
+
             int shotgunBullets = 1;
             int coneSize = 0;
             float segmentSize = 0;
-            if (isShotgun)
+            if (isShotgun && !ForceSingleBullet)
             {
                 shotgunBullets = CWC.Weapon.ArchetypeData.ShotgunBulletCount;
                 coneSize = CWC.Weapon.ArchetypeData.ShotgunConeSize;
