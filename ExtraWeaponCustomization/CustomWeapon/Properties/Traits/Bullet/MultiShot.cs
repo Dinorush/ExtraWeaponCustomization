@@ -56,7 +56,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 for (int i = 0; i < Offsets.Count; i += 2)
                 {
                     float x = Offsets[i] * mod;
-                    float y = Offsets[i + 1] * mod;
+                    float y = -Offsets[i + 1] * mod;
                     FireShotVisual(x, y, spread);
 
                     for (int j = 1; j < shotgunBullets; j++)
@@ -96,7 +96,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 for (int i = 0; i < Offsets.Count; i += 2)
                 {
                     float x = Offsets[i] * mod * aimMod;
-                    float y = Offsets[i+1] * mod * aimMod;
+                    float y = -Offsets[i+1] * mod * aimMod;
                     FireShot(x, y, spread);
 
                     for (int j = 1; j < shotgunBullets; j++)
