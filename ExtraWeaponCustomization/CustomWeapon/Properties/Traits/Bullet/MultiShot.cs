@@ -256,7 +256,8 @@ namespace EWC.CustomWeapon.Properties.Traits
                 AimOffsetMod = AimOffsetMod,
                 Repeat = Repeat,
                 IgnoreSpread = IgnoreSpread,
-                ApplySpreadPerShot = ApplySpreadPerShot
+                ApplySpreadPerShot = ApplySpreadPerShot,
+                ForceSingleBullet = ForceSingleBullet
             };
             copy.Offsets.AddRange(Offsets);
 
