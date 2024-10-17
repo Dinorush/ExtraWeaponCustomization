@@ -39,13 +39,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected static Quaternion s_tempRot;
         private bool _sendDestroy;
         private ushort _id;
+        private ushort _playerIndex;
 
         protected virtual void Awake()
         {
             enabled = false;
         }
 
-        public virtual void Init(ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, float lifetime, bool sendDestroy)
+        public virtual void Init(ushort playerIndex, ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, float lifetime, bool sendDestroy)
         {
             if (enabled) return;
 
@@ -71,6 +72,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _gravityVel = 0;
             _sendDestroy = sendDestroy;
             _id = ID;
+            _playerIndex = playerIndex;
         }
 
         public void SetVisualPosition(Vector3 positionVisual, float lerpDist)
@@ -170,7 +172,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             enabled = false;
             _inactiveRoutine = StartCoroutine(DelayedInactive().WrapToIl2Cpp());
             if (_sendDestroy)
-                EWCProjectileManager.DoProjectileDestroy(_id);
+                EWCProjectileManager.DoProjectileDestroy(_playerIndex, _id);
             Hitbox.Die();
         }
 

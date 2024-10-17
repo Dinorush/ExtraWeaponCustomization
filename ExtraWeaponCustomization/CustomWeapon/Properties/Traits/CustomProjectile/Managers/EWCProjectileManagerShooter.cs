@@ -45,11 +45,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             return comp;
         }
 
-        public EWCProjectileComponentShooter? CreateAndSendProjectile(Projectile projBase, Vector3 position, Vector3 dir)
+        public EWCProjectileComponentShooter CreateAndSendProjectile(Projectile projBase, Vector3 position, Vector3 dir)
         {
+            ushort index = (ushort) projBase.CWC.Weapon.Owner.PlayerSlotIndex;
             ProjectileDataShooter data = new()
             {
-                id = EWCProjectileManager.GetNextID(),
+                playerIndex = index,
+                id = EWCProjectileManager.GetNextID(index),
                 type = projBase.ProjectileType,
                 position = position,
                 trail = projBase.EnableTrail,
@@ -67,22 +69,23 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
             s_shooterSync.Send(data);
             EWCProjectileComponentShooter comp = GetFromPool(data.type);
-            EWCProjectileManager.PlayerProjectiles.AddLast((data.id, comp));
-            comp.Init(data.id, position, dir * projBase.Speed, projBase.AccelScale, projBase.AccelExponent, projBase.AccelTime, 
+            EWCProjectileManager.AddProjectile(index, data.id, comp);
+            comp.Init(index, data.id, position, dir * projBase.Speed, projBase.AccelScale, projBase.AccelExponent, projBase.AccelTime, 
                 projBase.Gravity, projBase.ModelScale, projBase.EnableTrail, projBase.GlowColor, projBase.GlowRange, projBase.Lifetime, true);
             return comp;
         }
 
-        internal void Internal_ReceiveProjectile(ushort id, ProjectileType type, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, bool trail, Color glowColor, float glowRange, float lifetime)
+        internal void Internal_ReceiveProjectile(ushort index, ushort id, ProjectileType type, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, bool trail, Color glowColor, float glowRange, float lifetime)
         {
             EWCProjectileComponentShooter comp = GetFromPool(type);
-            EWCProjectileManager.PlayerProjectiles.AddLast((id, comp));
-            comp.Init(id, position, velocity, accel, accelExpo, accelTime, gravity, scale, trail, glowColor, glowRange, lifetime, false);
+            EWCProjectileManager.AddProjectile(index, id, comp);
+            comp.Init(index, id, position, velocity, accel, accelExpo, accelTime, gravity, scale, trail, glowColor, glowRange, lifetime, false);
         }
     }
 
     public struct ProjectileDataShooter
     {
+        public ushort playerIndex;
         public ushort id;
         public ProjectileType type;
         public Vector3 position;

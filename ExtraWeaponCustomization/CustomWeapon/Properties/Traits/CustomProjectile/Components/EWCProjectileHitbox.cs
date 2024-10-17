@@ -1,5 +1,4 @@
 ﻿using Agents;
-using Enemies;
 using EWC.Patches;
 using EWC.Utils;
 using FX_EffectSystem;
@@ -37,7 +36,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private SearchSetting _searchSettings = SearchSetting.CacheHit;
 
         // Static
-        public const float MinCollisionSqrDist = 0.09f;
+        public const float MinCollisionSqrDist = 0.0009f;
         public const float MinCollisionDist = 0.03f;
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
@@ -68,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Vector3 pos = _weapon.Owner.FPSCamera.Position;
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
 
-            _entityLayer = LayerManager.MASK_MELEE_ATTACK_TARGETS;
+            _entityLayer = LayerUtil.MaskEnemyDynamic;
             _searchSettings = SearchSetting.CacheHit;
             _initialPlayers.Clear();
             IntPtr ownerPtr = _weapon.Owner.Pointer;
@@ -284,7 +283,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             GameObject gameObject = s_rayHit.collider.gameObject;
             var colliderMaterial = gameObject.GetComponent<ColliderMaterial>();
-            bool isDecalsAllowed = (LayerManager.MASK_VALID_FOR_DECALS & gameObject.gameObject.layer) == 0;
+            bool isDecalsAllowed = (LayerUtil.MaskDecalValid & gameObject.gameObject.layer) == 0;
 
             FX_GroupName impactFX = FX_GroupName.Impact_Concrete;
             if (colliderMaterial != null)

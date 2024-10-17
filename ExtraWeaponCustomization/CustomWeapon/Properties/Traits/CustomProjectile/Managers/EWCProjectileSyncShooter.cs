@@ -9,6 +9,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         protected override void Receive(ProjectileDataShooter packet)
         {
             EWCProjectileManager.Shooter.Internal_ReceiveProjectile(
+                packet.playerIndex,
                 packet.id,
                 packet.type,
                 packet.position,

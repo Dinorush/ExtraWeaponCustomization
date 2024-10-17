@@ -69,7 +69,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_ray.origin = context.Position;
             s_ray.direction = context.Data.fireDir;
             float visualDist = VisualLerpDist > 0.1f ? VisualLerpDist : 0.1f;
-            if (Physics.Raycast(s_ray, out s_rayHit, visualDist, LayerManager.MASK_BULLETWEAPON_RAY))
+            if (Physics.Raycast(s_ray, out s_rayHit, visualDist, LayerUtil.MaskEntityAndWorld3P))
                 visualDist = s_rayHit.distance;
 
             Vector3 position = context.Position + context.Data.fireDir * Math.Min(visualDist, 0.1f);

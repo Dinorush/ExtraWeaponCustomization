@@ -18,11 +18,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public EWCProjectileComponentShooter(IntPtr ptr) : base(ptr) { }
 #pragma warning restore CS8618
 
-        public override void Init(ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, float lifetime, bool sendDestroy)
+        public override void Init(ushort playerIndex, ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, float lifetime, bool sendDestroy)
         {
             if (enabled) return;
 
-            base.Init(ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
+            base.Init(playerIndex, ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
 
             _trailRenderer?.Clear();
 
@@ -40,11 +40,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
         }
 
-        public void Init(ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, bool trail, Color glowColor, float glowRange, float lifetime, bool sendDestroy)
+        public void Init(ushort playerIndex, ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, bool trail, Color glowColor, float glowRange, float lifetime, bool sendDestroy)
         {
             if (enabled) return;
 
-            Init(ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
+            Init(playerIndex, ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
 
             if (_trailRenderer != null)
                 _trailRenderer.enabled = trail;

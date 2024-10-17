@@ -8,7 +8,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         protected override void Receive(ProjectileDataDestroy packet)
         {
-            EWCProjectileManager.Internal_ReceiveProjectileDestroy(packet.id);
+            EWCProjectileManager.Internal_ReceiveProjectileDestroy(packet.playerIndex, packet.id);
         }
     }
 }

@@ -6,7 +6,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
     public static class EWCProjectileManager
     {
-        internal static readonly LinkedList<(ushort id, EWCProjectileComponentBase comp)> PlayerProjectiles = new();
+        internal static readonly Dictionary<ushort, LinkedList<(ushort id, EWCProjectileComponentBase comp)>> PlayerProjectiles = new();
 
         public static readonly EWCProjectileManagerShooter Shooter = new();
 
@@ -33,44 +33,52 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             PlayerProjectiles.Clear();
         }
 
-        internal static ushort GetNextID()
+        internal static ushort GetNextID(ushort playerIndex)
         {
-            if (PlayerProjectiles.Count == 0)
+            if (!PlayerProjectiles.TryGetValue(playerIndex, out var list) || list.Count == 0)
                 return 0;
 
-            return (ushort)(PlayerProjectiles.Last!.Value.id + 1);
+            return (ushort)(PlayerProjectiles[playerIndex].Last!.Value.id + 1);
         }
 
-        internal static (ushort id, EWCProjectileComponentBase comp)? GetPair(ushort id)
+        internal static (ushort id, EWCProjectileComponentBase comp)? GetPair(ushort playerIndex, ushort id)
         {
-            foreach (var pair in PlayerProjectiles)
+            foreach (var pair in PlayerProjectiles[playerIndex])
                 if (pair.id == id)
                     return pair;
             return null;
         }
 
-        public static void DoProjectileDestroy(ushort id)
+        internal static void AddProjectile(ushort playerIndex, ushort id, EWCProjectileComponentBase comp)
+        {
+            if (!PlayerProjectiles.ContainsKey(playerIndex))
+                PlayerProjectiles[playerIndex] = new();
+            PlayerProjectiles[playerIndex].AddLast((id, comp));
+        }
+
+        public static void DoProjectileDestroy(ushort playerIndex, ushort id)
         {
             ProjectileDataDestroy data = new() { id = id };
             _destroySync.Send(data);
 
-            var pair = GetPair(id);
+            var pair = GetPair(playerIndex, id);
             if (pair == null) return;
-            PlayerProjectiles.Remove(pair.Value);
+            PlayerProjectiles[playerIndex].Remove(pair.Value);
         }
 
-        internal static void Internal_ReceiveProjectileDestroy(ushort id)
+        internal static void Internal_ReceiveProjectileDestroy(ushort playerIndex, ushort id)
         {
-            var pair = GetPair(id);
+            var pair = GetPair(playerIndex, id);
             if (pair == null) return;
 
             pair.Value.comp.Die();
-            PlayerProjectiles.Remove(pair.Value);
+            PlayerProjectiles[playerIndex].Remove(pair.Value);
         }
     }
 
     public struct ProjectileDataDestroy
     {
+        public ushort playerIndex;
         public ushort id;
     }
 }
