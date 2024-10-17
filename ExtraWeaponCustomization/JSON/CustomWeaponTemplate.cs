@@ -33,6 +33,7 @@ namespace EWC.JSON
                     new DataSwap(),
                     new EnforceFireRate(),
                     new HoldBurst(),
+                    new MultiShot(),
                     new PierceMulti(),
                     new CustomWeapon.Properties.Traits.Projectile(),
                     new ReserveClip(),
