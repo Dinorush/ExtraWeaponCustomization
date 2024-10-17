@@ -80,7 +80,7 @@ namespace EWC.Utils
                 Apply(_meleeWeapon);
         }
 
-        private void Apply(WeaponHitData hitData)
+        public WeaponHitData Apply(WeaponHitData hitData)
         {
             hitData.damage = damage;
             hitData.precisionMulti = precisionMulti;
@@ -88,13 +88,15 @@ namespace EWC.Utils
             hitData.rayHit = RayHit;
             hitData.fireDir = fireDir;
             hitData.maxRayDist = maxRayDist;
+            return hitData;
         }
 
-        private void Apply(MeleeWeaponFirstPerson melee)
+        public MeleeWeaponFirstPerson Apply(MeleeWeaponFirstPerson melee)
         {
             melee.m_damageToDeal = damage;
             melee.m_precisionMultiToDeal = precisionMulti;
             melee.m_staggerMultiToDeal = staggerMulti;
+            return melee;
         }
 
         public void SetFalloff(float additionalDist = 0)
