@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using GTFO.API.JSON.Converters;
 using EWC.JSON.Converters;
-using EWC.Utils.Log;
 using EWC.Dependencies;
 
 namespace EWC.JSON
