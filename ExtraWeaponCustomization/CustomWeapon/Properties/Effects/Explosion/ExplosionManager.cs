@@ -57,7 +57,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (explosiveBase.DamageFriendly)
                 s_searchSetting |= SearchSetting.CheckFriendly;
 
-            SearchUtil.SightBlockLayer = LayerManager.MASK_EXPLOSION_BLOCKERS;
+            SearchUtil.SightBlockLayer = LayerUtil.MaskWorldExcProj;
             foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(ray, explosiveBase.Radius, 180f, node, s_searchSetting))
                 s_hits.Add(hit);
 

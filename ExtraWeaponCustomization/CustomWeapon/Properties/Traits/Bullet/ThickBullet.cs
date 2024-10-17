@@ -43,7 +43,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (_pierceCount == 0) return;
 
-            RaycastHit[] results = Physics.SphereCastAll(Weapon.s_ray, HitSize, maxDist, LayerManager.MASK_MELEE_ATTACK_TARGETS);
+            RaycastHit[] results = Physics.SphereCastAll(Weapon.s_ray, HitSize, maxDist, LayerUtil.MaskEnemyDynamic);
             if (results.Length != 0)
             {
                 SortUtil.SortWithWeakspotBuffer(results);
@@ -63,7 +63,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     CheckDirectHit(ref s_rayHit);
 
                     context.Data.RayHit = s_rayHit;
-                    if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
+                    if (BulletHit(context.Data))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return;
@@ -83,7 +83,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     if (wallPierce && !WallPierce.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent().CourseNode)) continue;
 
                     context.Data.RayHit = hit;
-                    if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
+                    if (BulletHit(context.Data))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return;
@@ -93,7 +93,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (wallPierce) return;
 
             context.Data.RayHit = wallHit;
-            BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true);
+            BulletWeapon.BulletHit(context.Data.Apply(Weapon.s_weaponRayData), true, 0, CWC.Gun!.m_damageSearchID, true);
         }
 
         // Check for enemies within the initial sphere (if hitsize is big enough)
@@ -113,7 +113,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 CheckDirectHit(ref hit);
 
                 context.Data.RayHit = hit;
-                if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
+                if (BulletHit(context.Data))
                     _pierceCount--;
 
                 if (_pierceCount <= 0) break;
@@ -128,7 +128,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (!wallPierce && !CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
 
                 context.Data.RayHit = hit;
-                if (BulletWeapon.BulletHit(context.Data.ToWeaponHitData(), true, 0, CWC.Gun!.m_damageSearchID, true))
+                if (BulletHit(context.Data))
                     _pierceCount--;
 
                 if (_pierceCount <= 0) break;
@@ -191,6 +191,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             return searchID != 0 && DamageableUtil.GetDamageableFromCollider(collider)?.GetBaseDamagable()?.TempSearchID == searchID;
         }
+
+        private bool BulletHit(HitData data) => BulletWeapon.BulletHit(data.Apply(Weapon.s_weaponRayData), true, 0, CWC.Gun!.m_damageSearchID, true);
 
         public override IWeaponProperty Clone()
         {

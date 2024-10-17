@@ -88,7 +88,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 s_ray.origin = _camera.Position;
                 s_ray.direction = context.Data.fireDir;
-                if (Physics.Raycast(s_ray, out s_raycastHit, 100f, LayerManager.MASK_BULLETWEAPON_RAY))
+                if (Physics.Raycast(s_ray, out s_raycastHit, 100f, LayerUtil.MaskEntityAndWorld3P))
                 {
                     Agent? agent = DamageableUtil.GetDamageableFromRayHit(s_raycastHit)?.GetBaseAgent();
                     if (agent != null && agent.Alive && (!RequireLock || agent == _target))
@@ -285,7 +285,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             // Check if any part of the target is still valid
             Vector3 position = _camera!.Position;
             Vector3 targetPos = GetTargetPos();
-            if (Physics.Linecast(position, targetPos, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS)) return false;
+            if (Physics.Linecast(position, targetPos, LayerUtil.MaskWorldExcProj)) return false;
 
             foreach (var collider in _target.GetComponentsInChildren<Collider>())
             {
@@ -319,7 +319,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 {
                     if (angle >= targetAngle) return _target;
                     if ((IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged)
-                     && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                     && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerUtil.MaskWorldExcProj))
                         return enemy;
                 }
             }
@@ -327,7 +327,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 foreach ((EnemyAgent enemy, _) in angles)
                     if ((IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged)
-                     && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                     && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerUtil.MaskWorldExcProj))
                         return enemy;
             }
 
@@ -410,7 +410,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 s_ray.origin = _camera.Position;
                 collider.Raycast(s_ray, out s_raycastHit, (weakspot.transform.position - _camera.Position).magnitude);
 
-                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)) && !Physics.Linecast(_camera.Position, weakspot.transform.position, LayerManager.MASK_SENTRYGUN_DETECTION_BLOCKERS))
+                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)) && !Physics.Linecast(_camera.Position, weakspot.transform.position, LayerUtil.MaskWorldExcProj))
                 {
                     _weakspotTarget = collider.transform;
                     _weakspotLimb = weakspot;

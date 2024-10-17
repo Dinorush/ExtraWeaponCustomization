@@ -4,7 +4,7 @@ namespace EWC.Utils
 {
     internal static class DamageableUtil
     {
-        public static IDamageable? GetDamageableFromRayHit(RaycastHit rayHit) => GetDamageableFromCollider(rayHit.collider);
+        public static IDamageable? GetDamageableFromRayHit(RaycastHit rayHit) => rayHit.collider == null ? null : GetDamageableFromCollider(rayHit.collider);
 
         public static IDamageable? GetDamageableFromCollider(Collider? collider) => collider == null ? null : GetDamageableFromGO(collider.gameObject);
 

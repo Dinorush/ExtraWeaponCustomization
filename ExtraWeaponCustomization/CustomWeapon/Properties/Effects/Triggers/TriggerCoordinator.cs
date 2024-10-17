@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     {
         private static readonly Random Random = new();
         public ITriggerCallback? Parent { get; set; }
-        public List<ITrigger> Activate { get; private set; }
+        public readonly List<ITrigger> Activate;
         public uint Cap { get; private set; } = 0;
         public uint Threshold { get; private set; } = 1;
         public float Cooldown { get; private set; } = 0f;
@@ -35,7 +35,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             // Only need to shallow copy the triggers themselves since they hold no state information
             TriggerCoordinator result = new()
             {
-                Activate = new(Activate),
                 Apply = Apply != null ? new(Apply) : null,
                 Reset = Reset != null ? new(Reset) : null,
                 Cap = Cap,
@@ -43,6 +42,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 Chance = Chance,
                 CooldownOnApply = CooldownOnApply
             };
+            result.Activate.AddRange(Activate);
             return result;
         }
 
@@ -111,8 +111,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "activate":
                 case "triggers":
                 case "trigger":
-                    // Can actually be null here, but converter will return a null if this is.
-                    Activate = DeserializeTriggers(ref reader)!;
+                    List<ITrigger>? triggers = DeserializeTriggers(ref reader)!;
+                    if (triggers != null)
+                        Activate.AddRange(triggers);
                     break;
                 case "apply":
                     Apply = DeserializeTriggers(ref reader);

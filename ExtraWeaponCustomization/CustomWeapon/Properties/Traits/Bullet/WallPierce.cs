@@ -18,10 +18,11 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostRayContext context)
         {
-            if (!context.Result) return;
-            if (context.Data.RayHit.collider.gameObject.IsInLayerMask(LayerManager.MASK_BULLETWEAPON_PIERCING_PASS)) return;
+            if (!context.Result || CWC.HasTrait(typeof(ThickBullet)) || CWC.HasTrait(typeof(Projectile))) return;
+            if (context.Data.RayHit.collider == null) return;
+            if (context.Data.RayHit.collider.gameObject.IsInLayerMask(LayerUtil.MaskEntity3P)) return;
 
-            if (!Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, LayerManager.MASK_BULLETWEAPON_PIERCING_PASS)) return;
+            if (!Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, LayerUtil.MaskEntity3P)) return;
 
             IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
             if (damageable == null || !IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode)) return;
