@@ -36,6 +36,7 @@ namespace EWC.CustomWeapon
         private float _lastShotTimer = 0f;
         private float _lastBurstTimer = 0f;
         private float _lastFireRate = 0f;
+        private bool _synced = false;
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
 
@@ -75,11 +76,13 @@ namespace EWC.CustomWeapon
 
         public void SetToSync()
         {
+            if (_synced) return;
             // Bots need full behavior but bots are pain and use different functions so idc for now
             Clear();
             enabled = true;
             _propertyController.ChangeToSyncContexts();
             Register(CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID));
+            _synced = true;
             _autoAim = null;
         }
 
@@ -114,6 +117,13 @@ namespace EWC.CustomWeapon
             {
                 data = Gun != null ? CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID) : CustomWeaponManager.Current.GetCustomMeleeData(Weapon.MeleeArchetypeData.persistentID);
                 if (data == null) return;
+            }
+
+            // If called by Activate(), i.e. without data, need to ensure it gets set to sync when applicable
+            if (!_synced && Weapon.TryCast<BulletWeaponSynced>() != null)
+            {
+                SetToSync();
+                return;
             }
 
             List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
