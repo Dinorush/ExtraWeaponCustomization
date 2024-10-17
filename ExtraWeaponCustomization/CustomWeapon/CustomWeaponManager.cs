@@ -201,12 +201,6 @@ namespace EWC.CustomWeapon
                 Directory.CreateDirectory(DEFINITION_PATH);
             }
 
-            if (File.Exists(path))
-            {
-                EWCLogger.Error("Can't create template file (already exists)!");
-                return;
-            }
-
             var file = File.CreateText(path);
             file.WriteLine(EWCJson.Serialize(new List<CustomWeaponData>() { CustomWeaponTemplate.CreateTemplate() }));
             file.Flush();
