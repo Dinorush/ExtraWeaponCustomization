@@ -23,6 +23,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
 - Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Auto]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst]
+- Multi Shot: Fires additional bullets per shot at given offsets. [Gun]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
 - Projectile: Fires a projectile instead of a hitscan bullet. [Gun]
 - Reserve Clip: Combines reserve ammo with the magazine. [Gun]
