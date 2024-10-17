@@ -50,7 +50,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
-            float spread = ApplySpreadPerShot ? Weapon.s_weaponRayData.randomSpread : 0f;
+            float spread = ApplySpreadPerShot && isShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
             for (uint mod = 1; mod <= Repeat + 1; mod++)
             {
                 for (int i = 0; i < Offsets.Count; i += 2)
@@ -82,15 +82,25 @@ namespace EWC.CustomWeapon.Properties.Traits
             int shotgunBullets = 1;
             int coneSize = 0;
             float segmentSize = 0;
+            var archData = CWC.Weapon.ArchetypeData;
             if (isShotgun && !ForceSingleBullet)
             {
-                shotgunBullets = CWC.Weapon.ArchetypeData.ShotgunBulletCount;
-                coneSize = CWC.Weapon.ArchetypeData.ShotgunConeSize;
+                shotgunBullets = archData.ShotgunBulletCount;
+                coneSize = archData.ShotgunConeSize;
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
-            float aimMod = CWC.Weapon.FPItemHolder.ItemAimTrigger ? AimOffsetMod : 1f;
-            float spread = ApplySpreadPerShot ? Weapon.s_weaponRayData.randomSpread : 0f;
+            bool isADS = CWC.Weapon.FPItemHolder.ItemAimTrigger;
+            float spread = 0;
+            if (ApplySpreadPerShot)
+            {
+                if (isShotgun)
+                    spread = archData.ShotgunBulletSpread;
+                else
+                    spread = isADS ? archData.AimSpread : archData.HipFireSpread;
+            }
+
+            float aimMod = isADS ? AimOffsetMod : 1f;
             for (uint mod = 1; mod <= Repeat+1; mod++)
             {
                 for (int i = 0; i < Offsets.Count; i += 2)
