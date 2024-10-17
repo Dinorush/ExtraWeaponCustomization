@@ -268,6 +268,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
+            writer.WritePropertyName(nameof(Offsets));
             EWCJson.Serialize(writer, Offsets);
             writer.WriteNumber(nameof(AimOffsetMod), AimOffsetMod);
             writer.WriteNumber(nameof(Repeat), Repeat);
