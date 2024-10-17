@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float WakeUpRadius { get; private set; } = 0f;
         public bool CrossDoors { get; private set; } = false;
 
-        private readonly Dictionary<AgentWrapper, float> _alertProgress = new();
+        private readonly Dictionary<ObjectWrapper<Agent>, float> _alertProgress = new();
 
         private readonly static List<EnemyAgent> s_wakeupList = new();
         private readonly static List<EnemyAgent> s_alertList = new();
@@ -45,7 +45,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private const float WakeupOutput = 1.1f;
         private const float AlertOutput = 0.95f;
 
-        private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
+        private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
 
         public void Invoke(WeaponPreFireContext context)
         {
@@ -71,7 +71,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponStealthUpdateContext context)
         {
-            TempWrapper.SetAgent(context.Enemy);
+            TempWrapper.SetObject(context.Enemy);
             if (!_alertProgress.TryGetValue(TempWrapper, out float progress)) return;
 
             if (progress >= InstantWakeupProgress)
@@ -118,7 +118,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (runAlert)
             {
-                foreach (AgentWrapper wrapper in _alertProgress.Keys.Where(key => key.Agent == null || !key.Agent.Alive).ToList())
+                foreach (ObjectWrapper<Agent> wrapper in _alertProgress.Keys.Where(key => key.Object == null || !key.Object.Alive).ToList())
                     _alertProgress.Remove(wrapper);
                 s_alertList.Clear();
                 s_alertList.AddRange(SearchUtil.GetEnemiesInRange(s_ray, AlertRadius, 180f, owner.CourseNode, SearchSettings));
@@ -141,9 +141,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (!EnemyCanHear(enemy))
                     continue;
 
-                TempWrapper.SetAgent(enemy);
+                TempWrapper.SetObject(enemy);
                 if (!_alertProgress.ContainsKey(TempWrapper))
-                    _alertProgress.Add(new AgentWrapper(enemy), 0);
+                    _alertProgress.Add(new ObjectWrapper<Agent>(enemy), 0);
 
                 _alertProgress[TempWrapper] += InstantWakeupProgress;
             }
@@ -157,9 +157,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (!EnemyCanHear(enemy))
                     continue;
 
-                TempWrapper.SetAgent(enemy);
+                TempWrapper.SetObject(enemy);
                 if (!_alertProgress.ContainsKey(TempWrapper))
-                    _alertProgress.Add(new AgentWrapper(enemy), 0);
+                    _alertProgress.Add(new ObjectWrapper<Agent>(enemy), 0);
 
                 EnemyDetection detection = enemy.AI.m_detection;
                 // If the enemy is asleep, make them alert (could do this by setting progress > 0 but sounds icky)

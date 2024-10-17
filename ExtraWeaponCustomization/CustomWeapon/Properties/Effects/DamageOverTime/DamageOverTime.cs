@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.ObjectWrappers;
+﻿using Agents;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
@@ -33,8 +34,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         }
 
         private readonly DOTController _controller = new();
-        private readonly Dictionary<AgentWrapper, DOTInstance> _lastDOTs = new();
-        private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
+        private readonly Dictionary<ObjectWrapper<Agent>, DOTInstance> _lastDOTs = new();
+        private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
 
 #pragma warning disable CS8618
         public DamageOverTime()
@@ -76,13 +77,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (!Stacks)
             {
                 _lastDOTs.Keys
-                .Where(wrapper => wrapper.Agent == null || !wrapper.Agent.Alive || _lastDOTs[wrapper].Expired)
+                .Where(wrapper => wrapper.Object == null || !wrapper.Object.Alive || _lastDOTs[wrapper].Expired)
                 .ToList()
                 .ForEach(wrapper => {
                     _lastDOTs.Remove(wrapper);
                 });
 
-                TempWrapper.SetAgent(limb.GetBaseAgent());
+                TempWrapper.SetObject(limb.GetBaseAgent());
 
                 if (_lastDOTs.ContainsKey(TempWrapper))
                 {
@@ -105,7 +106,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 {
                     DOTInstance? newDOT = _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
                     if (newDOT != null)
-                        _lastDOTs[new AgentWrapper(limb.GetBaseAgent())] = newDOT;
+                        _lastDOTs[new ObjectWrapper<Agent>(limb.GetBaseAgent())] = newDOT;
                 }
             }
             else

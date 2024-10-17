@@ -67,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 foreach (var kv in _enemyDots.ToList())
                 {
                     PriorityQueue<DOTInstance, DOTInstance> queue = kv.Value;
-                    IDamageable damageable = kv.Key.Damageable!;
+                    IDamageable damageable = kv.Key.Object!;
                     // Keep getting next DOT and dealing damage until no more can deal damage
                     while (queue.Count > 0 && queue.Peek().CanTick)
                     {
@@ -101,9 +101,9 @@ namespace EWC.CustomWeapon.Properties.Effects
             // Remove dead enemies
             _enemyDots.Keys
                 .Where(wrapper => 
-                        wrapper.Damageable == null
-                     || wrapper.Damageable.GetBaseAgent() == null
-                     || !wrapper.Damageable.GetBaseAgent().Alive)
+                        wrapper.Object == null
+                     || wrapper.Object.GetBaseAgent() == null
+                     || !wrapper.Object.GetBaseAgent().Alive)
                 .ToList()
                 .ForEach(wrapper => {
                     _enemyDots.Remove(wrapper);
@@ -122,7 +122,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
         }
 
-        sealed class DOTDamageableWrapper : DamageableWrapper
+        sealed class DOTDamageableWrapper : ObjectWrapper<IDamageable>
         {
             // Used for batching shotgun hits on same shot
             public DOTInstance? LastInstance { get; set; }

@@ -10,13 +10,13 @@ namespace EWC.CustomWeapon.KillTracker
 {
     public static class KillTrackerManager
     {
-        private static readonly Dictionary<AgentWrapper, (ItemEquippable Weapon, WeaponPreHitEnemyContext Context)> _lastHits = new();
-        private static readonly Dictionary<AgentWrapper, bool> _shownHits = new();
-        private static AgentWrapper TempWrapper => AgentWrapper.SharedInstance;
+        private static readonly Dictionary<ObjectWrapper<Agent>, (ItemEquippable Weapon, WeaponPreHitEnemyContext Context)> _lastHits = new();
+        private static readonly Dictionary<ObjectWrapper<Agent>, bool> _shownHits = new();
+        private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
 
         public static void ClearHit(EnemyAgent enemy)
         {
-            TempWrapper.SetAgent(enemy);
+            TempWrapper.SetObject(enemy);
             _lastHits.Remove(TempWrapper);
             _shownHits.Remove(TempWrapper);
         }
@@ -30,12 +30,12 @@ namespace EWC.CustomWeapon.KillTracker
             KillAPIWrapper.TagEnemy(enemy, weapon, hitContext.LocalPosition);
 
             // Still need to track weapon since KIF doesn't do that for host (only uses wielded, which may not be right for DoT)
-            TempWrapper.SetAgent(enemy);
+            TempWrapper.SetObject(enemy);
             if (_lastHits.ContainsKey(TempWrapper))
                 _lastHits[TempWrapper] = (weapon, hitContext);
             else
             {
-                AgentWrapper wrapper = new(enemy);
+                ObjectWrapper<Agent> wrapper = new(enemy);
                 _lastHits[wrapper] = (weapon, hitContext);
                 _shownHits[wrapper] = false;
             }
@@ -44,7 +44,7 @@ namespace EWC.CustomWeapon.KillTracker
         public static (ItemEquippable, WeaponPreHitEnemyContext)? GetKillHitContext(Agent? enemy)
         {
             _lastHits.Keys
-                .Where(wrapper => wrapper.Agent == null || _lastHits[wrapper].Weapon == null)
+                .Where(wrapper => wrapper.Object == null || _lastHits[wrapper].Weapon == null)
                 .ToList()
                 .ForEach(wrapper =>
                 {
@@ -54,7 +54,7 @@ namespace EWC.CustomWeapon.KillTracker
 
             if (enemy == null) return null;
 
-            TempWrapper.SetAgent(enemy);
+            TempWrapper.SetObject(enemy);
             if (!_shownHits.ContainsKey(TempWrapper) || _shownHits[TempWrapper])
                 return null;
 
