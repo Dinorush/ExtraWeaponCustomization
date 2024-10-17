@@ -38,7 +38,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             s_ray.origin = Weapon.s_ray.origin;
             bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
-            s_baseDir = IgnoreSpread && !isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
+            s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
 
             int shotgunBullets = 1;
             int coneSize = 0;
@@ -64,7 +64,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                         float angle = segmentSize * j;
                         x += coneSize * Mathf.Cos(angle);
                         y += coneSize * Mathf.Sin(angle);
-                        FireShotVisual(x, y, spread);
+                        FireShotVisual(x + coneSize * Mathf.Cos(angle), y + coneSize * Mathf.Sin(angle), spread);
                     }
                 }
             }
@@ -77,7 +77,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             s_ray.origin = Weapon.s_ray.origin;
             bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
-            s_baseDir = IgnoreSpread && !isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
+            s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
 
             int shotgunBullets = 1;
             int coneSize = 0;
@@ -102,9 +102,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     for (int j = 1; j < shotgunBullets; j++)
                     {
                         float angle = segmentSize * j;
-                        x += coneSize * Mathf.Cos(angle);
-                        y += coneSize * Mathf.Sin(angle);
-                        FireShot(x, y, spread);
+                        FireShot(x + coneSize * Mathf.Cos(angle), y + coneSize * Mathf.Sin(angle), spread);
                     }
                 }
             }
