@@ -82,6 +82,7 @@ namespace EWC.Utils
 
         public WeaponHitData Apply(WeaponHitData hitData)
         {
+            hitData.owner = owner;
             hitData.damage = damage;
             hitData.precisionMulti = precisionMulti;
             hitData.staggerMulti = staggerMulti;

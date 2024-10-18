@@ -57,7 +57,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
 
-            if (CancelShot)
+            if (CancelShot && !s_projectile)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
 
             int shotgunBullets = 1;
@@ -99,7 +99,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
 
-            if (CancelShot)
+            if (CancelShot && !s_projectile)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
 
             int shotgunBullets = 1;
