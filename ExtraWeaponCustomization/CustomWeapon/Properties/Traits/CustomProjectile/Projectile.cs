@@ -99,7 +99,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             CancelTracerFX(CWC.Gun!, CWC.Gun!.TryCast<ShotgunSynced>() != null);
         }
 
-        private void CancelTracerFX(BulletWeapon weapon, bool isShotgun)
+        public static void CancelTracerFX(BulletWeapon weapon, bool isShotgun)
         {
             int shots = 1;
             if (isShotgun)

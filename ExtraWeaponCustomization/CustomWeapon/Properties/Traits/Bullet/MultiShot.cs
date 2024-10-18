@@ -14,6 +14,8 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class MultiShot :
         Trait,
         IGunProperty,
+        IWeaponProperty<WeaponPreFireContext>,
+        IWeaponProperty<WeaponCancelRayContext>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
     {
@@ -22,6 +24,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public uint Repeat { get; private set; } = 0;
         public bool IgnoreSpread { get; private set; } = false;
         public bool ApplySpreadPerShot { get; private set; } = false;
+        public bool CancelInitialShot { get; private set; } = false;
         public bool ForceSingleBullet { get; private set; } = false;
 
         private static Ray s_ray;
@@ -31,6 +34,20 @@ namespace EWC.CustomWeapon.Properties.Traits
         private readonly static HitData s_hitData = new();
         private static bool s_wallPierce = false;
         private static bool s_projectile = false;
+        private static float s_initialShotMod = 1f;
+
+        public void Invoke(WeaponPreFireContext context)
+        {
+            if (Clock.Time - CWC.Gun!.m_lastFireTime > CWC.Gun!.m_fireRecoilCooldown)
+                s_initialShotMod = 0.2f;
+            else
+                s_initialShotMod = 1f;
+        }
+
+        public void Invoke(WeaponCancelRayContext context)
+        {
+            context.Result &= !CancelInitialShot;
+        }
 
         public void Invoke(WeaponPostFireContextSync context)
         {
@@ -39,6 +56,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_ray.origin = Weapon.s_ray.origin;
             bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
+
+            if (CancelInitialShot)
+                Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
 
             int shotgunBullets = 1;
             int coneSize = 0;
@@ -79,6 +99,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
 
+            if (CancelInitialShot)
+                Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
+
             int shotgunBullets = 1;
             int coneSize = 0;
             float segmentSize = 0;
@@ -97,7 +120,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (isShotgun)
                     spread = archData.ShotgunBulletSpread;
                 else
-                    spread = isADS ? archData.AimSpread : archData.HipFireSpread;
+                    spread = (isADS ? archData.AimSpread : archData.HipFireSpread) * s_initialShotMod;
             }
 
             float aimMod = isADS ? AimOffsetMod : 1f;
@@ -267,6 +290,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 Repeat = Repeat,
                 IgnoreSpread = IgnoreSpread,
                 ApplySpreadPerShot = ApplySpreadPerShot,
+                CancelInitialShot = CancelInitialShot,
                 ForceSingleBullet = ForceSingleBullet
             };
             copy.Offsets.AddRange(Offsets);
@@ -284,6 +308,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(Repeat), Repeat);
             writer.WriteBoolean(nameof(IgnoreSpread), IgnoreSpread);
             writer.WriteBoolean(nameof(ApplySpreadPerShot), ApplySpreadPerShot);
+            writer.WriteBoolean(nameof(CancelInitialShot), CancelInitialShot);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
             writer.WriteEndObject();
         }
@@ -313,6 +338,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "applyspreadpershot":
                 case "applyspread":
                     ApplySpreadPerShot = reader.GetBoolean();
+                    break;
+                case "cancelinitialshot":
+                case "cancelshot":
+                    CancelInitialShot = reader.GetBoolean();
                     break;
                 case "forcesinglebullet":
                 case "singlebullet":
