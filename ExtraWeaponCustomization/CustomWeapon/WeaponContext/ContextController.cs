@@ -159,7 +159,7 @@ namespace EWC.CustomWeapon.WeaponContext
 
             RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponBackstabContext>();
-            RegisterContext<WeaponCancelFireContext>();
+            RegisterContext<WeaponFireCanceledContext>();
             RegisterContext<WeaponDamageContext>();
             RegisterContext<WeaponPostAmmoInitContext>();
             RegisterContext<WeaponPreAmmoPackContext>();
@@ -172,6 +172,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreStartFireContext>();
             RegisterContext<WeaponPostStartFireContext>();
             RegisterContext<WeaponPreRayContext>();
+            RegisterContext<WeaponCancelRayContext>();
             RegisterContext<WeaponPostRayContext>();
             RegisterContext<WeaponPostStopFiringContext>();
             RegisterContext<WeaponRecoilContext>();

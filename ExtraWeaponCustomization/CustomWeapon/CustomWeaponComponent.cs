@@ -161,7 +161,7 @@ namespace EWC.CustomWeapon
         {
             if (!CancelShot)
             {
-                Invoke(StaticContext<WeaponCancelFireContext>.Instance);
+                Invoke(StaticContext<WeaponFireCanceledContext>.Instance);
                 CancelShot = true;
             }
         }

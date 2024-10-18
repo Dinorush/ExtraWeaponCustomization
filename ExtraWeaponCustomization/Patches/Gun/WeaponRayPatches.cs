@@ -57,9 +57,13 @@ namespace EWC.Patches
             if (_cachedCWC == null) return;
 
             s_hitData.Setup(weaponRayData);
-            WeaponPostRayContext context = new(s_hitData, originPos, __result);
-            _cachedCWC.Invoke(context);
-            __result = context.Result;
+            if (!_cachedCWC.Invoke(new WeaponCancelRayContext(s_hitData, originPos, __result)).Result)
+            {
+                __result = false;
+                return;
+            }
+
+            __result = _cachedCWC.Invoke(new WeaponPostRayContext(s_hitData, originPos, __result)).Result;
             s_hitData.Apply();
         }
     }

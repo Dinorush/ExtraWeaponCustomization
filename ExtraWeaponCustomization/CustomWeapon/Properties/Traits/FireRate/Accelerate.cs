@@ -15,7 +15,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         IGunProperty,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireRateSetContext>,
-        IWeaponProperty<WeaponCancelFireContext>,
+        IWeaponProperty<WeaponFireCanceledContext>,
         IWeaponProperty<WeaponDamageContext>,
         IWeaponProperty<WeaponPreFireContextSync>
     {
@@ -114,7 +114,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             context.FireRate = CalculateCurrentFireRate(startFireRate);
         }
 
-        public void Invoke(WeaponCancelFireContext context)
+        public void Invoke(WeaponFireCanceledContext context)
         {
             _progress = _resetProgress;
             _lastUpdateTime = _resetUpdateTime;
