@@ -9,11 +9,11 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public Vector3 Position { get; }
         public bool Result { get; set; }
 
-        public WeaponCancelRayContext(HitData hitData, Vector3 position, bool result)
+        public WeaponCancelRayContext(HitData hitData, Vector3 position)
         {
             Data = hitData;
             Position = position;
-            Result = result;
+            Result = true;
         }
     }
 }

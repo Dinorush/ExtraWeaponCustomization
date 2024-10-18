@@ -57,7 +57,7 @@ namespace EWC.Patches
             if (_cachedCWC == null) return;
 
             s_hitData.Setup(weaponRayData);
-            if (!_cachedCWC.Invoke(new WeaponCancelRayContext(s_hitData, originPos, __result)).Result)
+            if (!_cachedCWC.Invoke(new WeaponCancelRayContext(s_hitData, originPos)).Result)
             {
                 __result = false;
                 return;
