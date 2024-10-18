@@ -24,7 +24,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public uint Repeat { get; private set; } = 0;
         public bool IgnoreSpread { get; private set; } = false;
         public bool ApplySpreadPerShot { get; private set; } = false;
-        public bool CancelInitialShot { get; private set; } = false;
+        public bool CancelShot { get; private set; } = false;
         public bool ForceSingleBullet { get; private set; } = false;
 
         private static Ray s_ray;
@@ -46,7 +46,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponCancelRayContext context)
         {
-            context.Result &= !CancelInitialShot;
+            context.Result &= !CancelShot;
         }
 
         public void Invoke(WeaponPostFireContextSync context)
@@ -57,7 +57,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
 
-            if (CancelInitialShot)
+            if (CancelShot)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
 
             int shotgunBullets = 1;
@@ -99,7 +99,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
 
-            if (CancelInitialShot)
+            if (CancelShot)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
 
             int shotgunBullets = 1;
@@ -290,7 +290,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 Repeat = Repeat,
                 IgnoreSpread = IgnoreSpread,
                 ApplySpreadPerShot = ApplySpreadPerShot,
-                CancelInitialShot = CancelInitialShot,
+                CancelShot = CancelShot,
                 ForceSingleBullet = ForceSingleBullet
             };
             copy.Offsets.AddRange(Offsets);
@@ -308,7 +308,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(Repeat), Repeat);
             writer.WriteBoolean(nameof(IgnoreSpread), IgnoreSpread);
             writer.WriteBoolean(nameof(ApplySpreadPerShot), ApplySpreadPerShot);
-            writer.WriteBoolean(nameof(CancelInitialShot), CancelInitialShot);
+            writer.WriteBoolean(nameof(CancelShot), CancelShot);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
             writer.WriteEndObject();
         }
@@ -339,9 +339,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "applyspread":
                     ApplySpreadPerShot = reader.GetBoolean();
                     break;
-                case "cancelinitialshot":
+                case "cancelnormalshot":
                 case "cancelshot":
-                    CancelInitialShot = reader.GetBoolean();
+                    CancelShot = reader.GetBoolean();
                     break;
                 case "forcesinglebullet":
                 case "singlebullet":
