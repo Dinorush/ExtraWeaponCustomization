@@ -11,8 +11,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class TempProperties :
         Effect,
-        ITriggerCallbackSync,
-        IWeaponProperty<WeaponTempPropertiesContextSync>
+        ITriggerCallbackSync
     {
         public ushort SyncID { get; set; }
 
@@ -72,14 +71,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 RemoveProperties();
             }
             _activeRoutine = null;
-        }
-
-        public void Invoke(WeaponTempPropertiesContextSync context)
-        {
-            if (Properties == null) return;
-
-            _endTime = Clock.Time + Duration;
-            _activeRoutine ??= CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(DeactivateAfterDelay()));
         }
 
         private IEnumerator DeactivateAfterDelay()

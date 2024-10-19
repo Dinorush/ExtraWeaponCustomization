@@ -207,11 +207,11 @@ namespace EWC.CustomWeapon.WeaponContext
         internal void ChangeToSyncContexts()
         {
             _allContextLists.Clear();
+            RegisterContext<WeaponStealthUpdateContext>();
             RegisterContext<WeaponFireRateContext>();
             RegisterContext<WeaponFireRateSetContext>();
             RegisterContext<WeaponPreFireContextSync>();
             RegisterContext<WeaponPostFireContextSync>();
-            RegisterContext<WeaponTempPropertiesContextSync>();
         }
     }
 }

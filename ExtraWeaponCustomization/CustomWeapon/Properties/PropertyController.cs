@@ -46,6 +46,7 @@ namespace EWC.CustomWeapon.Properties
             _root = CreateTree(cwc, baseList);
             RemoveInvalidProperties(_root, cwc.Gun != null);
             Activate(_root);
+            RegisterSyncProperties(_root);
         }
 
         private PropertyNode CreateTree(CustomWeaponComponent cwc, PropertyList list, PropertyNode? parent = null)
@@ -110,6 +111,7 @@ namespace EWC.CustomWeapon.Properties
             _contextController.Clear();
             _overrideStack.Clear();
             _activeTraits.Clear();
+            _syncList.Clear();
         }
 
         public bool HasTrait(Type type) => _activeTraits.ContainsKey(type);
@@ -161,7 +163,10 @@ namespace EWC.CustomWeapon.Properties
             if (!node.Enabled) return;
 
             foreach (var property in node.List.Properties)
+            {
                 _contextController.Register(property);
+                EWCLogger.Log("Activated " + property.GetType().Name);
+            }
             
             if (node.List.Traits != null)
             {
@@ -187,7 +192,10 @@ namespace EWC.CustomWeapon.Properties
             if (!node.Enabled) return;
 
             foreach (var property in node.List.Properties)
+            {
                 _contextController.Unregister(property);
+                EWCLogger.Log("Deactivated " + property.GetType().Name);
+            }
 
             if (node.List.Traits != null)
             {

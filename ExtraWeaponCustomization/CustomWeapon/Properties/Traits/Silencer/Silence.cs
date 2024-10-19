@@ -33,7 +33,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         private readonly static List<EnemyAgent> s_alertList = new();
         private readonly static List<EnemyAgent> s_fakeAlertList = new();
 
-        private static NM_NoiseData s_noiseData = new();
         private static Agent.NoiseType s_cachedNoise;
         private static float s_cachedTimestamp;
         private static Ray s_ray;
@@ -100,9 +99,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             owner.m_noise = s_cachedNoise;
             owner.m_noiseTimestamp = s_cachedTimestamp;
 
-            s_noiseData.noiseMaker = owner.TryCast<INM_NoiseMaker>()!;
-            s_noiseData.position = owner.Position;
-
             bool runAlert = AlertRadius > WakeUpRadius;
             bool runFakeAlert = FakeAlertRadius > AlertRadius && FakeAlertRadius > WakeUpRadius;
 
@@ -130,7 +126,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             Vector3 pos = owner.Position;
 
             // Instant wakeup
-            s_noiseData.type = NM_NoiseType.InstaDetect;
             for (int i = s_wakeupList.Count - 1; i >= 0; --i)
             {
                 EnemyAgent enemy = s_wakeupList[i];
