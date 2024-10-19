@@ -59,13 +59,11 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponOwnerSetContext context)
         {
-            // Whichever one was not the archetype will need it to be set
-            if (_archetype != null && _archetype.m_owner == null)
-                _archetype.SetOwner(CWC.Weapon.Owner);
-            else if (_cachedArchetype != null && _cachedArchetype.m_owner == null)
-                _cachedArchetype.SetOwner(CWC.Weapon.Owner);
+            _archetype?.SetOwner(CWC.Weapon.Owner);
+            _cachedArchetype?.SetOwner(CWC.Weapon.Owner);
 
             ResetERDComponent();
+            CWC.RefreshSoundDelay();
         }
 
         public void Invoke(WeaponSetupContext context)

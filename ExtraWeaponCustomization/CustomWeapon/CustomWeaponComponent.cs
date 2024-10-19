@@ -25,10 +25,11 @@ namespace EWC.CustomWeapon
         internal AutoAim? AutoAim
         {
             get { return _autoAim; }
-            set { _autoAim = value; if (_ownerSet) _autoAim?.OnEnable(); }
+            set { _autoAim = value; if (OwnerSet) _autoAim?.OnEnable(); }
         }
 
-        private bool _ownerSet;
+        private bool OwnerSet => _ownerPtr != IntPtr.Zero;
+        private IntPtr _ownerPtr = IntPtr.Zero;
 
         public bool CancelShot { get; set; }
 
@@ -61,16 +62,16 @@ namespace EWC.CustomWeapon
                 _burstDelay = Gun.m_archeType.BurstDelay();
                 CurrentBurstDelay = _burstDelay;
             }
-            _ownerSet = false;
             enabled = false;
         }
 
         // Only runs on local player!
         public void OwnerInit()
         {
-            if (_ownerSet || !enabled) return;
+            IntPtr ptr = Gun!.m_archeType.m_owner.Pointer;
+            if (ptr == IntPtr.Zero || ptr == _ownerPtr || !enabled) return;
 
-            _ownerSet = true;
+            _ownerPtr = Gun!.m_archeType.m_owner.Pointer;
             Invoke(StaticContext<WeaponOwnerSetContext>.Instance);
         }
 
@@ -79,28 +80,27 @@ namespace EWC.CustomWeapon
             if (_synced) return;
             // Bots need full behavior but bots are pain and use different functions so idc for now
             Clear();
-            enabled = true;
             _propertyController.ChangeToSyncContexts();
-            Register(CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID));
             _synced = true;
+            Register(CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID));
             _autoAim = null;
         }
 
         private void Update()
         {
-            if (_ownerSet)
+            if (OwnerSet)
                 _autoAim?.Update();
         }
 
         private void OnEnable()
         {
-            if (_ownerSet)
+            if (OwnerSet)
                 _autoAim?.OnEnable();
         }
 
         private void OnDisable()
         {
-            if (_ownerSet)
+            if (OwnerSet)
                 _autoAim?.OnDisable();
         }
 
@@ -137,7 +137,7 @@ namespace EWC.CustomWeapon
             Invoke(StaticContext<WeaponClearContext>.Instance);
             _propertyController.Clear();
             _autoAim = null;
-            _ownerSet = false;
+            _ownerPtr = IntPtr.Zero;
             enabled = false;
             CurrentFireRate = _fireRate;
             CurrentBurstDelay = _burstDelay;
