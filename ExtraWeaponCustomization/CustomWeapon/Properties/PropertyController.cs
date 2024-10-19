@@ -163,10 +163,7 @@ namespace EWC.CustomWeapon.Properties
             if (!node.Enabled) return;
 
             foreach (var property in node.List.Properties)
-            {
                 _contextController.Register(property);
-                EWCLogger.Log("Activated " + property.GetType().Name);
-            }
             
             if (node.List.Traits != null)
             {
@@ -192,10 +189,7 @@ namespace EWC.CustomWeapon.Properties
             if (!node.Enabled) return;
 
             foreach (var property in node.List.Properties)
-            {
                 _contextController.Unregister(property);
-                EWCLogger.Log("Deactivated " + property.GetType().Name);
-            }
 
             if (node.List.Traits != null)
             {
