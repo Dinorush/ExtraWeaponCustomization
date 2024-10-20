@@ -34,8 +34,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             switch (property)
             {
-                case "DamageType":
-                case "Type":
+                case "damagetype":
+                case "type":
                     DamageType = IDamageTypeTrigger.ResolveDamageType(reader.GetString());
                     break;
             }
