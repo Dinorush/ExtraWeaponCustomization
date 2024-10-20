@@ -222,7 +222,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             CWC.RefreshArchetypeCache();
             ResetERDComponent();
 
-            slotAmmo.Setup(newBlock.CostOfBullet, CWC.Gun.ClipSize);
+            slotAmmo.Setup(newBlock.CostOfBullet * EXPAPIWrapper.GetAmmoMod(), CWC.Gun.ClipSize);
             int newClipSize = CWC.Gun.ClipSize;
 
             if (KeepMagCost)
@@ -253,6 +253,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
 
             ammoStorage.UpdateSlotAmmoUI(slotAmmo, CWC.Gun.GetCurrentClip());
+            ammoStorage.NeedsSync = true;
         }
 
         private void CopyArchetypeVars(BulletWeaponArchetype newArch, BulletWeaponArchetype oldArch)

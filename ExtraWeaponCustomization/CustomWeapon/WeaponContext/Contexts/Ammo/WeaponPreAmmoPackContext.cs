@@ -2,11 +2,11 @@
 {
     public class WeaponPreAmmoPackContext : IWeaponContext
     {
-        public float AmmoRel { get; set; }
+        public float AmmoAmount { get; set; }
 
-        public WeaponPreAmmoPackContext(float ammoRel)
+        public WeaponPreAmmoPackContext(float ammoAmount)
         {
-            AmmoRel = ammoRel;
+            AmmoAmount = ammoAmount;
         }
     }
 }

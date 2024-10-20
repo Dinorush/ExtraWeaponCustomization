@@ -7,6 +7,8 @@ using Enemies;
 using Player;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using GTFuckingXP.Enums;
 
 namespace EWC.Dependencies
 {
@@ -24,6 +26,11 @@ namespace EWC.Dependencies
             HasEXP = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
         }
 
+        public static float GetAmmoMod()
+        {
+            return HasEXP ? EXPGetAmmoMod() : 1f;
+        }
+
         public static void ApplyMod(ref float damage)
         {
             if (HasEXP)
@@ -35,6 +42,8 @@ namespace EWC.Dependencies
             if (HasEXP)
                 EXPDidDamage(enemy, source, damage, willKill);
         }
+
+        private static float EXPGetAmmoMod() => CacheApiWrapper.GetActiveLevel().CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.AmmoEfficiency)?.Value ?? 1f;
 
         private static void EXPDamageMod(ref float damage) => damage *= CacheApiWrapper.GetActiveLevel().WeaponDamageMultiplier;
 

@@ -56,7 +56,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             // Uses a relative change on the incoming value to handle any more than just ammopack case.
             // Ammopacks are not the only expected change (e.g. XP ammo refill, CConsole).
-            context.AmmoRel *= AmmoCapRel;
+            context.AmmoAmount *= AmmoCapRel;
         }
 
         public override IWeaponProperty Clone()

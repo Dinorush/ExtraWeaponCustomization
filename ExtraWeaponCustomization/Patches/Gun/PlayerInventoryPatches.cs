@@ -35,59 +35,40 @@ namespace EWC.Patches
             item.ShowAmmoTotalRel = context.ShowRel;
             item.ShowAmmoInfinite = context.ShowInfinite;
         }
-        
 
-        [HarmonyPatch(typeof(PlayerBackpackManager), nameof(PlayerBackpackManager.ReceiveAmmoGive))]
+        private static InventorySlot AmmoToSlot(AmmoType ammo)
+        {
+            return ammo switch
+            {
+                AmmoType.Standard => InventorySlot.GearStandard,
+                AmmoType.Special => InventorySlot.GearSpecial,
+                AmmoType.Class => InventorySlot.GearClass,
+                _ => InventorySlot.None
+            };
+        }
+
+        [HarmonyPatch(typeof(PlayerAmmoStorage), nameof(PlayerAmmoStorage.PickupAmmo))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void AmmoPackCallback(ref pAmmoGive data)
+        private static void AmmoPackCallback(PlayerAmmoStorage __instance, AmmoType ammoType, ref float ammoAmount)
         {
-            if (!data.targetPlayer.TryGetPlayer(out var player)) return;
-
-            PlayerAgent? agent = player.PlayerAgent?.TryCast<PlayerAgent>();
-            if (agent == null) return;
-
-            if(PlayerBackpackManager.TryGetItem(player, InventorySlot.GearStandard, out BackpackItem primary))
+            if (__instance.m_playerBackpack.TryGetBackpackItem(AmmoToSlot(ammoType), out BackpackItem item))
             {
-                CustomWeaponComponent? cwc = primary.Instance?.GetComponent<CustomWeaponComponent>();
+                CustomWeaponComponent? cwc = item.Instance?.GetComponent<CustomWeaponComponent>();
                 if (cwc != null)
-                {
-                    WeaponPreAmmoPackContext context = new(data.ammoStandardRel);
-                    cwc.Invoke(context);
-                    data.ammoStandardRel = context.AmmoRel;
-                }
-            }
-
-            if (PlayerBackpackManager.TryGetItem(player, InventorySlot.GearSpecial, out BackpackItem special))
-            {
-                CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
-                if (cwc != null)
-                {
-                    WeaponPreAmmoPackContext context = new(data.ammoSpecialRel);
-                    cwc.Invoke(context);
-                    data.ammoSpecialRel = context.AmmoRel;
-                }
+                    ammoAmount = cwc.Invoke(new WeaponPreAmmoPackContext(ammoAmount)).AmmoAmount;
             }
         }
 
-        [HarmonyPatch(typeof(PlayerBackpackManager), nameof(PlayerBackpackManager.ReceiveAmmoGive))]
+        [HarmonyPatch(typeof(PlayerAmmoStorage), nameof(PlayerAmmoStorage.PickupAmmo))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void PostAmmoPackCallback(ref pAmmoGive data)
+        private static void PostAmmoPackCallback(PlayerAmmoStorage __instance, AmmoType ammoType)
         {
-            if (!data.targetPlayer.TryGetPlayer(out var player)) return;
-
-            PlayerBackpack backpack = PlayerBackpackManager.GetBackpack(player);
-            if (backpack.TryGetBackpackItem(InventorySlot.GearStandard, out BackpackItem primary))
+            if (__instance.m_playerBackpack.TryGetBackpackItem(AmmoToSlot(ammoType), out BackpackItem item))
             {
-                CustomWeaponComponent? cwc = primary.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(new WeaponPostAmmoPackContext(backpack.AmmoStorage));
-            }
-
-            if (backpack.TryGetBackpackItem(InventorySlot.GearSpecial, out BackpackItem special))
-            {
-                CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(new WeaponPostAmmoPackContext(backpack.AmmoStorage));
+                CustomWeaponComponent? cwc = item.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(new WeaponPostAmmoPackContext(__instance));
             }
         }
 
