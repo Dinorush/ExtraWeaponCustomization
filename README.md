@@ -20,6 +20,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Auto Aim: Automatically fire toward targets. [Gun]
 - Auto Trigger: Hold the trigger to fire. [Semi, Burst]
 - Backstab Multi: Applies a multiplier to backstab damage.
+- Bio Ping: Damaging an enemy applies a Bio Tracker ping.
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
 - Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Auto]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst]
