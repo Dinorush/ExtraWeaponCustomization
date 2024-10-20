@@ -19,7 +19,11 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public override IWeaponProperty Clone()
         {
-            return new BioPing();
+            BioPing copy = new()
+            {
+                DamageType = DamageType
+            };
+            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
