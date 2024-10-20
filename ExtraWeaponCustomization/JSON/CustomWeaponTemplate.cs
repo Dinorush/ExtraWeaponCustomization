@@ -30,6 +30,7 @@ namespace EWC.JSON
                     new AutoAim(),
                     new AutoTrigger(),
                     new BackstabMulti(),
+                    new BioPing(),
                     new DataSwap(),
                     new EnforceFireRate(),
                     new HoldBurst(),
