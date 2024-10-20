@@ -1,4 +1,5 @@
 ﻿using Enemies;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
@@ -8,10 +9,12 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IWeaponProperty<WeaponPreHitEnemyContext>
     {
+        public DamageType DamageType { get; private set; } = DamageType.Bullet;
+
         public void Invoke(WeaponPreHitEnemyContext context)
         {
-            EnemyAgent enemy = context.Damageable.GetBaseAgent().Cast<EnemyAgent>();
-            ToolSyncManager.WantToTagEnemy(enemy);
+            if (context.DamageType.HasFlag(DamageType))
+                ToolSyncManager.WantToTagEnemy(context.Damageable.GetBaseAgent().Cast<EnemyAgent>());
         }
 
         public override IWeaponProperty Clone()
@@ -23,9 +26,19 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
+            writer.WriteString(nameof(DamageType), DamageType.ToString());
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        {
+            switch (property)
+            {
+                case "DamageType":
+                case "Type":
+                    DamageType = IDamageTypeTrigger.ResolveDamageType(reader.GetString());
+                    break;
+            }
+        }
     }
 }
