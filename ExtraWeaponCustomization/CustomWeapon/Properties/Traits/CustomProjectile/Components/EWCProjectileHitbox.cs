@@ -164,7 +164,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
-                foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), _searchSettings))
+                SearchUtil.DupeCheckSet = _hitEnts;
+                foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), _searchSettings | SearchSetting.IgnoreDupes))
                     s_hits.Add(hit);
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f));
 

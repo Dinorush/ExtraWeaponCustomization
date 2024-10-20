@@ -19,7 +19,8 @@ namespace EWC.Utils
         CheckLOS = 4,
         CheckDoors = 8,
         CheckOwner = 16,
-        CheckFriendly = 32
+        CheckFriendly = 32,
+        IgnoreDupes = 64,
     }
 
     internal static class SearchUtil
@@ -31,6 +32,7 @@ namespace EWC.Utils
 
         private static readonly List<RaycastHit> s_lockCache = new();
 
+        public static HashSet<IntPtr>? DupeCheckSet;
         public static int SightBlockLayer = 0;
         public const float WeakspotBufferDist = 0.1f;
 
@@ -107,6 +109,8 @@ namespace EWC.Utils
                 Dam_EnemyDamageLimb? limb = null;
                 if (agent.Type == AgentType.Enemy)
                 {
+                    if (settings.HasFlag(SearchSetting.IgnoreDupes) && DupeCheckSet?.Contains(agent.Pointer) == true) continue;
+
                     limb = collider.GetComponent<Dam_EnemyDamageLimb>();
                     if (limb == null || limb.IsDestroyed) continue;
                 }
