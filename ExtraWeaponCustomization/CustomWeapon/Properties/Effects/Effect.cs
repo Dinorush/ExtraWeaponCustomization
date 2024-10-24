@@ -8,14 +8,9 @@ using EWC.Utils.Log;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
-    public abstract class Effect : 
+    public abstract class Effect : WeaponPropertyBase,
         ITriggerCallback
     {
-#pragma warning disable CS8618 // Set when registered to a CWC
-        public CustomWeaponComponent CWC { get; set; }
-#pragma warning restore CS8618
-        public ItemEquippable Weapon => CWC.Weapon;
-
         private TriggerCoordinator? _coordinator;
         public TriggerCoordinator? Trigger
         { 
@@ -44,9 +39,13 @@ namespace EWC.CustomWeapon.Properties.Effects
         public abstract void TriggerApply(List<TriggerContext> triggerList);
         public abstract void TriggerReset();
 
-        public abstract IWeaponProperty Clone();
+        public override WeaponPropertyBase Clone()
+        {
+            var copy = (Effect) base.Clone();
+            copy.Trigger = Trigger?.Clone();
+            return copy;
+        }
 
-        public abstract void Serialize(Utf8JsonWriter writer);
         protected void SerializeTrigger(Utf8JsonWriter writer)
         {
             if (Trigger != null)
@@ -58,7 +57,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 writer.WriteString(nameof(Trigger), "Invalid");
         }
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch(property)
             {

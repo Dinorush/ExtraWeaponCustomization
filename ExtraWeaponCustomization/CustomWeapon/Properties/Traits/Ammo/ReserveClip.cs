@@ -46,11 +46,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             context.ShowClip = false;
         }
 
-        public override IWeaponProperty Clone()
-        {
-            return new ReserveClip();
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

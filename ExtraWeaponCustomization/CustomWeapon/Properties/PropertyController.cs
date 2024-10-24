@@ -44,7 +44,7 @@ namespace EWC.CustomWeapon.Properties
             if (baseList == null) return;
 
             _root = CreateTree(cwc, baseList);
-            RemoveInvalidProperties(_root, cwc.Gun != null);
+            RemoveInvalidProperties(_root, cwc.IsGun);
             Activate(_root);
             RegisterSyncProperties(_root);
         }
@@ -52,7 +52,7 @@ namespace EWC.CustomWeapon.Properties
         private PropertyNode CreateTree(CustomWeaponComponent cwc, PropertyList list, PropertyNode? parent = null)
         {
             PropertyNode curNode = new(list, parent);
-            foreach (IWeaponProperty property in list.Properties)
+            foreach (WeaponPropertyBase property in list.Properties)
             {
                 property.CWC = cwc;
                 if (property is TempProperties tempProperties)
@@ -71,9 +71,8 @@ namespace EWC.CustomWeapon.Properties
 
             for (int i = node.List.Properties.Count - 1; i >= 0; i--)
             {
-                IWeaponProperty property = node.List.Properties[i];
-                if ((!isGun && property is IGunProperty)
-                 || (isGun && property is IMeleeProperty))
+                WeaponPropertyBase property = node.List.Properties[i];
+                if (!property.ValidProperty())
                 {
                     node.List.Properties.Remove(property);
                     Type type = property.GetType();

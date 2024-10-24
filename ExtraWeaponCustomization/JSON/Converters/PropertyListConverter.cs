@@ -10,7 +10,7 @@ namespace EWC.JSON.Converters
     {
         public override PropertyList? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            List<IWeaponProperty>? list = EWCJson.Deserialize<List<IWeaponProperty>>(ref reader);
+            List<WeaponPropertyBase>? list = EWCJson.Deserialize<List<WeaponPropertyBase>>(ref reader);
             if (list == null || list.Count == 0) return null;
             return new PropertyList(list, false);
         }

@@ -67,16 +67,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             return mod;
         }
 
-        protected void CopyFrom(TriggerMod triggerMod)
-        {
-            Mod = triggerMod.Mod;
-            Cap = triggerMod.Cap;
-            Duration = triggerMod.Duration;
-            StackType = triggerMod.StackType;
-            StackLayer = triggerMod.StackLayer;
-            Trigger = triggerMod.Trigger?.Clone();
-        }
-
         public abstract void WriteName(Utf8JsonWriter writer);
 
         public override void Serialize(Utf8JsonWriter writer)

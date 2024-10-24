@@ -9,7 +9,9 @@ using System.Text.Json;
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class HealthMod :
-        Effect
+        Effect,
+        IGunProperty,
+        IMeleeProperty
     {
         public float HealthChangeRel { get; private set; } = 0f;
         public float CapRel { get; private set; } = -1f;
@@ -28,17 +30,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 heal,
                 cap * owner.Damage.HealthMax
                 );
-        }
-
-        public override IWeaponProperty Clone()
-        {
-            HealthMod copy = new()
-            {
-                HealthChangeRel = HealthChangeRel,
-                CapRel = CapRel,
-                Trigger = Trigger?.Clone()
-            };
-            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

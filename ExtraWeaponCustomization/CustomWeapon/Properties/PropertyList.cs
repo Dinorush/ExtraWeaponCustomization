@@ -7,13 +7,13 @@ namespace EWC.CustomWeapon.Properties
 {
     public sealed class PropertyList
     {
-        public readonly List<IWeaponProperty> Properties;
+        public readonly List<WeaponPropertyBase> Properties;
         public readonly Dictionary<Type, Trait>? Traits;
         public TempProperties? Owner { get; set; }
 
         public bool Override { get; set; } = false;
 
-        public PropertyList(List<IWeaponProperty> properties, bool cacheTypes = true)
+        public PropertyList(List<WeaponPropertyBase> properties, bool cacheTypes = true)
         {
             Properties = properties;
             if (!cacheTypes) return;

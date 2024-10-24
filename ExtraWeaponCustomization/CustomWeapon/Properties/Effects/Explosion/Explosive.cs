@@ -9,7 +9,9 @@ using UnityEngine;
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class Explosive : 
-        Effect
+        Effect,
+        IGunProperty,
+        IMeleeProperty
     {
         public float MaxDamage { get; private set; } = 0f;
         public float MinDamage { get; private set; } = 0f;
@@ -43,13 +45,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             foreach (TriggerContext tContext in triggerList)
             {
                 // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage
-                if (CWC.Gun != null && CWC.Gun.m_damageSearchID > 0 && CWC.Gun.m_damageSearchID - 1 == DamageUtil.SearchID)
+                if (CWC.IsGun && CWC.Gun!.m_damageSearchID > 0 && CWC.Gun.m_damageSearchID - 1 == DamageUtil.SearchID)
                     DamageUtil.IncrementSearchID();
 
                 if (tContext.context is WeaponPostKillContext killContext)
                 {
                     CacheBackstab = killContext.Backstab;
-                    ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, tContext.triggerAmt, null);
+                    ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, tContext.triggerAmt, null);
                 }
                 else
                 {
@@ -62,35 +64,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     if (context is WeaponPreHitEnemyContext enemyContext)
                         CacheBackstab = enemyContext.Backstab;
 
-                    ExplosionManager.DoExplosion(position, context.Direction, Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, tContext.triggerAmt, context.Damageable);
+                    ExplosionManager.DoExplosion(position, context.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, tContext.triggerAmt, context.Damageable);
                 }
             }
-        }
-
-        public override IWeaponProperty Clone()
-        {
-            Explosive copy = new()
-            {
-                MaxDamage = MaxDamage,
-                MinDamage = MinDamage,
-                InnerRadius = InnerRadius,
-                Radius = Radius,
-                PrecisionDamageMulti = PrecisionDamageMulti,
-                StaggerDamageMulti = StaggerDamageMulti,
-                DamageLimb = DamageLimb,
-                IgnoreArmor = IgnoreArmor,
-                IgnoreFalloff = IgnoreFalloff,
-                IgnoreBackstab = IgnoreBackstab,
-                IgnoreDamageMods = IgnoreDamageMods,
-                DamageFriendly = DamageFriendly,
-                DamageOwner = DamageOwner,
-                SoundID = SoundID,
-                GlowColor = GlowColor,
-                GlowDuration = GlowDuration,
-                GlowFadeDuration = GlowFadeDuration,
-                Trigger = Trigger?.Clone()
-            };
-            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -178,7 +154,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "soundid":
                 case "sound":
-                    SoundID = reader.GetUInt32();
+                    if (reader.TokenType == JsonTokenType.String)
+                        SoundID = AkSoundEngine.GetIDFromString(reader.GetString()!);
+                    else
+                        SoundID = reader.GetUInt32();
                     break;
                 case "glowcolor":
                 case "color":

@@ -1,18 +1,16 @@
 ﻿using EWC.CustomWeapon.Properties;
-using EWC.CustomWeapon.Properties.Traits;
-using EWC.Utils.Log;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace EWC.JSON.Converters
 {
-    public sealed class WeaponPropertyConverter : JsonConverter<IWeaponProperty>
+    public sealed class WeaponPropertyConverter : JsonConverter<WeaponPropertyBase>
     {
-        private static readonly string PropertyNamespace = typeof(IWeaponProperty).Namespace!;
-        public override IWeaponProperty? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        private static readonly string PropertyNamespace = typeof(WeaponPropertyBase).Namespace!;
+        public override WeaponPropertyBase? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            IWeaponProperty? instance = CreatePropertyInstance(reader);
+            WeaponPropertyBase? instance = CreatePropertyInstance(reader);
             if (instance == null) return null;
 
             while (reader.Read())
@@ -29,12 +27,12 @@ namespace EWC.JSON.Converters
             throw new JsonException("Expected EndObject token");
         }
 
-        public override void Write(Utf8JsonWriter writer, IWeaponProperty value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, WeaponPropertyBase value, JsonSerializerOptions options)
         {
             value.Serialize(writer);
         }
 
-        private static IWeaponProperty? CreatePropertyInstance(Utf8JsonReader reader)
+        private static WeaponPropertyBase? CreatePropertyInstance(Utf8JsonReader reader)
         {
             if (reader.TokenType != JsonTokenType.StartObject) return null;
 
@@ -55,17 +53,11 @@ namespace EWC.JSON.Converters
                 string? name = reader.GetString();
                 if (name == null) throw new JsonException("Name field cannot be empty in weapon property.");
                 name = name.Replace(" ", "");
-                
-                if (name.ToLowerInvariant() == "audioswap")
-                {
-                    EWCLogger.Warning("AudioSwap name is deprecated and will be unsupported in the future. Please change to DataSwap.");
-                    return new DataSwap();
-                }
 
                 Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
                 if (type == null) throw new JsonException("Unable to find corresponding weapon property for \"" + name + "\"");
 
-                return (IWeaponProperty?)Activator.CreateInstance(type);
+                return (WeaponPropertyBase?)Activator.CreateInstance(type);
             }
 
             return null;

@@ -16,7 +16,9 @@ namespace EWC.CustomWeapon
     {
         public readonly ItemEquippable Weapon;
         public readonly BulletWeapon? Gun;
+        public readonly bool IsGun;
         public readonly MeleeWeaponFirstPerson? Melee;
+        public readonly bool IsMelee;
 
         private readonly PropertyController _propertyController;
 
@@ -51,12 +53,13 @@ namespace EWC.CustomWeapon
             Weapon = item;
             Gun = item.TryCast<BulletWeapon>();
             Melee = item.TryCast<MeleeWeaponFirstPerson>();
+            IsGun = Gun != null;
+            IsMelee = !IsGun;
 
-            _propertyController = new(Gun != null);
-
-            if (Gun != null)
+            _propertyController = new(IsGun);
+            if (IsGun)
             {
-                _fireRate = 1f / Math.Max(Gun.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+                _fireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
                 _lastFireRate = _fireRate;
                 CurrentFireRate = _fireRate;
                 _burstDelay = Gun.m_archeType.BurstDelay();
@@ -115,7 +118,7 @@ namespace EWC.CustomWeapon
 
             if (data == null)
             {
-                data = Gun != null ? CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID) : CustomWeaponManager.Current.GetCustomMeleeData(Weapon.MeleeArchetypeData.persistentID);
+                data = IsGun ? CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID) : CustomWeaponManager.Current.GetCustomMeleeData(Weapon.MeleeArchetypeData.persistentID);
                 if (data == null) return;
             }
 
@@ -126,7 +129,7 @@ namespace EWC.CustomWeapon
                 return;
             }
 
-            List<IWeaponProperty> properties = data.Properties.ConvertAll(property => property.Clone());
+            List<WeaponPropertyBase> properties = data.Properties.ConvertAll(property => property.Clone());
             _propertyController.Init(this, new PropertyList(properties));
             if (Gun?.m_archeType?.m_owner != null)
                 OwnerInit();
@@ -206,7 +209,7 @@ namespace EWC.CustomWeapon
 
         public void RefreshArchetypeCache()
         {
-            if (Gun != null)
+            if (IsGun)
             {
                 _fireRate = 1f / Math.Max(Gun.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
                 _burstDelay = Gun.m_archeType.BurstDelay();

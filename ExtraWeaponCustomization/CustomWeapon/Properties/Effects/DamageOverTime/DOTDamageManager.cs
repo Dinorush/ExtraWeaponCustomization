@@ -59,7 +59,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 );
             dotBase.CWC.Invoke(hitContext);
 
-            KillTrackerManager.RegisterHit(dotBase.Weapon, hitContext);
+            KillTrackerManager.RegisterHit(dotBase.CWC.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f);
 
             Sync.Send(data, SNet_ChannelType.GameNonCritical);

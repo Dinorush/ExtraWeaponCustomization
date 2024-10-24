@@ -117,30 +117,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
         }
 
-        public override IWeaponProperty Clone()
-        {
-            Projectile copy = new()
-            {
-                ProjectileType = ProjectileType,
-                Speed = Speed,
-                AccelScale = AccelScale,
-                AccelExponent = AccelExponent,
-                AccelTime = AccelTime,
-                Gravity = Gravity,
-                HitSize = HitSize,
-                HitSizeWorld = HitSizeWorld,
-                ModelScale = ModelScale,
-                EnableTrail = EnableTrail,
-                GlowColor = GlowColor,
-                GlowRange = GlowRange,
-                DamageFriendly = DamageFriendly,
-                DamageOwner = DamageOwner,
-                VisualLerpDist = VisualLerpDist,
-                Lifetime = Lifetime
-            };
-            return copy;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

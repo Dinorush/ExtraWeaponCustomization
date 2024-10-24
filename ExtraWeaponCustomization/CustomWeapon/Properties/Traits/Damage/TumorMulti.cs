@@ -6,6 +6,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     internal class TumorMulti :
         Trait,
+        IGunProperty,
+        IMeleeProperty,
         IWeaponProperty<WeaponDamageContext>
     {
         public float TumorDamageMulti { get; private set; } = 1f;
@@ -19,16 +21,6 @@ namespace EWC.CustomWeapon.Properties.Traits
                 context.Precision.AddMod(TumorDamageMulti, StackType.Multiply);
                 context.BypassTumorCap = BypassCap;
             }
-        }
-
-        public override IWeaponProperty Clone()
-        {
-            TumorMulti copy = new()
-            {
-                TumorDamageMulti = TumorDamageMulti,
-                BypassCap = BypassCap
-            };
-            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

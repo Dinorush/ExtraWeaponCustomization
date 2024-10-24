@@ -428,28 +428,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             return angleX < angleY ? -1 : 1;
         }
 
-        public override IWeaponProperty Clone()
-        {
-            AutoAim copy = new()
-            {
-                AimActive = AimActive,
-                HipActive = HipActive,
-                Angle = Angle,
-                Range = Range,
-                LockTime = LockTime,
-                LockDecayTime = LockDecayTime,
-                StayOnTarget = StayOnTarget,
-                ResetOnNewTarget = ResetOnNewTarget,
-                RequireLock = RequireLock,
-                LockWhileEmpty = LockWhileEmpty,
-                TagOnly = TagOnly,
-                IgnoreInvisibility = IgnoreInvisibility,
-                TargetMode = TargetMode,
-                FavorLookPoint = FavorLookPoint
-            };
-            return copy;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

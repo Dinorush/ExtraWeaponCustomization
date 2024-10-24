@@ -195,15 +195,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private bool BulletHit(HitData data) => BulletWeapon.BulletHit(data.Apply(Weapon.s_weaponRayData), true, 0, CWC.Gun!.m_damageSearchID, true);
 
-        public override IWeaponProperty Clone()
-        {
-            ThickBullet copy = new()
-            {
-                HitSize = HitSize
-            };
-            return copy;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

@@ -101,7 +101,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             Agent? agent = damageable.GetBaseAgent();
             if (agent?.Type == AgentType.Player)
             {
-                if (agent == eBase.Weapon.Owner)
+                if (agent == eBase.CWC.Weapon.Owner)
                 {
                     if (!eBase.DamageOwner)
                         return;
@@ -171,7 +171,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 );
             eBase.CWC.Invoke(hitContext);
 
-            KillTrackerManager.RegisterHit(eBase.Weapon, hitContext);
+            KillTrackerManager.RegisterHit(eBase.CWC.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), position, armorMulti < 1f);
 
             DamageSync.Send(data, SNet_ChannelType.GameNonCritical);

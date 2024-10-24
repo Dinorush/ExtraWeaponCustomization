@@ -66,11 +66,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             return false;
         }
 
-        public override IWeaponProperty Clone()
-        {
-            return new WallPierce();
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

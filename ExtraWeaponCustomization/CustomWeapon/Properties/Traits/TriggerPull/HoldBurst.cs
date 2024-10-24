@@ -34,15 +34,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
         }
 
-        public override IWeaponProperty Clone()
-        {
-            HoldBurst copy = new()
-            {
-                ShotsUntilCancel = ShotsUntilCancel
-            };
-            return copy;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

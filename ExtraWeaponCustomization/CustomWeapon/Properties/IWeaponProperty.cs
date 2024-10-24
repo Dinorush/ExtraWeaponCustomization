@@ -6,7 +6,7 @@ namespace EWC.CustomWeapon.Properties
     public interface IWeaponProperty
     {
         public CustomWeaponComponent CWC { get; set; }
-        IWeaponProperty Clone(); // Should return a new instance with the same initial data.
+        WeaponPropertyBase Clone(); // Should return a new instance with the same initial data.
         void Serialize(Utf8JsonWriter writer);
         void DeserializeProperty(string property, ref Utf8JsonReader reader);
     }

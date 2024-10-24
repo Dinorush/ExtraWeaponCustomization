@@ -164,20 +164,10 @@ namespace EWC.CustomWeapon.Properties.Traits
             return UnityEngine.Mathf.Lerp(1f, EndDamageMod, (float)Math.Pow(_progress, AccelExponent));
         }
 
-        public override IWeaponProperty Clone()
+        public override WeaponPropertyBase Clone()
         {
-            Accelerate copy = new()
-            {
-                EndFireRate = EndFireRate,
-                EndDamageMod = EndDamageMod,
-                DamageStackLayer = DamageStackLayer,
-                AccelTime = AccelTime,
-                AccelExponent = AccelExponent,
-                _useContinuousGrowth = _useContinuousGrowth,
-                DecelTime = DecelTime,
-                DecelDelay = DecelDelay,
-                Trigger = Trigger?.Clone()
-            };
+            var copy = (Accelerate) base.Clone();
+            copy.Trigger = Trigger?.Clone();
             return copy;
         }
 

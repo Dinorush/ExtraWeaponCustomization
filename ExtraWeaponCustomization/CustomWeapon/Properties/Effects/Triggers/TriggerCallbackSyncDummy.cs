@@ -5,24 +5,21 @@ using System.Text.Json;
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     // Used by CWCs in the event that client has incorrect Sync properties
-    public sealed class TriggerCallbackSyncDummy : ITriggerCallbackSync
+    public sealed class TriggerCallbackSyncDummy : WeaponPropertyBase, ITriggerCallbackSync
     {
-        public static TriggerCallbackSyncDummy Instance = new();
+        public readonly static TriggerCallbackSyncDummy Instance = new();
 
         public ushort SyncID { get; set; }
-#pragma warning disable CS8618 // CWC is never used by this
-        public CustomWeaponComponent CWC { get; set; }
-#pragma warning restore CS8618
 
         public TriggerCoordinator? Trigger { get; set; }
 
-        public IWeaponProperty Clone() { return this; }
+        public override WeaponPropertyBase Clone() { return this; }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader) { }
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) { }
 
         public void Invoke(WeaponTriggerContext context) { }
 
-        public void Serialize(Utf8JsonWriter writer) { }
+        public override void Serialize(Utf8JsonWriter writer) { }
 
         public void TriggerApply(List<TriggerContext> triggerList) { }
 

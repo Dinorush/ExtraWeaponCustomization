@@ -69,11 +69,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             return Math.Min(cap, (int)_shotBuffer);
         }
 
-        public override IWeaponProperty Clone()
-        {
-            return new EnforceFireRate();
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

@@ -36,7 +36,6 @@ internal sealed class EntryPoint : BasePlugin
             EWCLogger.Error("No MTFO datablocks detected. Not loading EWC...");
             return;
         }
-
         new Harmony(MODNAME).PatchAll();
         EnemyDetectionPatches.ApplyNativePatch();
         Configuration.Init();

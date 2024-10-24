@@ -7,6 +7,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     internal class BioPing :
         Trait,
+        IGunProperty,
+        IMeleeProperty,
         IWeaponProperty<WeaponPreHitEnemyContext>
     {
         public DamageType DamageType { get; private set; } = DamageType.Bullet;
@@ -15,15 +17,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (context.DamageType.HasFlag(DamageType))
                 ToolSyncManager.WantToTagEnemy(context.Damageable.GetBaseAgent().Cast<EnemyAgent>());
-        }
-
-        public override IWeaponProperty Clone()
-        {
-            BioPing copy = new()
-            {
-                DamageType = DamageType
-            };
-            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

@@ -69,19 +69,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             ammoStorage.UpdateSlotAmmoUI(ammoStorage.m_ammoStorage[(int) weapon.AmmoType], newClip);
         }
 
-        public override IWeaponProperty Clone()
-        {
-            AmmoMod copy = new()
-            {
-                ClipChange = ClipChange,
-                ReserveChange = ReserveChange,
-                OverflowToReserve = OverflowToReserve,
-                PullFromReserve = PullFromReserve,
-                Trigger = Trigger?.Clone()
-            };
-            return copy;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

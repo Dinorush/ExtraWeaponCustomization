@@ -336,18 +336,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override IWeaponProperty Clone()
+        public override WeaponPropertyBase Clone()
         {
-            return new DataSwap()
-            {
-                ArchetypeID = ArchetypeID,
-                EndBurst = EndBurst,
-                EndCharge = EndCharge,
-                KeepMagCost = KeepMagCost,
-                AudioID = AudioID,
-                Duration = Duration,
-                Trigger = Trigger?.Clone()
-            };
+            var copy = (DataSwap) base.Clone();
+            copy.Trigger = Trigger?.Clone();
+            return copy;
         }
 
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)

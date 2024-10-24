@@ -12,9 +12,11 @@ using System.Text.Json;
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class DamageOverTime :
-        Effect
+        Effect,
+        IGunProperty,
+        IMeleeProperty
     {
-        public PlayerAgent Owner => Weapon.Owner;
+        public PlayerAgent Owner => CWC.Weapon.Owner;
 
         public float TotalDamage { get; private set; } = 0f;
         public float PrecisionDamageMulti { get; private set; } = 0f;
@@ -37,13 +39,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         private readonly Dictionary<ObjectWrapper<Agent>, DOTInstance> _lastDOTs = new();
         private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
 
-#pragma warning disable CS8618
         public DamageOverTime()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
             SetValidTriggers(DamageType.DOT, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
-#pragma warning restore CS8618
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
@@ -111,26 +111,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
             else
                 _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
-        }
-
-        public override IWeaponProperty Clone()
-        {
-            DamageOverTime copy = new()
-            {
-                TotalDamage = TotalDamage,
-                PrecisionDamageMulti = PrecisionDamageMulti,
-                StaggerDamageMulti = StaggerDamageMulti,
-                Duration = Duration,
-                Stacks = Stacks,
-                IgnoreFalloff = IgnoreFalloff,
-                DamageLimb = DamageLimb,
-                IgnoreArmor = IgnoreArmor,
-                IgnoreBackstab = IgnoreBackstab,
-                IgnoreDamageMods = IgnoreDamageMods,
-                TickRate = TickRate,
-                Trigger = Trigger?.Clone()
-            };
-            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

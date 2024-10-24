@@ -28,11 +28,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override IWeaponProperty Clone()
-        {
-            return new AutoTrigger();
-        }
-
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
     }
 }

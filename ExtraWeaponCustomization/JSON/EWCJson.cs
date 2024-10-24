@@ -26,7 +26,6 @@ namespace EWC.JSON
             _setting.Converters.Add(new WeaponPropertyConverter());
             _setting.Converters.Add(new PropertyListConverter());
             _setting.Converters.Add(new ColorConverter());
-            
             if (PDAPIWrapper.HasPData)
                 _setting.Converters.Add(PDAPIWrapper.PersistentIDConverter!);
         }

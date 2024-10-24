@@ -282,19 +282,10 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private bool BulletHit(HitData data) => BulletWeapon.BulletHit(data.Apply(Weapon.s_weaponRayData), true, 0, 0, true);
 
-        public override IWeaponProperty Clone()
+        public override WeaponPropertyBase Clone()
         {
-            MultiShot copy = new()
-            {
-                AimOffsetMod = AimOffsetMod,
-                Repeat = Repeat,
-                IgnoreSpread = IgnoreSpread,
-                ApplySpreadPerShot = ApplySpreadPerShot,
-                CancelShot = CancelShot,
-                ForceSingleBullet = ForceSingleBullet
-            };
+            var copy = (MultiShot)base.Clone();
             copy.Offsets.AddRange(Offsets);
-
             return copy;
         }
 

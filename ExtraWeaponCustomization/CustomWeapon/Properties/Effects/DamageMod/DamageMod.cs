@@ -7,6 +7,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class DamageMod :
         TriggerMod,
+        IGunProperty,
+        IMeleeProperty,
         IWeaponProperty<WeaponDamageContext>
     {
         private readonly Queue<TriggerInstance> _expireTimes = new();
@@ -29,13 +31,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             while (_expireTimes.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) _expireTimes.Dequeue();
 
             context.Damage.AddMod(CalculateMod(_expireTimes), StackLayer);
-        }
-
-        public override IWeaponProperty Clone()
-        {
-            DamageMod copy = new();
-            copy.CopyFrom(this);
-            return copy;
         }
 
         public override void WriteName(Utf8JsonWriter writer)

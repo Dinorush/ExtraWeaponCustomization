@@ -201,19 +201,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
         }
 
-        public override IWeaponProperty Clone()
-        {
-            Silence copy = new()
-            {
-                FakeAlertRadius = FakeAlertRadius,
-                AlertRadius = AlertRadius,
-                AlertAmount = AlertAmount,
-                WakeUpRadius = WakeUpRadius,
-                CrossDoors = CrossDoors
-            };
-            return copy;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

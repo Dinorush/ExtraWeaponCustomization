@@ -6,6 +6,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class ArmorPierce :
         Trait,
+        IGunProperty,
+        IMeleeProperty,
         IWeaponProperty<WeaponArmorContext>
     {
         public float Pierce { get; private set; } = 1f;
@@ -19,15 +21,6 @@ namespace EWC.CustomWeapon.Properties.Traits
                 PierceType.Multi => context.ArmorMulti * Pierce,
                 PierceType.Override => Pierce,
                 _ => context.ArmorMulti
-            };
-        }
-
-        public override IWeaponProperty Clone()
-        {
-            return new ArmorPierce()
-            {
-                Pierce = Pierce,
-                Type = Type
             };
         }
 

@@ -6,6 +6,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     internal class BackstabMulti : 
         Trait,
+        IGunProperty,
+        IMeleeProperty,
         IWeaponProperty<WeaponBackstabContext>
     {
         public float BackstabDamageMulti { get; private set; } = 1f;
@@ -13,15 +15,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         public void Invoke(WeaponBackstabContext context)
         {
             context.AddMod(BackstabDamageMulti, StackType.Multiply);
-        }
-
-        public override IWeaponProperty Clone()
-        {
-            BackstabMulti copy = new()
-            {
-                BackstabDamageMulti = BackstabDamageMulti
-            };
-            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

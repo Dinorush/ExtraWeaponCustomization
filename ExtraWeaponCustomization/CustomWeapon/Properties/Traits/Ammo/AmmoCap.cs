@@ -15,6 +15,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float AmmoCapRel { get; private set; } = 1f;
         public float AmmopackRefillRel { get; private set; } = 0f;
         public float CostOfBullet { get; private set; } = 0f;
+        public bool ApplyOnDrop { get; private set; } = true;
 
         private const float DefaultPackConv = 5f;
 
@@ -46,6 +47,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostAmmoInitContext context)
         {
+            if (!ApplyOnDrop) return;
+
             // Fix the starting ammo for the weapon.
             InventorySlotAmmo slot = context.SlotAmmo;
             slot.AmmoInPack = (CWC.Weapon.GetCurrentClip() * slot.CostOfBullet + slot.AmmoInPack) * AmmoCapRel;
@@ -59,17 +62,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             context.AmmoAmount *= AmmoCapRel;
         }
 
-        public override IWeaponProperty Clone()
-        {
-            AmmoCap copy = new()
-            {
-                AmmoCapRel = AmmoCapRel,
-                AmmopackRefillRel = AmmopackRefillRel,
-                CostOfBullet = CostOfBullet
-            };
-            return copy;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
@@ -77,6 +69,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(AmmoCapRel), AmmoCapRel);
             writer.WriteNumber(nameof(AmmopackRefillRel), AmmopackRefillRel);
             writer.WriteNumber(nameof(CostOfBullet), CostOfBullet);
+            writer.WriteBoolean(nameof(ApplyOnDrop), ApplyOnDrop);
             writer.WriteEndObject();
         }
 
@@ -92,16 +85,23 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "ammocap":
                 case "caprel":
                 case "cap":
-                    AmmoCapRel = reader.GetSingle();
+                    float cap = reader.GetSingle();
+                    if (cap == 1f) break;
+                    AmmoCapRel = cap;
                     CostOfBullet = 0;
                     AmmopackRefillRel = 0;
                     break;
+                case "ammopackrefillrel":
+                case "ammopackrefill":
                 case "ammorefillrel":
                 case "ammorefill":
                 case "refillrel":
                 case "refill":
                     AmmopackRefillRel = reader.GetSingle();
                     CostOfBullet = 0;
+                    break;
+                case "applyondrop":
+                    ApplyOnDrop = reader.GetBoolean();
                     break;
                 default:
                     break;

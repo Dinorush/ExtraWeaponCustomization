@@ -1,5 +1,4 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
-using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,6 +10,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class TempProperties :
         Effect,
+        IGunProperty,
+        IMeleeProperty,
         ITriggerCallbackSync
     {
         public ushort SyncID { get; set; }
@@ -98,19 +99,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
         }
 
-        public override IWeaponProperty Clone()
+        public override WeaponPropertyBase Clone()
         {
-            TempProperties copy = new()
-            {
-                Properties = Properties?.Clone(),
-                Duration = Duration,
-                Override = Override,
-                ResetTriggersOnEnd = ResetTriggersOnEnd,
-                Trigger = Trigger?.Clone()
-            };
+            var copy = (TempProperties) base.Clone();
 
-            if (copy.Properties != null)
+            if (Properties != null)
             {
+                copy.Properties = Properties.Clone();
                 copy.Properties.Owner = copy;
                 copy.Properties.Override = Override;
                 foreach (var property in copy.Properties.Properties)
@@ -153,7 +148,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "properties":
                     try
                     {
-                        var properties = EWCJson.Deserialize<List<IWeaponProperty>>(ref reader);
+                        var properties = EWCJson.Deserialize<List<WeaponPropertyBase>>(ref reader);
                         if (properties != null)
                             Properties = new(properties, false);
                     }

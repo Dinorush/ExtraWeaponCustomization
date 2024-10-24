@@ -16,15 +16,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             context.AddMod(PierceDamageMulti, StackType.Multiply);
         }
 
-        public override IWeaponProperty Clone()
-        {
-            PierceMulti copy = new()
-            {
-                PierceDamageMulti = PierceDamageMulti
-            };
-            return copy;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

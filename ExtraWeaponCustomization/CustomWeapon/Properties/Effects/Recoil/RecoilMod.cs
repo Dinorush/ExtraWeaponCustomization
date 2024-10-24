@@ -32,13 +32,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             context.AddMod(CalculateMod(_expireTimes), StackLayer);
         }
 
-        public override IWeaponProperty Clone()
-        {
-            RecoilMod copy = new();
-            copy.CopyFrom(this);
-            return copy;
-        }
-
         public override void WriteName(Utf8JsonWriter writer)
         {
             writer.WriteString("Name", GetType().Name);
