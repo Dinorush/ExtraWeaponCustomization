@@ -1,4 +1,5 @@
 ﻿using Agents;
+using EWC.CustomWeapon.WeaponContext;
 using EWC.Patches;
 using EWC.Utils;
 using FX_EffectSystem;
@@ -17,8 +18,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         // Set on init
         private Projectile? _settings;
-        private CustomWeaponComponent _baseCWC;
         private BulletWeapon _weapon;
+        private ContextController _contextController;
         private readonly HashSet<IntPtr> _initialPlayers = new();
         private readonly HashSet<IntPtr> _hitEnts = new();
         private readonly HitData _hitData = new();
@@ -38,6 +39,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         // Static
         public const float MinCollisionSqrDist = 0.0009f;
         public const float MinCollisionDist = 0.03f;
+        private static ContextController? s_currentController;
+        private static float s_lastControllerTime = 0f;
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
         private static float s_velMagnitude;
@@ -61,8 +64,20 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _enabled = true;
             _settings = projBase;
-            _baseCWC = cwc;
             _weapon = cwc.Gun!;
+
+            if (cwc.HasTempProperties())
+            {
+                // Properties can never change in the same frame, so we can batch shotguns.
+                if (s_lastControllerTime != Clock.Time)
+                {
+                    s_currentController = new(_settings.CWC.GetContextController());
+                    s_lastControllerTime = Clock.Time;
+                }
+                _contextController = s_currentController!;
+            }
+            else
+                _contextController = cwc.GetContextController();
 
             Vector3 pos = _weapon.Owner.FPSCamera.Position;
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
@@ -307,7 +322,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             DoImpactFX(damageable);
 
             bool backstab = true;
-            WeaponPatches.ApplyEWCHit(_baseCWC!, damageable, _hitData, _pierce, ref _baseDamage, ref backstab);
+            WeaponPatches.ApplyEWCHit(_contextController, _weapon, damageable, _hitData, _pierce, ref _baseDamage, ref backstab);
             float damage = _hitData.damage * _hitData.falloff;
             damageable?.BulletDamage(damage, _hitData.owner, _hitData.hitPos, _hitData.fireDir, _hitData.RayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
         }

@@ -113,6 +113,8 @@ namespace EWC.CustomWeapon.Properties
             _syncList.Clear();
         }
 
+        public ContextController GetContextController() => _contextController;
+        public bool HasTempProperties() => _root!.Children.Count > 0;
         public bool HasTrait(Type type) => _activeTraits.ContainsKey(type);
         public Trait GetTrait(Type type) => _activeTraits[type];
         internal ITriggerCallbackSync GetTriggerSync(ushort id)

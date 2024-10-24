@@ -160,6 +160,10 @@ namespace EWC.CustomWeapon
         [HideFromIl2Cpp]
         internal ITriggerCallbackSync GetTriggerSync(ushort id) => _propertyController.GetTriggerSync(id);
 
+        [HideFromIl2Cpp]
+        public ContextController GetContextController() => _propertyController.GetContextController();
+        public bool HasTempProperties() => _propertyController.HasTempProperties();
+
         public void StoreCancelShot()
         {
             if (!CancelShot)

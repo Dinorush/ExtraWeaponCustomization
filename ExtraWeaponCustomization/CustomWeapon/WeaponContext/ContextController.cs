@@ -12,6 +12,12 @@ namespace EWC.CustomWeapon.WeaponContext
     {
         private readonly Dictionary<Type, IContextList> _allContextLists = new();
 
+        public ContextController(ContextController contextController)
+        {
+            foreach (IContextList list in contextController._allContextLists.Values)
+                list.CopyTo(this);
+        }
+
         public ContextController(bool isGun)
         {
             if (isGun)
@@ -25,6 +31,7 @@ namespace EWC.CustomWeapon.WeaponContext
             bool Add(IWeaponProperty property);
             bool Remove(IWeaponProperty property);
             void Clear();
+            void CopyTo(ContextController manager);
             void Invoke(IWeaponContext context, List<Exception> exceptions);
         }
 
@@ -32,7 +39,6 @@ namespace EWC.CustomWeapon.WeaponContext
         {
             private readonly List<IWeaponProperty<TContext>> _entries;
             private readonly IContextList? _baseContextList;
-            private readonly ContextController _manager;
 
             internal ContextList(ContextController manager)
             {
@@ -41,9 +47,6 @@ namespace EWC.CustomWeapon.WeaponContext
                 Type? baseType = typeof(TContext).BaseType;
                 if (baseType != null && manager._allContextLists.ContainsKey(baseType))
                     _baseContextList = manager._allContextLists[baseType];
-
-                _manager = manager;
-                _manager._allContextLists.Add(typeof(TContext), this);
             }
 
             public bool Add(IWeaponProperty property)
@@ -69,6 +72,18 @@ namespace EWC.CustomWeapon.WeaponContext
             public void Clear()
             {
                 _entries.Clear();
+            }
+
+            public void CopyTo(ContextController manager)
+            {
+                Type type = typeof(TContext);
+                if (manager._allContextLists.ContainsKey(type)) return;
+
+                _baseContextList?.CopyTo(manager);
+
+                ContextList<TContext> copy = new(manager);
+                copy._entries.AddRange(_entries);
+                manager._allContextLists.Add(type, copy);
             }
 
             public void Invoke(TContext context, List<Exception> exceptions)
