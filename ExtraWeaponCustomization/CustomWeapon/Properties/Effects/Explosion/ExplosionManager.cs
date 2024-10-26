@@ -33,15 +33,15 @@ namespace EWC.CustomWeapon.Properties.Effects
             ExplosionFXManager.Init();
         }
 
-        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, IDamageable? directLimb = null)
+        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)
         {
             if (!source.IsLocallyOwned) return;
 
             ExplosionFXManager.DoExplosionFX(position, eBase);
-            DoExplosionDamage(position, direction, source, falloffMod, eBase, triggerAmt, directLimb);
+            DoExplosionDamage(position, direction, source, falloffMod, eBase, triggerAmt);
         }
 
-        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt, IDamageable? directLimb = null)
+        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt)
         {
             AIG_CourseNode? node = SearchUtil.GetCourseNode(position, source);
             if (node == null)

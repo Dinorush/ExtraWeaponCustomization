@@ -33,6 +33,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public float CacheBackstab { get; private set; } = 0f;
 
+        private const float WallHitBuffer = -0.03f;
+
         public Explosive()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.BulletLanded));
@@ -51,7 +53,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (tContext.context is WeaponPostKillContext killContext)
                 {
                     CacheBackstab = killContext.Backstab;
-                    ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, tContext.triggerAmt, null);
+                    ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, tContext.triggerAmt);
                 }
                 else
                 {
@@ -60,11 +62,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                     Vector3 position = context.Position;
                     if (context.Damageable != null && context.Damageable.GetBaseAgent() != null)
                         position = context.LocalPosition + context.Damageable.GetBaseAgent().Position;
+                    else if (context.Damageable == null)
+                        position += context.Direction * WallHitBuffer;
 
                     if (context is WeaponPreHitEnemyContext enemyContext)
                         CacheBackstab = enemyContext.Backstab;
 
-                    ExplosionManager.DoExplosion(position, context.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, tContext.triggerAmt, context.Damageable);
+                    ExplosionManager.DoExplosion(position, context.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, tContext.triggerAmt);
                 }
             }
         }
