@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+﻿using Enemies;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
@@ -21,6 +23,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
     {
+        public ushort SettingsID { get; set; }
+
         public ProjectileType ProjectileType { get; private set; } = ProjectileType.NotTargetingSmallFast;
         public float Speed { get; private set; } = 0f;
         public float AccelScale { get; private set; } = 1f;
@@ -42,6 +46,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool DamageOwner { get; private set; } = false;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
+
+        public ProjectileHomingSettings HomingSettings { get; private set; } = new();
 
         private float _cachedRayDist;
 
@@ -83,7 +89,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (VisualLerpDist > 0)
                 comp.SetVisualPosition(CWC.Gun!.MuzzleAlign.position, visualDist);
-            comp.Hitbox.Init(CWC, this);
         }
 
         // Cancel tracer FX
@@ -117,6 +122,13 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
         }
 
+        public override WeaponPropertyBase Clone()
+        {
+            Projectile copy = (Projectile) base.Clone();
+            copy.SettingsID = SettingsID;
+            return copy;
+        }
+
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
@@ -138,6 +150,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
+            writer.WritePropertyName(nameof(HomingSettings));
+            HomingSettings.Serialize(writer);
             writer.WriteEndObject();
         }
 
@@ -207,6 +221,13 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "maxlifetime":
                 case "lifetime":
                     Lifetime = reader.GetSingle();
+                    break;
+
+                case "homingsettings":
+                case "homing":
+                    HomingSettings.Deserialize(ref reader);
+                    break;
+                default:
                     break;
             }
         }

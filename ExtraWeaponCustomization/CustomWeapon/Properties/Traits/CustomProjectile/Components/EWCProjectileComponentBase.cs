@@ -12,22 +12,21 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public EWCProjectileComponentBase(IntPtr ptr) : base(ptr)
         {
             Hitbox = new(this);
+            Homing = new(this);
         }
 
         public EWCProjectileHitbox Hitbox;
+        public EWCProjectileHoming Homing;
+        protected Projectile? _settings;
 
         private float _endLifetime;
         private Coroutine? _inactiveRoutine;
-        protected Vector3 _baseDir;
+        private Vector3 _baseDir;
         private Vector3 _baseVelocity;
-        protected Vector3 _velocity;
-        protected float _accel;
-        protected float _accelExpo;
-        protected float _accelTime;
-        protected float _accelProgress;
+        private Vector3 _velocity;
+        private float _accelProgress;
 
         protected Vector3 _position;
-        protected float _gravity;
         protected float _gravityVel;
 
         private float _lerpProgress;
@@ -37,42 +36,45 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected Vector3 _dirVisual;
 
         protected static Quaternion s_tempRot;
-        private bool _sendDestroy;
-        private ushort _id;
-        private ushort _playerIndex;
+        private bool _isLocal;
+        public ushort SyncID { get; private set; }
+        public ushort PlayerIndex { get; private set; }
 
         protected virtual void Awake()
         {
             enabled = false;
         }
 
-        public virtual void Init(ushort playerIndex, ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, float lifetime, bool sendDestroy)
+        public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isLocal, Vector3 position, Vector3 dir)
         {
             if (enabled) return;
 
             if (_inactiveRoutine != null)
                 StopCoroutine(_inactiveRoutine);
 
-            gameObject.transform.localScale = Vector3.one * scale;
-            s_tempRot.SetLookRotation(velocity);
+            _settings = projBase;
+
+            gameObject.transform.localScale = Vector3.one * projBase.ModelScale;
+            s_tempRot.SetLookRotation(dir);
             gameObject.transform.SetPositionAndRotation(position, s_tempRot);
             gameObject.active = true;
             enabled = true;
+
             _lerpProgress = 1f;
             _accelProgress = 0f;
-            _endLifetime = Time.time + lifetime;
+            _endLifetime = Time.time + projBase.Lifetime;
+            Homing.Init(projBase, isLocal, position, dir);
+            if (isLocal)
+                Hitbox.Init(projBase);
+
             _position = position;
-            _velocity = velocity;
-            _baseVelocity = velocity;
-            _baseDir = velocity.normalized;
-            _accel = Mathf.Approximately(accel, 1f) ? 1f : accel; // Explicitly check for approx 1 so can skip accel calculations
-            _accelExpo = accelExpo;
-            _accelTime = accelTime == 0 ? 0.001f : accelTime;
-            _gravity = gravity;
+            _velocity = dir * projBase.Speed;
+            _baseVelocity = _velocity;
+            _baseDir = dir;
             _gravityVel = 0;
-            _sendDestroy = sendDestroy;
-            _id = ID;
-            _playerIndex = playerIndex;
+            _isLocal = isLocal;
+            SyncID = ID;
+            PlayerIndex = playerIndex;
         }
 
         public void SetVisualPosition(Vector3 positionVisual, float lerpDist)
@@ -108,6 +110,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         protected virtual void Update()
         {
+            if (_settings == null)
+            {
+                Die();
+                return;
+            }
+
+            Homing.Update(_position, ref _baseDir);
+            _baseVelocity = _baseDir * _settings.Speed;
+
             Vector3 deltaVel = UpdateVelocity();
             Vector3 collisionVel = deltaVel.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaVel : _baseDir * EWCProjectileHitbox.MinCollisionDist;
             Hitbox.Update(_position, collisionVel);
@@ -123,31 +134,31 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             LerpVisualOffset();
         }
 
-        protected Vector3 UpdateVelocity()
+        private Vector3 UpdateVelocity()
         {
             float delta = Time.deltaTime;
             float deltaMod;
-            if (_accel != 1f)
+            if (_settings!.AccelScale != 1f)
             {
                 if (_accelProgress == 1f)
                 {
-                    deltaMod = _accel * delta;
-                    _velocity = _baseVelocity * _accel;
+                    deltaMod = _settings.AccelScale * delta;
+                    _velocity = _baseVelocity * _settings!.AccelScale;
                 }
                 else // Need to calculate how much distance was covered including the acceleration
                 {
-                    float trgtProgress = Math.Min(_accelProgress + delta / _accelTime, 1f);
-                    float newExpo = _accelExpo + 1;
-                    float progressMod = (float)(_accelTime * (_accel - 1.0) * (Math.Pow(trgtProgress, newExpo) - Math.Pow(_accelProgress, newExpo)) / newExpo);
+                    float trgtProgress = Math.Min(_accelProgress + delta / _settings.AccelTime, 1f);
+                    float newExpo = _settings.AccelExponent + 1;
+                    float progressMod = (float)(_settings.AccelTime * (_settings.AccelScale - 1.0) * (Math.Pow(trgtProgress, newExpo) - Math.Pow(_accelProgress, newExpo)) / newExpo);
                     if (trgtProgress < 1f)
                         deltaMod = delta + progressMod;
                     else
                     {
-                        float timeToAccel = (1f - _accelProgress) * _accelTime;
-                        deltaMod = progressMod + timeToAccel + _accel * (delta - timeToAccel);
+                        float timeToAccel = (1f - _accelProgress) * _settings.AccelTime;
+                        deltaMod = progressMod + timeToAccel + _settings.AccelScale * (delta - timeToAccel);
                     }
                     _accelProgress = trgtProgress;
-                    _velocity = _baseVelocity * Mathf.Lerp(1f, _accel, Mathf.Pow(_accelProgress, _accelExpo));
+                    _velocity = _baseVelocity * Mathf.Lerp(1f, _settings.AccelScale, Mathf.Pow(_accelProgress, _settings.AccelExponent));
                 }
             }
             else
@@ -157,8 +168,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             Vector3 result = _baseVelocity * deltaMod;
-            result.y -= 0.5f * _gravity * delta * delta + _gravityVel * delta;
-            _gravityVel += _gravity * delta;
+            result.y -= 0.5f * _settings.Gravity * delta * delta + _gravityVel * delta;
+            _gravityVel += _settings.Gravity * delta;
             _velocity.y -= _gravityVel;
 
             return result;
@@ -171,9 +182,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
             _inactiveRoutine = StartCoroutine(DelayedInactive().WrapToIl2Cpp());
-            if (_sendDestroy)
-                EWCProjectileManager.DoProjectileDestroy(_playerIndex, _id);
+            if (_isLocal)
+                EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID);
             Hitbox.Die();
+            Homing.Die();
         }
 
         [HideFromIl2Cpp]

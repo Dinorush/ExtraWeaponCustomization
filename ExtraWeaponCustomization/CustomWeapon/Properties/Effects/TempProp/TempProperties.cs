@@ -16,7 +16,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public ushort SyncID { get; set; }
 
-        public PropertyList? Properties { get; private set; }
+        public PropertyList Properties { get; private set; } = new();
         private List<ITriggerCallback>? _callbackProperties;
         public float Duration { get; private set; } = 0f;
         public bool Override { get; private set; } = false;
@@ -29,8 +29,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
-            if (Properties == null) return;
-
             TriggerApplySync();
             TriggerManager.SendInstance(this);
             
@@ -42,16 +40,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void TriggerApplySync(float mod = 1f)
         {
-            if (Properties == null) return;
-
             _endTime = Clock.Time + Duration;
             _activeRoutine ??= CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(DeactivateAfterDelay()));
         }
 
         public override void TriggerReset()
         {
-            if (Properties == null) return;
-
             TriggerResetSync();
             TriggerManager.SendReset(this);
 
@@ -63,8 +57,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void TriggerResetSync()
         {
-            if (Properties == null) return;
-
             _endTime = 0;
             if (_activeRoutine != null)
             {
@@ -103,18 +95,15 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             var copy = (TempProperties) base.Clone();
 
-            if (Properties != null)
+            copy.Properties = Properties.Clone();
+            copy.Properties.Owner = copy;
+            copy.Properties.Override = Override;
+            foreach (var property in copy.Properties.Properties)
             {
-                copy.Properties = Properties.Clone();
-                copy.Properties.Owner = copy;
-                copy.Properties.Override = Override;
-                foreach (var property in copy.Properties.Properties)
+                if (property is ITriggerCallback trigger)
                 {
-                    if (property is ITriggerCallback trigger)
-                    {
-                        copy._callbackProperties ??= new();
-                        copy._callbackProperties.Add(trigger);
-                    }
+                    copy._callbackProperties ??= new();
+                    copy._callbackProperties.Add(trigger);
                 }
             }
 
@@ -126,13 +115,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WritePropertyName(nameof(Properties));
-            if (Properties != null)
-                EWCJson.Serialize(writer, Properties);
-            else
-            {
-                writer.WriteStartArray();
-                writer.WriteEndArray();
-            }
+            EWCJson.Serialize(writer, Properties);
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteBoolean(nameof(Override), Override);
             writer.WriteBoolean(nameof(ResetTriggersOnEnd), ResetTriggersOnEnd);
@@ -146,13 +129,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             switch (property)
             {
                 case "properties":
-                    try
-                    {
-                        var properties = EWCJson.Deserialize<List<WeaponPropertyBase>>(ref reader);
-                        if (properties != null)
-                            Properties = new(properties, false);
-                    }
-                    catch (JsonException) {}
+                    Properties = EWCJson.Deserialize<PropertyList>(ref reader)!;
                     break;
                 case "duration":
                     Duration = reader.GetSingle();

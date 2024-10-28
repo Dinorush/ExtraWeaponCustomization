@@ -1,4 +1,5 @@
 ﻿using Agents;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Enemies;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
@@ -7,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using UnityEngine;
-using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
@@ -33,8 +33,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool LockWhileEmpty { get; private set; } = true;
         public bool TagOnly { get; private set; } = false;
         public bool IgnoreInvisibility { get; private set; } = false;
-        TargetingMode TargetMode { get; set; } = TargetingMode.Normal;
+        public TargetingMode TargetMode { get; private set; } = TargetingMode.Normal;
         public bool FavorLookPoint { get; private set; } = false;
+        public bool HomingOnly { get; private set; } = false;
 
         public CrosshairHitIndicator? _reticle;
         private GameObject? _reticleHolder;
@@ -76,7 +77,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPreRayContext context)
         {
-            if (_camera == null) return;
+            if (_camera == null || HomingOnly) return;
 
             // Ignore pierced shots
             if (context.Data.maxRayDist < CWC.Gun!.MaxRayDist) return;
@@ -129,7 +130,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (LockDecayTime > 0)
             {
                 if (hasTarget && !_hasTarget)
-                    targetLostAnimator = CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(AnimateReticleToCenter()));
+                    targetLostAnimator = CoroutineManager.StartCoroutine(AnimateReticleToCenter().WrapToIl2Cpp());
                 else if(!hasTarget && _hasTarget && targetLostAnimator != null)
                 {
                     CoroutineManager.StopCoroutine(targetLostAnimator);
@@ -277,6 +278,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             );
         public bool UseAutoAim => LockedTarget && AutoAimActive;
 
+        public (EnemyAgent?, Dam_EnemyDamageLimb?) GetTargets() => (_target, _weakspotLimb);
+
         private bool CheckTargetValid()
         {
             if (_target == null || !_target.Alive) return false;
@@ -287,12 +290,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             Vector3 targetPos = GetTargetPos();
             if (Physics.Linecast(position, targetPos, LayerUtil.MaskWorldExcProj)) return false;
 
-            foreach (var collider in _target.GetComponentsInChildren<Collider>())
+            foreach (var limb in _target.Damage.DamageLimbs)
             {
-                Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
-                if (limb?.IsDestroyed == true) continue;
+                if (limb.IsDestroyed == true) continue;
 
-                Vector3 diff = collider.ClosestPoint(position) - position;
+                Vector3 diff = limb.GetComponent<Collider>().ClosestPoint(position) - position;
                 float sqrDist = diff.sqrMagnitude;
                 if (sqrDist < Range * Range && Vector3.Angle(_camera!.CameraRayDir, diff) < Angle)
                     return true;
@@ -367,11 +369,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (_target == null) return;
 
             _weakspotTarget = _target.AimTarget;
-            foreach (Collider collider in _target.GetComponentsInChildren<Collider>())
+            foreach (var limb in _target.Damage.DamageLimbs)
             {
-                Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
-                if (limb != null && limb.m_health > 0)
+                if (limb.m_health > 0)
                 {
+                    Collider collider = limb.GetComponent<Collider>();
                     if (limb.m_type == eLimbDamageType.Weakspot)
                         _weakspotList.Add((collider, limb));
                     else
@@ -446,6 +448,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(IgnoreInvisibility), IgnoreInvisibility);
             writer.WriteString(nameof(TargetMode), TargetMode.ToString());
             writer.WriteBoolean(nameof(FavorLookPoint), FavorLookPoint);
+            writer.WriteBoolean(nameof(HomingOnly), HomingOnly);
             writer.WriteEndObject();
         }
 
@@ -504,16 +507,19 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "favourlookpoint":
                     FavorLookPoint = reader.GetBoolean();
                     break;
+                case "homingonly":
+                    HomingOnly = reader.GetBoolean();
+                    break;
                 default:
                     break;
             }
         }
-
-        enum TargetingMode
-        {
-            Normal,
-            Body,
-            Weakspot
-        }
+    }
+    
+    public enum TargetingMode
+    {
+        Normal,
+        Body,
+        Weakspot
     }
 }

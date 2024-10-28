@@ -16,6 +16,8 @@ namespace EWC
 
         public static float AutoAimTickDelay { get; set; } = 0.1f;
 
+        public static float HomingTickDelay { get; set; } = 0.1f;
+
         private readonly static ConfigFile configFile;
 
         static Configuration()
@@ -41,6 +43,10 @@ namespace EWC
             PlayExplosionSFX = (bool)configFile[section, "Play Sound"].BoxedValue;
             ExplosionSFXCooldown = (float)configFile[section, "SFX Cooldown"].BoxedValue;
             ExplosionSFXShotOverride = (int)configFile[section, "Shots to Override SFX Cooldown"].BoxedValue;
+
+            section = "Projectile Settings";
+            HomingTickDelay = (float)configFile[section, "Homing Search Cooldown"].BoxedValue;
+
             CheckAndRefreshTemplate();
         }
 
@@ -54,6 +60,9 @@ namespace EWC
             PlayExplosionSFX = config.Bind(section, "Play Sound", PlayExplosionSFX, "Enables explosion sound FX.").Value;
             ExplosionSFXCooldown = config.Bind(section, "SFX Cooldown", ExplosionSFXCooldown, "Minimum time between explosion sound effects, to prevent obnoxiously loud sounds.").Value;
             ExplosionSFXShotOverride = config.Bind(section, "Shots to Override SFX Cooldown", ExplosionSFXShotOverride, "Amount of shots fired before another explosion sound effect is forced, regardless of cooldown.\nSmaller numbers let fast-firing weapons and shotguns make more sounds in a short span of time.").Value;
+
+            section = "Projectile Settings";
+            HomingTickDelay = config.Bind(section, "Homing Search Cooldown", HomingTickDelay, "Minimum time between attempted searches to acquire a new target.").Value;
 
             section = "Tools";
             ForceCreateTemplate = config.Bind(section, "Force Create Template", false, "Creates the template file again.");

@@ -7,7 +7,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using Il2CppInterop.Runtime.Attributes;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
 namespace EWC.CustomWeapon
@@ -129,8 +129,7 @@ namespace EWC.CustomWeapon
                 return;
             }
 
-            List<WeaponPropertyBase> properties = data.Properties.ConvertAll(property => property.Clone());
-            _propertyController.Init(this, new PropertyList(properties));
+            _propertyController.Init(this, data.Properties.Clone());
             if (Gun?.m_archeType?.m_owner != null)
                 OwnerInit();
         }
@@ -156,6 +155,8 @@ namespace EWC.CustomWeapon
         public bool HasTrait(Type type) => _propertyController.HasTrait(type);
         [HideFromIl2Cpp]
         public Trait GetTrait(Type type) => _propertyController.GetTrait(type);
+        [HideFromIl2Cpp]
+        public bool TryGetTrait(Type type, [MaybeNullWhen(false)] out Trait trait) => _propertyController.TryGetTrait(type, out trait);
 
         [HideFromIl2Cpp]
         internal ITriggerCallbackSync GetTriggerSync(ushort id) => _propertyController.GetTriggerSync(id);

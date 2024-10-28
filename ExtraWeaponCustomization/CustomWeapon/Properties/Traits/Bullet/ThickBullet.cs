@@ -74,7 +74,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             results = Physics.RaycastAll(s_ray, maxDist, LayerUtil.MaskFriendly);
             if (results.Length != 0)
             {
-                Array.Sort(results, SortUtil.RaycastDistance);
+                Array.Sort(results, SortUtil.Rayhit);
 
                 foreach (RaycastHit hit in results)
                 {
@@ -102,7 +102,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             Vector3 origin = s_ray.origin;
             List<(EnemyAgent enemy, RaycastHit hit)> hits = SearchUtil.GetEnemyHitsInRange(s_ray, HitSize, 180f, CWC.Weapon.Owner.CourseNode);
-            hits.Sort(SortUtil.SearchDistance);
+            hits.Sort(SortUtil.EnemyRayhit);
 
             foreach (var pair in hits)
             {
@@ -121,7 +121,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
 
             List<RaycastHit> lockHits = SearchUtil.GetLockHitsInRange(s_ray, HitSize, 180f);
-            lockHits.Sort(SortUtil.RaycastDistance);
+            lockHits.Sort(SortUtil.Rayhit);
 
             foreach (var hit in lockHits)
             {

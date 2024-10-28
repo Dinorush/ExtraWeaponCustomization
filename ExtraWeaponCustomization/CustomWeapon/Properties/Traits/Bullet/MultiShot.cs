@@ -263,7 +263,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (hits == null || hits.Length == 0) return;
 
-            Array.Sort(hits, SortUtil.RaycastDistance);
+            Array.Sort(hits, SortUtil.Rayhit);
             foreach (var hit in hits)
             {
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);

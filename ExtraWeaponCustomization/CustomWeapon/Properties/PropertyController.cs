@@ -6,6 +6,7 @@ using System;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils.Log;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EWC.CustomWeapon.Properties
 {
@@ -57,9 +58,8 @@ namespace EWC.CustomWeapon.Properties
                 property.CWC = cwc;
                 if (property is TempProperties tempProperties)
                 {
-                    if (tempProperties.Properties == null) continue;
-
-                    tempProperties.Node = CreateTree(cwc, tempProperties.Properties, curNode);
+                    if (!tempProperties.Properties.Empty)
+                        tempProperties.Node = CreateTree(cwc, tempProperties.Properties, curNode);
                 }
             }
             return curNode;
@@ -117,6 +117,7 @@ namespace EWC.CustomWeapon.Properties
         public bool HasTempProperties() => _root!.Children.Count > 0;
         public bool HasTrait(Type type) => _activeTraits.ContainsKey(type);
         public Trait GetTrait(Type type) => _activeTraits[type];
+        public bool TryGetTrait(Type type, [MaybeNullWhen(false)] out Trait trait) => _activeTraits.TryGetValue(type, out trait);
         internal ITriggerCallbackSync GetTriggerSync(ushort id)
         {
             if (_syncList.Count <= id)

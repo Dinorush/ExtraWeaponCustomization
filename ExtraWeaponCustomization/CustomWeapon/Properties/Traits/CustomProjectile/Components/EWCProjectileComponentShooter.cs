@@ -18,13 +18,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public EWCProjectileComponentShooter(IntPtr ptr) : base(ptr) { }
 #pragma warning restore CS8618
 
-        public override void Init(ushort playerIndex, ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, float lifetime, bool sendDestroy)
+        public override void Init(ushort playerIndex, ushort ID, Projectile settings, bool isLocal, Vector3 position, Vector3 dir)
         {
             if (enabled) return;
 
-            base.Init(playerIndex, ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
-
-            _trailRenderer?.Clear();
+            base.Init(playerIndex, ID, settings, isLocal, position, dir);
 
             foreach (var effect in _projectile.m_effectsToStopEmittingOnImpact)
                 effect.Play();
@@ -34,25 +32,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_targeting != null)
             {
                 if (_targeting.m_light != null)
+                {
                     _targeting.m_light.enabled = true;
+                    _targeting.m_light.Color = Approximately(settings.GlowColor, Color.black) ? _origGlowColor : settings.GlowColor;
+                    _targeting.m_light.Range = settings.GlowRange < 0f ? _origGlowRange : settings.GlowRange;
+                }
                 if (_targeting.m_ricochetEffect != null)
                     _targeting.m_ricochetEffect.active = true;
             }
-        }
-
-        public void Init(ushort playerIndex, ushort ID, Vector3 position, Vector3 velocity, float accel, float accelExpo, float accelTime, float gravity, float scale, bool trail, Color glowColor, float glowRange, float lifetime, bool sendDestroy)
-        {
-            if (enabled) return;
-
-            Init(playerIndex, ID, position, velocity, accel, accelExpo, accelTime, gravity, scale, lifetime, sendDestroy);
 
             if (_trailRenderer != null)
-                _trailRenderer.enabled = trail;
-
-            if (_targeting != null && _targeting.m_light != null)
             {
-                _targeting.m_light.Color = Approximately(glowColor, Color.black) ? _origGlowColor : glowColor;
-                _targeting.m_light.Range = glowRange < 0f ? _origGlowRange : glowRange;
+                _trailRenderer.Clear();
+                _trailRenderer.enabled = settings.EnableTrail;
             }
         }
 

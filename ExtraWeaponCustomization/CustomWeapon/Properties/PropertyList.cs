@@ -12,11 +12,13 @@ namespace EWC.CustomWeapon.Properties
         public TempProperties? Owner { get; set; }
 
         public bool Override { get; set; } = false;
+        public bool Empty => Properties.Count == 0;
 
-        public PropertyList(List<WeaponPropertyBase> properties, bool cacheTypes = true)
+        public PropertyList() => Properties = new(0);
+
+        public PropertyList(List<WeaponPropertyBase> properties)
         {
             Properties = properties;
-            if (!cacheTypes) return;
 
             // Deserialized objects don't need this since Clone() runs when putting them
             // into the properties attached to CWCs

@@ -8,23 +8,17 @@ namespace EWC.JSON.Converters
 {
     public sealed class PropertyListConverter : JsonConverter<PropertyList>
     {
-        public override PropertyList? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override PropertyList Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             List<WeaponPropertyBase>? list = EWCJson.Deserialize<List<WeaponPropertyBase>>(ref reader);
-            if (list == null || list.Count == 0) return null;
-            return new PropertyList(list, false);
+            if (list == null) throw new JsonException("Unable to deserialize property list");
+            
+            return new PropertyList(list);
         }
 
-        public override void Write(Utf8JsonWriter writer, PropertyList? value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, PropertyList value, JsonSerializerOptions options)
         {
-            if (value == null)
-            {
-                writer.WriteStartArray();
-                writer.WriteEndArray();
-                return;
-            }
-
-            EWCJson.Serialize(value.Properties);
+            EWCJson.Serialize(writer, value.Properties);
         }
     }
 }

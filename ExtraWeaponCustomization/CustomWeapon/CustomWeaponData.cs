@@ -1,5 +1,4 @@
 ﻿using EWC.CustomWeapon.Properties;
-using System.Collections.Generic;
 
 namespace EWC.CustomWeapon
 {
@@ -10,6 +9,6 @@ namespace EWC.CustomWeapon
         public uint ArchetypeID { get; set; } = 0;
         public uint MeleeArchetypeID { get; set; } = 0;
         public string Name { get; set; } = string.Empty;
-        public List<WeaponPropertyBase> Properties { get; set; } = new();
+        public PropertyList Properties { get; set; } = new();
     }
 }

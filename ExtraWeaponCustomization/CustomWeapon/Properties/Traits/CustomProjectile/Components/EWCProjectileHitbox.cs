@@ -21,7 +21,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private BulletWeapon _weapon;
         private ContextController _contextController;
         private readonly HashSet<IntPtr> _initialPlayers = new();
-        private readonly HashSet<IntPtr> _hitEnts = new();
         private readonly HitData _hitData = new();
         private int _entityLayer;
         private bool _hitWorld;
@@ -35,6 +34,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private float _basePrecision;
         private float _lastFixedTime;
         private SearchSetting _searchSettings = SearchSetting.CacheHit;
+        public readonly HashSet<IntPtr> HitEnts = new();
 
         // Static
         public const float MinCollisionSqrDist = 0.0009f;
@@ -56,10 +56,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 #pragma warning restore CS8618
 
-        public void Init(CustomWeaponComponent cwc, Projectile projBase)
+        public void Init(Projectile projBase)
         {
             if (_enabled) return;
 
+            CustomWeaponComponent cwc = projBase.CWC;
             if (!cwc.Weapon.Owner.IsLocallyOwned) return;
 
             _enabled = true;
@@ -107,7 +108,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _hitWorld = !cwc.HasTrait(typeof(WallPierce));
 
-            _hitEnts.Clear();
+            HitEnts.Clear();
             if (_weapon.ArchetypeData.PiercingBullets && _weapon.ArchetypeData.PiercingDamageCountLimit > 1)
             {
                 _pierce = true;
@@ -179,7 +180,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
-                SearchUtil.DupeCheckSet = _hitEnts;
+                SearchUtil.DupeCheckSet = HitEnts;
                 foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), _searchSettings | SearchSetting.IgnoreDupes))
                     s_hits.Add(hit);
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f));
@@ -200,6 +201,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
             }
 
+            int prevCount = _pierceCount;
             bool checkLOS = _settings.HitSize >= SightCheckMinSize;
             SortUtil.SortWithWeakspotBuffer(s_hits);
             foreach (RaycastHit hit in s_hits)
@@ -219,6 +221,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
                 if (_pierceCount <= 0) break;
             }
+
+            if (_pierceCount > 0 && _pierceCount != prevCount)
+                _base.Homing.FindHomingAgent();
             s_hits.Clear();
         }
 
@@ -292,7 +297,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private bool AlreadyHit(IDamageable? damageable)
         {
             if (damageable == null) return false;
-            return !_hitEnts.Add(damageable.GetBaseDamagable().Pointer);
+            return !HitEnts.Add(damageable.GetBaseDamagable().Pointer);
         }
 
         private void DoImpactFX(IDamageable? damageable)

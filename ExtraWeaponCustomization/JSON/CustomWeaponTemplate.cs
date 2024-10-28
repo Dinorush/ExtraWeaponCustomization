@@ -12,7 +12,7 @@ namespace EWC.JSON
             {
                 ArchetypeID = 0,
                 Name = "Example",
-                Properties = new()
+                Properties = new(new()
                 {
                     new AmmoMod(),
                     new DamageMod(),
@@ -42,7 +42,7 @@ namespace EWC.JSON
                     new ThickBullet(),
                     new TumorMulti(),
                     new WallPierce()
-                }
+                })
             };
             return data;
         }
