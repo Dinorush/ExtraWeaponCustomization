@@ -155,7 +155,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
     {
         Normal,
         AimDir, AimDirection = AimDir,
-        Distance,
         AutoAim
     }
 
