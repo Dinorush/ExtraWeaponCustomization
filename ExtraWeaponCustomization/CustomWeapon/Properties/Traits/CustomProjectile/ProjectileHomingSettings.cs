@@ -12,8 +12,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         public float HomingStrength { get; private set; } = 0f;
         public float HomingDelay { get; private set; } = 0f;
         public float HomingMaxDist { get; private set; } = 50f;
-        public float HomingMinDist { get; private set; } = 10f;
-        public float HomingDistExponent { get; private set; } = 3f;
+        public float HomingMinDist { get; private set; } = 15f;
+        public float HomingDistExponent { get; private set; } = 2f;
 
         public TargetingMode TargetMode { get; private set; } = TargetingMode.Normal;
 
