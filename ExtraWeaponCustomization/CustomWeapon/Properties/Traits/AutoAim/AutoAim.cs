@@ -34,8 +34,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool TagOnly { get; private set; } = false;
         public bool IgnoreInvisibility { get; private set; } = false;
         public TargetingMode TargetMode { get; private set; } = TargetingMode.Normal;
+        public TargetingPriority TargetPriority { get; private set; } = TargetingPriority.Angle;
         public bool FavorLookPoint { get; private set; } = false;
-        public bool FavorClosest { get; private set; } = false;
         public bool HomingOnly { get; private set; } = false;
 
         public CrosshairHitIndicator? _reticle;
@@ -308,21 +308,38 @@ namespace EWC.CustomWeapon.Properties.Traits
             // s_ray may get changed by other functions, so to ensure it remains the same, use a local one
             Ray ray = new(_camera!.Position, _camera!.CameraRayDir);
 
-            // Get the enemies in range and sort them by angle to their AimTargets
             List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, Range, Angle, CWC.Weapon.Owner.CourseNode);
-            List<(EnemyAgent, float val)> sortList;
-            if (FavorClosest)
-                sortList = enemies.ConvertAll(enemy => (enemy, (GetSearchTargetPos(enemy) - ray.origin).sqrMagnitude));
-            else
-                sortList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetSearchTargetPos(enemy) - ray.origin)));
-            sortList.Sort(SortUtil.FloatTuple);
+
+            List<(EnemyAgent, float)>? angleList = null; // Needed for later comparisons with current target
+            switch (TargetPriority)
+            {
+                case TargetingPriority.Angle:
+                    angleList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetSearchTargetPos(enemy) - ray.origin)));
+                    angleList.Sort();
+                    SortUtil.CopySortedList(angleList, enemies);
+                    break;
+                case TargetingPriority.Distance:
+                    var distList = enemies.ConvertAll(enemy => (enemy, (GetSearchTargetPos(enemy) - ray.origin).sqrMagnitude));
+                    distList.Sort();
+                    SortUtil.CopySortedList(distList, enemies);
+                    break;
+                case TargetingPriority.Health:
+                    // Since we prefer higher HealthMax, need to invert angles so the reverse gets the right order
+                    var healthList = enemies.ConvertAll(enemy => (enemy, enemy.Damage.HealthMax, 180f - Vector3.Angle(ray.direction, GetSearchTargetPos(enemy) - ray.origin)));
+                    healthList.Sort(SortUtil.FloatTriple);
+                    healthList.Reverse();
+                    SortUtil.CopySortedList(healthList, enemies);
+                    break;
+                default:
+                    return null;
+            };
 
             // New targets scanned don't check weakspots for performance.
             // Still, we want to consider current target's weakspots (since it's already cached and feels better).
-            if (CheckTargetValid())
+            if (TargetPriority == TargetingPriority.Angle && CheckTargetValid())
             {
                 float targetAngle = Vector3.Angle(ray.direction, GetTargetPos() - ray.origin);
-                foreach ((EnemyAgent enemy, float angle) in sortList)
+                foreach ((EnemyAgent enemy, float angle) in angleList!)
                 {
                     if (angle >= targetAngle) return _target;
                     if ((IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged)
@@ -332,7 +349,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
             else
             {
-                foreach ((EnemyAgent enemy, _) in sortList)
+                foreach (var enemy in enemies)
                     if ((IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged)
                      && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerUtil.MaskWorldExcProj))
                         return enemy;
@@ -447,7 +464,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(IgnoreInvisibility), IgnoreInvisibility);
             writer.WriteString(nameof(TargetMode), TargetMode.ToString());
             writer.WriteBoolean(nameof(FavorLookPoint), FavorLookPoint);
-            writer.WriteBoolean(nameof(FavorClosest), FavorClosest);
+            writer.WriteString(nameof(TargetPriority), TargetPriority.ToString());
             writer.WriteBoolean(nameof(HomingOnly), HomingOnly);
             writer.WriteEndObject();
         }
@@ -503,13 +520,13 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "targetmode":
                     TargetMode = reader.GetString().ToEnum(TargetingMode.Normal);
                     break;
+                case "targetingpriority":
+                case "targetpriority":
+                    TargetPriority = reader.GetString().ToEnum(TargetingPriority.Angle);
+                    break;
                 case "favorlookpoint":
                 case "favourlookpoint":
                     FavorLookPoint = reader.GetBoolean();
-                    break;
-                case "favorclosest":
-                case "favourclosest":
-                    FavorClosest = reader.GetBoolean();
                     break;
                 case "homingonly":
                     HomingOnly = reader.GetBoolean();
@@ -525,5 +542,12 @@ namespace EWC.CustomWeapon.Properties.Traits
         Normal,
         Body,
         Weakspot
+    }
+
+    public enum TargetingPriority
+    {
+        Angle,
+        Distance,
+        Health
     }
 }

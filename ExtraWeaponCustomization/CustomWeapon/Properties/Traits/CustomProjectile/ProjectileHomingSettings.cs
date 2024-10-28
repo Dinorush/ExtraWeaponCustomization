@@ -16,13 +16,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         public float HomingDistExponent { get; private set; } = 2f;
 
         public TargetingMode TargetMode { get; private set; } = TargetingMode.Normal;
+        public TargetingPriority TargetPriority { get; private set; } = TargetingPriority.Angle;
 
         public float SearchAngle { get; private set; } = 0f;
         public float SearchRange { get; private set; } = 50f;
-        public float SearchTickDelay { get; private set; } = 0.1f;
+        public float SearchCooldown { get; private set; } = 0.1f;
         public SearchMode SearchInitialMode { get; private set; } = SearchMode.Normal;
-        public StopSearchMode StopSearchMode { get; private set; } = StopSearchMode.None;
-        public bool SearchFavorClosest { get; private set; } = false;
+        public StopSearchMode SearchStopMode { get; private set; } = StopSearchMode.None;
         public bool SearchIgnoreWalls { get; private set;} = false;
         public bool SearchIgnoreInvisibility { get; private set; } = false;
         public bool SearchTagOnly { get; private set; } = false;
@@ -40,12 +40,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             writer.WriteNumber(nameof(HomingMinDist), HomingMinDist);
             writer.WriteNumber(nameof(HomingDistExponent), HomingDistExponent);
             writer.WriteString(nameof(TargetMode), TargetMode.ToString());
+            writer.WriteString(nameof(TargetPriority), TargetPriority.ToString());
             writer.WriteNumber(nameof(SearchAngle), SearchAngle);
             writer.WriteNumber(nameof(SearchRange), SearchRange);
-            writer.WriteNumber(nameof(SearchTickDelay), SearchTickDelay);
+            writer.WriteNumber(nameof(SearchCooldown), SearchCooldown);
             writer.WriteString(nameof(SearchInitialMode), SearchInitialMode.ToString());
-            writer.WriteString(nameof(StopSearchMode), StopSearchMode.ToString());
-            writer.WriteBoolean(nameof(SearchFavorClosest), SearchFavorClosest);
+            writer.WriteString(nameof(SearchStopMode), SearchStopMode.ToString());
             writer.WriteBoolean(nameof(SearchIgnoreWalls), SearchIgnoreWalls);
             writer.WriteBoolean(nameof(SearchIgnoreInvisibility), SearchIgnoreInvisibility);
             writer.WriteBoolean(nameof(SearchTagOnly), SearchTagOnly);
@@ -90,6 +90,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
                 case "targetmode":
                     TargetMode = reader.GetString()!.ToEnum(TargetingMode.Normal);
                     break;
+                case "targetingpriority":
+                case "targetpriority":
+                    TargetPriority = reader.GetString()!.ToEnum(TargetingPriority.Angle);
+                    break;
 
                 case "searchangle":
                 case "angle":
@@ -99,23 +103,17 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
                 case "range":
                     SearchRange = reader.GetSingle();
                     break;
-                case "searchtickdelay":
-                case "tickdelay":
-                    SearchTickDelay = reader.GetSingle();
+                case "searchcooldown":
+                case "cooldown":
+                    SearchCooldown = reader.GetSingle();
                     break;
                 case "searchinitialmode":
-                case "searchmode":
+                case "initialmode":
                     SearchInitialMode = reader.GetString()!.ToEnum(SearchMode.Normal);
                     break;
-                case "stopsearchmode":
-                case "stopsearch":
-                    StopSearchMode = reader.GetString()!.ToEnum(StopSearchMode.None);
-                    break;
-                case "searchfavorclosest":
-                case "searchfavourclosest":
-                case "favorclosest":
-                case "favourclosest":
-                    SearchFavorClosest = reader.GetBoolean();
+                case "searchstopmode":
+                case "stopmode":
+                    SearchStopMode = reader.GetString()!.ToEnum(StopSearchMode.None);
                     break;
                 case "searchignorewalls":
                 case "ignorewalls":
