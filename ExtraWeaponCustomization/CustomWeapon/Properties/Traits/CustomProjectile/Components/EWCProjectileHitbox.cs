@@ -56,13 +56,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 #pragma warning restore CS8618
 
-        public void Init(Projectile projBase)
+        public void Init(Projectile projBase, bool isLocal)
         {
-            if (_enabled) return;
+            if (_enabled || !isLocal) return;
 
             CustomWeaponComponent cwc = projBase.CWC;
-            if (!cwc.Weapon.Owner.IsLocallyOwned) return;
-
             _enabled = true;
             _settings = projBase;
             _weapon = cwc.Gun!;
@@ -223,7 +221,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             if (_pierceCount > 0 && _pierceCount != prevCount)
-                _base.Homing.FindHomingAgent();
+                _base.Homing.UpdateOnPierce();
             s_hits.Clear();
         }
 

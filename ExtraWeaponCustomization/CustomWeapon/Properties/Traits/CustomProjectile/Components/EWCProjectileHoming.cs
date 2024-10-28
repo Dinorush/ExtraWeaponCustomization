@@ -1,6 +1,9 @@
-﻿using Enemies;
+﻿using AIGraph;
+using Enemies;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
+using EWC.Utils.Log;
+using LevelGeneration;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -15,6 +18,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private ProjectileHomingSettings? _settings;
         private PlayerAgent _owner;
         private bool _isLocal;
+        private bool _wallPierce;
         private bool _enabled = false;
 
         private bool _homingEnabled;
@@ -29,6 +33,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private static Vector3 s_position;
         private static Vector3 s_dir;
+        private readonly static Queue<AIG_CourseNode> s_nodeQueue = new();
 
 #pragma warning disable CS8618
         // Hidden null warnings since other methods will initialize members prior to Update
@@ -46,6 +51,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _isLocal = isLocal;
             _owner = projBase.CWC.Weapon.Owner;
             _settings = projBase.HomingSettings;
+            _wallPierce = projBase.CWC.HasTrait(typeof(WallPierce));
 
             _homingStartTime = Time.time + _settings.HomingDelay;
             _initialHomingEndTime = _homingStartTime + _settings.InitialHomingDuration;
@@ -120,7 +126,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (_homingAgent == null || !_homingAgent.Alive)
             {
-                if (_settings!.StopSearchOnTargetDead)
+                if (_settings!.StopSearchMode.HasFlag(StopSearchMode.Kill))
                 {
                     _homingEnabled = false;
                     return false;
@@ -145,9 +151,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _homingTarget = limb != null ? limb.transform : GetHomingTarget(agent);
         }
 
-        public void UpdateHomingOnPierce()
+        public void UpdateOnPierce()
         {
-            if (_settings!.StopSearchOnPierce)
+            if (_settings!.StopSearchMode.HasFlag(StopSearchMode.Pierce))
             {
                 _homingEnabled = false;
                 return;
@@ -172,20 +178,22 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Ray ray = new(s_position, s_dir);
             SearchUtil.DupeCheckSet = _base.Hitbox.HitEnts;
             List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings!.SearchRange, _settings.SearchAngle, SearchUtil.GetCourseNode(s_position, _owner), SearchSetting.IgnoreDupes);
-            List<(EnemyAgent, float angle)> angles = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetHomingTargetPos(enemy) - ray.origin)));
-            angles.Sort(SortUtil.FloatTuple);
 
-            foreach ((EnemyAgent enemy, _) in angles)
+            List<(EnemyAgent, float val)> sortList;
+            if (_settings.SearchFavorClosest)
+                sortList = enemies.ConvertAll(enemy => (enemy, (GetHomingTargetPos(enemy) - ray.origin).sqrMagnitude));
+            else
+                sortList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetHomingTargetPos(enemy) - ray.origin)));
+            sortList.Sort(SortUtil.FloatTuple);
+
+            foreach ((EnemyAgent enemy, _) in sortList)
             {
-                if ((_settings.SearchIgnoreInvisibility
-                    || (!enemy.RequireTagForDetection && !_settings.SearchTagOnly)
-                    || enemy.IsTagged)
-                 && (_settings.SearchIgnoreWalls
-                    || !Physics.Linecast(ray.origin, GetHomingTargetPos(enemy), LayerUtil.MaskWorldExcProj)))
-                {
-                    _homingAgent = enemy;
-                    break;
-                }
+                if (!_settings.SearchIgnoreInvisibility && (enemy.RequireTagForDetection || _settings.SearchTagOnly) && !enemy.IsTagged) continue;
+                if (!_settings.SearchIgnoreWalls && Physics.Linecast(ray.origin, GetHomingTargetPos(enemy), LayerUtil.MaskWorldExcProj)) continue;
+                if (_settings.SearchIgnoreWalls && !IsTargetReachable(_owner.CourseNode, enemy.CourseNode)) continue;
+
+                _homingAgent = enemy;
+                break;
             }
 
             if (_homingAgent == null) return;
@@ -252,6 +260,41 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private Vector3 GetHomingTargetPos(EnemyAgent enemy)
         {
             return GetHomingTarget(enemy).position;
+        }
+
+        private bool IsTargetReachable(AIG_CourseNode? source, AIG_CourseNode? target)
+        {
+            if (source == null || target == null) return false;
+            if (source.NodeID == target.NodeID) return true;
+
+            AIG_SearchID.IncrementSearchID();
+            ushort searchID = AIG_SearchID.SearchID;
+            s_nodeQueue.Enqueue(source);
+
+            while (s_nodeQueue.Count > 0)
+            {
+                AIG_CourseNode current = s_nodeQueue.Dequeue();
+                current.m_searchID = searchID;
+                foreach (AIG_CoursePortal portal in current.m_portals)
+                {
+                    iLG_Door_Core? door = portal.m_door;
+                    if (_wallPierce && door != null && door.DoorType != eLG_DoorType.Security && door.DoorType != eLG_DoorType.Apex)
+                        door = null;
+                    if (door != null && door.LastStatus != eDoorStatus.Open && door.LastStatus != eDoorStatus.Opening && door.LastStatus != eDoorStatus.Destroyed)
+                        continue;
+
+                    AIG_CourseNode nextNode = portal.GetOppositeNode(current);
+                    if (nextNode.NodeID == target.NodeID)
+                    {
+                        s_nodeQueue.Clear();
+                        return true;
+                    }
+                    if (nextNode.m_searchID == searchID) continue;
+                    s_nodeQueue.Enqueue(nextNode);
+                }
+            }
+            s_nodeQueue.Clear();
+            return false;
         }
     }
 }

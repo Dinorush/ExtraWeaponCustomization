@@ -63,9 +63,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _lerpProgress = 1f;
             _accelProgress = 0f;
             _endLifetime = Time.time + projBase.Lifetime;
+            Hitbox.Init(projBase, isLocal);
             Homing.Init(projBase, isLocal, position, dir);
-            if (isLocal)
-                Hitbox.Init(projBase);
 
             _position = position;
             _velocity = dir * projBase.Speed;

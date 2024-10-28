@@ -21,11 +21,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         public float SearchRange { get; private set; } = 50f;
         public float SearchTickDelay { get; private set; } = 0.1f;
         public SearchMode SearchInitialMode { get; private set; } = SearchMode.Normal;
+        public StopSearchMode StopSearchMode { get; private set; } = StopSearchMode.None;
+        public bool SearchFavorClosest { get; private set; } = false;
         public bool SearchIgnoreWalls { get; private set;} = false;
         public bool SearchIgnoreInvisibility { get; private set; } = false;
         public bool SearchTagOnly { get; private set; } = false;
-        public bool StopSearchOnTargetDead { get; private set; } = false;
-        public bool StopSearchOnPierce { get; private set; } = false;
 
         public bool HomingEnabled => HomingStrength > 0f || InitialHomingStrength > 0f;
 
@@ -44,10 +44,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             writer.WriteNumber(nameof(SearchRange), SearchRange);
             writer.WriteNumber(nameof(SearchTickDelay), SearchTickDelay);
             writer.WriteString(nameof(SearchInitialMode), SearchInitialMode.ToString());
+            writer.WriteString(nameof(StopSearchMode), StopSearchMode.ToString());
+            writer.WriteBoolean(nameof(SearchFavorClosest), SearchFavorClosest);
             writer.WriteBoolean(nameof(SearchIgnoreWalls), SearchIgnoreWalls);
             writer.WriteBoolean(nameof(SearchIgnoreInvisibility), SearchIgnoreInvisibility);
             writer.WriteBoolean(nameof(SearchTagOnly), SearchTagOnly);
-            writer.WriteBoolean(nameof(StopSearchOnTargetDead), StopSearchOnTargetDead);
             writer.WriteEndObject();
         }
 
@@ -106,6 +107,16 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
                 case "searchmode":
                     SearchInitialMode = reader.GetString()!.ToEnum(SearchMode.Normal);
                     break;
+                case "stopsearchmode":
+                case "stopsearch":
+                    StopSearchMode = reader.GetString()!.ToEnum(StopSearchMode.None);
+                    break;
+                case "searchfavorclosest":
+                case "searchfavourclosest":
+                case "favorclosest":
+                case "favourclosest":
+                    SearchFavorClosest = reader.GetBoolean();
+                    break;
                 case "searchignorewalls":
                 case "ignorewalls":
                     SearchIgnoreWalls = reader.GetBoolean();
@@ -119,14 +130,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
                 case "searchtagonly":
                 case "tagonly":
                     SearchTagOnly = reader.GetBoolean();
-                    break;
-                case "stopsearchontargetdead":
-                case "stopontargetdead":
-                    StopSearchOnTargetDead = reader.GetBoolean();
-                    break;
-                case "stopsearchonpierce":
-                case "stoponpierce":
-                    StopSearchOnPierce = reader.GetBoolean();
                     break;
             }
         }
@@ -153,7 +156,17 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
     public enum SearchMode
     {
         Normal,
-        AimDir,
+        AimDir, AimDirection = AimDir,
+        Distance,
         AutoAim
+    }
+
+    [Flags]
+    public enum StopSearchMode
+    {
+        None = 0,
+        Pierce = 1,
+        Kill = 2,
+        PierceKill = Pierce | Kill, KillPierce = PierceKill
     }
 }
