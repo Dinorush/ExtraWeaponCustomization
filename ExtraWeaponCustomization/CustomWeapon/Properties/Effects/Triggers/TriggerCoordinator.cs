@@ -21,6 +21,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float CooldownOnApply { get; private set; } = 0f;
 
         public List<ITrigger>? Reset { get; private set; }
+        public bool ResetPreviousOnly { get; private set; } = false;
 
         private float _nextActivateTime = 0f;
         private readonly List<TriggerContext> _accumulatedTriggers = new();
@@ -41,7 +42,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 Threshold = Threshold,
                 Cooldown = Cooldown,
                 Chance = Chance,
-                CooldownOnApply = CooldownOnApply
+                CooldownOnApply = CooldownOnApply,
+                ResetPreviousOnly = ResetPreviousOnly
             };
             result.Activate.AddRange(Activate);
             return result;
@@ -66,13 +68,22 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 }
             }
 
+            bool reset = Reset?.Any(trigger => trigger.Invoke(context) > 0) == true;
+            if (ResetPreviousOnly && reset)
+                ResetTriggers(false);
+
             // Apply stored activations. If there are no Apply triggers, stored activations apply immediately
             if (_accumulatedTriggers.Count >= Threshold && (Apply?.Any(trigger => trigger.Invoke(context) > 0) ?? true))
                 ApplyTriggers();
 
             // Reset stored activations AND any related behavior on the callback this coordinator is tied to
-            if (Reset?.Any(trigger => trigger.Invoke(context) > 0) == true)
-                ResetTriggers();
+            if (reset)
+            {
+                if (ResetPreviousOnly)
+                    _accumulatedTriggers.Clear();
+                else
+                    ResetTriggers();
+            }
         }
 
         private void ApplyTriggers()
@@ -84,9 +95,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _nextActivateTime = Math.Max(_nextActivateTime, Clock.Time + CooldownOnApply);
         }
 
-        private void ResetTriggers()
+        private void ResetTriggers(bool resetAccumulated = true)
         {
-            _accumulatedTriggers.Clear();
+            if (resetAccumulated)
+                _accumulatedTriggers.Clear();
             Parent?.TriggerReset();
         }
 
@@ -121,6 +133,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "reset":
                     Reset = DeserializeTriggers(ref reader);
+                    break;
+                case "resetpreviousonly":
+                case "resetprevious":
+                    ResetPreviousOnly = reader.GetBoolean();
                     break;
             }
         }
