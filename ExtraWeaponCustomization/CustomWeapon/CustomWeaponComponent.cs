@@ -216,7 +216,7 @@ namespace EWC.CustomWeapon
         {
             if (IsGun)
             {
-                _fireRate = 1f / Math.Max(Gun.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+                _fireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
                 _burstDelay = Gun.m_archeType.BurstDelay();
                 UpdateStoredFireRate(Gun.m_archeType);
             }

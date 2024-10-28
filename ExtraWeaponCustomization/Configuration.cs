@@ -3,6 +3,7 @@ using BepInEx;
 using System.IO;
 using GTFO.API.Utilities;
 using EWC.CustomWeapon;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EWC
 {
@@ -50,6 +51,7 @@ namespace EWC
             CheckAndRefreshTemplate();
         }
 
+        [MemberNotNull(nameof(ForceCreateTemplate))]
         private static void BindAll(ConfigFile config)
         {
             string section = "Auto Aim Settings";
