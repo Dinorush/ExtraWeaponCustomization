@@ -463,8 +463,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(TagOnly), TagOnly);
             writer.WriteBoolean(nameof(IgnoreInvisibility), IgnoreInvisibility);
             writer.WriteString(nameof(TargetMode), TargetMode.ToString());
-            writer.WriteBoolean(nameof(FavorLookPoint), FavorLookPoint);
             writer.WriteString(nameof(TargetPriority), TargetPriority.ToString());
+            writer.WriteBoolean(nameof(FavorLookPoint), FavorLookPoint);
             writer.WriteBoolean(nameof(HomingOnly), HomingOnly);
             writer.WriteEndObject();
         }

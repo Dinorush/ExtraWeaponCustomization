@@ -127,7 +127,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (_homingAgent == null || !_homingAgent.Alive)
             {
-                if (_settings!.SearchStopMode.HasFlag(StopSearchMode.Kill))
+                if (_settings!.SearchStopMode.HasFlag(StopSearchMode.Dead))
                 {
                     _homingEnabled = false;
                     return false;

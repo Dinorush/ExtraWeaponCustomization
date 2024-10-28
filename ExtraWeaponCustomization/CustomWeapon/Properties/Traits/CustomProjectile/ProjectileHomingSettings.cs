@@ -163,7 +163,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
     {
         None = 0,
         Pierce = 1,
-        Kill = 2,
-        PierceKill = Pierce | Kill, KillPierce = PierceKill
+        Dead = 2,
+        PierceDead = Pierce | Dead, DeadPierce = PierceDead
     }
 }
