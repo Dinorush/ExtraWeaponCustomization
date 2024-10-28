@@ -99,6 +99,14 @@ namespace EWC.Utils
             hit = default;
             if (agent == null || !agent.Alive) return false;
 
+            if (settings.HasFlag(SearchSetting.IgnoreDupes))
+            {
+                if (agent.Type == AgentType.Enemy && DupeCheckSet?.Contains(agent.Cast<EnemyAgent>().Damage.Pointer) == true)
+                    return false;
+                else if (agent.Type == AgentType.Player && DupeCheckSet?.Contains(agent.Cast<PlayerAgent>().Damage.Pointer) == true)
+                    return false;
+            }
+
             s_ray.origin = ray.origin;
             float sqrRange = range * range;
             float minDist = sqrRange;
@@ -109,8 +117,6 @@ namespace EWC.Utils
                 Dam_EnemyDamageLimb? limb = null;
                 if (agent.Type == AgentType.Enemy)
                 {
-                    if (settings.HasFlag(SearchSetting.IgnoreDupes) && DupeCheckSet?.Contains(agent.Pointer) == true) continue;
-
                     limb = collider.GetComponent<Dam_EnemyDamageLimb>();
                     if (limb == null || limb.IsDestroyed) continue;
                 }
@@ -242,6 +248,8 @@ namespace EWC.Utils
             {
                 IDamageable? damageable = DamageableUtil.GetDamageableFromCollider(collider);
                 if (damageable == null) continue;
+
+                if (settings.HasFlag(SearchSetting.IgnoreDupes) && DupeCheckSet?.Contains(damageable.GetBaseDamagable().Pointer) == true) continue;
 
                 if (settings.HasFlag(SearchSetting.CheckLOS)
                  && Physics.Linecast(ray.origin, damageable.DamageTargetPos, out s_rayHit, SightBlockLayer)
