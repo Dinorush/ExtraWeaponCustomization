@@ -77,13 +77,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 ApplyTriggers();
 
             // Reset stored activations AND any related behavior on the callback this coordinator is tied to
-            if (reset)
-            {
-                if (ResetPreviousOnly)
-                    _accumulatedTriggers.Clear();
-                else
-                    ResetTriggers();
-            }
+            if (!ResetPreviousOnly && reset)
+                ResetTriggers();
         }
 
         private void ApplyTriggers()
