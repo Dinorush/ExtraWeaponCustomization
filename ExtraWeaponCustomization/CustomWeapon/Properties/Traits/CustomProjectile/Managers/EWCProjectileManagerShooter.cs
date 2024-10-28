@@ -68,6 +68,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             EWCProjectileComponentShooter comp = GetFromPool(projBase.ProjectileType);
             EWCProjectileManager.AddProjectile(index, id, comp);
             comp.Init(index, id, projBase, false, position, dir);
+            EWCProjectileManager.TryPullCachedTarget(index, id);
         }
     }
 

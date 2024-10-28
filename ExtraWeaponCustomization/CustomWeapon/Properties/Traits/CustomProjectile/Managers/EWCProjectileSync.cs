@@ -18,7 +18,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         protected override void Receive(ProjectileDataTarget packet)
         {
-            if (!packet.target.TryGet(out var agent)) return;
+            if (!packet.target.TryGet(out var agent))
+                agent = null;
 
             EWCProjectileManager.Internal_ReceiveProjectileTarget(packet.playerIndex, packet.id, agent, packet.limbID);
         }

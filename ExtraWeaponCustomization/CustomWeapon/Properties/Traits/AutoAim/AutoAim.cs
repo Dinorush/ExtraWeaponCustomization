@@ -315,18 +315,18 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 case TargetingPriority.Angle:
                     angleList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetSearchTargetPos(enemy) - ray.origin)));
-                    angleList.Sort();
+                    angleList.Sort(SortUtil.FloatTuple);
                     SortUtil.CopySortedList(angleList, enemies);
                     break;
                 case TargetingPriority.Distance:
                     var distList = enemies.ConvertAll(enemy => (enemy, (GetSearchTargetPos(enemy) - ray.origin).sqrMagnitude));
-                    distList.Sort();
+                    distList.Sort(SortUtil.FloatTuple);
                     SortUtil.CopySortedList(distList, enemies);
                     break;
                 case TargetingPriority.Health:
                     // Since we prefer higher HealthMax, need to invert angles so the reverse gets the right order
                     var healthList = enemies.ConvertAll(enemy => (enemy, enemy.Damage.HealthMax, 180f - Vector3.Angle(ray.direction, GetSearchTargetPos(enemy) - ray.origin)));
-                    healthList.Sort(SortUtil.FloatTriple);
+                    healthList.Sort(SortUtil.FloatTuple);
                     healthList.Reverse();
                     SortUtil.CopySortedList(healthList, enemies);
                     break;

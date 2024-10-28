@@ -2,7 +2,6 @@
 using Enemies;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
-using EWC.Utils.Log;
 using LevelGeneration;
 using Player;
 using System;
@@ -16,7 +15,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private readonly EWCProjectileComponentBase _base;
 
         private ProjectileHomingSettings? _settings;
-        private PlayerAgent _owner;
+        private PlayerAgent? _owner;
         private bool _isLocal;
         private bool _wallPierce;
         private bool _enabled = false;
@@ -35,13 +34,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private static Vector3 s_dir;
         private readonly static Queue<AIG_CourseNode> s_nodeQueue = new();
 
-#pragma warning disable CS8618
-        // Hidden null warnings since other methods will initialize members prior to Update
         public EWCProjectileHoming(EWCProjectileComponentBase comp)
         {
             _base = comp;
         }
-#pragma warning restore CS8618
 
         public void Init(Projectile projBase, bool isLocal, Vector3 position, Vector3 dir)
         {
@@ -49,9 +45,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _enabled = true;
             _isLocal = isLocal;
-            _owner = projBase.CWC.Weapon.Owner;
             _settings = projBase.HomingSettings;
-            _wallPierce = projBase.CWC.HasTrait(typeof(WallPierce));
+            _wallPierce = false;
+            _owner = null;
 
             _homingStartTime = Time.time + _settings.HomingDelay;
             _initialHomingEndTime = _homingStartTime + _settings.InitialHomingDuration;
@@ -59,7 +55,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _nextSearchTime = 0f;
             _homingAgent = null;
             _homingLimb = null;
-            if (_isLocal && _homingEnabled)
+
+            if (!_isLocal) return;
+            _owner = projBase.CWC.Weapon.Owner;
+            _wallPierce = projBase.CWC.HasTrait(typeof(WallPierce));
+
+            if (_homingEnabled)
             {
                 s_position = position;
                 s_dir = dir;
@@ -83,7 +84,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 else
                 {
                     if (_settings.SearchInitialMode == SearchMode.AimDir)
-                        s_dir = _owner.FPSCamera.Forward;
+                        s_dir = _owner!.FPSCamera.Forward;
                     FindHomingAgent();
                 }
             }
@@ -144,11 +145,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             return false;
         }
 
-        public void SetHomingAgent(EnemyAgent agent, Dam_EnemyDamageLimb? limb)
+        public void SetHomingAgent(EnemyAgent? agent, Dam_EnemyDamageLimb? limb)
         {
             _homingAgent = agent;
-            _homingLimb = limb;
-            _homingTarget = limb != null ? limb.transform : GetHomingTarget(agent);
+            if (agent == null)
+            {
+                _homingLimb = null;
+                _homingTarget = null;
+            }
+            else
+            {
+                _homingLimb = limb;
+                _homingTarget = limb != null ? limb.transform : GetHomingTarget(agent);
+            }
         }
 
         public void UpdateOnPierce()
@@ -156,10 +165,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_settings!.SearchStopMode.HasFlag(StopSearchMode.Pierce))
             {
                 _homingEnabled = false;
+                EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, null, 0);
                 return;
             }
 
             FindHomingAgent();
+            if (_homingAgent == null)
+                EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, null, 0);
         }
 
         public void FindHomingAgent()
@@ -177,24 +189,24 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _weakspotList.Clear();
             Ray ray = new(s_position, s_dir);
             SearchUtil.DupeCheckSet = _base.Hitbox.HitEnts;
-            List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings!.SearchRange, _settings.SearchAngle, SearchUtil.GetCourseNode(s_position, _owner), SearchSetting.IgnoreDupes);
+            List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings!.SearchRange, _settings.SearchAngle, SearchUtil.GetCourseNode(s_position, _owner!), SearchSetting.IgnoreDupes);
 
             switch (_settings.TargetPriority)
             {
                 case TargetingPriority.Angle:
                     var angleList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetHomingTargetPos(enemy) - ray.origin)));
-                    angleList.Sort();
+                    angleList.Sort(SortUtil.FloatTuple);
                     SortUtil.CopySortedList(angleList, enemies);
                     break;
                 case TargetingPriority.Distance:
                     var distList = enemies.ConvertAll(enemy => (enemy, (GetHomingTargetPos(enemy) - ray.origin).sqrMagnitude));
-                    distList.Sort();
+                    distList.Sort(SortUtil.FloatTuple);
                     SortUtil.CopySortedList(distList, enemies);
                     break;
                 case TargetingPriority.Health:
                     // Since we prefer higher HealthMax, need to invert angles so the reverse gets the right order
                     var healthList = enemies.ConvertAll(enemy => (enemy, enemy.Damage.HealthMax, 180f - Vector3.Angle(ray.direction, GetHomingTargetPos(enemy) - ray.origin)));
-                    healthList.Sort(SortUtil.FloatTriple);
+                    healthList.Sort(SortUtil.FloatTuple);
                     healthList.Reverse();
                     SortUtil.CopySortedList(healthList, enemies);
                     break;
@@ -206,7 +218,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 if (!_settings.SearchIgnoreInvisibility && (enemy.RequireTagForDetection || _settings.SearchTagOnly) && !enemy.IsTagged) continue;
                 if (!_settings.SearchIgnoreWalls && Physics.Linecast(ray.origin, GetHomingTargetPos(enemy), LayerUtil.MaskWorldExcProj)) continue;
-                if (_settings.SearchIgnoreWalls && !IsTargetReachable(_owner.CourseNode, enemy.CourseNode)) continue;
+                if (_settings.SearchIgnoreWalls && !IsTargetReachable(_owner!.CourseNode, enemy.CourseNode)) continue;
 
                 _homingAgent = enemy;
                 break;

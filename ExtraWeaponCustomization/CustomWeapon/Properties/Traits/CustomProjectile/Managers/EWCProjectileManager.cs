@@ -2,12 +2,14 @@
 using Enemies;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
     public static class EWCProjectileManager
     {
         internal static readonly Dictionary<ushort, LinkedList<(ushort id, EWCProjectileComponentBase comp)>> PlayerProjectiles = new();
+        private static readonly Dictionary<ushort, LinkedList<(ushort id, EnemyAgent? enemy, byte limbID)>> _cachedTargets = new();
         internal static readonly List<Projectile> ProjectileSettings = new();
 
         public static readonly EWCProjectileManagerShooter Shooter = new();
@@ -25,6 +27,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         internal static void Reset()
         {
             Shooter.Reset();
+            _cachedTargets.Clear();
             PlayerProjectiles.Clear();
         }
 
@@ -44,12 +47,29 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             return (ushort)(PlayerProjectiles[playerIndex].Last!.Value.id + 1);
         }
 
-        internal static (ushort id, EWCProjectileComponentBase comp)? GetPair(ushort playerIndex, ushort id)
+        internal static bool TryGetNode(ushort playerIndex, ushort id, [MaybeNullWhen(false)] out LinkedListNode<(ushort id, EWCProjectileComponentBase comp)> node)
         {
-            foreach (var pair in PlayerProjectiles[playerIndex])
-                if (pair.id == id)
-                    return pair;
-            return null;
+            node = null;
+            if (!PlayerProjectiles.TryGetValue(playerIndex, out var list)) return false;
+
+            node = list.First;
+            while (node != null && node.Value.id != id)
+                node = node.Next;
+
+            return node != null;
+        }
+
+        internal static void TryPullCachedTarget(ushort playerIndex, ushort id)
+        {
+            if (!_cachedTargets.TryGetValue(playerIndex, out var list)) return;
+
+            var node = list.First;
+            while (node != null && node.Value.id != id)
+                node = node.Next;
+            
+            if (node == null) return;
+            list.Remove(node);
+            Internal_ReceiveProjectileTarget(playerIndex, id, node.Value.enemy, node.Value.limbID);
         }
 
         internal static void AddProjectile(ushort playerIndex, ushort id, EWCProjectileComponentBase comp)
@@ -64,12 +84,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             ProjectileDataDestroy data = new() { playerIndex = playerIndex, id = id };
             _destroySync.Send(data);
 
-            var pair = GetPair(playerIndex, id);
-            if (pair == null) return;
-            PlayerProjectiles[playerIndex].Remove(pair.Value);
+            if (!TryGetNode(playerIndex, id, out var node)) return;
+            PlayerProjectiles[playerIndex].Remove(node);
         }
 
-        public static void DoProjectileTarget(ushort playerIndex, ushort id, EnemyAgent target, byte limbID)
+        public static void DoProjectileTarget(ushort playerIndex, ushort id, EnemyAgent? target, byte limbID)
         {
             ProjectileDataTarget data = new() { playerIndex = playerIndex, id = id, limbID = limbID };
             data.target.Set(target);
@@ -78,19 +97,22 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         internal static void Internal_ReceiveProjectileDestroy(ushort playerIndex, ushort id)
         {
-            var pair = GetPair(playerIndex, id);
-            if (pair == null) return;
+            if (!TryGetNode(playerIndex, id, out var node)) return;
 
-            pair.Value.comp.Die();
-            PlayerProjectiles[playerIndex].Remove(pair.Value);
+            node.Value.comp.Die();
+            PlayerProjectiles[playerIndex].Remove(node);
         }
 
-        internal static void Internal_ReceiveProjectileTarget(ushort playerIndex, ushort id, EnemyAgent enemy, int limbID)
+        internal static void Internal_ReceiveProjectileTarget(ushort playerIndex, ushort id, EnemyAgent? enemy, byte limbID)
         {
-            var pair = GetPair(playerIndex, id);
-            if (pair == null) return;
-
-            pair.Value.comp.Homing.SetHomingAgent(enemy, limbID > 0 ? enemy.Damage.DamageLimbs[limbID] : null);
+            if (!TryGetNode(playerIndex, id, out var node))
+            {
+                if (!_cachedTargets.TryGetValue(playerIndex, out var list))
+                    _cachedTargets.TryAdd(playerIndex, list = new());
+                list.AddLast((id, enemy, limbID));
+                return;
+            }
+            node.Value.comp.Homing.SetHomingAgent(enemy, limbID > 0 && enemy != null ? enemy.Damage.DamageLimbs[limbID] : null);
         }
     }
 

@@ -51,7 +51,7 @@ namespace EWC.Utils
             return x.val < y.val ? -1 : 1;
         }
 
-        public static int FloatTriple<T>((T, float val1, float val2) x, (T, float val1, float val2) y)
+        public static int FloatTuple<T>((T, float val1, float val2) x, (T, float val1, float val2) y)
         {
             if (x.val1 == y.val1)
             {

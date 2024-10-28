@@ -40,6 +40,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public ushort SyncID { get; private set; }
         public ushort PlayerIndex { get; private set; }
 
+        private const float NonLocalLifetimeBuffer = 1f;
+
         protected virtual void Awake()
         {
             enabled = false;
@@ -52,6 +54,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_inactiveRoutine != null)
                 StopCoroutine(_inactiveRoutine);
 
+            SyncID = ID;
+            PlayerIndex = playerIndex;
             _settings = projBase;
 
             gameObject.transform.localScale = Vector3.one * projBase.ModelScale;
@@ -62,7 +66,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _lerpProgress = 1f;
             _accelProgress = 0f;
-            _endLifetime = Time.time + projBase.Lifetime;
+            _endLifetime = Time.time + projBase.Lifetime + (isLocal ? NonLocalLifetimeBuffer : 0f);
             Hitbox.Init(projBase, isLocal);
             Homing.Init(projBase, isLocal, position, dir);
 
@@ -72,8 +76,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _baseDir = dir;
             _gravityVel = 0;
             _isLocal = isLocal;
-            SyncID = ID;
-            PlayerIndex = playerIndex;
         }
 
         public void SetVisualPosition(Vector3 positionVisual, float lerpDist)
