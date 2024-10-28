@@ -69,11 +69,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             }
 
             bool reset = Reset?.Any(trigger => trigger.Invoke(context) > 0) == true;
+            bool apply = _accumulatedTriggers.Count >= Threshold && (Apply?.Any(trigger => trigger.Invoke(context) > 0) ?? true);
             if (ResetPreviousOnly && reset)
-                ResetTriggers(false);
+                ResetTriggers(!apply);
 
             // Apply stored activations. If there are no Apply triggers, stored activations apply immediately
-            if (_accumulatedTriggers.Count >= Threshold && (Apply?.Any(trigger => trigger.Invoke(context) > 0) ?? true))
+            if (apply)
                 ApplyTriggers();
 
             // Reset stored activations AND any related behavior on the callback this coordinator is tied to
