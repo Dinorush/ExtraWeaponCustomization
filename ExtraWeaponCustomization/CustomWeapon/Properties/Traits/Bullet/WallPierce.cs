@@ -33,7 +33,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         internal static bool IsTargetReachable(AIG_CourseNode? source, AIG_CourseNode? target)
         {
-            if (source == null || target == null) return false;
+            if (source == null || target == null) return true;
             if (source.NodeID == target.NodeID) return true;
 
             AIG_SearchID.IncrementSearchID();
