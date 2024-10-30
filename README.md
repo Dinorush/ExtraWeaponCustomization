@@ -3,7 +3,9 @@
 Adds additional weapon mechanics for rundown developers to use. These include:
 
 #### Effects - Apply when a condition is triggered
+- Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
 - Ammo Mod: Modifies the magazine/reserve ammo counts. [Gun]
+- Bio Ping: Damaging an enemy applies a Bio Tracker ping.
 - Damage Mod: Applies a damage modifier.
 - Damage Mod Per Target: Applies a damage modifier unique to each target. [Hit, Damage, Charge]
 - Damage Over Time: Applies a damage over time effect. [Hit, Damage, Charge]
@@ -14,13 +16,11 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Temp Properties: Temporarily adds another set of properties.
 
 #### Traits - Innate gun behavior modifications
-- Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
 - Ammo Cap: Adjust the value used to calculate ammopack refills and starting ammo. [Gun]
-- Armor Pierce: Pierces armor or modifies bullet damage dealt to armor.
+- Armor Pierce: Pierces armor or modifies direct hit damage dealt to armor.
 - Auto Aim: Automatically fire toward targets. [Gun]
 - Auto Trigger: Hold the trigger to fire. [Semi, Burst]
 - Backstab Multi: Applies a multiplier to backstab damage.
-- Bio Ping: Damaging an enemy applies a Bio Tracker ping.
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
 - Enforce Fire Rate: Increases damage/recoil/ammo cost when FPS is lower than fire rate. [Auto]
 - Hold Burst: Releasing the trigger ends a burst early. [Burst]
