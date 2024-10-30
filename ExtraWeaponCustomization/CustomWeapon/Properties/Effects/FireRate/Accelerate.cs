@@ -171,13 +171,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "endfirerate":
                 case "accelfirerate":
                     EndFireRate = reader.GetSingle();
-                    EWCLogger.Log("Set EndFireRate to " + EndFireRate);
                     break;
                 case "endfireratemod":
                 case "accelfireratemod":
                 case "fireratemod":
                     EndFireRateMod = reader.GetSingle();
-                    EWCLogger.Log("Set EndFireRateMod to " + EndFireRateMod);
                     break;
                 case "fireratestacklayer":
                     FireRateStackLayer = reader.GetString().ToEnum(StackType.Invalid);
