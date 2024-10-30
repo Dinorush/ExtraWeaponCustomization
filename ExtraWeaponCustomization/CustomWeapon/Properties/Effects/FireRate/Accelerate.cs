@@ -147,6 +147,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber("EndShotDelay", 0f);
             writer.WriteNumber(nameof(EndFireRate), EndFireRate);
             writer.WriteNumber(nameof(EndFireRateMod), EndFireRateMod);
+            writer.WriteString(nameof(FireRateStackLayer), FireRateStackLayer.ToString());
             writer.WriteNumber(nameof(EndDamageMod), EndDamageMod);
             writer.WriteString(nameof(DamageStackLayer), DamageStackLayer.ToString());
             writer.WriteNumber(nameof(AccelTime), AccelTime);
@@ -178,6 +179,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     EndFireRateMod = reader.GetSingle();
                     break;
                 case "fireratestacklayer":
+                case "fireratelayer":
                     FireRateStackLayer = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 case "enddamagemod":
@@ -186,8 +188,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     EndDamageMod = reader.GetSingle();
                     break;
                 case "damagestacklayer":
-                case "stacklayer":
-                case "layer":
+                case "damagelayer":
                     DamageStackLayer = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 case "acceltime":
