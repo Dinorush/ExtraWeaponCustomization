@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 
-namespace EWC.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers
+namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers
 {
     internal sealed class ExplosionEffectHandler : MonoBehaviour
     {

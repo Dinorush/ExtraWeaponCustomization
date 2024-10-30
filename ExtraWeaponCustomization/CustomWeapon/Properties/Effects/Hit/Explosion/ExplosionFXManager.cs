@@ -1,9 +1,9 @@
-﻿using EWC.CustomWeapon.Properties.Effects.EEC_Explosion;
+﻿using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX;
 using EWC.Networking.Structs;
 using SNetwork;
 using UnityEngine;
 
-namespace EWC.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 {
     internal static class ExplosionFXManager
     {

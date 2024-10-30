@@ -181,7 +181,6 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponPostAmmoPackContext>();
             RegisterContext<WeaponPreAmmoUIContext>();
             RegisterContext<WeaponFireRateContext>();
-            RegisterContext<WeaponFireRateSetContext>();
             RegisterContext<WeaponPierceContext>();
             RegisterContext<WeaponFireCancelContext>();
             RegisterContext<WeaponPreStartFireContext>();
@@ -224,7 +223,6 @@ namespace EWC.CustomWeapon.WeaponContext
             _allContextLists.Clear();
             RegisterContext<WeaponStealthUpdateContext>();
             RegisterContext<WeaponFireRateContext>();
-            RegisterContext<WeaponFireRateSetContext>();
             RegisterContext<WeaponPreFireContextSync>();
             RegisterContext<WeaponPostFireContextSync>();
         }

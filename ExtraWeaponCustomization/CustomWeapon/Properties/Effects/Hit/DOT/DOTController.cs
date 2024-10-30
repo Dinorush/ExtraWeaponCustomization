@@ -1,12 +1,12 @@
-﻿using EWC.CustomWeapon.ObjectWrappers;
+﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using EWC.CustomWeapon.ObjectWrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
 
-namespace EWC.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
     public sealed class DOTController
     {
@@ -52,7 +52,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
             }
 
-            _updateRoutine ??= CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(Update()));
+            _updateRoutine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
             return dot;
         }
 
@@ -100,12 +100,13 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             // Remove dead enemies
             _enemyDots.Keys
-                .Where(wrapper => 
+                .Where(wrapper =>
                         wrapper.Object == null
                      || wrapper.Object.GetBaseAgent() == null
                      || !wrapper.Object.GetBaseAgent().Alive)
                 .ToList()
-                .ForEach(wrapper => {
+                .ForEach(wrapper =>
+                {
                     _enemyDots.Remove(wrapper);
                     _ptrToWrapper.Remove(wrapper.Pointer);
                 });
@@ -126,7 +127,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             // Used for batching shotgun hits on same shot
             public DOTInstance? LastInstance { get; set; }
-            public DOTDamageableWrapper(IDamageable damageable, IntPtr ptr) : base(damageable, ptr) {}
+            public DOTDamageableWrapper(IDamageable damageable, IntPtr ptr) : base(damageable, ptr) { }
         }
 
         sealed class DOTComparer : IComparer<DOTInstance>

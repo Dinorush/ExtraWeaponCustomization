@@ -42,8 +42,8 @@ namespace EWC.CustomWeapon
         private bool _synced = false;
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
+        public float BaseFireRate { get; private set; }
 
-        private float _fireRate;
         private float _burstDelay;
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
@@ -59,9 +59,9 @@ namespace EWC.CustomWeapon
             _propertyController = new(IsGun);
             if (IsGun)
             {
-                _fireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
-                _lastFireRate = _fireRate;
-                CurrentFireRate = _fireRate;
+                BaseFireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+                _lastFireRate = BaseFireRate;
+                CurrentFireRate = BaseFireRate;
                 _burstDelay = Gun.m_archeType.BurstDelay();
                 CurrentBurstDelay = _burstDelay;
             }
@@ -141,7 +141,7 @@ namespace EWC.CustomWeapon
             _autoAim = null;
             _ownerPtr = IntPtr.Zero;
             enabled = false;
-            CurrentFireRate = _fireRate;
+            CurrentFireRate = BaseFireRate;
             CurrentBurstDelay = _burstDelay;
             Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
@@ -190,24 +190,19 @@ namespace EWC.CustomWeapon
             return false;
         }
 
-        public void UpdateStoredFireRate(BulletWeaponArchetype archetype)
+        public void UpdateStoredFireRate()
         {
+            BulletWeaponArchetype bwa = Gun!.m_archeType;
             _lastFireRate = CurrentFireRate;
-            _lastShotTimer = archetype.m_nextShotTimer;
-            _lastBurstTimer = archetype.m_nextBurstTimer;
+            _lastShotTimer = bwa.m_nextShotTimer;
+            _lastBurstTimer = bwa.m_nextBurstTimer;
 
-            // Invoke callbacks that override base fire rate
-            WeaponFireRateSetContext context = new(_fireRate);
-            Invoke(context);
+            float newFireRate = Invoke(new WeaponFireRateContext(BaseFireRate)).Value;
 
-            // Invoke callbacks that modify current fire rate
-            WeaponFireRateContext postContext = new(context.FireRate);
-            Invoke(postContext);
-
-            if (CurrentFireRate != postContext.Value)
+            if (CurrentFireRate != newFireRate)
             {
-                CurrentFireRate = Math.Clamp(postContext.Value, 0.001f, CustomWeaponData.MaxFireRate);
-                CurrentBurstDelay = _burstDelay * _fireRate / CurrentFireRate;
+                CurrentFireRate = Math.Clamp(newFireRate, 0.001f, CustomWeaponData.MaxFireRate);
+                CurrentBurstDelay = _burstDelay * BaseFireRate / CurrentFireRate;
                 RefreshSoundDelay();
             }
         }
@@ -216,9 +211,9 @@ namespace EWC.CustomWeapon
         {
             if (IsGun)
             {
-                _fireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+                BaseFireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
                 _burstDelay = Gun.m_archeType.BurstDelay();
-                UpdateStoredFireRate(Gun.m_archeType);
+                UpdateStoredFireRate();
             }
         }
 
@@ -227,10 +222,11 @@ namespace EWC.CustomWeapon
             Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
-        public void ModifyFireRate(BulletWeaponArchetype archetype) {
-            archetype.m_nextShotTimer = Clock.Time + 1f / CurrentFireRate;
-            if (archetype.BurstIsDone())
-                archetype.m_nextBurstTimer = Math.Max(Clock.Time + CurrentBurstDelay, archetype.m_nextShotTimer);
+        public void ModifyFireRate() {
+            BulletWeaponArchetype bwa = Gun!.m_archeType;
+            bwa.m_nextShotTimer = Clock.Time + 1f / CurrentFireRate;
+            if (bwa.BurstIsDone())
+                bwa.m_nextBurstTimer = Math.Max(Clock.Time + CurrentBurstDelay, bwa.m_nextShotTimer);
         }
 
         public void ModifyFireRate(BulletWeaponSynced synced)

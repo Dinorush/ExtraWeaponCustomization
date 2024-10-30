@@ -14,7 +14,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace EWC.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 {
     public static class ExplosionManager
     {
@@ -203,7 +203,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             Vector3 direction = Vector3.up;
             if (limb != null && (willKill || limb.DoDamage(damage)))
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
-            
+
             Vector3 position = localPos + target.Position;
             damBase.ProcessReceivedDamage(damage, source, position, Vector3.up * 1000f, hitreact, tryForceHitreact, limbID, staggerMult);
         }

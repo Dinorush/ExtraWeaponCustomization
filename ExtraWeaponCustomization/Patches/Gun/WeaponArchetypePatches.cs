@@ -36,7 +36,7 @@ namespace EWC.Patches
             cwc.CancelShot = false;
             WeaponPreStartFireContext context = new();
             cwc.Invoke(context);
-            cwc.UpdateStoredFireRate(__instance); // Need to update prior to firing to predict weapon sound delay
+            cwc.UpdateStoredFireRate(); // Need to update prior to firing to predict weapon sound delay
             if (!context.Allow)
                 cwc.StoreCancelShot();
 
@@ -121,8 +121,8 @@ namespace EWC.Patches
                 return;
             }
 
-            cwc.UpdateStoredFireRate(__instance);
-            cwc.ModifyFireRate(__instance);
+            cwc.UpdateStoredFireRate();
+            cwc.ModifyFireRate();
         }
         
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStopFiring))]

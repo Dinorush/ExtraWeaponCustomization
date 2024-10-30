@@ -1,42 +1,36 @@
-﻿using EWC.CustomWeapon.Properties.Effects;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace EWC.CustomWeapon.Properties.Traits
+namespace EWC.CustomWeapon.Properties.Effects
 {
     public class Accelerate :
-        Trait,
-        ITriggerCallback,
+        Effect,
         IGunProperty,
         IWeaponProperty<WeaponPreStartFireContext>,
-        IWeaponProperty<WeaponFireRateSetContext>,
+        IWeaponProperty<WeaponPreFireContextSync>,
         IWeaponProperty<WeaponFireCanceledContext>,
-        IWeaponProperty<WeaponDamageContext>,
-        IWeaponProperty<WeaponPreFireContextSync>
+        IWeaponProperty<WeaponFireRateContext>,
+        IWeaponProperty<WeaponDamageContext>
     {
-        private float _endShotDelay = 1f;
-        public float EndShotDelay
+        public float EndFireRate { get; private set; } = 0f;
+        private float _endFireRateMod = 1f;
+        public float EndFireRateMod
         {
-            get { return _endShotDelay; }
-            private set
-            {
-                _endShotDelay = Math.Max(CustomWeaponData.MinShotDelay, value);
-                _endFireRate = 1f / _endShotDelay;
-            }
+            get { return _endFireRateMod; }
+            private set { _endFireRateMod = Math.Max(0.001f, value); }
         }
-        private float _endFireRate = 1f;
-        public float EndFireRate
-        {
-            get { return _endFireRate; }
-            private set { _endFireRate = Math.Max(0.001f, value); }
-        }
+        public StackType FireRateStackLayer { get; private set; } = StackType.Multiply;
+        private float FireRateMod => EndFireRate > 0f ? EndFireRate / CWC.BaseFireRate : EndFireRateMod;
+
         public float EndDamageMod { get; private set; } = 1f;
         public StackType DamageStackLayer { get; private set; } = StackType.Multiply;
+
         private float _accelTime = 1f;
         public float AccelTime
         {
@@ -51,33 +45,18 @@ namespace EWC.CustomWeapon.Properties.Traits
         }
         public float DecelDelay { get; private set; } = 0f;
         public float AccelExponent { get; private set; } = 1f;
-        private bool _useContinuousGrowth = false;
-
-        private TriggerCoordinator? _coordinator;
-        public TriggerCoordinator? Trigger
-        {
-            get => _coordinator;
-            set
-            {
-                _coordinator = value;
-                if (value != null)
-                    value.Parent = this;
-            }
-        }
+        public bool UseContinuousGrowth { get; private set; } = false;
 
         private float _progress = 0f;
         private float _lastUpdateTime = 0f;
 
         private float _resetProgress = 0f;
         private float _resetUpdateTime = 0f;
-        private bool _calculateGrowthFactor = true;
 
         private void UpdateProgress()
         {
             _resetProgress = _progress;
             _resetUpdateTime = _lastUpdateTime;
-
-            CWC.Weapon.GetComponent<CustomWeaponComponent>();
 
             if (_lastUpdateTime == 0f)
                 _lastUpdateTime = Clock.Time;
@@ -100,9 +79,14 @@ namespace EWC.CustomWeapon.Properties.Traits
             UpdateProgress();   
         }
 
+        public void Invoke(WeaponPreFireContextSync context)
+        {
+            UpdateProgress();
+        }
+
         // Runs on every shot fired. Don't need to do a full UpdateProgress since we know the player is
         // holding down the trigger if there are consecutive calls to this without UpdateProgress.
-        public void Invoke(WeaponFireRateSetContext context)
+        public void Invoke(WeaponFireRateContext context)
         {
             // Update acceleration progress
             _progress = Math.Min(_progress + (Clock.Time - _lastUpdateTime) / AccelTime, 1f);
@@ -110,8 +94,15 @@ namespace EWC.CustomWeapon.Properties.Traits
             _lastUpdateTime = Clock.Time;
 
             // Apply accelerated fire rate
-            float startFireRate = 1f / Math.Max(CustomWeaponData.MinShotDelay, CWC.Gun!.m_archeType.ShotDelay());
-            context.FireRate = CalculateCurrentFireRate(startFireRate);
+            if (FireRateMod != 1f)
+                context.AddMod(GetFireRateMod(), FireRateStackLayer);
+        }
+
+        // FireRate context is called first, so we know progress is up to date
+        public void Invoke(WeaponDamageContext context)
+        {
+            if (EndDamageMod != 1f)
+                context.Damage.AddMod(GetDamageMod(), DamageStackLayer);
         }
 
         public void Invoke(WeaponFireCanceledContext context)
@@ -120,67 +111,46 @@ namespace EWC.CustomWeapon.Properties.Traits
             _lastUpdateTime = _resetUpdateTime;
         }
 
-        public void Invoke(WeaponPreFireContextSync context)
-        {
-            UpdateProgress();
-        }
-
-        public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
-
-        public void TriggerReset()
+        public override void TriggerReset()
         {
             // Reset acceleration
             _progress = 0;
             _lastUpdateTime = Clock.Time;
         }
 
-        public void TriggerApply(List<TriggerContext> contexts)
+        public override void TriggerApply(List<TriggerContext> contexts)
         {
             // Reset acceleration
             _progress = 0;
             _lastUpdateTime = Clock.Time;
         }
 
-        // FireRateSet context is called first, so we know progress is up to date
-        public void Invoke(WeaponDamageContext context)
+
+        private float GetFireRateMod()
         {
-            if (EndDamageMod == 1f) return;
-            context.Damage.AddMod(CalculateCurrentDamageMod(), DamageStackLayer);
+            if (UseContinuousGrowth)
+                return (float) Math.Pow(FireRateMod, _progress);
+            return UnityEngine.Mathf.Lerp(1f, FireRateMod, (float) Math.Pow(_progress, AccelExponent));
         }
 
-        private float CalculateCurrentFireRate(float startFireRate)
+        private float GetDamageMod()
         {
-            if (_useContinuousGrowth)
-            {
-                CalculateGrowthFactor(startFireRate);
-                float fireRate = (float) Math.Exp(AccelExponent * _progress) * startFireRate;
-                return startFireRate < EndFireRate ? Math.Min(fireRate, EndFireRate) : Math.Max(EndFireRate, fireRate);
-            }
-            return UnityEngine.Mathf.Lerp(startFireRate, EndFireRate, (float) Math.Pow(_progress, AccelExponent));
-        }
-
-        private float CalculateCurrentDamageMod()
-        {
+            if (UseContinuousGrowth)
+                return (float)Math.Pow(EndDamageMod, _progress);
             return UnityEngine.Mathf.Lerp(1f, EndDamageMod, (float)Math.Pow(_progress, AccelExponent));
-        }
-
-        public override WeaponPropertyBase Clone()
-        {
-            var copy = (Accelerate) base.Clone();
-            copy.Trigger = Trigger?.Clone();
-            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
-            writer.WriteNumber(nameof(EndShotDelay), EndShotDelay);
+            writer.WriteNumber("EndShotDelay", 0f);
             writer.WriteNumber(nameof(EndFireRate), EndFireRate);
+            writer.WriteNumber(nameof(EndFireRateMod), EndFireRateMod);
             writer.WriteNumber(nameof(EndDamageMod), EndDamageMod);
             writer.WriteString(nameof(DamageStackLayer), DamageStackLayer.ToString());
             writer.WriteNumber(nameof(AccelTime), AccelTime);
-            if (_useContinuousGrowth)
+            if (UseContinuousGrowth)
                 writer.WriteString(nameof(AccelExponent), "e");
             else
                 writer.WriteNumber(nameof(AccelExponent), AccelExponent);
@@ -196,14 +166,25 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 case "endshotdelay":
                 case "accelshotdelay":
-                    EndShotDelay = reader.GetSingle();
+                    EndFireRate = 1f / Math.Max(CustomWeaponData.MinShotDelay, reader.GetSingle());
                     break;
                 case "endfirerate":
                 case "accelfirerate":
                     EndFireRate = reader.GetSingle();
+                    EWCLogger.Log("Set EndFireRate to " + EndFireRate);
+                    break;
+                case "endfireratemod":
+                case "accelfireratemod":
+                case "fireratemod":
+                    EndFireRateMod = reader.GetSingle();
+                    EWCLogger.Log("Set EndFireRateMod to " + EndFireRateMod);
+                    break;
+                case "fireratestacklayer":
+                    FireRateStackLayer = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 case "enddamagemod":
                 case "acceldamagemod":
+                case "damagemod":
                     EndDamageMod = reader.GetSingle();
                     break;
                 case "damagestacklayer":
@@ -218,14 +199,13 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "exponent":
                     if (reader.TokenType == JsonTokenType.String)
                     {
-                        string check = reader.GetString()!.ToLowerInvariant();
-                        if (check == "e")
-                            _useContinuousGrowth = true;
+                        if (reader.GetString()!.ToLowerInvariant() == "e")
+                            UseContinuousGrowth = true;
                     }
                     else
                     {
                         AccelExponent = reader.GetSingle();
-                        _useContinuousGrowth = false;
+                        UseContinuousGrowth = false;
                     }
                     break;
                 case "deceltime":
@@ -241,13 +221,6 @@ namespace EWC.CustomWeapon.Properties.Traits
                 default:
                     break;
             }
-        }
-
-        private void CalculateGrowthFactor(float startFireRate)
-        {
-            if (!_calculateGrowthFactor) return;
-            _calculateGrowthFactor = false;
-            AccelExponent = (float) Math.Log(EndFireRate / startFireRate);
         }
     }
 }

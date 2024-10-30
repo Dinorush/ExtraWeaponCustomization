@@ -28,10 +28,10 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
 
-        protected void SetValidTriggers(DamageType flag = DamageType.Invalid, params TriggerName[] names)
+        protected void SetValidTriggers(DamageType blacklist = DamageType.Invalid, params TriggerName[] names)
         {
             _validTriggers = names;
-            _blacklistType = flag;
+            _blacklistType = blacklist;
             VerifyTriggers();
         }
         protected void SetValidTriggers(params TriggerName[] names) => SetValidTriggers(DamageType.Invalid, names);

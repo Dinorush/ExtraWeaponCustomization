@@ -41,8 +41,8 @@ namespace EWC.Patches
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.UpdateStoredFireRate(__instance.m_archeType);
-            cwc.ModifyFireRate(__instance);
+            cwc.UpdateStoredFireRate();
+            cwc.ModifyFireRate();
             cwc.Invoke(StaticContext<WeaponPostFireContextSync>.Instance);
         }
     }

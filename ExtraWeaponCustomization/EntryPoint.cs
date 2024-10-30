@@ -5,8 +5,6 @@ using EWC.Dependencies;
 using GTFO.API;
 using Il2CppInterop.Runtime.Injection;
 using EWC.CustomWeapon;
-using EWC.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers;
-using EWC.CustomWeapon.Properties.Effects;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using EWC.CustomWeapon.Properties.Effects.Heal;
@@ -14,6 +12,9 @@ using EWC.Utils.Log;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils;
 using EWC.Patches.Native;
+using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
+using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
+using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
 
 namespace EWC;
 

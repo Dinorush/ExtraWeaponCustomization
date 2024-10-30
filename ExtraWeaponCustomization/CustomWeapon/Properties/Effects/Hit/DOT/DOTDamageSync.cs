@@ -2,7 +2,7 @@
 using EWC.Networking;
 using Player;
 
-namespace EWC.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
     internal sealed class DOTDamageSync : SyncedEventMasterOnly<DOTData>
     {

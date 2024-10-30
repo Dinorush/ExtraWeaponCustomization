@@ -1,8 +1,8 @@
-﻿using EWC.CustomWeapon.Properties.Effects.EEC_Explosion.Handlers;
+﻿using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace EWC.CustomWeapon.Properties.Effects.EEC_Explosion
+namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX
 {
     public static class ExplosionEffectPooling
     {

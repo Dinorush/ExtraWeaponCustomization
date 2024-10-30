@@ -1,5 +1,6 @@
 ﻿using Agents;
 using EWC.CustomWeapon.ObjectWrappers;
+using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;

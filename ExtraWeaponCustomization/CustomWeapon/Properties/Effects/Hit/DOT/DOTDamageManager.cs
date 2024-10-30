@@ -10,7 +10,7 @@ using SNetwork;
 using System;
 using UnityEngine;
 
-namespace EWC.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
     public static class DOTDamageManager
     {
@@ -33,7 +33,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             DOTData data = default;
             data.target.Set(limb.m_base.Owner);
             data.source.Set(dotBase.Owner);
-            data.limbID = (byte) (dotBase.DamageLimb ? limb.m_limbID : 0);
+            data.limbID = (byte)(dotBase.DamageLimb ? limb.m_limbID : 0);
             data.localPosition.Set(limb.DamageTargetPos - limb.m_base.Owner.Position, 10f);
             data.staggerMult.Set(dotBase.StaggerDamageMulti, MaxStagger);
 
@@ -72,7 +72,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (!target.Alive || damBase.IsImortal) return;
 
             // DoT should only stagger if threshold is reached. Need the hitreact to not be None for the threshold to do anything, though.
-            bool staggers = (damage * staggerMult + damBase.m_damBuildToHitreact) >= target.EnemyBalancingData.Health.DamageUntilHitreact;
+            bool staggers = damage * staggerMult + damBase.m_damBuildToHitreact >= target.EnemyBalancingData.Health.DamageUntilHitreact;
             ES_HitreactType hitreact = staggers ? ES_HitreactType.Light : ES_HitreactType.None;
             bool tryForceHitreact = false;
             bool willKill = damBase.WillDamageKill(damage);

@@ -35,7 +35,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 Dictionary<ObjectWrapper<Agent>, float> triggerDict = new();
                 foreach (var context in contexts)
                 {
-                    TempWrapper.SetObject(((WeaponPreHitEnemyContext)context.context).Damageable.GetBaseAgent());
+                    IDamageable damageable = ((WeaponPreHitEnemyContext)context.context).Damageable;
+                    if (damageable == null) continue;
+
+                    TempWrapper.SetObject(damageable.GetBaseAgent());
                     if (!triggerDict.ContainsKey(TempWrapper))
                         triggerDict.Add(new ObjectWrapper<Agent>(TempWrapper), 0);
                     triggerDict[TempWrapper] += context.triggerAmt;
@@ -47,10 +50,15 @@ namespace EWC.CustomWeapon.Properties.Effects
             else
             {
                 foreach (var context in contexts)
+                {
+                    IDamageable damageable = ((WeaponPreHitEnemyContext)context.context).Damageable;
+                    if (damageable == null) continue;
+
                     AddTriggerInstance(
-                        new ObjectWrapper<Agent>(((WeaponPreHitEnemyContext)context.context).Damageable.GetBaseAgent()),
+                        new ObjectWrapper<Agent>(damageable.GetBaseAgent()),
                         context.triggerAmt
                         );
+                }
             }
         }
 

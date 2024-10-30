@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EWC.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
     public sealed class DOTInstance
     {
@@ -59,7 +59,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (!CanTick || Expired) return;
 
             float damage = 0f;
-            int damageTicks = Math.Min(_ticks, (int) ((Clock.Time - _lastTickTime) * DotBase.TickRate));
+            int damageTicks = Math.Min(_ticks, (int)((Clock.Time - _lastTickTime) * DotBase.TickRate));
             damage += damageTicks * _damagePerTick;
             _lastTickTime += damageTicks * TickDelay;
             _ticks -= damageTicks;

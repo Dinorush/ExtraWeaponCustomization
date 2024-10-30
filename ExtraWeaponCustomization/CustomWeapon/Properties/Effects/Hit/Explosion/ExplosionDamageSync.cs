@@ -2,7 +2,7 @@
 using Enemies;
 using Player;
 
-namespace EWC.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 {
     internal sealed class ExplosionDamageSync : SyncedEventMasterOnly<ExplosionDamageData>
     {
