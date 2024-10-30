@@ -11,12 +11,15 @@ namespace EWC.CustomWeapon.Properties.Effects
     public class Accelerate :
         Effect,
         IGunProperty,
+        ITriggerCallbackSync,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponPreFireContextSync>,
         IWeaponProperty<WeaponFireCanceledContext>,
         IWeaponProperty<WeaponFireRateContext>,
         IWeaponProperty<WeaponDamageContext>
     {
+        public ushort SyncID { get; set; }
+
         public float EndFireRate { get; private set; } = 0f;
         private float _endFireRateMod = 1f;
         public float EndFireRateMod
@@ -112,18 +115,19 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerReset()
         {
-            // Reset acceleration
-            _progress = 0;
-            _lastUpdateTime = Clock.Time;
+            TriggerResetSync();
+            TriggerManager.SendReset(this);
         }
 
-        public override void TriggerApply(List<TriggerContext> contexts)
+        public void TriggerResetSync()
         {
             // Reset acceleration
             _progress = 0;
             _lastUpdateTime = Clock.Time;
         }
 
+        public override void TriggerApply(List<TriggerContext> contexts) => TriggerReset();
+        public void TriggerApplySync(float mod) => TriggerResetSync();
 
         private float GetFireRateMod()
         {
