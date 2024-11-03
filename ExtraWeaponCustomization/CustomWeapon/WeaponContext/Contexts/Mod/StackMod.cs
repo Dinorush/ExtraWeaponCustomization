@@ -9,7 +9,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         {
             get
             {
-                return Math.Max(_min, _value * (_overrideMod >= 0 ? _overrideMod : _addMod * _multMod));
+                return Math.Max(_min, _value * (_overrideMod >= 0 ? _overrideMod : _addMod * _multMod * _maxMod));
             }
         }
 
@@ -17,6 +17,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         private float _min;
         private float _addMod = 1f;
         private float _multMod = 1f;
+        private float _maxMod = 1f;
         private float _overrideMod = -1f;
 
         public StackMod(float value, float min = 0)
@@ -42,6 +43,12 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                     break;
                 case StackType.Multiply:
                     _multMod *= mod;
+                    break;
+                case StackType.Max:
+                    if (mod > 1f)
+                        _maxMod = Math.Max(_maxMod, mod);
+                    else
+                        _maxMod = Math.Min(_maxMod, mod);
                     break;
             }
         }
