@@ -18,6 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float ReserveChange { get; private set; } = 0;
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
+        public InventorySlot ReceiverSlot { get; private set; } = InventorySlot.None;
 
         private float _clipBuffer = 0;
         private float _reserveBuffer = 0;
@@ -36,7 +37,10 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            BulletWeapon weapon = CWC.Gun!;
+            PlayerBackpack backpack = PlayerBackpackManager.GetBackpack(CWC.Weapon.Owner.Owner);
+            ItemEquippable weapon = CWC.Gun!;
+            if (ReceiverSlot != InventorySlot.None && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem) && bpItem.Instance != null)
+                weapon = bpItem.Instance.Cast<ItemEquippable>();
 
             float triggers = triggerList.Sum(context => context.triggerAmt);
             _clipBuffer += ClipChange * triggers;
@@ -49,7 +53,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             int accountForShot = Clock.Time == _lastFireTime ? 1 : 0;
 
             // Calculate the actual changes we can make to clip/ammo
-            PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage;
+            PlayerAmmoStorage ammoStorage = backpack.AmmoStorage;
             int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, ammoStorage.GetBulletsInPack(weapon.AmmoType)) : _clipBuffer);
             int newClip = Math.Clamp(weapon.GetCurrentClip() + clipChange, accountForShot, weapon.GetMaxClip() + accountForShot);
 
@@ -77,6 +81,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(ReserveChange), ReserveChange);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
+            writer.WriteString(nameof(ReceiverSlot), SlotToName(ReceiverSlot));
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -101,9 +106,35 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "pullfromreserve":
                     PullFromReserve = reader.GetBoolean();
                     break;
+                case "receiverslot":
+                case "slot":
+                    ReceiverSlot = ShortNameToSlot(reader.GetString()!);
+                    break;
                 default:
                     break;
             }
+        }
+
+        private static InventorySlot ShortNameToSlot(string name)
+        {
+            return name.ToLowerInvariant().Replace(" ", null) switch
+            {
+                "main" or "primary" => InventorySlot.GearStandard,
+                "special" or "secondary" => InventorySlot.GearSpecial,
+                "tool" or "class" => InventorySlot.GearClass,
+                _ => InventorySlot.None
+            };
+        }
+
+        private static string SlotToName(InventorySlot slot)
+        {
+            return slot switch
+            {
+                InventorySlot.GearStandard => "Main",
+                InventorySlot.GearSpecial => "Special",
+                InventorySlot.GearClass => "Tool",
+                _ => "None",
+            };
         }
     }
 }
