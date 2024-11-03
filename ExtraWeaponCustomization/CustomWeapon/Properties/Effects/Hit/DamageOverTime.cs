@@ -4,6 +4,7 @@ using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
+using EWC.Utils.Log;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float PrecisionDamageMulti { get; private set; } = 0f;
         public float StaggerDamageMulti { get; private set; } = 0f;
         public float Duration { get; private set; } = 0f;
-        public bool Stacks { get; private set; } = true;
+        public uint StackLimit { get; private set; } = 0;
         public bool IgnoreFalloff { get; private set; } = false;
         public bool DamageLimb { get; private set; } = true;
         public bool IgnoreArmor { get; private set; } = false;
@@ -37,7 +38,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         }
 
         private readonly DOTController _controller = new();
-        private readonly Dictionary<ObjectWrapper<Agent>, DOTInstance> _lastDOTs = new();
+        private readonly Dictionary<ObjectWrapper<Agent>, Queue<DOTInstance>> _lastDOTs = new();
         private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
 
         public DamageOverTime()
@@ -74,44 +75,58 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             EXPAPIWrapper.ApplyMod(ref damage);
 
-            // If it doesn't stack, need to kill the existing DOT and add a new one
-            if (!Stacks)
+            if (StackLimit == 0)
+                _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
+            else
             {
-                _lastDOTs.Keys
-                .Where(wrapper => wrapper.Object == null || !wrapper.Object.Alive || _lastDOTs[wrapper].Expired)
-                .ToList()
-                .ForEach(wrapper => {
-                    _lastDOTs.Remove(wrapper);
-                });
-
+                ClearDeadQueues();
                 TempWrapper.SetObject(limb.GetBaseAgent());
-
+                float nextTickTime = -1f;
+                Queue<DOTInstance> queue;
                 if (_lastDOTs.ContainsKey(TempWrapper))
                 {
-                    DOTInstance? lastDot = _lastDOTs[TempWrapper];
-                    if (!lastDot.Started)
-                        return;
-
-                    float nextTickTime = lastDot.NextTickTime;
-                    lastDot.Destroy();
-                    lastDot = _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
-                    if (lastDot != null)
+                    queue = _lastDOTs[TempWrapper];
+                    if (queue.Count > StackLimit)
                     {
-                        lastDot.StartWithTargetTime(nextTickTime);
-                        _lastDOTs[TempWrapper] = lastDot;
+                        // If the first DOT hasn't even done damage, no point in adding a new one
+                        DOTInstance firstDot = queue.Peek();
+                        if (!firstDot.Started)
+                            return;
+
+                        nextTickTime = firstDot.NextTickTime;
+                        queue.Dequeue().Destroy();
                     }
-                    else
-                        _lastDOTs.Remove(TempWrapper);
                 }
                 else
+                    _lastDOTs.Add(new ObjectWrapper<Agent>(limb.GetBaseAgent()), queue = new Queue<DOTInstance>());
+
+                DOTInstance? newDot = _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
+                if (newDot != null)
                 {
-                    DOTInstance? newDOT = _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
-                    if (newDOT != null)
-                        _lastDOTs[new ObjectWrapper<Agent>(limb.GetBaseAgent())] = newDOT;
+                    queue.Enqueue(newDot);
+                    newDot.StartWithTargetTime(nextTickTime);
                 }
             }
-            else
-                _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
+        }
+
+        private void ClearDeadQueues()
+        {
+            List<ObjectWrapper<Agent>> wrappers = _lastDOTs.Keys.ToList();
+            foreach (var wrapper in wrappers)
+            {
+                if (wrapper.Object == null || !wrapper.Object.Alive)
+                {
+                    _lastDOTs.Remove(wrapper);
+                    continue;
+                }
+
+                Queue<DOTInstance> queue = _lastDOTs[wrapper];
+                while (queue.TryPeek(out var instance) && instance.Expired)
+                    queue.Dequeue();
+
+                if (queue.Count == 0)
+                    _lastDOTs.Remove(wrapper);
+            }
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -123,7 +138,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(StaggerDamageMulti), StaggerDamageMulti);
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteNumber(nameof(TickRate), TickRate);
-            writer.WriteBoolean(nameof(Stacks), Stacks);
+            writer.WriteNumber(nameof(StackLimit), StackLimit);
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
@@ -161,9 +176,15 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "hitrate":
                     TickRate = reader.GetSingle();
                     break;
+                case "stacklimit":
+                case "limit":
+                    StackLimit = reader.GetUInt32();
+                    break;
                 case "stacks":
                 case "stack":
-                    Stacks = reader.GetBoolean();
+                    EWCLogger.Warning("Stacks is a deprecated field for DamageOverTime. Use StackLimit instead.");
+                    if (!reader.GetBoolean())
+                        StackLimit = 1;
                     break;
                 case "ignorefalloff":
                     IgnoreFalloff = reader.GetBoolean();
