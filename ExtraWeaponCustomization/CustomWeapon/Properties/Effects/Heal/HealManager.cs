@@ -15,18 +15,21 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
             Sync.Setup();
         }
 
-        public static void DoHeal(PlayerAgent player, float heal, float cap)
+        public static void DoHeal(PlayerAgent player, float heal, float cap, HealthMod hBase)
         {
             if (heal == 0) return;
 
-            HealData data = default;
+            HealData data = new() {
+                damageFX = hBase.TriggerDamageFX,
+                cancelRegen = hBase.CancelRegen
+            };
             data.player.Set(player);
             data.heal.Set(heal, player.Damage.HealthMax);
             data.cap.Set(cap, player.Damage.HealthMax);
             Sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
-        internal static void Internal_ReceiveHeal(PlayerAgent player, float heal, float cap)
+        internal static void Internal_ReceiveHeal(PlayerAgent player, float heal, float cap, bool damageFX, bool cancelRegen)
         {
             Dam_PlayerDamageBase dam = player.Damage;
             if (heal > 0)
@@ -36,13 +39,25 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
 
                 dam.Health = Math.Min(dam.Health + heal, player.Damage.HealthMax);
                 dam.SendSetHealth(dam.Health);
+                if (cancelRegen)
+                    dam.m_nextRegen = Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage;
             }
             else
             {
                 heal = Math.Min(-heal, dam.Health - (cap - SingleVal));
                 if (heal <= 0) return;
-                
-                player.Damage.OnIncomingDamage(heal, heal, player);
+
+                float origRegen = dam.m_nextRegen;
+
+                if (damageFX)
+                    player.Damage.OnIncomingDamage(heal, heal, player);
+                else
+                {
+                    dam.Health = Math.Min(dam.Health - heal, player.Damage.HealthMax);
+                    dam.SendSetHealth(dam.Health);
+                }
+
+                dam.m_nextRegen = cancelRegen ? origRegen : Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage;
             }
         }
     }
@@ -52,5 +67,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
         public pPlayerAgent player;
         public SFloat16 heal;
         public UFloat16 cap;
+        public bool damageFX;
+        public bool cancelRegen;
     }
 }

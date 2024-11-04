@@ -13,7 +13,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
             HealManager.Internal_ReceiveHeal(
                 player,
                 packet.heal.Get(player.Damage.HealthMax),
-                packet.cap.Get(player.Damage.HealthMax)
+                packet.cap.Get(player.Damage.HealthMax),
+                packet.damageFX,
+                packet.cancelRegen
                 );
         }
     }
