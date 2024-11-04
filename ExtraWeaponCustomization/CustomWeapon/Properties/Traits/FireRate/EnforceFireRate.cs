@@ -11,11 +11,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         IGunProperty,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponDamageContext>,
         IWeaponProperty<WeaponRecoilContext>
     {
-        private CustomWeaponComponent? _cachedCWC = null;
-
         private float _lastShotTime = 0f;
         private float _shotBuffer = 0f;
 
@@ -27,43 +24,31 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContext context)
         {
+            // Acts as a lock against recursive calls and first shot
+            if (_lastShotTime == Clock.Time) return;
+
             BulletWeaponArchetype archetype = CWC.Gun!.m_archeType;
-            if (_cachedCWC == null)
-                _cachedCWC = CWC.Weapon.GetComponent<CustomWeaponComponent>();
-            float shotDelay = 1f / _cachedCWC.CurrentFireRate;
+            float shotDelay = 1f / CWC.CurrentFireRate;
 
-            // Hit callback runs and applies damage bonus before this one, so we can safely reduce the buffer
+            _shotBuffer += (Clock.Time - _lastShotTime) / shotDelay - 1f;
             int extraShots = GetShotsInBuffer(CWC.Gun!);
-            if (_cachedCWC.HasTrait(typeof(ReserveClip)))
-                PlayerBackpackManager.GetBackpack(CWC.Gun!.Owner.Owner).AmmoStorage.UpdateBulletsInPack(CWC.Gun!.AmmoType, -extraShots);
-            else
-                archetype.m_weapon.m_clip -= extraShots;
-            _shotBuffer -= extraShots;
-
-            if (_lastShotTime != Clock.Time)
-                _shotBuffer += (Clock.Time - _lastShotTime) / Math.Max(CustomWeaponData.MinShotDelay, shotDelay) - 1f;
 
             _lastShotTime = Clock.Time;
-            // Need to update ammo since we modified the clip
-            CWC.Gun!.UpdateAmmoStatus();
-        }
-
-        public void Invoke(WeaponDamageContext context)
-        {
-            // Won't apply on the first shot (no time delta available to use)
-            context.Damage.AddMod(1f + GetShotsInBuffer(CWC.Gun!), Effects.StackType.Multiply);
+            for (int i = 0; i < extraShots; i++)
+                archetype.OnFireShot();
+            _shotBuffer -= extraShots;
         }
 
         public void Invoke(WeaponRecoilContext context)
         {
-            // Won't apply on the first shot (no time delta available to use)
+            // Recoil is not accumulative, so need to modify.
             context.AddMod(1f + GetShotsInBuffer(CWC.Gun!), Effects.StackType.Multiply);
         }
 
         private int GetShotsInBuffer(BulletWeapon weapon)
         {
             int cap = weapon.GetCurrentClip();
-            if (_cachedCWC?.HasTrait(typeof(ReserveClip)) == true)
+            if (CWC.HasTrait(typeof(ReserveClip)))
                 cap = PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetBulletsInPack(weapon.AmmoType);
           
             return Math.Min(cap, (int)_shotBuffer);
