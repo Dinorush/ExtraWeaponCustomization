@@ -1,21 +1,25 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Linq;
 using System.Text.Json;
 using EWC.JSON;
+using UnityEngine;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public sealed class TriggerCoordinator
     {
-        private static readonly Random Random = new();
+        private static readonly System.Random Random = new();
         public ITriggerCallback? Parent { get; set; }
         public readonly List<ITrigger> Activate;
         public uint Cap { get; private set; } = 0;
         public uint Threshold { get; private set; } = 1;
         public float Cooldown { get; private set; } = 0f;
         public float Chance { get; private set; } = 1f;
+        public float ActivateResetDelay { get; private set; } = 0f;
 
         public List<ITrigger>? Apply { get; private set; }
         public float CooldownOnApply { get; private set; } = 0f;
@@ -25,6 +29,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private float _nextActivateTime = 0f;
         private readonly List<TriggerContext> _accumulatedTriggers = new();
+        private float _activateResetTime = 0f;
+        private Coroutine? _resetRoutine;
 
         public TriggerCoordinator(params ITrigger[] triggers)
         {
@@ -42,6 +48,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 Threshold = Threshold,
                 Cooldown = Cooldown,
                 Chance = Chance,
+                ActivateResetDelay = ActivateResetDelay,
                 CooldownOnApply = CooldownOnApply,
                 ResetPreviousOnly = ResetPreviousOnly
             };
@@ -54,7 +61,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             // Store valid activations (if any)
             if (Clock.Time >= _nextActivateTime
              && (Cap == 0 || _accumulatedTriggers.Count < Cap)
-             && (Chance == 1f || Chance > Random.NextDouble()))
+             && (Chance == 1f || Chance > Random.NextSingle()))
             {
                 foreach (ITrigger trigger in Activate)
                 {
@@ -87,6 +94,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             // Need to copy list and reset prior to applying trigger in case applying triggers causes another application
             List<TriggerContext> temp = new(_accumulatedTriggers);
             _accumulatedTriggers.Clear();
+            ClearDelayedReset();
             Parent?.TriggerApply(temp);
             _nextActivateTime = Math.Max(_nextActivateTime, Clock.Time + CooldownOnApply);
         }
@@ -96,6 +104,31 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (resetAccumulated)
                 _accumulatedTriggers.Clear();
             Parent?.TriggerReset();
+            ClearDelayedReset();
+        }
+
+        private void StartDelayedReset()
+        {
+            if (ActivateResetDelay <= 0f) return;
+
+            _activateResetTime = Clock.Time + ActivateResetDelay;
+            _resetRoutine ??= CoroutineManager.StartCoroutine(ResetAccumulatedDelayed().WrapToIl2Cpp());
+        }
+
+        private void ClearDelayedReset()
+        {
+            if (_resetRoutine == null) return;
+
+            CoroutineManager.StopCoroutine(_resetRoutine);
+            _resetRoutine = null;
+        }
+
+        private IEnumerator ResetAccumulatedDelayed()
+        {
+            while (Clock.Time < _activateResetTime)
+                yield return new WaitForSeconds(_activateResetTime - Clock.Time);
+            _resetRoutine = null;
+            _accumulatedTriggers.Clear();
         }
 
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)
