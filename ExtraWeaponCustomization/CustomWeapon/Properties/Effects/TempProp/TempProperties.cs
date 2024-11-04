@@ -1,10 +1,8 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.JSON;
-using System.Collections;
+using EWC.Utils;
 using System.Collections.Generic;
 using System.Text.Json;
-using UnityEngine;
-using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
@@ -24,8 +22,18 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         internal PropertyNode? Node { get; set; }
 
-        private Coroutine? _activeRoutine;
+        private readonly DelayedCallback _applyCallback;
         private float _endTime;
+
+        public TempProperties()
+        {
+            _applyCallback = new(
+                () => _endTime,
+                ApplyProperties,
+                () => _endTime = Clock.Time + Duration,
+                RemoveProperties
+            );
+        }
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
@@ -40,8 +48,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void TriggerApplySync(float mod = 1f)
         {
-            _endTime = Clock.Time + Duration;
-            _activeRoutine ??= CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(DeactivateAfterDelay()));
+            _applyCallback.Start();
         }
 
         public override void TriggerReset()
@@ -58,21 +65,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public void TriggerResetSync()
         {
             _endTime = 0;
-            if (_activeRoutine != null)
-            {
-                CoroutineManager.StopCoroutine(_activeRoutine);
-                RemoveProperties();
-            }
-            _activeRoutine = null;
-        }
-
-        private IEnumerator DeactivateAfterDelay()
-        {
-            ApplyProperties();
-            while (Clock.Time < _endTime)
-                yield return new WaitForSeconds(_endTime - Clock.Time);
-            RemoveProperties();
-            _activeRoutine = null;
+            _applyCallback.Stop();
         }
 
         private void ApplyProperties()
