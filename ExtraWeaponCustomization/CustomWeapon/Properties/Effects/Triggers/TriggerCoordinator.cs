@@ -18,15 +18,19 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public uint Cap { get; private set; } = 0;
         public uint Threshold { get; private set; } = 1;
         public float Cooldown { get; private set; } = 0f;
+        public uint CooldownThreshold { get; private set; } = 1;
         public float Chance { get; private set; } = 1f;
         public float ActivateResetDelay { get; private set; } = 0f;
 
         public List<ITrigger>? Apply { get; private set; }
         public float CooldownOnApply { get; private set; } = 0f;
+        public uint CooldownOnApplyThreshold { get; private set; } = 1;
 
         public List<ITrigger>? Reset { get; private set; }
         public bool ResetPreviousOnly { get; private set; } = false;
 
+        private uint _activateCount = 0;
+        private uint _applyCount = 0;
         private float _nextActivateTime = 0f;
         private readonly List<TriggerContext> _accumulatedTriggers = new();
         private float _activateResetTime = 0f;
@@ -47,9 +51,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 Cap = Cap,
                 Threshold = Threshold,
                 Cooldown = Cooldown,
+                CooldownThreshold = CooldownThreshold,
                 Chance = Chance,
                 ActivateResetDelay = ActivateResetDelay,
                 CooldownOnApply = CooldownOnApply,
+                CooldownOnApplyThreshold = CooldownOnApplyThreshold,
                 ResetPreviousOnly = ResetPreviousOnly
             };
             result.Activate.AddRange(Activate);
@@ -68,8 +74,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     float triggerAmt = trigger.Invoke(context);
                     if (triggerAmt > 0f)
                     {
-                        _accumulatedTriggers.Add(new TriggerContext { triggerAmt = triggerAmt, context = context });
-                        _nextActivateTime = Math.Max(_nextActivateTime, Clock.Time + Cooldown);
+                        ActivateTriggers(context, triggerAmt);
                         if (Cap > 0 && _accumulatedTriggers.Count == Cap) break;
                     }
                 }
@@ -89,6 +94,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 ResetTriggers();
         }
 
+        private void ActivateTriggers(WeaponTriggerContext context, float triggerAmt)
+        {
+            _accumulatedTriggers.Add(new TriggerContext { triggerAmt = triggerAmt, context = context });
+            _activateCount++;
+            if (_activateCount == CooldownThreshold)
+            {
+                _nextActivateTime = Math.Max(_nextActivateTime, Clock.Time + Cooldown);
+                _activateCount = 0;
+            }
+            StartDelayedReset();
+        }
+
         private void ApplyTriggers()
         {
             // Need to copy list and reset prior to applying trigger in case applying triggers causes another application
@@ -96,7 +113,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _accumulatedTriggers.Clear();
             ClearDelayedReset();
             Parent?.TriggerApply(temp);
-            _nextActivateTime = Math.Max(_nextActivateTime, Clock.Time + CooldownOnApply);
+            if (_applyCount == CooldownOnApplyThreshold)
+            {
+                _nextActivateTime = Math.Max(_nextActivateTime, Clock.Time + CooldownOnApply);
+                _applyCount = 0;
+            }
         }
 
         private void ResetTriggers(bool resetAccumulated = true)
@@ -105,6 +126,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _accumulatedTriggers.Clear();
             Parent?.TriggerReset();
             ClearDelayedReset();
+            _activateCount = 0;
+            _applyCount = 0;
         }
 
         private void StartDelayedReset()
@@ -128,7 +151,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             while (Clock.Time < _activateResetTime)
                 yield return new WaitForSeconds(_activateResetTime - Clock.Time);
             _resetRoutine = null;
-            _accumulatedTriggers.Clear();
+            ResetTriggers();
         }
 
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)
@@ -144,11 +167,17 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "cooldown":
                     Cooldown = reader.GetSingle();
                     break;
+                case "cooldownthreshold":
+                    CooldownThreshold = Math.Max(reader.GetUInt32(), 1);
+                    break;
                 case "chance":
                     Chance = reader.GetSingle();
                     break;
                 case "cooldownonapply":
                     CooldownOnApply = reader.GetSingle();
+                    break;
+                case "cooldownonapplythreshold":
+                    CooldownOnApplyThreshold = Math.Max(reader.GetUInt32(), 1);
                     break;
                 case "activate":
                 case "triggers":
