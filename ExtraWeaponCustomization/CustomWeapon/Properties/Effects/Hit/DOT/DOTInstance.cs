@@ -10,10 +10,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private float _lastTickTime = 0f;
         private int _ticks = 0;
         private float _damagePerTick = 0f;
-        private float _precisionMulti = 1f;
-        private bool _bypassTumor = false;
-        private float _backstabMulti = 1f;
-        private float _falloff = 1f;
+        private readonly float _precisionMulti = 1f;
+        private readonly bool _bypassTumor = false;
+        private readonly float _backstabMulti = 1f;
+        private readonly float _falloff = 1f;
 
         public DOTInstance(float totalDamage, float falloff, float precision, bool bypassTumor, float backstab, DamageOverTime dotBase)
         {
@@ -35,7 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         public bool CanAddInstance(DamageOverTime dotBase)
         {
             // Technically, shotgun pellets may have different backstab bonuses... but it's too much effort to fix
-            return DotBase == dotBase && !Started;
+            return DotBase.StackLimit == 0 && DotBase == dotBase && !Started;
         }
 
         // This should only be called before the first damage tick.

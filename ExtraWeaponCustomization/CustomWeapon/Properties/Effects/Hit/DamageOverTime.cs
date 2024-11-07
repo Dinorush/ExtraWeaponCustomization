@@ -86,7 +86,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (_lastDOTs.ContainsKey(TempWrapper))
                 {
                     queue = _lastDOTs[TempWrapper];
-                    if (queue.Count > StackLimit)
+                    if (queue.Count >= StackLimit)
                     {
                         // If the first DOT hasn't even done damage, no point in adding a new one
                         DOTInstance firstDot = queue.Peek();
@@ -104,7 +104,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (newDot != null)
                 {
                     queue.Enqueue(newDot);
-                    newDot.StartWithTargetTime(nextTickTime);
+                    if (nextTickTime >= 0f)
+                        newDot.StartWithTargetTime(nextTickTime);
                 }
             }
         }
