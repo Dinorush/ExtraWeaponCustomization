@@ -20,7 +20,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
             if (heal == 0) return;
 
             HealData data = new() {
-                damageFX = hBase.TriggerDamageFX,
                 cancelRegen = hBase.CancelRegen
             };
             data.player.Set(player);
@@ -29,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
             Sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
-        internal static void Internal_ReceiveHeal(PlayerAgent player, float heal, float cap, bool damageFX, bool cancelRegen)
+        internal static void Internal_ReceiveHeal(PlayerAgent player, float heal, float cap, bool cancelRegen)
         {
             Dam_PlayerDamageBase dam = player.Damage;
             if (heal > 0)
@@ -48,16 +47,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
                 if (heal <= 0) return;
 
                 float origRegen = dam.m_nextRegen;
-
-                if (damageFX)
-                    player.Damage.OnIncomingDamage(heal, heal, player);
-                else
-                {
-                    dam.Health = Math.Min(dam.Health - heal, player.Damage.HealthMax);
-                    dam.SendSetHealth(dam.Health);
-                }
-
-                dam.m_nextRegen = cancelRegen ? origRegen : Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage;
+                player.Damage.OnIncomingDamage(heal, heal, player);
+                dam.m_nextRegen = cancelRegen ? Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage : origRegen;
             }
         }
     }
@@ -67,7 +58,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
         public pPlayerAgent player;
         public SFloat16 heal;
         public UFloat16 cap;
-        public bool damageFX;
         public bool cancelRegen;
     }
 }

@@ -16,7 +16,6 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float HealthChangeRel { get; private set; } = 0f;
         public float CapRel { get; private set; } = -1f;
         public bool CancelRegen { get; private set; } = false;
-        public bool TriggerDamageFX { get; private set; } = true;
 
         public override void TriggerReset() {}
 
@@ -41,6 +40,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(HealthChangeRel), HealthChangeRel);
             writer.WriteNumber(nameof(CapRel), CapRel);
+            writer.WriteBoolean(nameof(CancelRegen), CancelRegen);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -61,6 +61,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "caprel":
                 case "cap":
                     CapRel = reader.GetSingle();
+                    break;
+                case "cancelregen":
+                    CancelRegen = reader.GetBoolean();
                     break;
                 default:
                     break;
