@@ -47,7 +47,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 case StackType.Max:
                     if (mod > 1f)
                         _maxMod = Math.Max(_maxMod, mod);
-                    else
+                    else if (mod < 1f)
                         _maxMod = Math.Min(_maxMod, mod);
                     break;
             }

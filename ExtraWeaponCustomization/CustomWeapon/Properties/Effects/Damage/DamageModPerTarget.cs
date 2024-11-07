@@ -91,7 +91,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             while (queue.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) queue.Dequeue();
 
-            context.Damage.AddMod(CalculateMod(queue), StackLayer);
+            if (queue.Count > 0)
+                context.Damage.AddMod(CalculateMod(queue), StackLayer);
         }
 
         public override void WriteName(Utf8JsonWriter writer)
