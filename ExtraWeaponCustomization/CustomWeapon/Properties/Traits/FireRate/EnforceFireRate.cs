@@ -1,8 +1,10 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
 using Gear;
 using Player;
 using System;
 using System.Text.Json;
+using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
@@ -10,11 +12,17 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IGunProperty,
         IWeaponProperty<WeaponPostStartFireContext>,
-        IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponRecoilContext>
+        IWeaponProperty<WeaponPostFireContext>
     {
         private float _lastShotTime = 0f;
         private float _shotBuffer = 0f;
+        private float _fixedTime = 0f;
+        private readonly static float FixedDelta;
+        
+        static EnforceFireRate()
+        {
+            FixedDelta = Time.fixedDeltaTime;
+        }
 
         public void Invoke(WeaponPostStartFireContext context)
         {
@@ -32,17 +40,34 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             _shotBuffer += (Clock.Time - _lastShotTime) / shotDelay - 1f;
             int extraShots = GetShotsInBuffer(CWC.Gun!);
-
             _lastShotTime = Clock.Time;
-            for (int i = 0; i < extraShots; i++)
-                archetype.OnFireShot();
-            _shotBuffer -= extraShots;
-        }
 
-        public void Invoke(WeaponRecoilContext context)
-        {
-            // Recoil is not accumulative, so need to modify.
-            context.AddMod(1f + GetShotsInBuffer(CWC.Gun!), Effects.StackType.Multiply);
+            if (extraShots == 0) return;
+
+            _fixedTime = Time.time - Time.fixedTime;
+            FPSCamera camera = CWC.Weapon.Owner.FPSCamera;
+            FPS_RecoilSystem system = camera.m_recoilSystem;
+
+            float delta = Clock.Delta;
+            shotDelay = Math.Min(shotDelay, delta);
+            // Modify delta time so FPS_Update() moves the correct amount
+            Clock.Delta = shotDelay;
+            for (int i = 0; i < extraShots; i++)
+            {
+                // Update camera to where it should be
+                system.FPS_Update();
+                camera.RotationUpdate();
+                // Camera Ray only updates on fixed time
+                if (!FSFAPIWrapper.hasFSF && (_fixedTime += shotDelay) > FixedDelta)
+                {
+                    camera.UpdateCameraRay();
+                    _fixedTime -= FixedDelta;
+                }
+                archetype.OnFireShot();
+            }
+
+            Clock.Delta = delta;
+            _shotBuffer -= extraShots;
         }
 
         private int GetShotsInBuffer(BulletWeapon weapon)
