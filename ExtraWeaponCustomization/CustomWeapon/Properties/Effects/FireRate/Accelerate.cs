@@ -96,14 +96,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             _lastUpdateTime = Clock.Time;
 
             // Apply accelerated fire rate
-            if (FireRateMod != 1f)
+            if (FireRateMod != 1f && _progress > 0)
                 context.AddMod(GetFireRateMod(), FireRateStackLayer);
         }
 
         // FireRate context is called first, so we know progress is up to date
         public void Invoke(WeaponDamageContext context)
         {
-            if (EndDamageMod != 1f)
+            if (EndDamageMod != 1f && _progress > 0)
                 context.Damage.AddMod(GetDamageMod(), DamageStackLayer);
         }
 
