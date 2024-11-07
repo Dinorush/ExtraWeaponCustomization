@@ -132,7 +132,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
             Parent?.TriggerApply(temp);
 
-            if (_applyCount == CooldownOnApplyThreshold)
+            if (++_applyCount == CooldownOnApplyThreshold)
             {
                 _nextActivateTime = Math.Max(_nextActivateTime, Clock.Time + CooldownOnApply);
                 _applyCount = 0;
