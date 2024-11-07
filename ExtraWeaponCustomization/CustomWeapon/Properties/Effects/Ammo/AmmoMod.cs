@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float ReserveChange { get; private set; } = 0;
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
-        public bool GiveRawAmmo { get; private set; } = false;
+        public bool UseRawAmmo { get; private set; } = false;
         public InventorySlot ReceiverSlot { get; private set; } = InventorySlot.None;
 
         private float _clipBuffer = 0;
@@ -51,14 +51,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             _reserveBuffer += ReserveChange * triggers;
 
             float costOfBullet = slotAmmo.CostOfBullet;
-            float min = GiveRawAmmo ? costOfBullet : 1f;
+            float min = UseRawAmmo ? costOfBullet : 1f;
             if (Math.Abs(_clipBuffer) < min && Math.Abs(_reserveBuffer) < min) return;
             
             // Ammo decrements after this callback if on kill/shot/hit, need to account for that.
             // But if this weapon didn't get the kill (e.g. DOT kill), shouldn't do that.
             int accountForShot = Clock.Time == _lastFireTime ? 1 : 0;
 
-            if (GiveRawAmmo)
+            if (UseRawAmmo)
             {
                 _clipBuffer /= costOfBullet;
                 _reserveBuffer /= costOfBullet;
@@ -79,7 +79,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             weapon.SetCurrentClip(newClip);
 
-            if (GiveRawAmmo)
+            if (UseRawAmmo)
             {
                 _clipBuffer *= costOfBullet;
                 _reserveBuffer *= costOfBullet;
@@ -98,7 +98,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(ReserveChange), ReserveChange);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
-            writer.WriteBoolean(nameof(GiveRawAmmo), GiveRawAmmo);
+            writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
             writer.WriteString(nameof(ReceiverSlot), SlotToName(ReceiverSlot));
             SerializeTrigger(writer);
             writer.WriteEndObject();
@@ -124,9 +124,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "pullfromreserve":
                     PullFromReserve = reader.GetBoolean();
                     break;
-                case "giverawammo":
-                case "giveammo":
-                    GiveRawAmmo = reader.GetBoolean();
+                case "userawammo":
+                case "useammo":
+                    UseRawAmmo = reader.GetBoolean();
                     break;
                 case "receiverslot":
                 case "slot":
