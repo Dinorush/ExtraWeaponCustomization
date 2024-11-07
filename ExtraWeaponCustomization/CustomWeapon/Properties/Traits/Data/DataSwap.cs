@@ -252,6 +252,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 CWC.Gun.SetCurrentClip(newMag); 
             }
 
+            newArch.m_clip = CWC.Gun.GetCurrentClip();
             if (CWC.Weapon.Owner.IsLocallyOwned && GuiManager.CrosshairLayer.m_circleCrosshair.Visible)
                 GuiManager.CrosshairLayer.ShowSpreadCircle(CWC.Gun.RecoilData.hipFireCrosshairSizeDefault);
             ammoStorage.UpdateSlotAmmoUI(slotAmmo, CWC.Gun.GetCurrentClip());
