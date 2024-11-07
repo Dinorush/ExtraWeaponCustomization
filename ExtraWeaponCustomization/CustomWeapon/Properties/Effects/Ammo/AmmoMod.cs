@@ -18,6 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float ReserveChange { get; private set; } = 0;
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
+        public bool GiveRawAmmo { get; private set; } = false;
         public InventorySlot ReceiverSlot { get; private set; } = InventorySlot.None;
 
         private float _clipBuffer = 0;
@@ -42,19 +43,29 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (ReceiverSlot != InventorySlot.None && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem) && bpItem.Instance != null)
                 weapon = bpItem.Instance.Cast<ItemEquippable>();
 
+            PlayerAmmoStorage ammoStorage = backpack.AmmoStorage;
+            InventorySlotAmmo slotAmmo = ammoStorage.GetInventorySlotAmmo(weapon.AmmoType);
+
             float triggers = triggerList.Sum(context => context.triggerAmt);
             _clipBuffer += ClipChange * triggers;
             _reserveBuffer += ReserveChange * triggers;
 
-            if (_clipBuffer < 1 && _clipBuffer > -1 && _reserveBuffer < 1 && _reserveBuffer > -1) return;
+            float costOfBullet = slotAmmo.CostOfBullet;
+            float min = GiveRawAmmo ? costOfBullet : 1f;
+            if (Math.Abs(_clipBuffer) < min && Math.Abs(_reserveBuffer) < min) return;
             
             // Ammo decrements after this callback if on kill/shot/hit, need to account for that.
             // But if this weapon didn't get the kill (e.g. DOT kill), shouldn't do that.
             int accountForShot = Clock.Time == _lastFireTime ? 1 : 0;
 
+            if (GiveRawAmmo)
+            {
+                _clipBuffer /= costOfBullet;
+                _reserveBuffer /= costOfBullet;
+            }
+
             // Calculate the actual changes we can make to clip/ammo
-            PlayerAmmoStorage ammoStorage = backpack.AmmoStorage;
-            int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, ammoStorage.GetBulletsInPack(weapon.AmmoType)) : _clipBuffer);
+            int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, slotAmmo.BulletsInPack) : _clipBuffer);
             int newClip = Math.Clamp(weapon.GetCurrentClip() + clipChange, accountForShot, weapon.GetMaxClip() + accountForShot);
 
             // If we overflow/underflow the magazine, send the rest to reserves (if not pulling from reserves)
@@ -68,9 +79,15 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             weapon.SetCurrentClip(newClip);
 
-            // Need to update UI since UpdateBulletsInPack does it without including the clip
+            if (GiveRawAmmo)
+            {
+                _clipBuffer *= costOfBullet;
+                _reserveBuffer *= costOfBullet;
+            }
+
             ammoStorage.UpdateBulletsInPack(weapon.AmmoType, reserveChange);
-            ammoStorage.UpdateSlotAmmoUI(ammoStorage.m_ammoStorage[(int) weapon.AmmoType], newClip);
+            // Need to update UI again since UpdateBulletsInPack does it without including the clip
+            ammoStorage.UpdateSlotAmmoUI(slotAmmo, newClip);
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -81,6 +98,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(ReserveChange), ReserveChange);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
+            writer.WriteBoolean(nameof(GiveRawAmmo), GiveRawAmmo);
             writer.WriteString(nameof(ReceiverSlot), SlotToName(ReceiverSlot));
             SerializeTrigger(writer);
             writer.WriteEndObject();
@@ -106,16 +124,20 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "pullfromreserve":
                     PullFromReserve = reader.GetBoolean();
                     break;
+                case "giverawammo":
+                case "giveammo":
+                    GiveRawAmmo = reader.GetBoolean();
+                    break;
                 case "receiverslot":
                 case "slot":
-                    ReceiverSlot = ShortNameToSlot(reader.GetString()!);
+                    ReceiverSlot = SlotNameToSlot(reader.GetString()!);
                     break;
                 default:
                     break;
             }
         }
 
-        private static InventorySlot ShortNameToSlot(string name)
+        private static InventorySlot SlotNameToSlot(string name)
         {
             return name.ToLowerInvariant().Replace(" ", null) switch
             {
