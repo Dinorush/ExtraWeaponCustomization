@@ -113,6 +113,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 // Seems like the damageable is always the base, but just in case
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
                 damage *= playerBase.m_playerData.friendlyFireMulti;
+                damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
                 // Only damage and direction are used AFAIK, but again, just in case...
                 playerBase.BulletDamage(damage, source, position, playerBase.DamageTargetPos - position, Vector3.zero);
                 return;
@@ -124,7 +125,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             }
 
             // Applied after FF damage since EXP mod doesn't affect FF damage
-            EXPAPIWrapper.ApplyMod(ref damage);
+            damage *= EXPAPIWrapper.GetDamageMod(eBase.CWC.IsGun);
 
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
             if (limb == null || limb.m_base.IsImortal) return;

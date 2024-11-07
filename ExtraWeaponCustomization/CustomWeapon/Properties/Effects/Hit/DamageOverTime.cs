@@ -73,7 +73,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 damage = damageContext.Damage.Value;
             precisionMulti = damageContext.Precision.Value;
 
-            EXPAPIWrapper.ApplyMod(ref damage);
+            damage *= EXPAPIWrapper.GetDamageMod(CWC.IsGun);
 
             if (StackLimit == 0)
                 _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);

@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GTFuckingXP.Enums;
+using GTFuckingXP.Information.Level;
+using System.Runtime.CompilerServices;
 
 namespace EWC.Dependencies
 {
@@ -26,16 +28,11 @@ namespace EWC.Dependencies
             HasEXP = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
         }
 
-        public static float GetAmmoMod()
-        {
-            return HasEXP ? EXPGetAmmoMod() : 1f;
-        }
+        public static float GetAmmoMod() => HasEXP ? EXPGetAmmoMod() : 1f;
 
-        public static void ApplyMod(ref float damage)
-        {
-            if (HasEXP)
-                EXPDamageMod(ref damage);
-        }
+        public static float GetExplosionResistanceMod(PlayerAgent player) => HasEXP ? EXPGetExplosionResistanceMod(player) : 1f;
+
+        public static float GetDamageMod(bool isGun) => HasEXP ? EXPGetDamageMod(isGun) : 1f;
 
         public static void RegisterDamage(EnemyAgent enemy, PlayerAgent? source, float damage, bool willKill)
         {
@@ -43,10 +40,26 @@ namespace EWC.Dependencies
                 EXPDidDamage(enemy, source, damage, willKill);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static float EXPGetAmmoMod() => CacheApiWrapper.GetActiveLevel().CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.AmmoEfficiency)?.Value ?? 1f;
 
-        private static void EXPDamageMod(ref float damage) => damage *= CacheApiWrapper.GetActiveLevel().WeaponDamageMultiplier;
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static float EXPGetDamageMod(bool isGun) => isGun ? CacheApiWrapper.GetActiveLevel().WeaponDamageMultiplier : CacheApiWrapper.GetActiveLevel().MeleeDamageMultiplier;
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static float EXPGetExplosionResistanceMod(PlayerAgent player)
+        {
+            Level level;
+            if (player.IsLocallyOwned)
+                level = CacheApiWrapper.GetActiveLevel();
+            else if (!CacheApiWrapper.GetPlayerToLevelMapping().TryGetValue(player.PlayerSlotIndex, out level!))
+                return 1f;
+
+            CustomScalingBuff? buff = level.CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.ExplosionResistance);
+            return buff != null ? 2f - buff.Value : 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void EXPDidDamage(EnemyAgent enemy, PlayerAgent? source, float damage, bool willKill)
         {
             if (source == null) return;
