@@ -30,8 +30,7 @@ namespace EWC.Utils
         public IEnumerator Update()
         {
             _onStart?.Invoke();
-            float endTime;
-            while (Clock.Time < (endTime = _endTime.Invoke()))
+            for (float endTime = _endTime.Invoke(); endTime > Clock.Time; endTime = _endTime.Invoke())
                 yield return new WaitForSeconds(endTime - Clock.Time);
             _routine = null;
             _onEnd?.Invoke();
