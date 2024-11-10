@@ -1,6 +1,8 @@
 ﻿using BepInEx.Unity.IL2CPP;
 using Gear;
 using ExtraRecoilData.API;
+using ExtraRecoilData.CustomRecoil;
+using System.Runtime.CompilerServices;
 
 namespace EWC.Dependencies
 {
@@ -21,6 +23,16 @@ namespace EWC.Dependencies
                 ERD_ChangeERDComponent(archetypeID, weapon);
         }
 
+        public static void NotifyFireCustomRecoil(float shotDelay, BulletWeapon weapon)
+        {
+            if (hasERD)
+                ERD_NotifyFireCustomRecoil(shotDelay, weapon);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ERD_ChangeERDComponent(uint archetypeID, BulletWeapon weapon) => ChangeAPI.ChangeERDComponent(archetypeID, weapon);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ERD_NotifyFireCustomRecoil(float shotDelay, BulletWeapon weapon) => weapon.GetComponent<CustomRecoilComponent>()?.FireTriggered(Clock.Time + shotDelay);
     }
 }

@@ -73,7 +73,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private int GetShotsInBuffer(BulletWeapon weapon)
         {
             int cap = weapon.GetCurrentClip();
-            if (CWC.HasTrait(typeof(ReserveClip)))
+            if (CWC.HasTrait<ReserveClip>())
                 cap = PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetBulletsInPack(weapon.AmmoType);
           
             return Math.Min(cap, (int)_shotBuffer);

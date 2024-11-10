@@ -84,11 +84,27 @@ namespace EWC.Patches
             cwc.Invoke(StaticContext<WeaponPostReloadContext>.Instance);
         }
 
+        private static bool _allowReload = true;
+        [HarmonyPatch(typeof(PlayerInventoryLocal), nameof(PlayerInventoryLocal.TriggerReload))]
+        [HarmonyWrapSafe]
+        [HarmonyPrefix]
+        private static bool ReloadPreStartCallback(PlayerInventoryLocal __instance)
+        {
+            _allowReload = true;
+            CustomWeaponComponent? cwc = __instance.m_wieldedItem?.GetComponent<CustomWeaponComponent>();
+            if (cwc == null) return true;
+
+            _allowReload = cwc.Invoke(new WeaponPreReloadContext()).Allow;
+            return _allowReload;
+        }
+
         [HarmonyPatch(typeof(PlayerInventoryLocal), nameof(PlayerInventoryLocal.TriggerReload))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
         private static void ReloadStartCallback(PlayerInventoryLocal __instance)
         {
+            if (!_allowReload) return;
+
             CustomWeaponComponent? cwc = __instance.m_wieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null || !cwc.Weapon.IsReloading) return;
 

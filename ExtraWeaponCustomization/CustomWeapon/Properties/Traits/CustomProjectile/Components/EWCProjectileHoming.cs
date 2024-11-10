@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private ProjectileHomingSettings? _settings;
         private PlayerAgent? _owner;
         private bool _isLocal;
-        private bool _wallPierce;
+        private WallPierce? _wallPierce;
         private bool _enabled = false;
 
         private bool _homingEnabled;
@@ -46,7 +46,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _enabled = true;
             _isLocal = isLocal;
             _settings = projBase.HomingSettings;
-            _wallPierce = false;
+            _wallPierce = null;
             _owner = null;
 
             _homingStartTime = Time.time + _settings.HomingDelay;
@@ -58,7 +58,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (!_isLocal) return;
             _owner = projBase.CWC.Weapon.Owner;
-            _wallPierce = projBase.CWC.HasTrait(typeof(WallPierce));
+            _wallPierce = projBase.CWC.GetTrait<WallPierce>();
 
             if (_homingEnabled)
             {
@@ -67,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 if (_settings.SearchInitialMode == SearchMode.AutoAim)
                 {
                     _homingEnabled = false;
-                    AutoAim? autoAim = projBase.CWC.AutoAim;
+                    AutoAim? autoAim = projBase.CWC.GetTrait<AutoAim>();
                     if (autoAim == null || !autoAim.UseAutoAim) return;
 
                     (EnemyAgent? target, Dam_EnemyDamageLimb? limb) = autoAim.GetTargets();
@@ -306,7 +306,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 foreach (AIG_CoursePortal portal in current.m_portals)
                 {
                     iLG_Door_Core? door = portal.m_door;
-                    if (_wallPierce && door != null && door.DoorType != eLG_DoorType.Security && door.DoorType != eLG_DoorType.Apex)
+                    if (_wallPierce?.RequireOpenPath == true && door != null && door.DoorType != eLG_DoorType.Security && door.DoorType != eLG_DoorType.Apex)
                         door = null;
                     if (door != null && door.LastStatus != eDoorStatus.Open && door.LastStatus != eDoorStatus.Opening && door.LastStatus != eDoorStatus.Destroyed)
                         continue;

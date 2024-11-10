@@ -16,9 +16,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         private static RaycastHit s_rayHit;
         private static Queue<AIG_CourseNode> s_nodeQueue = new();
 
+        public bool RequireOpenPath { get; private set; } = false;
+
         public void Invoke(WeaponPostRayContext context)
         {
-            if (!context.Result || CWC.HasTrait(typeof(ThickBullet)) || CWC.HasTrait(typeof(Projectile))) return;
+            if (!context.Result || CWC.HasTrait<ThickBullet>() || CWC.HasTrait<Projectile>()) return;
             if (context.Data.RayHit.collider == null) return;
             if (context.Data.RayHit.collider.gameObject.IsInLayerMask(LayerUtil.MaskEntity3P)) return;
 
@@ -31,7 +33,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             context.Data.RayHit = s_rayHit;
         }
 
-        internal static bool IsTargetReachable(AIG_CourseNode? source, AIG_CourseNode? target)
+        public bool IsTargetReachable(AIG_CourseNode? source, AIG_CourseNode? target)
         {
             if (source == null || target == null) return true;
             if (source.NodeID == target.NodeID) return true;
@@ -46,12 +48,15 @@ namespace EWC.CustomWeapon.Properties.Traits
                 current.m_searchID = searchID;
                 foreach (AIG_CoursePortal portal in current.m_portals)
                 {
-                    LG_SecurityDoor? secDoor = portal.Gate?.SpawnedDoor?.TryCast<LG_SecurityDoor>();
-                    if (secDoor != null)
-                    {
-                        if (secDoor.LastStatus != eDoorStatus.Open && secDoor.LastStatus != eDoorStatus.Opening)
+                    iLG_Door_Core? door = portal.m_door;
+                    // If we don't require an open path, ignore non-security door plugs
+                    if (!RequireOpenPath && door != null && door.DoorType != eLG_DoorType.Security && door.DoorType != eLG_DoorType.Apex)
+                        door = null;
+                        
+                    // Don't pass through closed doors
+                    if (door != null && door.LastStatus != eDoorStatus.Open && door.LastStatus != eDoorStatus.Opening && door.LastStatus != eDoorStatus.Destroyed)
                             continue;
-                    }
+                    
                     AIG_CourseNode nextNode = portal.GetOppositeNode(current);
                     if (nextNode.m_searchID == searchID) continue;
                     if (nextNode.NodeID == target.NodeID)
@@ -70,9 +75,18 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
+            writer.WriteBoolean(nameof(RequireOpenPath), RequireOpenPath);
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) { }
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        {
+            switch (property)
+            {
+                case "requireopenpath":
+                    RequireOpenPath = reader.GetBoolean();
+                    break;
+            }
+        }
     }
 }

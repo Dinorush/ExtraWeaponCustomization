@@ -144,7 +144,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     burst.m_burstMax = _archBlock.BurstShotCount;
                 }
 
-                if (CWC.HasTrait(typeof(AutoTrigger)))
+                if (CWC.HasTrait<AutoTrigger>())
                     _archetype.m_triggerNeedsPress = false;
 
                 if (CWC.Gun!.Owner?.IsLocallyOwned == true)

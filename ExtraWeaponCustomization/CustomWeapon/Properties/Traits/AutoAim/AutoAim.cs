@@ -16,6 +16,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         IGunProperty,
         IWeaponProperty<WeaponOwnerSetContext>,
         IWeaponProperty<WeaponSetupContext>,
+        IWeaponProperty<WeaponEnableContext>,
+        IWeaponProperty<WeaponDisableContext>,
+        IWeaponProperty<WeaponUpdateContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>,
@@ -105,26 +108,19 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             _reticle = AutoAimReticle.Reticle;
             _reticleHolder = AutoAimReticle.ReticleHolder;
-            CWC.AutoAim = this;
             OnEnable();
         }
 
-        public void Invoke(WeaponOwnerSetContext context)
-        {
-            OnEnable();
-        }
+        public void Invoke(WeaponOwnerSetContext _) => OnEnable();
+        public void Invoke(WeaponEnableContext _) => OnEnable();
 
-        public void Invoke(WeaponClearContext _)
-        {
-            OnDisable();
-            CWC.AutoAim = null;
-        }
+        public void Invoke(WeaponDisableContext _) => OnDisable();
+        public void Invoke(WeaponClearContext _) => OnDisable();
 
-        public void Update() 
+        public void Invoke(WeaponUpdateContext _) 
         {
-            if (_reticle == null) return;
-
-            _camera ??= CWC.Gun!.Owner?.FPSCamera;
+            if (_camera == null && CWC.Weapon.Owner != null)
+                _camera = CWC.Weapon.Owner.FPSCamera;
 
             bool hasTarget = _hasTarget;
             UpdateDetection();

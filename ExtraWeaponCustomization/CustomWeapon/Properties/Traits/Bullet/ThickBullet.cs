@@ -31,10 +31,10 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             s_ray = Weapon.s_ray;
             _pierceCount = CWC.Weapon.ArchetypeData.PiercingBullets ? CWC.Weapon.ArchetypeData.PiercingDamageCountLimit : 1;
-            bool wallPierce = CWC.HasTrait(typeof(WallPierce));
+            var wallPierce = CWC.GetTrait<WallPierce>();
             bool hitWall;
             Vector3 wallPos; // Used to determine bounds for thick bullets and line of sight checks
-            if ((hitWall = Physics.Raycast(s_ray, out RaycastHit wallRayHit, context.Data.maxRayDist, LayerUtil.MaskWorld)) && !wallPierce)
+            if ((hitWall = Physics.Raycast(s_ray, out RaycastHit wallRayHit, context.Data.maxRayDist, LayerUtil.MaskWorld)) && wallPierce == null)
                 wallPos = wallRayHit.point;
             else
                 wallPos = s_ray.origin + context.Data.fireDir * context.Data.maxRayDist;
@@ -57,8 +57,8 @@ namespace EWC.CustomWeapon.Properties.Traits
                     if (damageable == null) continue;
                     if (AlreadyHit(damageable, CWC.Gun!.m_damageSearchID)) continue;
 
-                    if (wallPierce && !WallPierce.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode)) continue;
-                    if (!wallPierce && !CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos, true)) continue;
+                    if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode) == false) continue;
+                    if (wallPierce == null && !CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos, true)) continue;
 
                     s_rayHit = hit;
                     CheckDirectHit(ref s_rayHit);
@@ -81,7 +81,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                     if (damageable == null) continue;
                     if (AlreadyHit(damageable, CWC.Gun!.m_damageSearchID)) continue;
-                    if (wallPierce && !WallPierce.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent().CourseNode)) continue;
+                    if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent().CourseNode) == false) continue;
 
                     context.Data.RayHit = hit;
                     if (BulletHit(context.Data))
@@ -98,7 +98,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         }
 
         // Check for enemies within the initial sphere (if hitsize is big enough)
-        private void CheckCollisionInitial(WeaponPostRayContext context, Vector3 wallPos, bool wallPierce)
+        private void CheckCollisionInitial(WeaponPostRayContext context, Vector3 wallPos, WallPierce? wallPierce)
         {
             Vector3 origin = s_ray.origin;
             List<(EnemyAgent enemy, RaycastHit hit)> hits = SearchUtil.GetEnemyHitsInRange(s_ray, HitSize, 180f, CWC.Weapon.Owner.CourseNode);
@@ -108,8 +108,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 RaycastHit hit = pair.hit;
                 if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
-                if (wallPierce && !WallPierce.IsTargetReachable(CWC.Weapon.Owner.CourseNode, pair.enemy.CourseNode)) continue;
-                if (!wallPierce && !CheckLineOfSight(hit.collider, origin, wallPos)) continue;
+                if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, pair.enemy.CourseNode) == false) continue;
+                if (wallPierce == null && !CheckLineOfSight(hit.collider, origin, wallPos)) continue;
 
                 CheckDirectHit(ref hit);
 
@@ -126,7 +126,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             foreach (var hit in lockHits)
             {
                 if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
-                if (!wallPierce && !CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
+                if (wallPierce == null && !CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
 
                 context.Data.RayHit = hit;
                 if (BulletHit(context.Data))

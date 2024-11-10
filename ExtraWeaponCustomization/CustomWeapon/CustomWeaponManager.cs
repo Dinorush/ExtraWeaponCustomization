@@ -1,11 +1,14 @@
 ﻿using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects;
+using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.JSON;
+using EWC.Utils;
 using EWC.Utils.Log;
 using Gear;
 using GTFO.API.Utilities;
 using MTFO.API;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -207,11 +210,8 @@ namespace EWC.CustomWeapon
 
         private void RegisterProjectileSettings_Recurse(PropertyList list)
         {
-            if (list.Traits?.TryGetValue(typeof(Properties.Traits.Projectile), out var trait) == true)
-            {
-                var projectile = (Properties.Traits.Projectile)trait;
+            if (list.Traits?.TryGetValueAs<Type, Trait, Properties.Traits.Projectile>(typeof(Properties.Traits.Projectile), out var projectile) == true)
                 projectile.SettingsID = EWCProjectileManager.RegisterSetting(projectile);
-            }
 
             foreach (var property in list.Properties)
                 if (property is TempProperties tempProperties)

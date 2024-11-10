@@ -22,14 +22,6 @@ namespace EWC.CustomWeapon
 
         private readonly PropertyController _propertyController;
 
-        private AutoAim? _autoAim;
-        [HideFromIl2Cpp]
-        internal AutoAim? AutoAim
-        {
-            get { return _autoAim; }
-            set { _autoAim = value; if (OwnerSet) _autoAim?.OnEnable(); }
-        }
-
         private bool OwnerSet => _ownerPtr != IntPtr.Zero;
         private IntPtr _ownerPtr = IntPtr.Zero;
 
@@ -86,25 +78,24 @@ namespace EWC.CustomWeapon
             _propertyController.ChangeToSyncContexts();
             _synced = true;
             Register(CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID));
-            _autoAim = null;
         }
 
         private void Update()
         {
             if (OwnerSet)
-                _autoAim?.Update();
+                Invoke(StaticContext<WeaponUpdateContext>.Instance);
         }
 
         private void OnEnable()
         {
             if (OwnerSet)
-                _autoAim?.OnEnable();
+                Invoke(StaticContext<WeaponEnableContext>.Instance);
         }
 
         private void OnDisable()
         {
             if (OwnerSet)
-                _autoAim?.OnDisable();
+                Invoke(StaticContext<WeaponDisableContext>.Instance);
         }
 
         [HideFromIl2Cpp]
@@ -138,7 +129,6 @@ namespace EWC.CustomWeapon
         {
             Invoke(StaticContext<WeaponClearContext>.Instance);
             _propertyController.Clear();
-            _autoAim = null;
             _ownerPtr = IntPtr.Zero;
             enabled = false;
             CurrentFireRate = BaseFireRate;
@@ -152,11 +142,11 @@ namespace EWC.CustomWeapon
         internal void DeactivateNode(PropertyNode node) => _propertyController.SetActive(node, false);
 
         [HideFromIl2Cpp]
-        public bool HasTrait(Type type) => _propertyController.HasTrait(type);
+        public bool HasTrait<T>() where T : Trait => _propertyController.HasTrait<T>();
         [HideFromIl2Cpp]
-        public Trait GetTrait(Type type) => _propertyController.GetTrait(type);
+        public T? GetTrait<T>() where T : Trait => _propertyController.GetTrait<T>();
         [HideFromIl2Cpp]
-        public bool TryGetTrait(Type type, [MaybeNullWhen(false)] out Trait trait) => _propertyController.TryGetTrait(type, out trait);
+        public bool TryGetTrait<T>([MaybeNullWhen(false)] out T trait) where T : Trait => _propertyController.TryGetTrait(out trait);
 
         [HideFromIl2Cpp]
         internal ITriggerCallbackSync GetTriggerSync(ushort id) => _propertyController.GetTriggerSync(id);

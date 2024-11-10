@@ -15,6 +15,7 @@ namespace EWC.JSON
                 Properties = new(new()
                 {
                     new AmmoMod(),
+                    new AmmoRegen(),
                     new DamageMod(),
                     new DamageModPerTarget(),
                     new DamageOverTime(),

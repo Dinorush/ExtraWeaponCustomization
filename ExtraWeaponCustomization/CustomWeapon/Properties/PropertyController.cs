@@ -7,6 +7,7 @@ using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils.Log;
 using System.Diagnostics.CodeAnalysis;
+using EWC.Utils;
 
 namespace EWC.CustomWeapon.Properties
 {
@@ -96,7 +97,7 @@ namespace EWC.CustomWeapon.Properties
             {
                 if (property is ITriggerCallbackSync syncProperty)
                 {
-                    syncProperty.SyncID = (ushort) _syncList.Count;
+                    syncProperty.SyncID = (ushort)_syncList.Count;
                     _syncList.Add(syncProperty);
                 }
             }
@@ -115,9 +116,10 @@ namespace EWC.CustomWeapon.Properties
 
         public ContextController GetContextController() => _contextController;
         public bool HasTempProperties() => _root!.Children.Count > 0;
-        public bool HasTrait(Type type) => _activeTraits.ContainsKey(type);
-        public Trait GetTrait(Type type) => _activeTraits[type];
-        public bool TryGetTrait(Type type, [MaybeNullWhen(false)] out Trait trait) => _activeTraits.TryGetValue(type, out trait);
+        public bool HasTrait<T>() where T : Trait => _activeTraits.ContainsKey(typeof(T));
+        public T? GetTrait<T>() where T : Trait => _activeTraits.TryGetValueAs<Type, Trait, T>(typeof(T), out T? trait) ? trait : null;
+        public bool TryGetTrait<T>([MaybeNullWhen(false)] out T trait) where T : Trait => _activeTraits.TryGetValueAs(typeof(T), out trait);
+
         internal ITriggerCallbackSync GetTriggerSync(ushort id)
         {
             if (_syncList.Count <= id)
@@ -149,13 +151,10 @@ namespace EWC.CustomWeapon.Properties
                     // UpdateRoot will register/add traits, so just need to invoke setups
                     UpdateRoot(node);
 
-                    if (node.List.Traits != null)
+                    if (node.List.SetupCallbacks != null)
                     {
-                        foreach (Trait trait in node.List.Traits.Values)
-                        {
-                            if (trait is IWeaponProperty<WeaponSetupContext> setup)
-                                setup.Invoke(StaticContext<WeaponSetupContext>.Instance);
-                        }
+                        foreach (var property in node.List.SetupCallbacks)
+                            property.Invoke(StaticContext<WeaponSetupContext>.Instance);
                     }
                 }
                 else
@@ -165,18 +164,13 @@ namespace EWC.CustomWeapon.Properties
             if (!node.Enabled) return;
 
             foreach (var property in node.List.Properties)
-                _contextController.Register(property);
-            
-            if (node.List.Traits != null)
             {
-                foreach ((Type type, Trait trait) in node.List.Traits)
-                {
-                    if (_activeTraits.TryAdd(type, trait))
-                    {
-                        if (trait is IWeaponProperty<WeaponSetupContext> setup)
-                            setup.Invoke(StaticContext<WeaponSetupContext>.Instance);
-                    }
-                }
+                if (property is Trait trait && !_activeTraits.TryAdd(property.GetType(), trait)) continue;
+                
+                if (property is IWeaponProperty<WeaponSetupContext> setup)
+                    setup.Invoke(StaticContext<WeaponSetupContext>.Instance);
+
+                _contextController.Register(property);
             }
         }
 
@@ -191,18 +185,17 @@ namespace EWC.CustomWeapon.Properties
             if (!node.Enabled) return;
 
             foreach (var property in node.List.Properties)
-                _contextController.Unregister(property);
-
-            if (node.List.Traits != null)
             {
-                foreach ((Type type, Trait trait) in node.List.Traits)
-                {
-                    if (_activeTraits[type] == trait && _activeTraits.Remove(type))
-                    {
-                        if (trait is IWeaponProperty<WeaponClearContext> setup)
-                            setup.Invoke(StaticContext<WeaponClearContext>.Instance);
-                    }
-                }
+                Type type = property.GetType();
+                if (property is Trait trait && (!_activeTraits.TryGetValue(type, out var active) || active != trait))
+                    continue;
+                else
+                    _activeTraits.Remove(type);
+
+                if (property is IWeaponProperty<WeaponClearContext> clear)
+                    clear.Invoke(StaticContext<WeaponClearContext>.Instance);
+
+                _contextController.Unregister(property);
             }
 
             if (node.List.Override)
@@ -222,9 +215,9 @@ namespace EWC.CustomWeapon.Properties
             {
                 PropagateDisable(_root);
                 _activeTraits.Clear();
-                PropagateEnable(node);
                 if (node.List.Owner != null)
                     _contextController.Register(node.List.Owner);
+                PropagateEnable(node);
             }
             else
             {
@@ -240,15 +233,13 @@ namespace EWC.CustomWeapon.Properties
 
             if (node.Active)
             {
-                if (node.List.Traits != null)
+                if (node.List.ClearCallbacks != null)
                 {
-                    foreach ((Type type, Trait trait) in node.List.Traits)
+                    foreach (var property in node.List.ClearCallbacks)
                     {
-                        if (_activeTraits[type] == trait)
-                        {
-                            if (trait is IWeaponProperty<WeaponClearContext> setup)
-                                setup.Invoke(StaticContext<WeaponClearContext>.Instance);
-                        }
+                        if (property is Trait trait && (!_activeTraits.TryGetValue(property.GetType(), out var active) || trait != active)) continue;
+
+                        property.Invoke(StaticContext<WeaponClearContext>.Instance);
                     }
                 }
             }
@@ -267,11 +258,11 @@ namespace EWC.CustomWeapon.Properties
                 if (node.Active)
                 {
                     foreach (var property in node.List.Properties)
-                        _contextController.Register(property);
+                    {
+                        if (property is Trait trait && !_activeTraits.TryAdd(property.GetType(), trait)) continue;
 
-                    if (node.List.Traits != null)
-                        foreach ((Type type, Trait trait) in node.List.Traits)
-                            _activeTraits.TryAdd(type, trait);
+                        _contextController.Register(property);
+                    }
                 }
                 return;
             }

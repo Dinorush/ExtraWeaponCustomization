@@ -23,7 +23,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private readonly HashSet<IntPtr> _initialPlayers = new();
         private readonly HitData _hitData = new();
         private int _entityLayer;
-        private bool _hitWorld;
+        private WallPierce? _wallPierce;
         private bool _enabled = false;
 
         // Variables
@@ -104,7 +104,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
             }
 
-            _hitWorld = !cwc.HasTrait(typeof(WallPierce));
+            _wallPierce = cwc.GetTrait<WallPierce>();
 
             HitEnts.Clear();
             if (_weapon.ArchetypeData.PiercingBullets && _weapon.ArchetypeData.PiercingDamageCountLimit > 1)
@@ -157,7 +157,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             CheckCollision();
             if (_pierceCount <= 0) return;
 
-            if (_hitWorld)
+            if (_wallPierce == null)
                 CheckCollisionWorld();
 
             // Player moves on fixed time so only remove on fixed time
@@ -207,7 +207,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                 if (damageable == null) continue;
                 if (AlreadyHit(damageable)) continue;
-                if (checkLOS && _hitWorld
+                if (checkLOS && _wallPierce == null
                  && Physics.Linecast(hit.point, s_ray.origin, out s_rayHit, LayerUtil.MaskWorld)
                  && s_rayHit.collider.gameObject.Pointer != hit.collider.gameObject.Pointer) // Needed for locks
                     continue;
@@ -289,7 +289,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     return false;
             }
 
-            return _hitWorld || WallPierce.IsTargetReachable(_weapon.Owner.CourseNode, agent?.CourseNode);
+            return _wallPierce?.IsTargetReachable(_weapon.Owner.CourseNode, agent?.CourseNode) != false;
         }
 
         private bool AlreadyHit(IDamageable? damageable)

@@ -168,9 +168,11 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreFireContext>();
             RegisterContext<WeaponPreHitContext>();
             RegisterContext<WeaponPreHitEnemyContext>();
+            RegisterContext<WeaponPreReloadContext>();
             RegisterContext<WeaponPostReloadContext>();
             RegisterContext<WeaponReloadStartContext>();
             RegisterContext<WeaponWieldContext>();
+            RegisterContext<WeaponUnWieldContext>();
 
             RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponBackstabContext>();
@@ -195,6 +197,9 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponSetupContext>();
             RegisterContext<WeaponOwnerSetContext>();
+            RegisterContext<WeaponUpdateContext>();
+            RegisterContext<WeaponEnableContext>();
+            RegisterContext<WeaponDisableContext>();
         }
 
         private void RegisterMeleeContexts()

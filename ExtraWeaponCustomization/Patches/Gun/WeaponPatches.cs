@@ -44,6 +44,17 @@ namespace EWC.Patches
             s_lastSearchID = 0;
         }
 
+        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnUnWield))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void UpdateWeaponUnwielded(BulletWeapon __instance)
+        {
+            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
+            if (cwc == null) return;
+
+            cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
+        }
+
         // Used to correctly apply HitCallback damage modification on piercing shots
         // (otherwise damage mods apply to future pierce shots exponentially)
         private static uint s_lastSearchID = 0;

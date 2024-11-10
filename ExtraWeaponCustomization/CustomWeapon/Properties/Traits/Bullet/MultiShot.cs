@@ -32,8 +32,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         private static Vector3 s_baseDir;
         private readonly static HashSet<IntPtr> s_hitEnts = new();
         private readonly static HitData s_hitData = new();
-        private static bool s_wallPierce = false;
-        private static bool s_projectile = false;
+        private static WallPierce? s_wallPierce;
+        private static bool s_isProjectile = false;
         private static float s_initialShotMod = 1f;
 
         public void Invoke(WeaponPreFireContext context)
@@ -51,13 +51,13 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContextSync context)
         {
-            s_projectile = CWC.HasTrait(typeof(Projectile));
+            s_isProjectile = CWC.HasTrait<Projectile>();
 
-            s_ray.origin = Weapon.s_ray.origin;
+            s_ray.origin = CWC.Weapon.MuzzleAlign.position;
             bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
 
-            if (CancelShot && !s_projectile)
+            if (CancelShot && !s_isProjectile)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
 
             int shotgunBullets = 1;
@@ -92,14 +92,14 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContext context)
         {
-            s_wallPierce = CWC.HasTrait(typeof(WallPierce));
-            s_projectile = CWC.HasTrait(typeof(Projectile));
+            s_wallPierce = CWC.GetTrait<WallPierce>();
+            s_isProjectile = CWC.HasTrait<Projectile>();
 
-            s_ray.origin = Weapon.s_ray.origin;
+            s_ray.origin = CWC.Weapon.Owner.FPSCamera.Position;
             bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
 
-            if (CancelShot && !s_projectile)
+            if (CancelShot && !s_isProjectile)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
 
             int shotgunBullets = 1;
@@ -158,7 +158,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             // Stops at padlocks but that's the same behavior as vanilla so idc
             Vector3 wallPos;
             bool hitWall;
-            if ((hitWall = Physics.Raycast(s_ray, out RaycastHit wallRayHit, s_hitData.maxRayDist, LayerUtil.MaskWorld)) && !s_wallPierce)
+            if ((hitWall = Physics.Raycast(s_ray, out RaycastHit wallRayHit, s_hitData.maxRayDist, LayerUtil.MaskWorld)) && s_wallPierce == null)
                 wallPos = wallRayHit.point;
             else
                 wallPos = s_ray.origin + s_ray.direction * s_hitData.maxRayDist;
@@ -167,7 +167,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             CWC.Invoke(context);
             if (!context.Result)
             {
-                if (s_projectile) return;
+                if (s_isProjectile) return;
 
                 // Plays bullet FX, since Thick Bullet will cancel the ray but doesn't
                 FX_Manager.EffectTargetPosition = wallPos;
@@ -183,7 +183,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (pierceCount > 0)
             {
-                if (s_wallPierce)
+                if (s_wallPierce == null)
                     CheckForHits(pierceCount, maxDist, LayerUtil.MaskDynamic);
                 
                 if (pierceCount > 0 && hitWall && !AlreadyHit(DamageableUtil.GetDamageableFromRayHit(wallRayHit)))
@@ -200,7 +200,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private void FireShotVisual(float x, float y, float spread)
         {
-            if (s_projectile) return;
+            if (s_isProjectile) return;
 
             CalcRayDir(x, y, spread, local: false);
 
@@ -269,7 +269,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                 if (damageable == null) continue;
                 if (AlreadyHit(damageable)) continue;
-                if (s_wallPierce && !WallPierce.IsTargetReachable(s_hitData.owner.CourseNode, damageable.GetBaseAgent()?.CourseNode)) continue;
+                if (s_wallPierce?.IsTargetReachable(s_hitData.owner.CourseNode, damageable.GetBaseAgent()?.CourseNode) == false) continue;
 
                 s_hitData.RayHit = hit;
                 FX_Manager.EffectTargetPosition = hit.point;
