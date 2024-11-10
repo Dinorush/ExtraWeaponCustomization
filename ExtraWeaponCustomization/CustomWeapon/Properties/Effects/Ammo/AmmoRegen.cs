@@ -19,8 +19,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         IWeaponProperty<WeaponUnWieldContext>,
         IWeaponProperty<WeaponPreReloadContext>
     {
-        public float ClipChange { get; private set; } = 0f;
-        public float ReserveChange { get; private set; } = 0f;
+        public float ClipRegen { get; private set; } = 0f;
+        public float ReserveRegen { get; private set; } = 0f;
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
         public bool UseRawAmmo { get; private set; } = false;
@@ -107,8 +107,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
 
                 float delta = Math.Min(time - _nextTickTime, time - _lastTickTime);
-                _clipBuffer += ClipChange * delta;
-                _reserveBuffer += ReserveChange * delta;
+                _clipBuffer += ClipRegen * delta;
+                _reserveBuffer += ReserveRegen * delta;
                 _lastTickTime = time;
 
                 float costOfBullet = _slotAmmo!.CostOfBullet;
@@ -168,8 +168,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
-            writer.WriteNumber(nameof(ClipChange), ClipChange);
-            writer.WriteNumber(nameof(ReserveChange), ReserveChange);
+            writer.WriteNumber(nameof(ClipRegen), ClipRegen);
+            writer.WriteNumber(nameof(ReserveRegen), ReserveRegen);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
@@ -185,13 +185,15 @@ namespace EWC.CustomWeapon.Properties.Effects
             base.DeserializeProperty(property, ref reader);
             switch (property)
             {
+                case "clipregen":
                 case "clipchange":
                 case "clip":
-                    ClipChange = reader.GetSingle();
+                    ClipRegen = reader.GetSingle();
                     break;
+                case "reserveregen":
                 case "reservechange":
                 case "reserve":
-                    ReserveChange = reader.GetSingle();
+                    ReserveRegen = reader.GetSingle();
                     break;
                 case "overflowtoreserve":
                 case "overflow":
