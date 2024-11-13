@@ -34,9 +34,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             if (!bypassTumor && limb.DestructionType == eLimbDestructionType.Custom)
                 Damage = Math.Min(Damage, limb.m_healthMax);
 
-            DamageType = flag;
-            if (limb.m_type == eLimbDamageType.Weakspot)
-                DamageType |= DamageType.Weakspot;
+            DamageType = flag.WithSubTypes(limb);
         }
     }
 }

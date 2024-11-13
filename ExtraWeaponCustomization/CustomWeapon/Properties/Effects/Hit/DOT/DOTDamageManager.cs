@@ -24,17 +24,34 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
         public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, bool bypassTumor, float backstabMulti, DamageOverTime dotBase)
         {
-            if (!dotBase.Owner.IsLocallyOwned) return;
-
-            Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
-            if (limb == null || limb.m_base.IsImortal || damage <= 0) return;
+            if (!dotBase.Owner.IsLocallyOwned || damage <= 0) return;
 
             damage = damage * falloff + 0.001f; // Account for rounding errors
+
+            Agent? agent = damageable.GetBaseAgent();
+            if (agent?.Type == AgentType.Player)
+            {
+                Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
+                damage *= playerBase.m_playerData.friendlyFireMulti;
+                // Don't need custom damage behavior. However, BulletDamage triggers FF dialogue.
+                SendPlayerDOTDamage(damage, playerBase, dotBase.Owner);
+                return;
+            }
+            else if (agent == null) // Lock damage; direction and damage type don't matter
+            {
+                damageable.FireDamage(damage, dotBase.Owner);
+                return;
+            }
+
+            Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
+            if (limb == null) return;
+
+            Dam_EnemyDamageBase damBase = limb.m_base;
             DOTData data = default;
-            data.target.Set(limb.m_base.Owner);
+            data.target.Set(damBase.Owner);
             data.source.Set(dotBase.Owner);
             data.limbID = (byte)(dotBase.DamageLimb ? limb.m_limbID : 0);
-            data.localPosition.Set(limb.DamageTargetPos - limb.m_base.Owner.Position, 10f);
+            data.localPosition.Set(limb.DamageTargetPos - damBase.Owner.Position, 10f);
             data.staggerMult.Set(dotBase.StaggerDamageMulti, MaxStagger);
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
@@ -46,7 +63,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             if (!bypassTumor && limb.DestructionType == eLimbDestructionType.Custom)
                 precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
 
-            data.damage.Set(precDamage, limb.m_base.DamageMax);
+            data.damage.Set(precDamage, damBase.DamageMax);
 
             WeaponPreHitEnemyContext hitContext = new(
                 precDamage,
@@ -54,15 +71,28 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 backstabMulti,
                 damageable,
                 limb.DamageTargetPos,
-                limb.DamageTargetPos - limb.m_base.Owner.Position,
-                precHit ? DamageType.WeakspotDOT : DamageType.DOT
+                limb.DamageTargetPos - damBase.Owner.Position,
+                DamageType.DOT.WithSubTypes(precHit, armorMulti)
                 );
             dotBase.CWC.Invoke(hitContext);
 
             KillTrackerManager.RegisterHit(dotBase.CWC.Weapon, hitContext);
-            limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f);
+            limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             Sync.Send(data, SNet_ChannelType.GameNonCritical);
+        }
+
+        // Avoid using damBase.FireDamage directly to avoid invoking XP's bleed resistance
+        private static void SendPlayerDOTDamage(float damage, Dam_PlayerDamageBase damBase, Agent source)
+        {
+            pSmallDamageData data = default;
+            data.damage.Set(damage, damBase.HealthMax);
+            data.source.Set(source);
+            if (SNet.IsMaster)
+                damBase.m_fireDamagePacket.Send(data, SNet_ChannelType.GameNonCritical);
+            else
+                damBase.m_fireDamagePacket.Send(data, SNet_ChannelType.GameNonCritical, SNet.Master);
+            damBase.ReceiveFireDamage(data);
         }
 
         internal static void Internal_ReceiveDOTDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult)

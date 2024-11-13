@@ -25,8 +25,10 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
         public bool IgnoreDamageMods { get; private set; } = false;
+        public float FriendlyDamageMulti { get; private set; } = 1f;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = true;
+        public bool DamageLocks { get; private set; } = true;
         public uint SoundID { get; private set; } = EVENTS.STICKYMINEEXPLODE;
         public Color GlowColor { get; private set; } = new(1, 0.2f, 0, 1);
         public float GlowDuration { get; private set; } = 0.1f;
@@ -39,7 +41,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public Explosive()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.BulletLanded));
-            SetValidTriggers(DamageType.Explosive, TriggerName.BulletLanded, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge, TriggerName.Kill);
+            SetValidTriggers(DamageType.Explosive);
         }
 
         public override void TriggerReset() {}
@@ -51,25 +53,29 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (CWC.IsGun && CWC.Gun!.m_damageSearchID > 0 && CWC.Gun.m_damageSearchID - 1 == DamageUtil.SearchID)
                     DamageUtil.IncrementSearchID();
 
+                CacheBackstab = 0f;
                 if (tContext.context is WeaponPostKillContext killContext)
                 {
                     CacheBackstab = killContext.Backstab;
                     ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, tContext.triggerAmt);
                 }
-                else
+                else if(tContext.context is WeaponPreHitContext hitContext)
                 {
-                    CacheBackstab = 0f;
-                    WeaponPreHitContext context = (WeaponPreHitContext)tContext.context;
-                    Vector3 position = context.Position;
-                    if (context.Damageable != null && context.Damageable.GetBaseAgent() != null)
-                        position = context.LocalPosition + context.Damageable.GetBaseAgent().Position;
-                    else if (context.Damageable == null)
-                        position += context.Direction * WallHitBuffer;
+                    Vector3 position = hitContext.Position;
+                    if (hitContext.Damageable != null && hitContext.Damageable.GetBaseAgent() != null)
+                        position = hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Position;
+                    else if (hitContext.Damageable == null)
+                        position += hitContext.Direction * WallHitBuffer;
 
-                    if (context is WeaponPreHitEnemyContext enemyContext)
+                    if (hitContext is WeaponPreHitEnemyContext enemyContext)
                         CacheBackstab = enemyContext.Backstab;
 
-                    ExplosionManager.DoExplosion(position, context.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : context.Falloff, this, tContext.triggerAmt);
+                    ExplosionManager.DoExplosion(position, hitContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt);
+                }
+                else
+                {
+                    Player.PlayerAgent owner = CWC.Weapon.Owner;
+                    ExplosionManager.DoExplosion(owner.FPSCamera.Position, owner.FPSCamera.CameraRayDir, owner, 1f, this, tContext.triggerAmt);
                 }
             }
         }
@@ -89,8 +95,10 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
+            writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
+            writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             SerializeTrigger(writer);
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WritePropertyName(nameof(GlowColor));
@@ -149,6 +157,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "ignoredamagemod":
                     IgnoreDamageMods = reader.GetBoolean();
                     break;
+                case "friendlydamagemulti":
+                case "friendlymulti":
+                case "friendlymult":
+                    FriendlyDamageMulti = reader.GetSingle();
+                    break;
                 case "damagefriendly":
                 case "friendlyfire":
                     DamageFriendly = reader.GetBoolean();
@@ -156,6 +169,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "damageowner":
                 case "damageuser":
                     DamageOwner = reader.GetBoolean();
+                    break;
+                case "damagelocks":
+                    DamageLocks = reader.GetBoolean();
                     break;
                 case "soundid":
                 case "sound":

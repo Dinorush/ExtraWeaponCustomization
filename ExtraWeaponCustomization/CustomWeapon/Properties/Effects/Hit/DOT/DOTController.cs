@@ -1,4 +1,5 @@
-﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+﻿using Agents;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 using EWC.CustomWeapon.ObjectWrappers;
 using System;
 using System.Collections;
@@ -10,10 +11,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
     public sealed class DOTController
     {
-        // Used to give a fast reference back to the wrapper used as key in the enemyDots dictionary.
+        // Used to give a fast reference back to the wrapper used as key in the activeDots dictionary.
         // Need to access that specific wrapper so we can get the last DOT instance added to it.
         private readonly Dictionary<IntPtr, DOTDamageableWrapper> _ptrToWrapper = new();
-        private readonly Dictionary<DOTDamageableWrapper, PriorityQueue<DOTInstance, DOTInstance>> _enemyDots = new();
+        private readonly Dictionary<DOTDamageableWrapper, PriorityQueue<DOTInstance, DOTInstance>> _activeDots = new();
         private readonly DOTComparer _comparer = new();
         private Coroutine? _updateRoutine = null;
         private float _nextTickTime = float.MaxValue;
@@ -24,14 +25,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
             IntPtr ptr = damageable.Pointer;
 
-            // If the limb doesn't exist in enemyDots, initialize a new Wrapper and add it
+            // If the limb doesn't exist in activeDots, initialize a new Wrapper and add it
             DOTInstance dot = new(totalDamage, falloff, precision, bypassTumor, backstab, dotBase);
             if (!_ptrToWrapper.ContainsKey(ptr))
             {
                 DOTDamageableWrapper wrapper = new(damageable, ptr);
                 _ptrToWrapper[ptr] = wrapper;
-                _enemyDots[wrapper] = new(_comparer);
-                _enemyDots[wrapper].Enqueue(dot, dot);
+                _activeDots[wrapper] = new(_comparer);
+                _activeDots[wrapper].Enqueue(dot, dot);
                 wrapper.LastInstance = dot;
             }
             else
@@ -47,7 +48,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 }
                 else
                 {
-                    _enemyDots[key].Enqueue(dot, dot);
+                    _activeDots[key].Enqueue(dot, dot);
                     key.LastInstance = dot;
                 }
             }
@@ -63,8 +64,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 _nextTickTime = float.MaxValue;
                 Cleanup();
 
-                int count = _enemyDots.Count;
-                foreach (var kv in _enemyDots.ToList())
+                int count = _activeDots.Count;
+                foreach (var kv in _activeDots.ToList())
                 {
                     PriorityQueue<DOTInstance, DOTInstance> queue = kv.Value;
                     IDamageable damageable = kv.Key.Object!;
@@ -83,8 +84,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 }
 
                 // Recalculate next tick time if new DOTs were added
-                if (_enemyDots.Count > count)
-                    foreach (var queue in _enemyDots.Values)
+                if (_activeDots.Count > count)
+                    foreach (var queue in _activeDots.Values)
                         if (queue.Count > 0)
                             _nextTickTime = Math.Min(_nextTickTime, queue.Peek().NextTickTime);
 
@@ -99,22 +100,21 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private void Cleanup()
         {
             // Remove dead enemies
-            _enemyDots.Keys
+            _activeDots.Keys
                 .Where(wrapper =>
                         wrapper.Object == null
-                     || wrapper.Object.GetBaseAgent() == null
-                     || !wrapper.Object.GetBaseAgent().Alive)
+                     || (wrapper.Agent != null && !wrapper.Agent.Alive))
                 .ToList()
                 .ForEach(wrapper =>
                 {
-                    _enemyDots.Remove(wrapper);
+                    _activeDots.Remove(wrapper);
                     _ptrToWrapper.Remove(wrapper.Pointer);
                 });
         }
 
         public void Clear()
         {
-            _enemyDots.Clear();
+            _activeDots.Clear();
             _ptrToWrapper.Clear();
             if (_updateRoutine != null)
             {
@@ -127,7 +127,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             // Used for batching shotgun hits on same shot
             public DOTInstance? LastInstance { get; set; }
-            public DOTDamageableWrapper(IDamageable damageable, IntPtr ptr) : base(damageable, ptr) { }
+            public readonly Agent Agent;
+            public DOTDamageableWrapper(IDamageable damageable, IntPtr ptr) : base(damageable, ptr)
+            {
+                Agent = damageable.GetBaseAgent();
+            }
         }
 
         sealed class DOTComparer : IComparer<DOTInstance>

@@ -31,12 +31,7 @@ namespace EWC.CustomWeapon.ObjectWrappers
             Object = obj;
         }
 
-        public ObjectWrapper(IntPtr ptr)
-        {
-            Pointer = ptr;
-        }
-
-        public void SetObject(T obj)
+        public virtual void SetObject(T obj)
         {
             Pointer = obj.Pointer;
             Object = obj;
