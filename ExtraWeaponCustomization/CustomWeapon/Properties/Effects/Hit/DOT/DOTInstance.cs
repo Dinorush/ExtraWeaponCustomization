@@ -35,7 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         public bool CanAddInstance(DamageOverTime dotBase)
         {
             // Technically, shotgun pellets may have different backstab bonuses... but it's too much effort to fix
-            return DotBase.StackLimit == 0 && DotBase == dotBase && !Started;
+            return DotBase.BatchStacks && DotBase.StackLimit == 0 && DotBase == dotBase && !Started;
         }
 
         // This should only be called before the first damage tick.

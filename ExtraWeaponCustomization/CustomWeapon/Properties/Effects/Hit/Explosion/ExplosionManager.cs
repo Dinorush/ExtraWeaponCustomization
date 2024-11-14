@@ -65,7 +65,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting))
                     s_hits.Add(hit);
 
-            s_hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting));
+            if (explosiveBase.DamageLocks)
+                s_hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting));
 
             foreach (RaycastHit hit in s_hits)
             {
@@ -112,7 +113,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 GuiManager.CrosshairLayer.PopFriendlyTarget();
                 // Seems like the damageable is always the base, but just in case
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
-                damage *= playerBase.m_playerData.friendlyFireMulti;
+                damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti;
                 damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
                 // Only damage and direction are used AFAIK, but again, just in case...
                 playerBase.BulletDamage(damage, source, position, playerBase.DamageTargetPos - position, Vector3.zero);
@@ -128,11 +129,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             damage *= EXPAPIWrapper.GetDamageMod(eBase.CWC.IsGun);
 
             Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
-            if (limb == null || limb.m_base.IsImortal) return;
+            if (limb == null) return;
 
-            Vector3 localPosition = position - limb.m_base.Owner.Position;
+            Dam_EnemyDamageBase damBase = limb.m_base;
+            Vector3 localPosition = position - damBase.Owner.Position;
             ExplosionDamageData data = default;
-            data.target.Set(limb.m_base.Owner);
+            data.target.Set(damBase.Owner);
             data.source.Set(source);
             data.limbID = (byte)(eBase.DamageLimb ? limb.m_limbID : 0);
             data.localPosition.Set(localPosition, 10f);
@@ -159,7 +161,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             if (!damageContext.BypassTumorCap && limb.DestructionType == eLimbDestructionType.Custom)
                 precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
 
-            data.damage.Set(precDamage, limb.m_base.DamageMax);
+            data.damage.Set(precDamage, damBase.DamageMax);
 
             WeaponPreHitEnemyContext hitContext = new(
                 precDamage,
@@ -168,12 +170,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 damageable,
                 position,
                 direction,
-                precHit ? DamageType.WeakspotExplosive : DamageType.Explosive
+                DamageType.Explosive.WithSubTypes(precHit, armorMulti)
                 );
             eBase.CWC.Invoke(hitContext);
 
             KillTrackerManager.RegisterHit(eBase.CWC.Weapon, hitContext);
-            limb.ShowHitIndicator(precDamage > damage, limb.m_base.WillDamageKill(precDamage), position, armorMulti < 1f);
+            limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), position, armorMulti < 1f || damBase.IsImortal);
 
             DamageSync.Send(data, SNet_ChannelType.GameNonCritical);
         }

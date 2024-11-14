@@ -36,21 +36,25 @@ namespace EWC.CustomWeapon.Properties.Effects
             get { return _tickRate; }
             private set { _tickRate = MathF.Max(0.01f, value); }
         }
+        public float FriendlyDamageMulti { get; private set; } = 1f;
+        public bool DamageFriendly { get; private set; } = false;
+        public bool DamageLocks { get; private set; } = false;
+        public bool BatchStacks { get; private set; } = true;
 
         private readonly DOTController _controller = new();
-        private readonly Dictionary<ObjectWrapper<Agent>, Queue<DOTInstance>> _lastDOTs = new();
-        private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
+        private readonly Dictionary<BaseDamageableWrapper, Queue<DOTInstance>> _lastDOTs = new();
+        private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
         public DamageOverTime()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(DamageType.DOT, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(DamageType.DOT, TriggerName.BulletLanded, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
             foreach (TriggerContext tContext in triggerList)
-                AddDOT((WeaponPreHitEnemyContext)tContext.context, tContext.triggerAmt);
+                AddDOT((WeaponPreHitContext) tContext.context, tContext.triggerAmt);
         }
 
         public override void TriggerReset()
@@ -58,13 +62,20 @@ namespace EWC.CustomWeapon.Properties.Effects
             _controller.Clear();
         }
 
-        private void AddDOT(WeaponPreHitEnemyContext context, float triggerAmt)
+        private void AddDOT(WeaponPreHitContext context, float triggerAmt)
         {
-            Dam_EnemyDamageLimb? limb = context.Damageable.TryCast<Dam_EnemyDamageLimb>();
-            if (limb == null || limb.m_armorDamageMulti == 0 || limb.m_base.IsImortal == true) return;
+            if (context.Damageable == null) return;
+
+            TempWrapper.SetObject(context.Damageable);
+            if (TempWrapper.Agent == null && !DamageLocks) return;
+            if (TempWrapper.Agent?.m_type == AgentType.Player && !DamageFriendly) return;
+
             float falloff = IgnoreFalloff ? 1f : context.Falloff;
             float damage = TotalDamage * triggerAmt;
-            float backstabMulti = IgnoreBackstab ? 1f : context.Backstab;
+            float backstabMulti = 1f;
+            if (!IgnoreBackstab && context is WeaponPreHitEnemyContext enemyContext)
+                backstabMulti = enemyContext.Backstab;
+
             float precisionMulti = PrecisionDamageMulti;
 
             WeaponDamageContext damageContext = new(damage, precisionMulti, context.Damageable);
@@ -80,7 +91,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             else
             {
                 ClearDeadQueues();
-                TempWrapper.SetObject(limb.GetBaseAgent());
                 float nextTickTime = -1f;
                 Queue<DOTInstance> queue;
                 if (_lastDOTs.ContainsKey(TempWrapper))
@@ -98,7 +108,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     }
                 }
                 else
-                    _lastDOTs.Add(new ObjectWrapper<Agent>(limb.GetBaseAgent()), queue = new Queue<DOTInstance>());
+                    _lastDOTs.Add(new BaseDamageableWrapper(context.Damageable), queue = new Queue<DOTInstance>());
 
                 DOTInstance? newDot = _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
                 if (newDot != null)
@@ -112,10 +122,10 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void ClearDeadQueues()
         {
-            List<ObjectWrapper<Agent>> wrappers = _lastDOTs.Keys.ToList();
+            List<BaseDamageableWrapper> wrappers = _lastDOTs.Keys.ToList();
             foreach (var wrapper in wrappers)
             {
-                if (wrapper.Object == null || !wrapper.Object.Alive)
+                if (wrapper.Object == null || (wrapper.Agent != null && !wrapper.Agent.Alive))
                 {
                     _lastDOTs.Remove(wrapper);
                     continue;
@@ -145,7 +155,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
+            writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
+            writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
+            writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             SerializeTrigger(writer);
+            writer.WriteBoolean(nameof(BatchStacks), BatchStacks);
             writer.WriteEndObject();
         }
 
@@ -204,6 +218,20 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "ignoredamagemods":
                 case "ignoredamagemod":
                     IgnoreDamageMods = reader.GetBoolean();
+                    break;
+                case "friendlydamagemulti":
+                case "friendlymulti":
+                case "friendlymult":
+                    FriendlyDamageMulti = reader.GetSingle();
+                    break;
+                case "damagefriendly":
+                    DamageFriendly = reader.GetBoolean();
+                    break;
+                case "damagelocks":
+                    DamageLocks = reader.GetBoolean();
+                    break;
+                case "batchstacks":
+                    BatchStacks = reader.GetBoolean();
                     break;
                 default:
                     break;

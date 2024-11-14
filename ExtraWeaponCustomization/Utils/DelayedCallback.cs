@@ -7,15 +7,24 @@ namespace EWC.Utils
 {
     public sealed class DelayedCallback
     {
-        private readonly Func<float> _endTime;
+        private readonly Func<float>? _endTimeUpdate;
         private readonly Action? _onStart;
         private readonly Action? _onRefresh;
         private readonly Action? _onEnd;
+
+        private float _endTime;
         private Coroutine? _routine;
 
-        public DelayedCallback(Func<float> endTime, Action? onStart, Action? onRefresh, Action? onEnd)
+        public DelayedCallback(float endTime, Action? onEnd)
         {
             _endTime = endTime;
+            _onEnd = onEnd;
+        }
+
+
+        public DelayedCallback(Func<float> endTimeUpdate, Action? onStart, Action? onRefresh, Action? onEnd)
+        {
+            _endTimeUpdate = endTimeUpdate;
             _onStart = onStart;
             _onRefresh = onRefresh;
             _onEnd = onEnd;
@@ -30,8 +39,13 @@ namespace EWC.Utils
         public IEnumerator Update()
         {
             _onStart?.Invoke();
-            for (float endTime = _endTime.Invoke(); endTime > Clock.Time; endTime = _endTime.Invoke())
-                yield return new WaitForSeconds(endTime - Clock.Time);
+            if (_endTimeUpdate != null)
+            {
+                for (_endTime = _endTimeUpdate.Invoke(); _endTime > Clock.Time; _endTime = _endTimeUpdate.Invoke())
+                    yield return new WaitForSeconds(_endTime - Clock.Time);
+            }
+            else
+                yield return new WaitForSeconds(_endTime - Clock.Time);
             _routine = null;
             _onEnd?.Invoke();
         }
