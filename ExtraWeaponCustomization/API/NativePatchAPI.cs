@@ -6,6 +6,8 @@ namespace EWC.API
 {
     public static class NativePatchAPI
     {
+        public static bool Loaded => EntryPoint.Loaded;
+
         public delegate bool DetectOnNoisePrefix(EnemyDetection __instance, AgentTarget agentTarget, float movementDetectionDistance, float shootDetectionDistance, float delta, ref float output);
         public delegate void DetectOnNoisePostfix(EnemyDetection __instance, AgentTarget agentTarget, float movementDetectionDistance, float shootDetectionDistance, float delta, ref float output);
 

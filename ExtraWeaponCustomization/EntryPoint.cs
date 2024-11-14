@@ -29,6 +29,7 @@ namespace EWC;
 internal sealed class EntryPoint : BasePlugin
 {
     public const string MODNAME = "ExtraWeaponCustomization";
+    public static bool Loaded { get; private set; } = false;
 
     public override void Load()
     {
@@ -38,6 +39,8 @@ internal sealed class EntryPoint : BasePlugin
             EWCLogger.Error("No MTFO datablocks detected. Not loading EWC...");
             return;
         }
+        Loaded = true;
+
         new Harmony(MODNAME).PatchAll();
         EnemyDetectionPatches.ApplyNativePatch();
         Configuration.Init();
