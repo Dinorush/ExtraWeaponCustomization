@@ -7,7 +7,7 @@ namespace EWC.Utils
 {
     public sealed class DelayedCallback
     {
-        private readonly Func<float>? _endTimeUpdate;
+        private readonly float _duration;
         private readonly Action? _onStart;
         private readonly Action? _onRefresh;
         private readonly Action? _onEnd;
@@ -15,16 +15,22 @@ namespace EWC.Utils
         private float _endTime;
         private Coroutine? _routine;
 
-        public DelayedCallback(float endTime, Action? onEnd)
+        public DelayedCallback(float duration, Action? onEnd)
         {
-            _endTime = endTime;
+            _duration = duration;
             _onEnd = onEnd;
         }
 
-
-        public DelayedCallback(Func<float> endTimeUpdate, Action? onStart, Action? onRefresh, Action? onEnd)
+        public DelayedCallback(float duration, Action? onStart, Action? onEnd)
         {
-            _endTimeUpdate = endTimeUpdate;
+            _duration = duration;
+            _onStart = onStart;
+            _onEnd = onEnd;
+        }
+
+        public DelayedCallback(float duration, Action? onStart, Action? onRefresh, Action? onEnd)
+        {
+            _duration = duration;
             _onStart = onStart;
             _onRefresh = onRefresh;
             _onEnd = onEnd;
@@ -32,6 +38,7 @@ namespace EWC.Utils
 
         public void Start()
         {
+            _endTime = Clock.Time + _duration;
             _onRefresh?.Invoke();
             _routine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
@@ -39,12 +46,7 @@ namespace EWC.Utils
         public IEnumerator Update()
         {
             _onStart?.Invoke();
-            if (_endTimeUpdate != null)
-            {
-                for (_endTime = _endTimeUpdate.Invoke(); _endTime > Clock.Time; _endTime = _endTimeUpdate.Invoke())
-                    yield return new WaitForSeconds(_endTime - Clock.Time);
-            }
-            else
+            while (_endTime > Clock.Time)
                 yield return new WaitForSeconds(_endTime - Clock.Time);
             _routine = null;
             _onEnd?.Invoke();

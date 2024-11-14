@@ -1,8 +1,6 @@
-﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
-using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
-using Il2CppInterop.Runtime.Attributes;
+﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.Utils;
 using System;
-using System.Collections;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
@@ -13,6 +11,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             Hitbox = new(this);
             Homing = new(this);
+            _inactiveCallback = new(2f, () => gameObject.active = false);
         }
 
         public EWCProjectileHitbox Hitbox;
@@ -20,7 +19,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected Projectile? _settings;
 
         private float _endLifetime;
-        private Coroutine? _inactiveRoutine;
+        private DelayedCallback _inactiveCallback;
         private Vector3 _baseDir;
         private Vector3 _baseVelocity;
         private Vector3 _velocity;
@@ -50,11 +49,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             if (enabled) return;
 
-            if (_inactiveRoutine != null)
-            {
-                StopCoroutine(_inactiveRoutine);
-                _inactiveRoutine = null;
-            }
+            _inactiveCallback.Cancel();
 
             SyncID = ID;
             PlayerIndex = playerIndex;
@@ -185,18 +180,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
-            _inactiveRoutine = StartCoroutine(DelayedInactive().WrapToIl2Cpp());
+            _inactiveCallback.Start();
             EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID, IsLocal);
             Hitbox.Die();
             Homing.Die();
-        }
-
-        [HideFromIl2Cpp]
-        private IEnumerator DelayedInactive()
-        {
-            yield return new WaitForSeconds(2f);
-            gameObject.active = false;
-            _inactiveRoutine = null;
         }
     }
 }

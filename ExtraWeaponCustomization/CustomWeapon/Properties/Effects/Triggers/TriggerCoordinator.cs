@@ -45,16 +45,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public TriggerCoordinator(params ITrigger[] triggers)
         {
             _activateReset = new DelayedCallback(
-                () => _activateResetTime,
-                null,
-                () => _activateResetTime = ActivateResetDelay + Clock.Time,
+                ActivateResetDelay,
                 () => _accumulatedTriggers.Clear()
                 );
 
             _applyReset = new DelayedCallback(
-                () => _applyResetTime,
-                null,
-                () => _applyResetTime = ApplyResetDelay + Clock.Time,
+                ApplyResetDelay,
                 () => _applyCount = 0
                 );
 
@@ -158,11 +154,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (ApplyDelay > 0f)
             {
-                var callback = new DelayedCallback(Clock.Time + ApplyDelay, EndDelayedApply);
-                _delayedApplies!.Enqueue((
-                    callback,
-                    triggerContexts
-                    ));
+                var callback = new DelayedCallback(ApplyDelay, EndDelayedApply);
+                _delayedApplies!.Enqueue((callback, triggerContexts));
                 callback.Start();
             }
             else

@@ -23,14 +23,12 @@ namespace EWC.CustomWeapon.Properties.Effects
         internal PropertyNode? Node { get; set; }
 
         private readonly DelayedCallback _applyCallback;
-        private float _endTime;
 
         public TempProperties()
         {
             _applyCallback = new(
-                () => _endTime,
+                Duration,
                 ApplyProperties,
-                () => _endTime = Clock.Time + Duration,
                 RemoveProperties
             );
         }
@@ -64,7 +62,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void TriggerResetSync()
         {
-            _endTime = 0;
             _applyCallback.Stop();
         }
 
