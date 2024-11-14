@@ -110,13 +110,14 @@ namespace EWC.Patches
                 s_hitData.precisionMulti = s_origHitPrecision;
             }
 
-            ApplyEWCHit(cwc, damageable, s_hitData, damageSearchID != 0, ref s_origHitDamage, ref allowDirectionalBonus);
+            ApplyEWCHit(cwc, damageable, s_hitData, damageSearchID != 0, ref s_origHitDamage, out allowDirectionalBonus);
         }
 
-        public static void ApplyEWCHit(CustomWeaponComponent cwc, IDamageable? damageable, HitData hitData, bool pierce, ref float pierceDamage, ref bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, damageable, hitData, pierce, ref pierceDamage, ref doBackstab);
+        public static void ApplyEWCHit(CustomWeaponComponent cwc, IDamageable? damageable, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, damageable, hitData, pierce, ref pierceDamage, out doBackstab);
 
-        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, IDamageable? damageable, HitData hitData, bool pierce, ref float pierceDamage, ref bool doBackstab)
+        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, IDamageable? damageable, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab)
         {
+            doBackstab = true;
             CachedHitCC = cc;
 
             if (damageable != null)
@@ -136,29 +137,33 @@ namespace EWC.Patches
                 }
             }
 
-            Agent? agent = damageable?.GetBaseAgent();
-            if (agent != null && agent.Type == AgentType.Enemy && agent.Alive)
+            if (damageable != null)
             {
-                Dam_EnemyDamageLimb? limb = damageable!.TryCast<Dam_EnemyDamageLimb>()!;
+                Agent? agent = damageable.GetBaseAgent();
+                if (agent != null && agent.Alive && agent.Type == AgentType.Enemy)
+                {
+                    Dam_EnemyDamageLimb limb = damageable!.Cast<Dam_EnemyDamageLimb>();
+                    float backstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
+                    WeaponBackstabContext backContext = new();
+                    cc.Invoke(backContext);
+ 
+                    WeaponPreHitDamageableContext hitContext = new(
+                        hitData,
+                        CachedBypassTumorCap,
+                        backstab.Map(1f, 2f, 1f, backContext.Value),
+                        limb,
+                        DamageType.Bullet
+                    );
+                    cc.Invoke(hitContext);
+                    KillTrackerManager.RegisterHit(weapon, hitContext);
 
-                float backstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
-                WeaponBackstabContext backContext = new();
-                cc.Invoke(backContext);
-
-                WeaponPreHitEnemyContext hitContext = new(
-                    hitData,
-                    CachedBypassTumorCap,
-                    backstab.Map(1f, 2f, 1f, backContext.Value),
-                    limb,
-                    DamageType.Bullet
-                );
-                cc.Invoke(hitContext);
-                KillTrackerManager.RegisterHit(weapon, hitContext);
-
-                if (backContext.Value > 1f)
-                    hitData.damage *= hitContext.Backstab / backstab;
+                    if (backContext.Value > 1f)
+                        hitData.damage *= hitContext.Backstab / backstab;
+                    else
+                        doBackstab = false;
+                }
                 else
-                    doBackstab = false;
+                    cc.Invoke(new WeaponPreHitDamageableContext(hitData, damageable, DamageType.Bullet));
             }
             else
                 cc.Invoke(new WeaponPreHitContext(hitData));

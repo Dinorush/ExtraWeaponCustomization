@@ -1,5 +1,4 @@
-﻿using Agents;
-using EWC.CustomWeapon.ObjectWrappers;
+﻿using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -37,8 +36,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             private set { _tickRate = MathF.Max(0.01f, value); }
         }
         public float FriendlyDamageMulti { get; private set; } = 1f;
-        public bool DamageFriendly { get; private set; } = false;
-        public bool DamageLocks { get; private set; } = false;
         public bool BatchStacks { get; private set; } = true;
 
         private readonly DOTController _controller = new();
@@ -48,13 +45,13 @@ namespace EWC.CustomWeapon.Properties.Effects
         public DamageOverTime()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(DamageType.DOT, TriggerName.BulletLanded, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(DamageType.DOT, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
             foreach (TriggerContext tContext in triggerList)
-                AddDOT((WeaponPreHitContext) tContext.context, tContext.triggerAmt);
+                AddDOT((WeaponPreHitDamageableContext) tContext.context, tContext.triggerAmt);
         }
 
         public override void TriggerReset()
@@ -62,19 +59,15 @@ namespace EWC.CustomWeapon.Properties.Effects
             _controller.Clear();
         }
 
-        private void AddDOT(WeaponPreHitContext context, float triggerAmt)
+        private void AddDOT(WeaponPreHitDamageableContext context, float triggerAmt)
         {
-            if (context.Damageable == null) return;
-
             TempWrapper.SetObject(context.Damageable);
-            if (TempWrapper.Agent == null && !DamageLocks) return;
-            if (TempWrapper.Agent?.m_type == AgentType.Player && !DamageFriendly) return;
 
             float falloff = IgnoreFalloff ? 1f : context.Falloff;
             float damage = TotalDamage * triggerAmt;
             float backstabMulti = 1f;
-            if (!IgnoreBackstab && context is WeaponPreHitEnemyContext enemyContext)
-                backstabMulti = enemyContext.Backstab;
+            if (!IgnoreBackstab)
+                backstabMulti = context.Backstab;
 
             float precisionMulti = PrecisionDamageMulti;
 
@@ -125,7 +118,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             List<BaseDamageableWrapper> wrappers = _lastDOTs.Keys.ToList();
             foreach (var wrapper in wrappers)
             {
-                if (wrapper.Object == null || (wrapper.Agent != null && !wrapper.Agent.Alive))
+                if (!wrapper.Alive)
                 {
                     _lastDOTs.Remove(wrapper);
                     continue;
@@ -156,8 +149,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
             writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
-            writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
-            writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             SerializeTrigger(writer);
             writer.WriteBoolean(nameof(BatchStacks), BatchStacks);
             writer.WriteEndObject();
@@ -223,12 +214,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "friendlymulti":
                 case "friendlymult":
                     FriendlyDamageMulti = reader.GetSingle();
-                    break;
-                case "damagefriendly":
-                    DamageFriendly = reader.GetBoolean();
-                    break;
-                case "damagelocks":
-                    DamageLocks = reader.GetBoolean();
                     break;
                 case "batchstacks":
                     BatchStacks = reader.GetBoolean();

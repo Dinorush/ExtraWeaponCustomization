@@ -2,7 +2,6 @@
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Utils.Log;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -22,7 +21,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public BioPing()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(DamageType.Player | DamageType.Lock, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
@@ -30,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             float nextTime = Clock.Time + CooldownPerTarget;
             foreach (var context in contexts)
             {
-                IDamageable? damageable = ((WeaponPreHitEnemyContext)context.context).Damageable;
+                IDamageable damageable = ((WeaponPreHitDamageableContext)context.context).Damageable;
                 if (damageable == null) continue;
 
                 TempWrapper.SetObject(damageable.GetBaseAgent().Cast<EnemyAgent>());
@@ -72,11 +71,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             base.DeserializeProperty(property, ref reader);
             switch (property)
             {
-                case "damagetype":
-                case "type":
-                    EWCLogger.Warning("DamageType field is deprecated on BioPing. Please specify in the Trigger field.");
-                    Trigger?.Activate[0].DeserializeProperty(property, ref reader);
-                    break;
                 case "cooldownpertarget":
                     CooldownPerTarget = reader.GetSingle();
                     break;

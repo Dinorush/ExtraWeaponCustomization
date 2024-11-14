@@ -111,16 +111,33 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     return;
 
                 GuiManager.CrosshairLayer.PopFriendlyTarget();
-                // Seems like the damageable is always the base, but just in case
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
                 damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti;
                 damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
+                eBase.CWC.Invoke(new WeaponPreHitDamageableContext(
+                    damage,
+                    distFalloff * falloffMod,
+                    1f,
+                    damageable,
+                    position,
+                    direction,
+                    DamageType.Explosive
+                ));
                 // Only damage and direction are used AFAIK, but again, just in case...
                 playerBase.BulletDamage(damage, source, position, playerBase.DamageTargetPos - position, Vector3.zero);
                 return;
             }
             else if (agent == null) // Lock damage; direction doesn't matter
             {
+                eBase.CWC.Invoke(new WeaponPreHitDamageableContext(
+                    damage,
+                    distFalloff * falloffMod,
+                    1f,
+                    damageable,
+                    position,
+                    direction,
+                    DamageType.Explosive
+                ));
                 damageable.BulletDamage(damage, source, Vector3.zero, Vector3.zero, Vector3.zero);
                 return;
             }
@@ -163,14 +180,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             data.damage.Set(precDamage, damBase.DamageMax);
 
-            WeaponPreHitEnemyContext hitContext = new(
+            WeaponPreHitDamageableContext hitContext = new(
                 precDamage,
                 distFalloff * falloffMod,
                 backstabMulti,
                 damageable,
                 position,
                 direction,
-                DamageType.Explosive.WithSubTypes(precHit, armorMulti)
+                DamageType.Explosive
                 );
             eBase.CWC.Invoke(hitContext);
 

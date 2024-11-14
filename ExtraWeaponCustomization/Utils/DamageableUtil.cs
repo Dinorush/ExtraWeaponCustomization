@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace EWC.Utils
 {
@@ -17,6 +18,21 @@ namespace EWC.Utils
                 return colliderDamageable;
 
             return go.GetComponent<IDamageable>();
+        }
+
+        private static IntPtr _cachedExpedition = default;
+        private static float _cachedHealth = 15f;
+        public static float LockHealth
+        {
+            get
+            {
+                if (RundownManager.ActiveExpedition != null && RundownManager.ActiveExpedition.Pointer != _cachedExpedition)
+                {
+                    _cachedExpedition = RundownManager.ActiveExpedition.Pointer;
+                    _cachedHealth = RundownManager.ActiveExpeditionBalanceData.WeakDoorLockHealth;
+                }
+                return _cachedHealth;
+            }
         }
     }
 }

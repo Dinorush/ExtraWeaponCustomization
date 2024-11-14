@@ -4,15 +4,15 @@ using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
-    public sealed class DamageTrigger : DamageTypeTrigger<WeaponPreHitEnemyContext>
+    public sealed class DamageTrigger : DamageTypeTrigger<WeaponPreHitDamageableContext>
     {
         public float Cap { get; private set; } = 0f;
         public DamageTrigger(DamageType type = DamageType.Any) : base(TriggerName.Damage, type) {}
 
         public override float Invoke(WeaponTriggerContext context)
         {
-            if (context is WeaponPreHitEnemyContext hitContext
-                && !hitContext.DamageType.HasFlag(BlacklistType)
+            if (context is WeaponPreHitDamageableContext hitContext
+                && !hitContext.DamageType.HasAnyFlag(BlacklistType)
                 && hitContext.DamageType.HasFlag(DamageType))
             {
                 if (Cap > 0)

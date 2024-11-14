@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.KillTracker
 {
     public static class KillTrackerManager
     {
-        private static readonly Dictionary<ObjectWrapper<Agent>, (ItemEquippable Weapon, WeaponPreHitEnemyContext Context)> _lastHits = new();
+        private static readonly Dictionary<ObjectWrapper<Agent>, (ItemEquippable Weapon, WeaponPreHitDamageableContext Context)> _lastHits = new();
         private static readonly Dictionary<ObjectWrapper<Agent>, bool> _shownHits = new();
         private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
 
@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.KillTracker
             _shownHits.Remove(TempWrapper);
         }
 
-        public static void RegisterHit(ItemEquippable weapon, WeaponPreHitEnemyContext hitContext)
+        public static void RegisterHit(ItemEquippable weapon, WeaponPreHitDamageableContext hitContext)
         {
             EnemyAgent? enemy = hitContext.Damageable.GetBaseAgent()?.TryCast<EnemyAgent>();
             if (enemy == null || !weapon.Owner.IsLocallyOwned) return;
@@ -41,7 +41,7 @@ namespace EWC.CustomWeapon.KillTracker
             }
         }
 
-        public static (ItemEquippable, WeaponPreHitEnemyContext)? GetKillHitContext(Agent? enemy)
+        public static (ItemEquippable, WeaponPreHitDamageableContext)? GetKillHitContext(Agent? enemy)
         {
             _lastHits.Keys
                 .Where(wrapper => wrapper.Object == null || _lastHits[wrapper].Weapon == null)

@@ -67,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     else if (hitContext.Damageable == null)
                         position += hitContext.Direction * WallHitBuffer;
 
-                    if (hitContext is WeaponPreHitEnemyContext enemyContext)
+                    if (hitContext is WeaponPreHitDamageableContext enemyContext)
                         CacheBackstab = enemyContext.Backstab;
 
                     ExplosionManager.DoExplosion(position, hitContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt);

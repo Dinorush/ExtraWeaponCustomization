@@ -4,7 +4,7 @@ using Player;
 
 namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
-    internal sealed class DOTDamageSync : SyncedEventMasterOnly<DOTData>
+    internal sealed class DOTEnemyDamageSync : SyncedEventMasterOnly<DOTData>
     {
         public override string GUID => "DOT";
 
@@ -13,7 +13,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             if (!packet.target.TryGet(out EnemyAgent enemy)) return;
             packet.source.TryGet(out PlayerAgent? player);
 
-            DOTDamageManager.Internal_ReceiveDOTDamage(
+            DOTDamageManager.Internal_ReceiveDOTEnemyDamage(
                 enemy,
                 player,
                 packet.limbID,

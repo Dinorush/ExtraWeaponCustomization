@@ -24,17 +24,17 @@ namespace EWC.CustomWeapon.Properties.Effects
         }
 
         private TriggerName[]? _validTriggers;
-        private DamageType _blacklistType = DamageType.Invalid;
+        private DamageType _blacklistType = DamageType.Any;
 
         public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
 
-        protected void SetValidTriggers(DamageType blacklist = DamageType.Invalid, params TriggerName[] names)
+        protected void SetValidTriggers(DamageType blacklist = DamageType.Any, params TriggerName[] names)
         {
-            _validTriggers = names;
+            _validTriggers = names.Length > 0 ? names : null;
             _blacklistType = blacklist;
             VerifyTriggers();
         }
-        protected void SetValidTriggers(params TriggerName[] names) => SetValidTriggers(DamageType.Invalid, names);
+        protected void SetValidTriggers(params TriggerName[] names) => SetValidTriggers(DamageType.Any, names);
 
         public abstract void TriggerApply(List<TriggerContext> triggerList);
         public abstract void TriggerReset();
@@ -86,9 +86,9 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                 if (Trigger.Activate[i] is not IDamageTypeTrigger typeTrigger) continue;
 
-                typeTrigger.BlacklistType &= _blacklistType;
+                typeTrigger.BlacklistType |= _blacklistType;
                 // If all valid triggers are blacklisted, remove it
-                if (typeTrigger.DamageType.HasFlag(typeTrigger.BlacklistType))
+                if (typeTrigger.DamageType.HasAnyFlag(typeTrigger.BlacklistType))
                 {
                     EWCLogger.Warning(GetType().Name + " cannot have a hit trigger damage type matching " + _blacklistType.ToString());
                     Trigger.Activate.RemoveAt(i);

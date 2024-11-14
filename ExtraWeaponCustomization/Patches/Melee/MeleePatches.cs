@@ -92,8 +92,7 @@ namespace EWC.Patches.Melee
             s_hitData.damage = s_origHitDamage;
             s_hitData.precisionMulti = s_origHitPrecision;
 
-            bool backstabDiscard = true;
-            WeaponPatches.ApplyEWCHit(cwc, damageable, s_hitData, false, ref s_origHitDamage, ref backstabDiscard);
+            WeaponPatches.ApplyEWCHit(cwc, damageable, s_hitData, false, ref s_origHitDamage, out _);
         }
     }
 }

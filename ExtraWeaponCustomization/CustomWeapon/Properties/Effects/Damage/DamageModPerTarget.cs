@@ -14,8 +14,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         IMeleeProperty,
         IWeaponProperty<WeaponDamageContext>
     {
-        private readonly Dictionary<ObjectWrapper<Agent>, Queue<TriggerInstance>> _expireTimes = new();
-        private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
+        private readonly Dictionary<BaseDamageableWrapper, Queue<TriggerInstance>> _expireTimes = new();
+        private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
         public DamageModPerTarget()
         {
@@ -32,44 +32,44 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             if (contexts.Count > 5)
             {
-                Dictionary<ObjectWrapper<Agent>, float> triggerDict = new();
+                Dictionary<BaseDamageableWrapper, float> triggerDict = new();
                 foreach (var context in contexts)
                 {
-                    IDamageable damageable = ((WeaponPreHitEnemyContext)context.context).Damageable;
+                    IDamageable damageable = ((WeaponPreHitDamageableContext)context.context).Damageable;
                     if (damageable == null) continue;
 
-                    TempWrapper.SetObject(damageable.GetBaseAgent());
+                    TempWrapper.SetObject(damageable);
                     if (!triggerDict.ContainsKey(TempWrapper))
-                        triggerDict.Add(new ObjectWrapper<Agent>(TempWrapper), 0);
+                        triggerDict.Add(new BaseDamageableWrapper(TempWrapper), 0);
                     triggerDict[TempWrapper] += context.triggerAmt;
                 }
 
-                foreach ((ObjectWrapper<Agent> wrapper, float triggerAmt) in triggerDict)
+                foreach ((BaseDamageableWrapper wrapper, float triggerAmt) in triggerDict)
                     AddTriggerInstance(wrapper, triggerAmt);
             }
             else
             {
                 foreach (var context in contexts)
                 {
-                    IDamageable damageable = ((WeaponPreHitEnemyContext)context.context).Damageable;
+                    IDamageable damageable = ((WeaponPreHitDamageableContext)context.context).Damageable;
                     if (damageable == null) continue;
 
                     AddTriggerInstance(
-                        new ObjectWrapper<Agent>(damageable.GetBaseAgent()),
+                        new BaseDamageableWrapper(damageable),
                         context.triggerAmt
                         );
                 }
             }
         }
 
-        private void AddTriggerInstance(ObjectWrapper<Agent> wrapper, float triggerAmt)
+        private void AddTriggerInstance(BaseDamageableWrapper wrapper, float triggerAmt)
         {
             float mod = CalculateMod(triggerAmt);
             if (!_expireTimes.ContainsKey(wrapper))
             {
                 // Clean dead agents from dict. Doesn't need to happen here, but we don't need to run this often, so eh
                 _expireTimes.Keys
-                    .Where(wrapper => wrapper.Object == null || !wrapper.Object.Alive)
+                    .Where(wrapper => !wrapper.Alive)
                     .ToList()
                     .ForEach(wrapper => _expireTimes.Remove(wrapper));
 
@@ -83,10 +83,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponDamageContext context)
         {
-            Agent agent = context.Damageable.GetBaseAgent();
-            if (agent == null) return;
-
-            TempWrapper.SetObject(agent);
+            TempWrapper.SetObject(context.Damageable);
             if (!_expireTimes.TryGetValue(TempWrapper, out Queue<TriggerInstance>? queue)) return;
 
             while (queue.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) queue.Dequeue();

@@ -9,7 +9,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public DamageType BlacklistType { get; set; }
         public TriggerName Name { get; }
 
-        public DamageTypeTrigger(TriggerName name, DamageType type = DamageType.Any, DamageType blacklistType = DamageType.Invalid)
+        public DamageTypeTrigger(TriggerName name, DamageType type = DamageType.Any, DamageType blacklistType = DamageType.Any)
         {
             Name = name;
             DamageType = type;
@@ -19,7 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public virtual float Invoke(WeaponTriggerContext context)
         {
             return context is TContext hitContext
-                && !hitContext.DamageType.HasFlag(BlacklistType)
+                && !hitContext.DamageType.HasAnyFlag(BlacklistType)
                 && hitContext.DamageType.HasFlag(DamageType) ? 1f : 0f;
         }
 
@@ -29,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 case "damagetype":
                 case "type":
-                    DamageType = IDamageTypeTrigger.ResolveDamageType(reader.GetString());
+                    DamageType = reader.GetString().ToDamageType();
                     break;
             }
         }

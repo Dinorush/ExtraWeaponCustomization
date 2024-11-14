@@ -1,5 +1,4 @@
-﻿using Agents;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
+﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
 using EWC.CustomWeapon.ObjectWrappers;
 using System;
 using System.Collections;
@@ -101,9 +100,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             // Remove dead enemies
             _activeDots.Keys
-                .Where(wrapper =>
-                        wrapper.Object == null
-                     || (wrapper.Agent != null && !wrapper.Agent.Alive))
+                .Where(wrapper => !wrapper.Alive)
                 .ToList()
                 .ForEach(wrapper =>
                 {
@@ -127,10 +124,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             // Used for batching shotgun hits on same shot
             public DOTInstance? LastInstance { get; set; }
-            public readonly Agent Agent;
+            public bool Alive => _baseDamageable != null && _baseDamageable.GetHealthRel() > 0;
+            private readonly IDamageable _baseDamageable;
             public DOTDamageableWrapper(IDamageable damageable, IntPtr ptr) : base(damageable, ptr)
             {
-                Agent = damageable.GetBaseAgent();
+                _baseDamageable = damageable.GetBaseDamagable();
             }
         }
 
