@@ -16,7 +16,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private ProjectileHomingSettings? _settings;
         private PlayerAgent? _owner;
-        private bool _isLocal;
         private WallPierce? _wallPierce;
         private bool _enabled = false;
 
@@ -39,12 +38,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _base = comp;
         }
 
-        public void Init(Projectile projBase, bool isLocal, Vector3 position, Vector3 dir)
+        public void Init(Projectile projBase, Vector3 position, Vector3 dir)
         {
             if (_enabled) return;
 
             _enabled = true;
-            _isLocal = isLocal;
             _settings = projBase.HomingSettings;
             _wallPierce = null;
             _owner = null;
@@ -56,7 +54,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _homingAgent = null;
             _homingLimb = null;
 
-            if (!_isLocal) return;
+            if (!_base.IsLocal) return;
             _owner = projBase.CWC.Weapon.Owner;
             _wallPierce = projBase.CWC.GetTrait<WallPierce>();
 
@@ -115,7 +113,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private bool UpdateHomingAgent()
         {
-            if (!_isLocal)
+            if (!_base.IsLocal)
             {
                 if (_homingAgent == null || !_homingAgent.Alive) return false;
                 if (_homingLimb != null && _homingLimb.m_health > 0) return true;

@@ -36,11 +36,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected Vector3 _dirVisual;
 
         protected static Quaternion s_tempRot;
-        private bool _isLocal;
+        public bool IsLocal { get; private set; }
         public ushort SyncID { get; private set; }
         public ushort PlayerIndex { get; private set; }
 
-        private const float NonLocalLifetimeBuffer = 1f;
 
         protected virtual void Awake()
         {
@@ -52,7 +51,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (enabled) return;
 
             if (_inactiveRoutine != null)
+            {
                 StopCoroutine(_inactiveRoutine);
+                _inactiveRoutine = null;
+            }
 
             SyncID = ID;
             PlayerIndex = playerIndex;
@@ -66,19 +68,20 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _lerpProgress = 1f;
             _accelProgress = 0f;
-            _endLifetime = Time.time + projBase.Lifetime + (isLocal ? NonLocalLifetimeBuffer : 0f);
-            Hitbox.Init(projBase, isLocal);
-            Homing.Init(projBase, isLocal, position, dir);
+            _endLifetime = Time.time + projBase.Lifetime;
 
             _position = position;
             _velocity = dir * projBase.Speed;
             _baseVelocity = _velocity;
             _baseDir = dir;
             _gravityVel = 0;
-            _isLocal = isLocal;
+            IsLocal = isLocal;
+
+            Hitbox.Init(projBase);
+            Homing.Init(projBase, position, dir);
         }
 
-        public void SetVisualPosition(Vector3 positionVisual, float lerpDist)
+        public virtual void SetVisualPosition(Vector3 positionVisual, float lerpDist)
         {
             if (_velocity.sqrMagnitude == 0) return;
 
@@ -183,8 +186,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
             _inactiveRoutine = StartCoroutine(DelayedInactive().WrapToIl2Cpp());
-            if (_isLocal)
-                EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID);
+            EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID, IsLocal);
             Hitbox.Die();
             Homing.Die();
         }

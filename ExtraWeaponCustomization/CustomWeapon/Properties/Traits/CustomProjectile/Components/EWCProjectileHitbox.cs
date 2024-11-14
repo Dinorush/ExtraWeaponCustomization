@@ -56,9 +56,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 #pragma warning restore CS8618
 
-        public void Init(Projectile projBase, bool isLocal)
+        public void Init(Projectile projBase)
         {
-            if (_enabled || !isLocal) return;
+            if (_enabled || !_base.IsLocal) return;
 
             CustomWeaponComponent cwc = projBase.CWC;
             _enabled = true;

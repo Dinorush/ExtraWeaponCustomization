@@ -79,10 +79,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             PlayerProjectiles[playerIndex].AddLast((id, comp));
         }
 
-        public static void DoProjectileDestroy(ushort playerIndex, ushort id)
+        public static void DoProjectileDestroy(ushort playerIndex, ushort id, bool isLocal)
         {
-            ProjectileDataDestroy data = new() { playerIndex = playerIndex, id = id };
-            _destroySync.Send(data);
+            if (isLocal)
+            {
+                ProjectileDataDestroy data = new() { playerIndex = playerIndex, id = id };
+                _destroySync.Send(data);
+            }
 
             if (!TryGetNode(playerIndex, id, out var node)) return;
             PlayerProjectiles[playerIndex].Remove(node);
@@ -98,9 +101,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         internal static void Internal_ReceiveProjectileDestroy(ushort playerIndex, ushort id)
         {
             if (!TryGetNode(playerIndex, id, out var node)) return;
-
             node.Value.comp.Die();
-            PlayerProjectiles[playerIndex].Remove(node);
         }
 
         internal static void Internal_ReceiveProjectileTarget(ushort playerIndex, ushort id, EnemyAgent? enemy, byte limbID)

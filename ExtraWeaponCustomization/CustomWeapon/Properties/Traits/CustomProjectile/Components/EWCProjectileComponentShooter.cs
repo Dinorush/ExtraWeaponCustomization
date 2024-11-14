@@ -24,6 +24,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             base.Init(playerIndex, ID, settings, isLocal, position, dir);
 
+            _projectile.transform.SetPositionAndRotation(_position, s_tempRot);
+
             foreach (var effect in _projectile.m_effectsToStopEmittingOnImpact)
                 effect.Play();
             foreach (var go in _projectile.m_toDestroyOnImpact)
@@ -62,6 +64,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _origGlowColor = _targeting.m_light.Color;
                 _origGlowRange = _targeting.m_light.Range;
             }
+        }
+
+        public override void SetVisualPosition(Vector3 positionVisual, float lerpDist)
+        {
+            base.SetVisualPosition(positionVisual, lerpDist);
+            _projectile.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
 
         protected override void Update()
