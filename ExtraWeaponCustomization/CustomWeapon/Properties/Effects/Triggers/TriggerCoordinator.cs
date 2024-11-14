@@ -37,9 +37,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private readonly List<TriggerContext> _accumulatedTriggers = new();
         private Queue<(DelayedCallback, List<TriggerContext>)>? _delayedApplies;
 
-        private float _activateResetTime = 0f;
         private readonly DelayedCallback _activateReset;
-        private float _applyResetTime = 0f;
         private readonly DelayedCallback _applyReset;
 
         public TriggerCoordinator(params ITrigger[] triggers)
