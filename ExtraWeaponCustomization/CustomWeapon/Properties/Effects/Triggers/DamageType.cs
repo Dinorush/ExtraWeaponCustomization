@@ -62,23 +62,20 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public static DamageType GetSubTypes(IDamageable damageable)
         {
             Agent? agent = damageable.GetBaseAgent();
-            if (agent == null) return GetSubTypes(false, 1f) | DamageType.Lock;
+            if (agent == null) return DamageType.Flesh | DamageType.Body | DamageType.Lock;
 
-            switch (agent.Type)
+            return agent.Type switch
             {
-                case AgentType.Enemy:
-                    return GetSubTypes(damageable.Cast<Dam_EnemyDamageLimb>());
-                case AgentType.Player:
-                    return DamageType.Flesh | DamageType.Player;
-                default:
-                    return DamageType.Any;
-            }
+                AgentType.Enemy => GetSubTypes(damageable.Cast<Dam_EnemyDamageLimb>()),
+                AgentType.Player => DamageType.Flesh | DamageType.Body | DamageType.Player,
+                _ => DamageType.Any
+            };
         }
 
         public static DamageType GetSubTypes(bool precHit, float armorMulti)
         {
             DamageType damageType = DamageType.Any;
-            if (precHit) damageType |= DamageType.Weakspot;
+            damageType |= precHit ? DamageType.Weakspot : DamageType.Body;
             damageType |= armorMulti < 1f ? DamageType.Armor : DamageType.Flesh;
             return damageType;
         }

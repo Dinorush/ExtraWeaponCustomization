@@ -23,15 +23,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 && hitContext.DamageType.HasFlag(DamageType) ? 1f : 0f;
         }
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
-        {
-            switch(property)
-            {
-                case "damagetype":
-                case "type":
-                    DamageType = reader.GetString().ToDamageType();
-                    break;
-            }
-        }
+        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader) { }
     }
 }
