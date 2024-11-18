@@ -85,8 +85,17 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _reserveBuffer *= costOfBullet;
             }
 
-            ammoStorage.UpdateBulletsInPack(weapon.AmmoType, reserveChange);
-            // Need to update UI again since UpdateBulletsInPack does it without including the clip
+            float reserveCost = reserveChange * costOfBullet;
+            if (slotAmmo.IsFull)
+            {
+                if (reserveCost < 0)
+                    slotAmmo.AmmoInPack = Math.Max(0, slotAmmo.AmmoInPack + reserveCost);
+            }
+            else
+                slotAmmo.AmmoInPack = Math.Clamp(slotAmmo.AmmoInPack + reserveCost, 0, slotAmmo.AmmoMaxCap);
+
+            slotAmmo.OnBulletsUpdateCallback?.Invoke(slotAmmo.BulletsInPack);
+            ammoStorage.NeedsSync = true;
             ammoStorage.UpdateSlotAmmoUI(slotAmmo, newClip);
         }
 
