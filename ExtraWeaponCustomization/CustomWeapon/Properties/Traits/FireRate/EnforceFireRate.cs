@@ -12,8 +12,10 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IGunProperty,
         IWeaponProperty<WeaponPostStartFireContext>,
-        IWeaponProperty<WeaponPostFireContext>
+        IWeaponProperty<WeaponPostFireContext>,
+        IWeaponProperty<WeaponPostFireContextSync>
     {
+        private int _lastSyncShotCount = 0;
         private float _lastShotTime = 0f;
         private float _shotBuffer = 0f;
         private float _fixedTime = 0f;
@@ -28,6 +30,26 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             _shotBuffer = 0;
             _lastShotTime = Clock.Time;
+        }
+
+        public void Invoke(WeaponPostFireContextSync context)
+        {
+            var weapon = CWC.Gun!.Cast<BulletWeaponSynced>();
+            if (_lastSyncShotCount == 0)
+            {
+                _lastSyncShotCount = weapon.m_shotsToFire;
+                _lastShotTime = Clock.Time;
+                _shotBuffer = 0;
+                return;
+            }
+
+            float shotDelay = 1f / CWC.CurrentFireRate;
+            _shotBuffer += (Clock.Time - _lastShotTime) / shotDelay - 1f;
+            int extraShots = (int)_shotBuffer;
+            weapon.m_shotsToFire = Math.Max(0, weapon.m_shotsToFire - extraShots);
+            _lastSyncShotCount = weapon.m_shotsToFire;
+            _lastShotTime = Clock.Time;
+            _shotBuffer -= extraShots;
         }
 
         public void Invoke(WeaponPostFireContext context)
