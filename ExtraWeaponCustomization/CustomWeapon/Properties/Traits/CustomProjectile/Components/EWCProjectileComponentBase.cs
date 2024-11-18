@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             Hitbox = new(this);
             Homing = new(this);
-            _inactiveCallback = new(2f, () => gameObject.active = false);
+            _inactiveCallback = new(() => 2f, () => gameObject.active = false);
         }
 
         public EWCProjectileHitbox Hitbox;

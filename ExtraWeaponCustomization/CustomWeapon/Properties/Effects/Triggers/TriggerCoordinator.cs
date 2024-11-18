@@ -43,12 +43,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public TriggerCoordinator(params ITrigger[] triggers)
         {
             _activateReset = new DelayedCallback(
-                ActivateResetDelay,
-                () => _accumulatedTriggers.Clear()
+                () => ActivateResetDelay,
+                () => { _accumulatedTriggers.Clear(); _activateCount = 0; _activateSum = 0; }
                 );
 
             _applyReset = new DelayedCallback(
-                ApplyResetDelay,
+                () => ApplyResetDelay,
                 () => _applyCount = 0
                 );
 
@@ -82,7 +82,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             // Store valid activations (if any)
             if (Clock.Time >= _nextActivateTime
-             && (Cap == 0 || _accumulatedTriggers.Count < Cap)
+             && (Cap == 0 || _activateSum < Cap)
              && (Chance == 1f || Chance > Random.NextSingle()))
             {
                 foreach (ITrigger trigger in Activate)
@@ -91,7 +91,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     if (triggerAmt > 0f)
                     {
                         ActivateTrigger(context, triggerAmt);
-                        if (Cap > 0 && _accumulatedTriggers.Count == Cap) break;
+                        if (Cap > 0 && _activateSum >= Cap) break;
                     }
                 }
             }
@@ -152,7 +152,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (ApplyDelay > 0f)
             {
-                var callback = new DelayedCallback(ApplyDelay, EndDelayedApply);
+                var callback = new DelayedCallback(() => ApplyDelay, EndDelayedApply);
                 _delayedApplies!.Enqueue((callback, triggerContexts));
                 callback.Start();
             }
@@ -169,13 +169,16 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private void ResetTriggers(bool resetAccumulated = true)
         {
             if (resetAccumulated)
+            {
                 _accumulatedTriggers.Clear();
+                _activateSum = 0;
+                _activateCount = 0;
+            }
+
             Parent?.TriggerReset();
             _activateReset.Cancel();
             _applyReset.Cancel();
             _applyCount = 0;
-            _activateSum = 0;
-            _activateCount = 0;
             if (ApplyDelay > 0)
             {
                 while (_delayedApplies!.TryDequeue(out (DelayedCallback callback, List<TriggerContext>) pair))

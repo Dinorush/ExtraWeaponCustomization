@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public TempProperties()
         {
             _applyCallback = new(
-                Duration,
+                () => Duration,
                 ApplyProperties,
                 RemoveProperties
             );

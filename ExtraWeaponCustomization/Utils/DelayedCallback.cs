@@ -7,7 +7,7 @@ namespace EWC.Utils
 {
     public sealed class DelayedCallback
     {
-        private readonly float _duration;
+        private readonly Func<float> _getDelay;
         private readonly Action? _onStart;
         private readonly Action? _onRefresh;
         private readonly Action? _onEnd;
@@ -15,22 +15,22 @@ namespace EWC.Utils
         private float _endTime;
         private Coroutine? _routine;
 
-        public DelayedCallback(float duration, Action? onEnd)
+        public DelayedCallback(Func<float> getDelay, Action? onEnd)
         {
-            _duration = duration;
+            _getDelay = getDelay;
             _onEnd = onEnd;
         }
 
-        public DelayedCallback(float duration, Action? onStart, Action? onEnd)
+        public DelayedCallback(Func<float> getDelay, Action? onStart, Action? onEnd)
         {
-            _duration = duration;
+            _getDelay = getDelay;
             _onStart = onStart;
             _onEnd = onEnd;
         }
 
-        public DelayedCallback(float duration, Action? onStart, Action? onRefresh, Action? onEnd)
+        public DelayedCallback(Func<float> getDelay, Action? onStart, Action? onRefresh, Action? onEnd)
         {
-            _duration = duration;
+            _getDelay = getDelay;
             _onStart = onStart;
             _onRefresh = onRefresh;
             _onEnd = onEnd;
@@ -38,7 +38,7 @@ namespace EWC.Utils
 
         public void Start()
         {
-            _endTime = Clock.Time + _duration;
+            _endTime = Clock.Time + _getDelay.Invoke();
             _onRefresh?.Invoke();
             _routine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
