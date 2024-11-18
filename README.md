@@ -10,7 +10,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Damage Mod: Applies a damage modifier.
 - Damage Mod Per Target: Applies a damage modifier unique to each target. [Hit, Damage, Charge]
 - Damage Over Time: Applies a damage over time effect. [Hit, Damage, Charge]
-- Explosive: Causes explosions where bullets land. [Bullet Landed, Hit, Damage, Charge, Kill]
+- Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
 - Health Mod: Modifies the user's health.
 - Recoil Mod: Applies a recoil modifier. [Gun]
