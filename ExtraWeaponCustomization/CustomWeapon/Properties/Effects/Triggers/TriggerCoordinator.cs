@@ -225,6 +225,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "activate":
                 case "triggers":
                 case "trigger":
+                case "name":
                     List<ITrigger>? triggers = DeserializeTriggers(ref reader)!;
                     if (triggers != null)
                         Activate.AddRange(triggers);
