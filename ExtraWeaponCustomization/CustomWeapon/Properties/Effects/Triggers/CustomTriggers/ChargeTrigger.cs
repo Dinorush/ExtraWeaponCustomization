@@ -19,7 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 float charge = MeleePatches.CachedCharge;
                 if (charge >= Min && charge <= Max)
-                    return Scale ? charge : 1f;
+                    return (Scale ? charge : 1f) * Amount;
             }
             return 0f;
         }

@@ -16,8 +16,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 && hitContext.DamageType.HasFlag(DamageType))
             {
                 if (Cap > 0)
-                    return Math.Min(Cap, hitContext.Damage);
-                return hitContext.Damage;
+                    return Math.Min(Cap, hitContext.Damage * Amount);
+                return hitContext.Damage * Amount;
             }
             return 0f;
         }
