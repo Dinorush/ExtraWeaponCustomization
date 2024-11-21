@@ -40,10 +40,15 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float HitSizeWorld { get; private set; } = 0f;
         public float ModelScale { get; private set; } = 1f;
         public bool EnableTrail { get; private set; } = true;
+        public Color TrailColor { get; private set; } = Color.black;
+        public float TrailWidth { get; private set; } = -1f;
+        public float TrailTime { get; private set; } = -1f;
         public Color GlowColor { get; private set; } = Color.black;
         public float GlowRange { get; private set; } = -1f;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = false;
+        public float HitCooldown { get; private set; } = -1;
+        public float HitIgnoreWallsDuration { get; private set; } = 0f;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
 
@@ -143,11 +148,17 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(HitSizeWorld), HitSizeWorld);
             writer.WriteNumber(nameof(ModelScale), ModelScale);
             writer.WriteBoolean(nameof(EnableTrail), EnableTrail);
+            writer.WritePropertyName(nameof(TrailColor));
+            EWCJson.Serialize(writer, TrailColor);
+            writer.WriteNumber(nameof(TrailWidth), TrailWidth);
+            writer.WriteNumber(nameof(TrailTime), TrailTime);
             writer.WritePropertyName(nameof(GlowColor));
             EWCJson.Serialize(writer, GlowColor);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
+            writer.WriteNumber(nameof(HitCooldown), HitCooldown);
+            writer.WriteNumber(nameof(HitIgnoreWallsDuration), HitIgnoreWallsDuration);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
             writer.WritePropertyName(nameof(HomingSettings));
@@ -198,6 +209,15 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "trail":
                     EnableTrail = reader.GetBoolean();
                     break;
+                case "trailcolor":
+                    TrailColor = EWCJson.Deserialize<Color>(ref reader);
+                    break;
+                case "trailwidth":
+                    TrailWidth = reader.GetSingle();
+                    break;
+                case "trailtime":
+                    TrailTime = reader.GetSingle();
+                    break;
                 case "glowcolor":
                 case "color":
                     GlowColor = EWCJson.Deserialize<Color>(ref reader);
@@ -213,6 +233,12 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "damageowner":
                 case "damageuser":
                     DamageOwner = reader.GetBoolean();
+                    break;
+                case "hitcooldown":
+                    HitCooldown = reader.GetSingle();
+                    break;
+                case "hitignorewallsduration":
+                    HitIgnoreWallsDuration = reader.GetSingle();
                     break;
                 case "visuallerpdist":
                 case "lerpdist":

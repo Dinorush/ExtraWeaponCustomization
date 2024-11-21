@@ -35,10 +35,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private float _lastFixedTime;
         private SearchSetting _searchSettings = SearchSetting.CacheHit;
         public readonly HashSet<IntPtr> HitEnts = new();
+        private readonly Queue<(IntPtr, float)> _hitEntCooldowns = new();
+        private float _ignoreWallsTime = 0f;
 
         // Static
-        public const float MinCollisionSqrDist = 0.0009f;
         public const float MinCollisionDist = 0.03f;
+        public const float MinCollisionSqrDist = MinCollisionDist * MinCollisionDist;
         private static ContextController? s_currentController;
         private static float s_lastControllerTime = 0f;
         private static Ray s_ray;
@@ -83,7 +85,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _entityLayer = LayerUtil.MaskEnemyDynamic;
             _searchSettings = SearchSetting.CacheHit;
-            _initialPlayers.Clear();
             IntPtr ownerPtr = _weapon.Owner.Pointer;
             if (projBase.DamageOwner)
             {
@@ -106,7 +107,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _wallPierce = cwc.GetTrait<WallPierce>();
 
-            HitEnts.Clear();
             if (_weapon.ArchetypeData.PiercingBullets && _weapon.ArchetypeData.PiercingDamageCountLimit > 1)
             {
                 _pierce = true;
@@ -137,6 +137,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             _enabled = false;
             _initialPlayers.Clear();
+            HitEnts.Clear();
+            _hitEntCooldowns.Clear();
+            _ignoreWallsTime = 0;
         }
 
         public void Update(Vector3 position, Vector3 velocityDelta)
@@ -157,7 +160,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             CheckCollision();
             if (_pierceCount <= 0) return;
 
-            if (_wallPierce == null)
+            if (_wallPierce == null && Clock.Time >= _ignoreWallsTime)
                 CheckCollisionWorld();
 
             // Player moves on fixed time so only remove on fixed time
@@ -165,6 +168,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 _initialPlayers.RemoveWhere(ptr => !s_playerCheck.Contains(ptr));
                 _lastFixedTime = Time.fixedTime;
+            }
+
+            while (_hitEntCooldowns.TryPeek(out (IntPtr ptr, float endTime) pair) && pair.endTime < Clock.Time)
+            {
+                HitEnts.Remove(pair.ptr);
+                _hitEntCooldowns.Dequeue();
             }
 
             _distanceMoved += velocityDelta.magnitude;
@@ -271,6 +280,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             BulletHit(damageable);
 
+            IntPtr basePtr = damageable.GetBaseDamagable().Pointer;
+            HitEnts.Add(basePtr);
+            if (_settings!.HitCooldown >= 0)
+                _hitEntCooldowns.Enqueue((basePtr, Clock.Time + _settings.HitCooldown));
+            if (damageable.GetBaseAgent() != null)
+                _ignoreWallsTime = Clock.Time + _settings.HitIgnoreWallsDuration;
+
             if (--_pierceCount <= 0)
                 _base.Die();
         }
@@ -295,7 +311,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private bool AlreadyHit(IDamageable? damageable)
         {
             if (damageable == null) return false;
-            return !HitEnts.Add(damageable.GetBaseDamagable().Pointer);
+            return HitEnts.Contains(damageable.GetBaseDamagable().Pointer);
         }
 
         private void DoImpactFX(IDamageable? damageable)

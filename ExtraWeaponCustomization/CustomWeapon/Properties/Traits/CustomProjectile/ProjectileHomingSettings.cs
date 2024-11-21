@@ -23,6 +23,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         public float SearchCooldown { get; private set; } = 0.1f;
         public SearchMode SearchInitialMode { get; private set; } = SearchMode.Normal;
         public StopSearchMode SearchStopMode { get; private set; } = StopSearchMode.None;
+        public bool SearchStayOnTarget { get; private set; } = false;
         public bool SearchIgnoreWalls { get; private set;} = false;
         public bool SearchIgnoreInvisibility { get; private set; } = false;
         public bool SearchTagOnly { get; private set; } = false;
@@ -46,6 +47,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             writer.WriteNumber(nameof(SearchCooldown), SearchCooldown);
             writer.WriteString(nameof(SearchInitialMode), SearchInitialMode.ToString());
             writer.WriteString(nameof(SearchStopMode), SearchStopMode.ToString());
+            writer.WriteBoolean(nameof(SearchStayOnTarget), SearchStayOnTarget);
             writer.WriteBoolean(nameof(SearchIgnoreWalls), SearchIgnoreWalls);
             writer.WriteBoolean(nameof(SearchIgnoreInvisibility), SearchIgnoreInvisibility);
             writer.WriteBoolean(nameof(SearchTagOnly), SearchTagOnly);
@@ -114,6 +116,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
                 case "searchstopmode":
                 case "stopmode":
                     SearchStopMode = reader.GetString()!.ToEnum(StopSearchMode.None);
+                    break;
+                case "searchstayontarget":
+                case "stayontarget":
+                    SearchStayOnTarget = reader.GetBoolean();
                     break;
                 case "searchignorewalls":
                 case "ignorewalls":

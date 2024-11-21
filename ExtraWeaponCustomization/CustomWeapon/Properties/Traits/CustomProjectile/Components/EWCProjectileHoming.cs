@@ -160,7 +160,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         public void UpdateOnPierce()
         {
-            if (_settings!.SearchStopMode.HasFlag(StopSearchMode.Pierce))
+            if (_settings!.SearchStayOnTarget) return;
+
+            if (_settings.SearchStopMode.HasFlag(StopSearchMode.Pierce))
             {
                 _homingEnabled = false;
                 EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, null, 0);

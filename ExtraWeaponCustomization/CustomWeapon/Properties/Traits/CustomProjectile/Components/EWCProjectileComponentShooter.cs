@@ -11,6 +11,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private TrailRenderer? _trailRenderer;
         public ProjectileType Type;
 
+        private Color _origTrailColor;
+        private float _origTrailWidth;
+        private float _origTrailDuration;
+
         private Color _origGlowColor;
         private float _origGlowRange;
 
@@ -47,6 +51,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 _trailRenderer.Clear();
                 _trailRenderer.enabled = settings.EnableTrail;
+                _trailRenderer.startColor = Approximately(settings.TrailColor, Color.black) ? _origTrailColor : settings.TrailColor;
+                _trailRenderer.time = settings.TrailTime < 0f ? _origTrailDuration: settings.TrailTime;
+                _trailRenderer.widthMultiplier = settings.TrailWidth < 0f ? _origTrailWidth : settings.TrailWidth;
             }
         }
 
@@ -63,6 +70,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 _origGlowColor = _targeting.m_light.Color;
                 _origGlowRange = _targeting.m_light.Range;
+            }
+            if (_trailRenderer != null)
+            {
+                _origTrailColor = _trailRenderer.startColor;
+                _origTrailDuration = _trailRenderer.time;
+                _origTrailWidth = _trailRenderer.widthMultiplier;
             }
         }
 
