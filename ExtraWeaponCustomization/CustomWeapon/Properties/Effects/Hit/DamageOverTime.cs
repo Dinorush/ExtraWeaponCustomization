@@ -186,12 +186,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "limit":
                     StackLimit = reader.GetUInt32();
                     break;
-                case "stacks":
-                case "stack":
-                    EWCLogger.Warning("Stacks is a deprecated field for DamageOverTime. Use StackLimit instead.");
-                    if (!reader.GetBoolean())
-                        StackLimit = 1;
-                    break;
                 case "ignorefalloff":
                     IgnoreFalloff = reader.GetBoolean();
                     break;

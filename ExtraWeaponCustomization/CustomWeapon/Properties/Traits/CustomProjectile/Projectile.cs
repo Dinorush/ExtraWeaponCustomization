@@ -219,12 +219,18 @@ namespace EWC.CustomWeapon.Properties.Traits
                     TrailTime = reader.GetSingle();
                     break;
                 case "glowcolor":
-                case "color":
                     GlowColor = EWCJson.Deserialize<Color>(ref reader);
                     break;
+                case "color":
+                    GlowColor = EWCJson.Deserialize<Color>(ref reader);
+                    EWCLogger.Warning("Projectile \"Color\" is a deprecated alternative name for \"GlowColor\". Please change to GlowColor.");
+                    break;
                 case "glowrange":
+                    GlowRange = reader.GetSingle();
+                    break;
                 case "range":
                     GlowRange = reader.GetSingle();
+                    EWCLogger.Warning("Projectile \"Range\" is a deprecated alternative name for \"GlowRange\". Please change to GlowColor.");
                     break;
                 case "damagefriendly":
                 case "friendlyfire":
