@@ -77,6 +77,8 @@ namespace EWC.Patches.Melee
 
             s_hitData.Setup(__instance, data);
             IDamageable? damageable = s_hitData.damageable;
+            IDamageable? baseDamageable = damageable?.GetBaseDamagable();
+            if (baseDamageable != null && baseDamageable.GetHealthRel() <= 0) return;
 
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null)

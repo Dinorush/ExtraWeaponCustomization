@@ -201,7 +201,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb? limb = limbID > 0 ? damBase.DamageLimbs[limbID] : null;
-            if (!damBase.Owner.Alive || damBase.IsImortal) return;
+            if (damBase.Health <= 0 || !damBase.Owner.Alive || damBase.IsImortal) return;
 
             ES_HitreactType hitreact = staggerMult > 0 ? ES_HitreactType.Light : ES_HitreactType.None;
             bool tryForceHitreact = false;

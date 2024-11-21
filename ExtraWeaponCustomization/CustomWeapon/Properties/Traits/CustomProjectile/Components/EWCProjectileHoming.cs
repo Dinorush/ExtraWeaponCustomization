@@ -115,7 +115,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             if (!_base.IsLocal)
             {
-                if (_homingAgent == null || !_homingAgent.Alive) return false;
+                if (_homingAgent == null || !_homingAgent.Alive || _homingAgent.Damage.Health <= 0) return false;
                 if (_homingLimb != null && _homingLimb.m_health > 0) return true;
 
                 _homingTarget = GetHomingTarget(_homingAgent);
@@ -123,7 +123,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 return true;
             }
 
-            if (_homingAgent == null || !_homingAgent.Alive)
+            if (_homingAgent == null || !_homingAgent.Alive || _homingAgent.Damage.Health <= 0)
             {
                 if (_settings!.SearchStopMode.HasFlag(StopSearchMode.Dead))
                 {

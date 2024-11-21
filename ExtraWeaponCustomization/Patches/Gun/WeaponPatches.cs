@@ -86,6 +86,8 @@ namespace EWC.Patches
             s_hitData.Setup(weaponRayData, additionalDis);
             IDamageable? damageable = s_hitData.damageable;
             IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
+            if (damBase != null && damBase.GetHealthRel() <= 0) return;
+
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
 
             CustomWeaponComponent? cwc = s_hitData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
@@ -137,7 +139,8 @@ namespace EWC.Patches
                 }
             }
 
-            if (damageable != null)
+            IDamageable? baseDamageable = damageable?.GetBaseDamagable();
+            if (damageable != null && (baseDamageable == null || baseDamageable.GetHealthRel() > 0))
             {
                 Agent? agent = damageable.GetBaseAgent();
                 if (agent != null && agent.Alive && agent.Type == AgentType.Enemy)

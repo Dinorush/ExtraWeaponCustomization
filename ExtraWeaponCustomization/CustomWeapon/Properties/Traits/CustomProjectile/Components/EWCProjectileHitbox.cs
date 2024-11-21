@@ -293,6 +293,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private bool ShouldDamage(IDamageable damageable)
         {
+            if (damageable.GetBaseDamagable().GetHealthRel() <= 0) return false;
+
             Agent? agent = damageable.GetBaseAgent();
             if (agent != null)
             {

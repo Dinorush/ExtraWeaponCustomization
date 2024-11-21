@@ -197,7 +197,7 @@ namespace EWC.Utils
 
                 foreach (EnemyAgent enemy in node.m_enemiesInNode)
                 {
-                    if (enemy == null || !enemy.Alive) continue;
+                    if (enemy == null || !enemy.Alive || enemy.Damage.Health <= 0) continue;
                     if ((ClosestPointOnBounds(enemy.MovingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange) continue;
                     if (!TryGetClosestHit(ray, range, angle, enemy, out s_rayHit, settings)) continue;
                     s_combinedCache.Add((enemy, s_rayHit));

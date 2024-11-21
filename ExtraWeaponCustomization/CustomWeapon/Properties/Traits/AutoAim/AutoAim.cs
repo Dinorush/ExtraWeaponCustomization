@@ -173,7 +173,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
 
             // If the target died, immediately re-acquire another one
-            if (_hasTarget && (_target == null || !_target.Alive))
+            if (_hasTarget && (_target == null || !_target.Alive || _target.Damage.Health <= 0))
             {
                 _target = null;
                 _detectionTick = 0f;
@@ -279,7 +279,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private bool CheckTargetValid()
         {
-            if (_target == null || !_target.Alive) return false;
+            if (_target == null || !_target.Alive || _target.Damage.Health <= 0) return false;
             if (!IgnoreInvisibility && (_target.RequireTagForDetection || TagOnly) && !_target.IsTagged) return false;
 
             // Check if any part of the target is still valid
