@@ -219,7 +219,7 @@ namespace EWC.CustomWeapon
                 bwa.m_nextBurstTimer = Math.Max(Clock.Time + CurrentBurstDelay, bwa.m_nextShotTimer);
         }
 
-        public void ModifyFireRate(BulletWeaponSynced synced)
+        public void ModifyFireRateSynced(BulletWeaponSynced synced)
         {
             synced.m_lastFireTime = Clock.Time + 1f / CurrentFireRate - Weapon.ArchetypeData.ShotDelay;
         }

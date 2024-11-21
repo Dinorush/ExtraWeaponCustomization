@@ -42,7 +42,7 @@ namespace EWC.Patches
             if (cwc == null) return;
 
             cwc.UpdateStoredFireRate();
-            cwc.ModifyFireRate();
+            cwc.ModifyFireRateSynced(__instance);
             cwc.Invoke(StaticContext<WeaponPostFireContextSync>.Instance);
         }
     }
