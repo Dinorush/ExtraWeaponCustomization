@@ -12,7 +12,8 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class AmmoMod :
         Effect,
         IGunProperty,
-        IWeaponProperty<WeaponPreFireContext>
+        IWeaponProperty<WeaponPreFireContext>,
+        IWeaponProperty<WeaponPostFireContext>
     {
         public float ClipChange { get; private set; } = 0;
         public float ReserveChange { get; private set; } = 0;
@@ -23,11 +24,16 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private float _clipBuffer = 0;
         private float _reserveBuffer = 0;
-        private float _lastFireTime = 0;
+        private bool _bonusRound = false;
 
         public void Invoke(WeaponPreFireContext context)
         {
-            _lastFireTime = Clock.Time;
+            _bonusRound = true;
+        }
+
+        public void Invoke(WeaponPostFireContext context)
+        {
+            _bonusRound = false;
         }
 
         public override void TriggerReset()
@@ -56,7 +62,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             
             // Ammo decrements after this callback if on kill/shot/hit, need to account for that.
             // But if this weapon didn't get the kill (e.g. DOT kill), shouldn't do that.
-            int accountForShot = Clock.Time == _lastFireTime ? 1 : 0;
+            int accountForShot = _bonusRound ? 1 : 0;
 
             if (UseRawAmmo)
             {
