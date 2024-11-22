@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             Hitbox = new(this);
             Homing = new(this);
-            _inactiveCallback = new(() => 2f, () => gameObject.active = false);
+            _inactiveCallback = new(() => _inactiveLifetime, Cleanup);
         }
 
         public EWCProjectileHitbox Hitbox;
@@ -20,6 +20,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private float _endLifetime;
         private DelayedCallback _inactiveCallback;
+        protected float _inactiveLifetime = 0f;
         private Vector3 _baseDir;
         private Vector3 _baseVelocity;
         private Vector3 _velocity;
@@ -184,6 +185,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID, IsLocal);
             Hitbox.Die();
             Homing.Die();
+        }
+
+        protected virtual void Cleanup()
+        {
+            gameObject.active = false;
         }
     }
 }

@@ -43,6 +43,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public Color TrailColor { get; private set; } = Color.black;
         public float TrailWidth { get; private set; } = -1f;
         public float TrailTime { get; private set; } = -1f;
+        public bool TrailCullOnDie { get; private set; } = true;
         public Color GlowColor { get; private set; } = Color.black;
         public float GlowRange { get; private set; } = -1f;
         public bool DamageFriendly { get; private set; } = true;
@@ -152,6 +153,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             EWCJson.Serialize(writer, TrailColor);
             writer.WriteNumber(nameof(TrailWidth), TrailWidth);
             writer.WriteNumber(nameof(TrailTime), TrailTime);
+            writer.WriteBoolean(nameof(TrailCullOnDie), TrailCullOnDie);
             writer.WritePropertyName(nameof(GlowColor));
             EWCJson.Serialize(writer, GlowColor);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
@@ -217,6 +219,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "trailtime":
                     TrailTime = reader.GetSingle();
+                    break;
+                case "trailcullondie":
+                case "trailcull":
+                    TrailCullOnDie = reader.GetBoolean();
                     break;
                 case "glowcolor":
                     GlowColor = EWCJson.Deserialize<Color>(ref reader);
