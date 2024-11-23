@@ -25,7 +25,7 @@ namespace EWC.CustomWeapon.Properties
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
-            writer.WriteNumber(nameof(ReferenceID), ReferenceID);
+            writer.WriteNumber("ID", ReferenceID);
             writer.WriteEndObject();
         }
 
