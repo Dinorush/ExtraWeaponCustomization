@@ -139,8 +139,14 @@ namespace EWC.CustomWeapon.Properties
         private void SetReferenceProperties(PropertyNode node)
         {
             if (node.List.ReferenceProperties != null)
+            {
                 foreach (var property in node.List.ReferenceProperties)
+                {
                     property.Reference = _idToProperty.GetValueOrDefault(property.ReferenceID);
+                    if (node.List.Owner != null && property.Reference?.property is ITriggerCallback callback && callback.Trigger == null)
+                        node.List.Owner.AddTriggerCallback(callback);
+                }
+            }
 
             foreach (var child in node.Children)
                 SetReferenceProperties(child);
