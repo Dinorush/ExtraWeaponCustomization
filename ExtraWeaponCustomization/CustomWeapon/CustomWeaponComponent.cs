@@ -32,6 +32,7 @@ namespace EWC.CustomWeapon
         private float _lastBurstTimer = 0f;
         private float _lastFireRate = 0f;
         private bool _synced = false;
+        private bool _destroyed = false;
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
         public float BaseFireRate { get; private set; }
@@ -100,6 +101,7 @@ namespace EWC.CustomWeapon
 
         private void OnDestroy()
         {
+            _destroyed = true;
             Invoke(StaticContext<WeaponClearContext>.Instance);
         }
 
@@ -109,7 +111,7 @@ namespace EWC.CustomWeapon
         [HideFromIl2Cpp]
         public void Register(CustomWeaponData? data = null)
         {
-            if (enabled) return; // Don't want to register data twice
+            if (enabled || _destroyed) return; // Don't want to register data twice
             enabled = true;
 
             if (data == null)

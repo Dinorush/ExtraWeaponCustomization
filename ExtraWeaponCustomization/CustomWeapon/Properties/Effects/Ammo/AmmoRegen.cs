@@ -91,7 +91,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         public IEnumerator Update()
         {
             _lastTickTime = Clock.Time;
-            while (true)
+            
+            // Sometimes a CWC appears that dies but doesn't run OnDestroy
+            while (CWC != null)
             {
                 if (!ResetCache())
                 {
