@@ -223,7 +223,7 @@ namespace EWC.CustomWeapon
             string path = Path.Combine(DEFINITION_PATH, "Template.json");
             if (!Directory.Exists(DEFINITION_PATH))
             {
-                EWCLogger.Log("No directory detected. Creating " + path);
+                EWCLogger.Log("No directory detected. Creating template.");
                 Directory.CreateDirectory(DEFINITION_PATH);
             }
 
@@ -250,7 +250,7 @@ namespace EWC.CustomWeapon
             if (!Directory.Exists(DEFINITION_PATH))
                 CreateTemplate();
             else
-                EWCLogger.Log("Directory detected. " + DEFINITION_PATH);
+                EWCLogger.Log("Directory detected.");
 
             foreach (string confFile in Directory.EnumerateFiles(DEFINITION_PATH, "*.json", SearchOption.AllDirectories))
             {
