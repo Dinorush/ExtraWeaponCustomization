@@ -226,7 +226,7 @@ namespace EWC.CustomWeapon.Properties
                     if (refProp.Reference == null || refProp.Reference.refCount++ != 0) continue;
                     property = refProp.Reference.property;
                 }
-                else if (property.ID != 0 && _idToProperty[property.ID].refCount != 0) continue;
+                else if (property.ID != 0 && _idToProperty[property.ID].refCount++ != 0) continue;
 
                 if (s_ignoreRefs.Contains(property)) continue; // Ignore properties that will remain active
 
@@ -258,7 +258,7 @@ namespace EWC.CustomWeapon.Properties
                     if (refProp.Reference == null || --refProp.Reference.refCount != 0) continue;
                     property = refProp.Reference.property;
                 }
-                else if (property.ID != 0 && _idToProperty[property.ID].refCount != 0) continue;
+                else if (property.ID != 0 && --_idToProperty[property.ID].refCount != 0) continue;
 
                 if (s_ignoreRefs.Contains(property)) continue; // Ignore properties that will remain active
 
