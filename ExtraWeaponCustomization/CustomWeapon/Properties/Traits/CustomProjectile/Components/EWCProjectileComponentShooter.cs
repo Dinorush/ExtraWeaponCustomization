@@ -95,7 +95,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 foreach (var child in transform)
                 {
                     Transform transform = child.Cast<Transform>();
-                    _projectile.m_toDestroyOnImpact.Add(transform.gameObject);
+                    if (transform.name != "Sphere" && transform.name != "Cube")
+                        _projectile.m_toDestroyOnImpact.Add(transform.gameObject);
                 }
             }
             else
