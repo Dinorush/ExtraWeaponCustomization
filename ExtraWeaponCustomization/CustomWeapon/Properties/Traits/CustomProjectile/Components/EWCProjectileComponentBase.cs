@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
+using Il2CppInterop.Runtime.Attributes;
 using System;
 using UnityEngine;
 
@@ -46,6 +47,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             enabled = false;
         }
 
+        [HideFromIl2Cpp]
         public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isLocal, Vector3 position, Vector3 dir)
         {
             if (enabled) return;
