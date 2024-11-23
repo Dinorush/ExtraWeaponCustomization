@@ -228,7 +228,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (KeepMagCost)
             {
                 float newBuffer = clipCost;
-                _costBuffer += newBuffer;
+                _costBuffer += newBuffer + 1e-10f; // Some small constant to avoid rounding errors
                 int newMag = Mathf.Min(newClipSize, (int) (_costBuffer / slotAmmo.CostOfBullet));
                 _costBuffer -= newMag * slotAmmo.CostOfBullet;
                 newBuffer -= newMag * slotAmmo.CostOfBullet;
@@ -239,13 +239,13 @@ namespace EWC.CustomWeapon.Properties.Traits
             else
             {
                 // Calculate the target magazine
-                float newMagFloat = (float) clip / clipSize * newClipSize + _magBuffer;
+                float newMagFloat = (float)clip / clipSize * newClipSize + _magBuffer;
                 int newMag = Mathf.Min(newClipSize, (int)newMagFloat);
 
                 // Calculate the maximum amount of ammo we can give
-                float trgtCost = Mathf.Min(slotAmmo.AmmoInPack + clipCost, newMag * slotAmmo.CostOfBullet);
-                newMagFloat = trgtCost / slotAmmo.CostOfBullet;
-                newMag = (int)newMagFloat;
+                float maxCost = slotAmmo.AmmoInPack + clipCost;
+                if (maxCost < newMag * slotAmmo.CostOfBullet)
+                    newMag = (int)(maxCost / slotAmmo.CostOfBullet);
 
                 _magBuffer = Mathf.Max(0, clip - newMag * clipSize / newClipSize);
                 slotAmmo.AmmoInPack += clipCost - newMag * slotAmmo.CostOfBullet;
