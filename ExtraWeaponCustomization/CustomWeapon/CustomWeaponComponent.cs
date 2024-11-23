@@ -98,6 +98,11 @@ namespace EWC.CustomWeapon
                 Invoke(StaticContext<WeaponDisableContext>.Instance);
         }
 
+        private void OnDestroy()
+        {
+            Invoke(StaticContext<WeaponClearContext>.Instance);
+        }
+
         [HideFromIl2Cpp]
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _propertyController.Invoke(context);
 
