@@ -18,7 +18,7 @@ using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "2.11.1")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "2.11.2")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
