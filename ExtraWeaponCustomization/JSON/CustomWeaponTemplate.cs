@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects;
 using EWC.CustomWeapon.Properties.Traits;
 
@@ -14,6 +15,8 @@ namespace EWC.JSON
                 Name = "Example",
                 Properties = new(new()
                 {
+                    new ReferenceProperty(),
+
                     new AmmoMod(),
                     new AmmoRegen(),
                     new DamageMod(),
