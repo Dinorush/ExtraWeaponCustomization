@@ -12,7 +12,7 @@ namespace EWC.JSON.Converters
         {
             List<WeaponPropertyBase>? list = EWCJson.Deserialize<List<WeaponPropertyBase>>(ref reader);
             if (list == null) throw new JsonException("Unable to deserialize property list");
-            
+
             return new PropertyList(list);
         }
 

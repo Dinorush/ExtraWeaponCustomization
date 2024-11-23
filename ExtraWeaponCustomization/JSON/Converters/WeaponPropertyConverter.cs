@@ -11,7 +11,7 @@ namespace EWC.JSON.Converters
         public override WeaponPropertyBase? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             WeaponPropertyBase? instance = CreatePropertyInstance(reader);
-            if (instance == null) return null;
+            if (instance == null || reader.TokenType != JsonTokenType.StartObject) return instance;
 
             while (reader.Read())
             {
@@ -34,6 +34,9 @@ namespace EWC.JSON.Converters
 
         private static WeaponPropertyBase? CreatePropertyInstance(Utf8JsonReader reader)
         {
+            if (reader.TokenType == JsonTokenType.String) return new ReferenceProperty(reader.GetString()!);
+            if (reader.TokenType == JsonTokenType.Number) return new ReferenceProperty(reader.GetUInt32());
+
             if (reader.TokenType != JsonTokenType.StartObject) return null;
 
             while (reader.Read())
@@ -52,15 +55,20 @@ namespace EWC.JSON.Converters
                 reader.Read();
                 string? name = reader.GetString();
                 if (name == null) throw new JsonException("Name field cannot be empty in weapon property.");
-                name = name.Replace(" ", "");
 
-                Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
-                if (type == null) throw new JsonException("Unable to find corresponding weapon property for \"" + name + "\"");
-
-                return (WeaponPropertyBase?)Activator.CreateInstance(type);
+                return NameToProperty(name);
             }
 
             return null;
+        }
+
+        private static WeaponPropertyBase? NameToProperty(string name)
+        {
+            name = name.Replace(" ", "");
+            Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
+            if (type == null) return null;
+
+            return (WeaponPropertyBase?)Activator.CreateInstance(type);
         }
     }
 }

@@ -52,7 +52,5 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteString("Name", GetType().Name);
             writer.WriteEndObject();
         }
-
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) {}
     }
 }

@@ -44,6 +44,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
+            base.DeserializeProperty(property, ref reader);
             switch (property)
             {
                 case "shotsuntilcancel":

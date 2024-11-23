@@ -59,6 +59,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
+            base.DeserializeProperty(property, ref reader);
             switch(property)
             {
                 case "triggertype":

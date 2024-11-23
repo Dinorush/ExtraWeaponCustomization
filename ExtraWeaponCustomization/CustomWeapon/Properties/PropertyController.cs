@@ -33,6 +33,8 @@ namespace EWC.CustomWeapon.Properties
         private bool _isLocal = true;
         private readonly LinkedList<PropertyNode> _overrideStack = new();
         private readonly Dictionary<Type, Trait> _activeTraits = new();
+        private readonly Dictionary<uint, PropertyRef> _idToProperty = new();
+        private static readonly HashSet<WeaponPropertyBase> s_ignoreRefs = new();
         private readonly List<ITriggerCallbackSync> _syncList = new(1);
 
         public PropertyController(bool isGun)
@@ -48,6 +50,7 @@ namespace EWC.CustomWeapon.Properties
 
             _root = CreateTree(cwc, baseList);
             RemoveInvalidProperties(_root, cwc.IsGun);
+            RegisterPropertyIDs();
             Activate(_root);
             RegisterSyncProperties(_root);
         }
@@ -76,6 +79,8 @@ namespace EWC.CustomWeapon.Properties
                 WeaponPropertyBase property = node.List.Properties[i];
                 if (!property.ValidProperty())
                 {
+                    EWCLogger.Warning($"Cannot add {property.GetType().Name} to a {(isGun ? "gun" : "melee")}!");
+
                     node.List.Properties.Remove(property);
                     Type type = property.GetType();
                     if (node.List.Traits?.TryGetValue(type, out var trait) == true && trait == property)
@@ -108,11 +113,45 @@ namespace EWC.CustomWeapon.Properties
                 RegisterSyncProperties(child);
         }
 
+        private void RegisterPropertyIDs()
+        {
+            if (_root == null) return;
+
+            CachePropertyIDs(_root);
+            SetReferenceProperties(_root);
+        }
+
+        private void CachePropertyIDs(PropertyNode node)
+        {
+            foreach (var property in node.List.Properties)
+            {
+                if (property.ID != 0)
+                {
+                    if (!_idToProperty.TryAdd(property.ID, new PropertyRef(property)))
+                        EWCLogger.Warning("Duplicate property ID detected: " + property.ID);
+                }
+            }
+
+            foreach (var child in node.Children)
+                CachePropertyIDs(child);
+        }
+
+        private void SetReferenceProperties(PropertyNode node)
+        {
+            if (node.List.ReferenceProperties != null)
+                foreach (var property in node.List.ReferenceProperties)
+                    property.Reference = _idToProperty.GetValueOrDefault(property.ReferenceID);
+
+            foreach (var child in node.Children)
+                SetReferenceProperties(child);
+        }
+
         public void Clear()
         {
             _contextController.Clear();
             _overrideStack.Clear();
             _activeTraits.Clear();
+            _idToProperty.Clear();
             _syncList.Clear();
         }
 
@@ -135,10 +174,19 @@ namespace EWC.CustomWeapon.Properties
 
         public void SetActive(PropertyNode node, bool active)
         {
+            if (node.List.Override)
+            {
+                PropertyNode newRoot = active ? node : (_overrideStack.Count > 1 ? _overrideStack.Last!.Previous!.Value : _root!);
+                CacheIgnoreRefs(newRoot, active);
+            }
+
             if (active)
                 Activate(node);
             else
                 Deactivate(node);
+
+            if (node.List.Override)
+                s_ignoreRefs.Clear();
         }
 
         private void Activate(PropertyNode node)
@@ -156,7 +204,11 @@ namespace EWC.CustomWeapon.Properties
                     if (_isLocal && node.List.SetupCallbacks != null)
                     {
                         foreach (var property in node.List.SetupCallbacks)
+                        {
+                            if (s_ignoreRefs.Contains((WeaponPropertyBase) property)) continue;
+
                             property.Invoke(StaticContext<WeaponSetupContext>.Instance);
+                        }
                     }
                 }
                 else
@@ -165,8 +217,19 @@ namespace EWC.CustomWeapon.Properties
 
             if (!node.Enabled) return;
 
-            foreach (var property in node.List.Properties)
+            foreach (var curr in node.List.Properties)
             {
+                var property = curr;
+                // Swap ReferenceProperties with their target, or skip it if it's referenced elsewhere
+                if (property is ReferenceProperty refProp)
+                {
+                    if (refProp.Reference == null || refProp.Reference.refCount++ != 0) continue;
+                    property = refProp.Reference.property;
+                }
+                else if (property.ID != 0 && _idToProperty[property.ID].refCount != 0) continue;
+
+                if (s_ignoreRefs.Contains(property)) continue; // Ignore properties that will remain active
+
                 if (property is Trait trait && !_activeTraits.TryAdd(property.GetType(), trait)) continue;
                 
                 if (_isLocal && property is IWeaponProperty<WeaponSetupContext> setup)
@@ -186,8 +249,19 @@ namespace EWC.CustomWeapon.Properties
 
             if (!node.Enabled) return;
 
-            foreach (var property in node.List.Properties)
+            foreach (var curr in node.List.Properties)
             {
+                var property = curr;
+                // Swap ReferenceProperties with their target, or skip it if it's referenced elsewhere
+                if (property is ReferenceProperty refProp)
+                {
+                    if (refProp.Reference == null || --refProp.Reference.refCount != 0) continue;
+                    property = refProp.Reference.property;
+                }
+                else if (property.ID != 0 && _idToProperty[property.ID].refCount != 0) continue;
+
+                if (s_ignoreRefs.Contains(property)) continue; // Ignore properties that will remain active
+
                 Type type = property.GetType();
                 if (property is Trait trait && (!_activeTraits.TryGetValue(type, out var active) || active != trait))
                     continue;
@@ -212,11 +286,17 @@ namespace EWC.CustomWeapon.Properties
                 node = _overrideStack.Last?.Value;
 
             _contextController.Clear();
+            // Register properties that will remain active (they will not be added by other functions)
+            foreach (var property in s_ignoreRefs)
+                _contextController.Register(property);
 
             if (node != null)
             {
                 PropagateDisable(_root);
                 _activeTraits.Clear();
+                foreach (var property in s_ignoreRefs)
+                    if (property is Trait trait)
+                        _activeTraits.TryAdd(property.GetType(), trait);
                 if (node.List.Owner != null)
                     _contextController.Register(node.List.Owner);
                 PropagateEnable(node);
@@ -228,6 +308,19 @@ namespace EWC.CustomWeapon.Properties
             }
         }
 
+        private void CacheIgnoreRefs(PropertyNode? node, bool allowFirst = true)
+        {
+            if (node == null || (!node.Active && !allowFirst)) return;
+
+            if (node.List.ReferenceProperties != null)
+                foreach (var refProp in node.List.ReferenceProperties)
+                    if (refProp.Reference != null)
+                        s_ignoreRefs.Add(refProp.Reference.property);
+
+            foreach (var child in node.Children)
+                CacheIgnoreRefs(child, false);
+        }
+
         private void PropagateDisable(PropertyNode? node)
         {
             if (node == null || !node.Enabled || node == _overrideStack.Last!.Value) return;
@@ -237,6 +330,8 @@ namespace EWC.CustomWeapon.Properties
             {
                 foreach (var property in node.List.ClearCallbacks)
                 {
+                    if (s_ignoreRefs.Contains((WeaponPropertyBase)property)) continue; // Ignore properties that will remain active
+
                     if (property is Trait trait && (!_activeTraits.TryGetValue(property.GetType(), out var active) || trait != active)) continue;
 
                     property.Invoke(StaticContext<WeaponClearContext>.Instance);
@@ -256,8 +351,16 @@ namespace EWC.CustomWeapon.Properties
                 // Re-register properties since data was cleared, but no need to call setup context
                 if (node.Active)
                 {
-                    foreach (var property in node.List.Properties)
+                    foreach (var curr in node.List.Properties)
                     {
+                        var property = curr;
+                        if (property is ReferenceProperty refProp)
+                        {
+                            if (refProp.Reference == null) continue;
+                            property = refProp.Reference.property;
+                        }
+                        if (s_ignoreRefs.Contains(property)) continue; // Ignore properties that will remain active
+
                         if (property is Trait trait && !_activeTraits.TryAdd(property.GetType(), trait)) continue;
 
                         _contextController.Register(property);

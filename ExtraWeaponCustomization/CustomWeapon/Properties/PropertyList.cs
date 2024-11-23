@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.Properties.Effects;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 
@@ -12,6 +13,7 @@ namespace EWC.CustomWeapon.Properties
         public readonly Dictionary<Type, Trait>? Traits;
         public readonly List<IWeaponProperty<WeaponSetupContext>>? SetupCallbacks;
         public readonly List<IWeaponProperty<WeaponClearContext>>? ClearCallbacks;
+        public readonly List<ReferenceProperty>? ReferenceProperties;
 
         public TempProperties? Owner { get; set; }
 
@@ -44,6 +46,12 @@ namespace EWC.CustomWeapon.Properties
                 {
                     ClearCallbacks ??= new();
                     ClearCallbacks.Add(weaponClearContext);
+                }
+
+                if (baseProperty is ReferenceProperty refProp)
+                {
+                    ReferenceProperties ??= new();
+                    ReferenceProperties.Add(refProp);
                 }
             }
         }
