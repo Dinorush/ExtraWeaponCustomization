@@ -336,7 +336,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             _hitData.damage = _baseDamage;
             _hitData.precisionMulti = _basePrecision;
-            _hitData.fireDir = s_ray.direction.normalized;
+            _hitData.fireDir = (_settings!.HitFromOwnerPos ? s_rayHit.point - _weapon.Owner.FPSCamera.Position : s_ray.direction).normalized;
             _hitData.RayHit = s_rayHit;
             _hitData.SetFalloff(_distanceMoved);
 

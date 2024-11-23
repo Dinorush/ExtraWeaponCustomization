@@ -48,6 +48,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float GlowRange { get; private set; } = -1f;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = false;
+        public bool HitFromOwnerPos { get; private set; } = false;
         public float HitCooldown { get; private set; } = -1;
         public float HitIgnoreWallsDuration { get; private set; } = 0f;
         public float VisualLerpDist { get; private set; } = 5f;
@@ -159,6 +160,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(GlowRange), GlowRange);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
+            writer.WriteBoolean(nameof(HitFromOwnerPos), HitFromOwnerPos);
             writer.WriteNumber(nameof(HitCooldown), HitCooldown);
             writer.WriteNumber(nameof(HitIgnoreWallsDuration), HitIgnoreWallsDuration);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
@@ -170,6 +172,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
+            base.DeserializeProperty(property, ref reader);
             switch (property.ToLowerInvariant())
             {
                 case "projectiletype":
@@ -245,6 +248,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "damageowner":
                 case "damageuser":
                     DamageOwner = reader.GetBoolean();
+                    break;
+                case "hitfromownerposition":
+                case "hitfromownerpos":
+                    HitFromOwnerPos = reader.GetBoolean();
                     break;
                 case "hitcooldown":
                     HitCooldown = reader.GetSingle();
