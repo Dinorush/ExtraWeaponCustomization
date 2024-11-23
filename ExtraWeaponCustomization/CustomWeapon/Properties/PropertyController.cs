@@ -143,7 +143,7 @@ namespace EWC.CustomWeapon.Properties
                 foreach (var property in node.List.ReferenceProperties)
                 {
                     property.Reference = _idToProperty.GetValueOrDefault(property.ReferenceID);
-                    if (node.List.Owner != null && property.Reference?.property is ITriggerCallback callback && callback.Trigger == null)
+                    if (node.List.Owner != null && property.Reference?.property is ITriggerCallback callback)
                         node.List.Owner.AddTriggerCallback(callback);
                 }
             }

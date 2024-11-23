@@ -40,7 +40,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             
             if (_callbackProperties != null)
                 foreach (var callback in _callbackProperties)
-                    callback.TriggerApply(contexts);
+                    if (callback.Trigger == null)
+                        callback.TriggerApply(contexts);
         }
 
         public void TriggerApplySync(float mod = 1f)
@@ -55,7 +56,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             if (_callbackProperties != null)
                 foreach (var callback in _callbackProperties)
-                    callback.TriggerReset();
+                    if (callback.Trigger == null)
+                        callback.TriggerReset();
         }
 
         public void TriggerResetSync()
@@ -87,7 +89,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             copy.Properties.Owner = copy;
             copy.Properties.Override = Override;
             foreach (var property in copy.Properties.Properties)
-                if (property is ITriggerCallback callback && callback.Trigger == null)
+                if (property is ITriggerCallback callback)
                     copy.AddTriggerCallback(callback);
 
             return copy;
