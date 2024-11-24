@@ -90,6 +90,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             damage *= triggerAmt;
             float precisionMult = eBase.PrecisionDamageMulti;
 
+            var preContext = eBase.CWC.Invoke(new WeaponPreHitDamageableContext(
+                damageable,
+                position,
+                direction,
+                falloffMod * distFalloff,
+                DamageType.Explosive
+                ));
+
             WeaponDamageContext damageContext = new(damage, precisionMult, damageable);
             eBase.CWC.Invoke(damageContext);
             if (!eBase.IgnoreDamageMods)
@@ -114,30 +122,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
                 damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti;
                 damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
-                eBase.CWC.Invoke(new WeaponPreHitDamageableContext(
-                    damage,
-                    distFalloff * falloffMod,
-                    1f,
-                    damageable,
-                    position,
-                    direction,
-                    DamageType.Explosive
-                ));
+                eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, preContext));
                 // Only damage and direction are used AFAIK, but again, just in case...
                 playerBase.BulletDamage(damage, source, position, playerBase.DamageTargetPos - position, Vector3.zero);
                 return;
             }
             else if (agent == null) // Lock damage; direction doesn't matter
             {
-                eBase.CWC.Invoke(new WeaponPreHitDamageableContext(
-                    damage,
-                    distFalloff * falloffMod,
-                    1f,
-                    damageable,
-                    position,
-                    direction,
-                    DamageType.Explosive
-                ));
+                eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, preContext));
                 damageable.BulletDamage(damage, source, Vector3.zero, Vector3.zero, Vector3.zero);
                 return;
             }
@@ -180,16 +172,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             data.damage.Set(precDamage, damBase.DamageMax);
 
-            WeaponPreHitDamageableContext hitContext = new(
-                precDamage,
-                distFalloff * falloffMod,
-                backstabMulti,
-                damageable,
-                position,
-                direction,
-                DamageType.Explosive
-                );
-            eBase.CWC.Invoke(hitContext);
+            var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, backstabMulti, preContext));
 
             KillTrackerManager.RegisterHit(eBase.CWC.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), position, armorMulti < 1f || damBase.IsImortal);

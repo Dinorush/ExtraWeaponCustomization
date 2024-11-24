@@ -30,11 +30,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             while (_expireTimes.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) _expireTimes.Dequeue();
 
-            if (_expireTimes.Count > 0 )
+            if (_expireTimes.Count > 0)
                 context.Damage.AddMod(CalculateMod(_expireTimes), StackLayer);
         }
 
-        public override void WriteName(Utf8JsonWriter writer)
+        protected override void WriteName(Utf8JsonWriter writer)
         {
             writer.WriteString("Name", GetType().Name);
         }

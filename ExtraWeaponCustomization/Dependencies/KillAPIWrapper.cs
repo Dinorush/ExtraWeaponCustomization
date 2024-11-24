@@ -23,7 +23,7 @@ namespace EWC.Dependencies
         {
             if (delay > MAX_DELAY) return;
 
-            (ItemEquippable Weapon, WeaponPreHitDamageableContext Context)? hitContext = KillTrackerManager.GetKillHitContext(enemy);
+            (ItemEquippable Weapon, WeaponHitDamageableContext Context)? hitContext = KillTrackerManager.GetKillHitContext(enemy);
             if (hitContext == null) return;
 
             CustomWeaponComponent? cwc = hitContext.Value.Weapon.GetComponent<CustomWeaponComponent>();

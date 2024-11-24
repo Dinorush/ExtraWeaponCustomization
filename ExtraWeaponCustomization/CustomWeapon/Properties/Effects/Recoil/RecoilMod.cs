@@ -33,7 +33,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 context.AddMod(CalculateMod(_expireTimes), StackLayer);
         }
 
-        public override void WriteName(Utf8JsonWriter writer)
+        protected override void WriteName(Utf8JsonWriter writer)
         {
             writer.WriteString("Name", GetType().Name);
         }

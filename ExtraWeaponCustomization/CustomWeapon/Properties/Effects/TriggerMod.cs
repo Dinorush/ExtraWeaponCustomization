@@ -68,7 +68,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             return mod;
         }
 
-        public abstract void WriteName(Utf8JsonWriter writer);
+        protected abstract void WriteName(Utf8JsonWriter writer);
 
         public override void Serialize(Utf8JsonWriter writer)
         {

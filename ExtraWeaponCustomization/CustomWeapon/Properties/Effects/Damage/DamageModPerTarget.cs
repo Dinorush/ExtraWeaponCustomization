@@ -20,7 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public DamageModPerTarget()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 
         public override void TriggerReset()
@@ -35,7 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 Dictionary<BaseDamageableWrapper, float> triggerDict = new();
                 foreach (var context in contexts)
                 {
-                    IDamageable damageable = ((WeaponPreHitDamageableContext)context.context).Damageable;
+                    IDamageable damageable = ((WeaponHitDamageableContext)context.context).Damageable;
                     if (damageable == null) continue;
 
                     TempWrapper.SetObject(damageable);
@@ -51,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 foreach (var context in contexts)
                 {
-                    IDamageable damageable = ((WeaponPreHitDamageableContext)context.context).Damageable;
+                    IDamageable damageable = ((WeaponHitDamageableContext)context.context).Damageable;
                     if (damageable == null) continue;
 
                     AddTriggerInstance(
@@ -92,7 +92,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 context.Damage.AddMod(CalculateMod(queue), StackLayer);
         }
 
-        public override void WriteName(Utf8JsonWriter writer)
+        protected override void WriteName(Utf8JsonWriter writer)
         {
             writer.WriteString("Name", GetType().Name);
         }

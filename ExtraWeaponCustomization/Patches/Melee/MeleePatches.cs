@@ -94,7 +94,7 @@ namespace EWC.Patches.Melee
             s_hitData.damage = s_origHitDamage;
             s_hitData.precisionMulti = s_origHitPrecision;
 
-            WeaponPatches.ApplyEWCHit(cwc, damageable, s_hitData, false, ref s_origHitDamage, out _);
+            WeaponPatches.ApplyEWCHit(cwc, s_hitData, false, ref s_origHitDamage, out _);
         }
     }
 }

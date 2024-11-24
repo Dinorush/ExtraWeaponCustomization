@@ -112,18 +112,22 @@ namespace EWC.Patches
                 s_hitData.precisionMulti = s_origHitPrecision;
             }
 
-            ApplyEWCHit(cwc, damageable, s_hitData, damageSearchID != 0, ref s_origHitDamage, out allowDirectionalBonus);
+            ApplyEWCHit(cwc, s_hitData, damageSearchID != 0, ref s_origHitDamage, out allowDirectionalBonus);
         }
 
-        public static void ApplyEWCHit(CustomWeaponComponent cwc, IDamageable? damageable, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, damageable, hitData, pierce, ref pierceDamage, out doBackstab);
+        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, hitData, pierce, ref pierceDamage, out doBackstab);
 
-        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, IDamageable? damageable, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab)
+        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab)
         {
             doBackstab = true;
             CachedHitCC = cc;
 
-            if (damageable != null)
+            IDamageable? damageable = hitData.damageable;
+            IDamageable? baseDamageable = damageable?.GetBaseDamagable();
+            if (damageable != null && (baseDamageable == null || baseDamageable.GetHealthRel() > 0))
             {
+                cc.Invoke(new WeaponPreHitDamageableContext(hitData, DamageType.Bullet));
+
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(hitData.damage, hitData.precisionMulti, damageable);
                 cc.Invoke(damageContext);
@@ -137,11 +141,7 @@ namespace EWC.Patches
                     cc.Invoke(pierceContext);
                     pierceDamage = pierceContext.Value;
                 }
-            }
 
-            IDamageable? baseDamageable = damageable?.GetBaseDamagable();
-            if (damageable != null && (baseDamageable == null || baseDamageable.GetHealthRel() > 0))
-            {
                 Agent? agent = damageable.GetBaseAgent();
                 if (agent != null && agent.Alive && agent.Type == AgentType.Enemy)
                 {
@@ -150,7 +150,7 @@ namespace EWC.Patches
                     WeaponBackstabContext backContext = new();
                     cc.Invoke(backContext);
  
-                    WeaponPreHitDamageableContext hitContext = new(
+                    WeaponHitDamageableContext hitContext = new(
                         hitData,
                         CachedBypassTumorCap,
                         backstab.Map(1f, 2f, 1f, backContext.Value),
@@ -166,10 +166,10 @@ namespace EWC.Patches
                         doBackstab = false;
                 }
                 else
-                    cc.Invoke(new WeaponPreHitDamageableContext(hitData, damageable, DamageType.Bullet));
+                    cc.Invoke(new WeaponHitDamageableContext(hitData, DamageType.Bullet));
             }
             else
-                cc.Invoke(new WeaponPreHitContext(hitData));
+                cc.Invoke(new WeaponHitContext(hitData));
 
             hitData.Apply();
         }

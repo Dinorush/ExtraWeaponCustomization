@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public BioPing()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(DamageType.Player | DamageType.Lock, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(DamageType.Player | DamageType.Lock, TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
@@ -29,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             float nextTime = Clock.Time + CooldownPerTarget;
             foreach (var context in contexts)
             {
-                IDamageable damageable = ((WeaponPreHitDamageableContext)context.context).Damageable;
+                IDamageable damageable = ((WeaponHitDamageableContext)context.context).Damageable;
                 if (damageable == null) continue;
 
                 TempWrapper.SetObject(damageable.GetBaseAgent().Cast<EnemyAgent>());

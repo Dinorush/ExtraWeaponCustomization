@@ -59,7 +59,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     CacheBackstab = killContext.Backstab;
                     ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, tContext.triggerAmt);
                 }
-                else if(tContext.context is WeaponPreHitContext hitContext)
+                else if(tContext.context is WeaponHitContext hitContext)
                 {
                     Vector3 position = hitContext.Position;
                     if (hitContext.Damageable != null && hitContext.Damageable.GetBaseAgent() != null)
@@ -67,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     else if (hitContext.Damageable == null)
                         position += hitContext.Direction * WallHitBuffer;
 
-                    if (hitContext is WeaponPreHitDamageableContext enemyContext)
+                    if (hitContext is WeaponHitDamageableContext enemyContext)
                         CacheBackstab = enemyContext.Backstab;
 
                     ExplosionManager.DoExplosion(position, hitContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt);

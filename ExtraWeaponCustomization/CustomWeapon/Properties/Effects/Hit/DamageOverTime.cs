@@ -45,13 +45,13 @@ namespace EWC.CustomWeapon.Properties.Effects
         public DamageOverTime()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(DamageType.DOT, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(DamageType.DOT, TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
             foreach (TriggerContext tContext in triggerList)
-                AddDOT((WeaponPreHitDamageableContext) tContext.context, tContext.triggerAmt);
+                AddDOT((WeaponHitDamageableContext) tContext.context, tContext.triggerAmt);
         }
 
         public override void TriggerReset()
@@ -59,7 +59,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             _controller.Clear();
         }
 
-        private void AddDOT(WeaponPreHitDamageableContext context, float triggerAmt)
+        private void AddDOT(WeaponHitDamageableContext context, float triggerAmt)
         {
             TempWrapper.SetObject(context.Damageable);
 

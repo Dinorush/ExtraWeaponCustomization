@@ -166,8 +166,9 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponPostKillContext>();
             RegisterContext<WeaponPostFireContext>();
             RegisterContext<WeaponPreFireContext>();
-            RegisterContext<WeaponPreHitContext>();
+            RegisterContext<WeaponHitContext>();
             RegisterContext<WeaponPreHitDamageableContext>();
+            RegisterContext<WeaponHitDamageableContext>();
             RegisterContext<WeaponPreReloadContext>();
             RegisterContext<WeaponPostReloadContext>();
             RegisterContext<WeaponReloadStartContext>();
@@ -209,8 +210,8 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponPostKillContext>();
             RegisterContext<WeaponPostFireContext>();
             RegisterContext<WeaponPreFireContext>();
-            RegisterContext<WeaponPreHitContext>();
-            RegisterContext<WeaponPreHitDamageableContext>();
+            RegisterContext<WeaponHitContext>();
+            RegisterContext<WeaponHitDamageableContext>();
             RegisterContext<WeaponWieldContext>();
 
             RegisterContext<WeaponArmorContext>();

@@ -12,7 +12,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public float Falloff { get; }
         public float Backstab { get; }
 
-        public WeaponPostKillContext(WeaponPreHitDamageableContext hitContext) : base(hitContext.DamageType)
+        public WeaponPostKillContext(WeaponHitDamageableContext hitContext) : base(hitContext.DamageType)
         {
             Enemy = hitContext.Damageable.GetBaseAgent().TryCast<EnemyAgent>()!;
 

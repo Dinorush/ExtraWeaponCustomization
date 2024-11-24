@@ -26,37 +26,35 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             if (!dotBase.Owner.IsLocallyOwned || damage <= 0) return;
 
-            damage = damage * falloff + 0.001f; // Account for rounding errors
+            damage = damage * falloff + 0.001f; // Account for rounding errors            
 
             Agent? agent = damageable.GetBaseAgent();
             if (agent?.Type == AgentType.Player)
             {
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
                 damage *= playerBase.m_playerData.friendlyFireMulti * dotBase.FriendlyDamageMulti;
-                // Don't need custom damage behavior. However, BulletDamage triggers FF dialogue.
-                dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
-                    damage,
-                    falloff,
-                    1f,
+                var prePlayerContext = dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                     damageable,
                     damageable.DamageTargetPos,
                     damageable.DamageTargetPos - playerBase.Owner.Position,
+                    falloff,
                     DamageType.DOT
                     ));
+                dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, prePlayerContext));
+                // Don't really need custom damage behavior, but BulletDamage triggers FF dialogue.
                 SendPlayerDOTDamage(damage, playerBase, dotBase.Owner);
                 return;
             }
-            else if (agent == null) // Lock damage; direction and damage type don't matter
+            else if (agent == null) // Lock damage; direction and damage function don't matter
             {
-                dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
-                    damage,
-                    falloff,
-                    1f,
+                var preLockContext = dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                     damageable,
                     damageable.DamageTargetPos,
                     Vector3.up,
+                    falloff,
                     DamageType.DOT
                     ));
+                dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, preLockContext));
                 damageable.BulletDamage(damage, dotBase.Owner, Vector3.zero, Vector3.zero, Vector3.zero);
                 return;
             }
@@ -83,16 +81,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
             data.damage.Set(precDamage, damBase.DamageMax);
 
-            WeaponPreHitDamageableContext hitContext = new(
-                precDamage,
-                falloff,
-                backstabMulti,
+            var preContext = dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                 damageable,
                 limb.DamageTargetPos,
                 limb.DamageTargetPos - damBase.Owner.Position,
+                falloff,
                 DamageType.DOT
-                );
-            dotBase.CWC.Invoke(hitContext);
+                ));
+            var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, backstabMulti, preContext));
 
             KillTrackerManager.RegisterHit(dotBase.CWC.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f || damBase.IsImortal);

@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
-    public sealed class ChargeTrigger : DamageTypeTrigger<WeaponPreHitDamageableContext>
+    public sealed class ChargeTrigger : DamageTypeTrigger<WeaponHitDamageableContext>
     {
         public float Min { get; private set; } = 0f;
         public float Max { get; private set; } = 1f;
@@ -13,7 +13,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public override float Invoke(WeaponTriggerContext context)
         {
-            if (context is WeaponPreHitDamageableContext hitContext
+            if (context is WeaponHitDamageableContext hitContext
                 && !hitContext.DamageType.HasAnyFlag(BlacklistType)
                 && hitContext.DamageType.HasFlag(DamageType))
             {
