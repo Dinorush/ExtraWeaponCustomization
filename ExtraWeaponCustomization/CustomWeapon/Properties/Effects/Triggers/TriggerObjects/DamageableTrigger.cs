@@ -24,7 +24,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
             TContext tContext = (TContext) context;
             amount = InvokeInternal(tContext);
-            EWCLogger.Log("Invoked trigger! " + UniqueThreshold + " | " + (_uniqueCounts != null) + " | " + amount);
             if (_uniqueCounts != null)
             {
                 TempWrapper.SetObject(tContext.Damageable!);
@@ -37,7 +36,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     _uniqueCounts[new BaseDamageableWrapper(TempWrapper)] = 0;
                 }
                 _uniqueCounts[TempWrapper] += amount;
-                EWCLogger.Log("Trying to trigger! Counts: " + _uniqueCounts[TempWrapper] + ", Threshold: " + UniqueThreshold);
 
                 if (_uniqueCounts[TempWrapper] < UniqueThreshold)
                 {
@@ -66,7 +64,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _uniqueCounts = _uniqueCounts != null ? new() : null,
             };
             CloneValues(trigger);
-            EWCLogger.Log("Cloned damageable trigger with threshold " + UniqueThreshold);
             return trigger;
         }
 
