@@ -115,9 +115,9 @@ namespace EWC.Patches
             ApplyEWCHit(cwc, s_hitData, damageSearchID != 0, ref s_origHitDamage, out allowDirectionalBonus);
         }
 
-        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, hitData, pierce, ref pierceDamage, out doBackstab);
+        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab, bool triggerHit = true) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, hitData, pierce, ref pierceDamage, out doBackstab, triggerHit);
 
-        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab)
+        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab, bool triggerHit = true)
         {
             doBackstab = true;
             CachedHitCC = cc;
@@ -126,7 +126,8 @@ namespace EWC.Patches
             IDamageable? baseDamageable = damageable?.GetBaseDamagable();
             if (damageable != null && (baseDamageable == null || baseDamageable.GetHealthRel() > 0))
             {
-                cc.Invoke(new WeaponPreHitDamageableContext(hitData, DamageType.Bullet));
+                if (triggerHit)
+                    cc.Invoke(new WeaponPreHitDamageableContext(hitData, DamageType.Bullet));
 
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(hitData.damage, hitData.precisionMulti, damageable);
@@ -148,8 +149,7 @@ namespace EWC.Patches
                     Dam_EnemyDamageLimb limb = damageable!.Cast<Dam_EnemyDamageLimb>();
                     float backstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
                     WeaponBackstabContext backContext = new();
-                    cc.Invoke(backContext);
- 
+                    
                     WeaponHitDamageableContext hitContext = new(
                         hitData,
                         CachedBypassTumorCap,
@@ -157,7 +157,10 @@ namespace EWC.Patches
                         limb,
                         DamageType.Bullet
                     );
-                    cc.Invoke(hitContext);
+
+                    if (triggerHit)
+                        cc.Invoke(hitContext);
+
                     KillTrackerManager.RegisterHit(weapon, hitContext);
 
                     if (backContext.Value > 1f)
@@ -165,10 +168,10 @@ namespace EWC.Patches
                     else
                         doBackstab = false;
                 }
-                else
+                else if (triggerHit)
                     cc.Invoke(new WeaponHitDamageableContext(hitData, DamageType.Bullet));
             }
-            else
+            else if (triggerHit)
                 cc.Invoke(new WeaponHitContext(hitData));
 
             hitData.Apply();
