@@ -51,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool HitFromOwnerPos { get; private set; } = false;
         public float HitCooldown { get; private set; } = -1;
         public float HitIgnoreWallsDuration { get; private set; } = 0f;
-        public bool TriggerHitEffects { get; private set; } = true;
+        public bool RunHitTriggers { get; private set; } = true;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
 
@@ -164,7 +164,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(HitFromOwnerPos), HitFromOwnerPos);
             writer.WriteNumber(nameof(HitCooldown), HitCooldown);
             writer.WriteNumber(nameof(HitIgnoreWallsDuration), HitIgnoreWallsDuration);
-            writer.WriteBoolean(nameof(TriggerHitEffects), TriggerHitEffects);
+            writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
             writer.WritePropertyName(nameof(HomingSettings));
@@ -261,8 +261,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "hitignorewallsduration":
                     HitIgnoreWallsDuration = reader.GetSingle();
                     break;
-                case "triggerhiteffects":
-                    TriggerHitEffects = reader.GetBoolean();
+                case "runhittriggers":
+                case "hittriggers":
+                    RunHitTriggers = reader.GetBoolean();
                     break;
                 case "visuallerpdist":
                 case "lerpdist":

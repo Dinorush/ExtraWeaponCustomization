@@ -342,7 +342,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             DoImpactFX(damageable);
 
-            WeaponPatches.ApplyEWCHit(_contextController, _weapon, _hitData, _pierce, ref _baseDamage, out bool backstab, _settings.TriggerHitEffects);
+            WeaponPatches.ApplyEWCHit(_contextController, _weapon, _hitData, _pierce, ref _baseDamage, out bool backstab, _settings.RunHitTriggers);
             float damage = _hitData.damage * _hitData.falloff;
             damageable?.BulletDamage(damage, _hitData.owner, _hitData.hitPos, _hitData.fireDir, _hitData.RayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
         }
