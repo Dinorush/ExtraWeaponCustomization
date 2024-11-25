@@ -51,13 +51,13 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContextSync context)
         {
-            s_isProjectile = CWC.HasTrait<Projectile>();
+            if (CWC.HasTrait<Projectile>()) return;
 
             s_ray.origin = CWC.Weapon.MuzzleAlign.position;
             bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
             s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
 
-            if (CancelShot && !s_isProjectile)
+            if (CancelShot)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
 
             int shotgunBullets = 1;
@@ -77,14 +77,14 @@ namespace EWC.CustomWeapon.Properties.Traits
                 {
                     float x = Offsets[i] * mod;
                     float y = -Offsets[i + 1] * mod;
-                    FireShotVisual(x, y, spread);
+                    FireVisual(x, y, spread);
 
                     for (int j = 1; j < shotgunBullets; j++)
                     {
                         float angle = segmentSize * j;
                         x += coneSize * Mathf.Cos(angle);
                         y += coneSize * Mathf.Sin(angle);
-                        FireShotVisual(x + coneSize * Mathf.Cos(angle), y + coneSize * Mathf.Sin(angle), spread);
+                        FireVisual(x + coneSize * Mathf.Cos(angle), y + coneSize * Mathf.Sin(angle), spread);
                     }
                 }
             }
@@ -130,18 +130,18 @@ namespace EWC.CustomWeapon.Properties.Traits
                 {
                     float x = Offsets[i] * mod * aimMod;
                     float y = -Offsets[i+1] * mod * aimMod;
-                    FireShot(x, y, spread);
+                    Fire(x, y, spread);
 
                     for (int j = 1; j < shotgunBullets; j++)
                     {
                         float angle = segmentSize * j;
-                        FireShot(x + coneSize * Mathf.Cos(angle), y + coneSize * Mathf.Sin(angle), spread);
+                        Fire(x + coneSize * Mathf.Cos(angle), y + coneSize * Mathf.Sin(angle), spread);
                     }
                 }
             }
         }
 
-        private void FireShot(float x, float y, float spread)
+        private void Fire(float x, float y, float spread)
         {
             ArchetypeDataBlock archData = CWC.Weapon.ArchetypeData;
             s_hitData.owner = CWC.Weapon.Owner;
@@ -198,10 +198,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
         }
 
-        private void FireShotVisual(float x, float y, float spread)
+        private void FireVisual(float x, float y, float spread)
         {
-            if (s_isProjectile) return;
-
             CalcRayDir(x, y, spread, local: false);
 
             if (Physics.Raycast(s_ray, out s_rayHit, 20f, LayerUtil.MaskEntityAndWorld))
