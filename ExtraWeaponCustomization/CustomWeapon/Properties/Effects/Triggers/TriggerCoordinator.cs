@@ -13,7 +13,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     {
         private static readonly System.Random Random = new();
         public ITriggerCallback? Parent { get; set; }
-        public readonly List<ITrigger> Activate;
+        public List<ITrigger> Activate { get; private set; }
         public float Cap { get; private set; } = 0f;
         public float Threshold { get; private set; } = 0f;
         public float Cooldown { get; private set; } = 0f;
@@ -28,7 +28,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float ApplyResetDelay { get; private set; } = 0f;
 
         public List<ITrigger>? Reset { get; private set; }
+        public float ResetDelay { get; private set; } = 0f;
         public bool ResetPreviousOnly { get; private set; } = false;
+        public float ResetResetDelay { get; private set; } = 0f;
 
         private uint _applyCount = 0;
         private float _activateSum = 0f;
@@ -39,29 +41,48 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private readonly DelayedCallback _activateReset;
         private readonly DelayedCallback _applyReset;
+        private readonly DelayedCallback _resetReset;
 
         public TriggerCoordinator(params ITrigger[] triggers)
         {
+            Activate = new(triggers);
+
             _activateReset = new DelayedCallback(
                 () => ActivateResetDelay,
-                () => { _accumulatedTriggers.Clear(); _activateCount = 0; _activateSum = 0; }
+                () => 
+                {
+                    _accumulatedTriggers.Clear();
+                    _activateCount = 0;
+                    _activateSum = 0;
+                    Activate.ForEach(trigger => trigger.Reset());
+                }
                 );
 
             _applyReset = new DelayedCallback(
                 () => ApplyResetDelay,
-                () => _applyCount = 0
+                () =>
+                {
+                    _applyCount = 0;
+                    Apply!.ForEach(trigger => trigger.Reset());
+                }
                 );
 
-            Activate = new(triggers);
+            _resetReset = new DelayedCallback(
+                () => ResetResetDelay,
+                () =>
+                {
+                    Reset!.ForEach(trigger => trigger.Reset());
+                }
+                );
         }
 
         public TriggerCoordinator Clone()
         {
-            // Only need to shallow copy the triggers themselves since they hold no state information
             TriggerCoordinator result = new()
             {
-                Apply = Apply != null ? new(Apply) : null,
-                Reset = Reset != null ? new(Reset) : null,
+                Activate = CloneTriggers(Activate)!,
+                Apply = CloneTriggers(Apply),
+                Reset = CloneTriggers(Reset),
                 Cap = Cap,
                 Threshold = Threshold,
                 Chance = Chance,
@@ -72,10 +93,19 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 CooldownOnApply = CooldownOnApply,
                 CooldownOnApplyThreshold = CooldownOnApplyThreshold,
                 ApplyResetDelay = ApplyResetDelay,
-                ResetPreviousOnly = ResetPreviousOnly
+                ResetDelay = ResetDelay,
+                ResetPreviousOnly = ResetPreviousOnly,
+                ResetResetDelay = ResetResetDelay,
+                _delayedApplies = _delayedApplies != null ? new() : null
             };
-            result.Activate.AddRange(Activate);
             return result;
+        }
+
+        private List<ITrigger>? CloneTriggers(List<ITrigger>? list)
+        {
+            if (list == null) return null;
+
+            return list.ConvertAll(trigger => trigger.Clone());
         }
 
         public void Invoke(WeaponTriggerContext context)
@@ -87,17 +117,50 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 foreach (ITrigger trigger in Activate)
                 {
-                    float triggerAmt = trigger.Invoke(context);
-                    if (triggerAmt > 0f)
+                    if (trigger.Invoke(context, out float amount))
                     {
-                        ActivateTrigger(context, triggerAmt);
+                        if (ActivateResetDelay > 0f)
+                            _activateReset.Start();
+                        if (amount > 0f)
+                            ActivateTrigger(context, amount);
                         if (Cap > 0 && _activateSum >= Cap) break;
                     }
                 }
             }
 
-            bool reset = Reset?.Any(trigger => trigger.Invoke(context) > 0) == true;
-            bool apply = _activateSum > 0 && _activateSum >= Threshold && (Apply?.Any(trigger => trigger.Invoke(context) > 0) ?? true);
+            bool apply = false;
+            if (_activateSum > 0 && _activateSum >= Threshold)
+            {
+                if (Apply != null)
+                {
+                    foreach (ITrigger trigger in Apply)
+                    {
+                        if (trigger.Invoke(context, out float amount))
+                        {
+                            if (ApplyResetDelay > 0f)
+                                _applyReset.Start();
+                            apply |= amount > 0f;
+                        }
+                    }
+                }
+                else
+                    apply = true;
+            }
+
+            bool reset = false;
+            if (Reset != null)
+            {
+                foreach (ITrigger trigger in Reset)
+                {
+                    if (trigger.Invoke(context, out float amount))
+                    {
+                        if (ResetResetDelay > 0f)
+                            _resetReset.Start();
+                        reset |= amount > 0f;
+                    }
+                }
+            }
+
             if (ResetPreviousOnly && reset)
                 ResetTriggers(!apply);
 
@@ -121,9 +184,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _nextActivateTime = Math.Max(_nextActivateTime, Clock.Time + Cooldown);
                 _activateCount = 0f;
             }
-
-            if (ActivateResetDelay > 0f)
-                _activateReset.Start();
         }
 
         private void ApplyTriggers()
@@ -139,13 +199,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _applyCount = 0;
             }
 
-            if (ActivateResetDelay > 0f)
-                _activateReset.Cancel();
-
             DoApply(temp);
-
-            if (ApplyResetDelay > 0f)
-                _applyReset.Start();
         }
 
         private void DoApply(List<TriggerContext> triggerContexts)
@@ -168,23 +222,36 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private void ResetTriggers(bool resetAccumulated = true)
         {
+            if (ResetDelay > 0f)
+                new DelayedCallback(() => ResetDelay, EndDelayedReset).Start();
+            else
+                DoReset(resetAccumulated);
+        }
+
+        private void DoReset(bool resetAccumulated = true)
+        {
             if (resetAccumulated)
             {
                 _accumulatedTriggers.Clear();
-                _activateSum = 0;
-                _activateCount = 0;
+                _applyCount = 0;
+                _applyReset.Cancel();
+                Apply?.ForEach(trigger => trigger.Reset());
             }
 
             Parent?.TriggerReset();
+            _activateCount = 0;
+            _activateSum = 0f;
             _activateReset.Cancel();
-            _applyReset.Cancel();
-            _applyCount = 0;
+            Activate.ForEach(trigger => trigger.Reset());
+
             if (ApplyDelay > 0)
             {
                 while (_delayedApplies!.TryDequeue(out (DelayedCallback callback, List<TriggerContext>) pair))
                     pair.callback.Cancel();
-            }    
+            }
         }
+
+        private void EndDelayedReset() => DoReset(true);
 
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
@@ -236,9 +303,15 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "reset":
                     Reset = DeserializeTriggers(ref reader);
                     break;
+                case "resetdelay":
+                    ResetDelay = reader.GetSingle();
+                    break;
                 case "resetpreviousonly":
                 case "resetprevious":
                     ResetPreviousOnly = reader.GetBoolean();
+                    break;
+                case "resetresetdelay":
+                    ResetResetDelay = reader.GetSingle();
                     break;
             }
         }

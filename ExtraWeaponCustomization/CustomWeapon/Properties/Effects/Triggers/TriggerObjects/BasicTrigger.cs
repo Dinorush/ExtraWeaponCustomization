@@ -13,10 +13,20 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             Name = name;
         }
 
-        public float Invoke(WeaponTriggerContext context)
+        public bool Invoke(WeaponTriggerContext context, out float amount)
         {
-            return context is TContext ? Amount : 0f;
+            amount = 0f;
+            if (context is TContext)
+            {
+                amount = Amount;
+                return true;
+            }
+            return false;
         }
+
+        public void Reset() { }
+
+        public ITrigger Clone() => this;
 
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {

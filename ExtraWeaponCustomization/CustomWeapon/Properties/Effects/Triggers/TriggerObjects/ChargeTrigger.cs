@@ -4,23 +4,18 @@ using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
-    public sealed class ChargeTrigger : DamageTypeTrigger<WeaponHitDamageableContext>
+    public sealed class ChargeTrigger : DamageableTrigger<WeaponHitDamageableContext>
     {
         public float Min { get; private set; } = 0f;
         public float Max { get; private set; } = 1f;
         public bool Scale { get; private set; } = true;
         public ChargeTrigger(DamageType type = DamageType.Any) : base(TriggerName.Charge, type) {}
 
-        public override float Invoke(WeaponTriggerContext context)
+        protected override float InvokeInternal(WeaponHitDamageableContext context)
         {
-            if (context is WeaponHitDamageableContext hitContext
-                && !hitContext.DamageType.HasAnyFlag(BlacklistType)
-                && hitContext.DamageType.HasFlag(DamageType))
-            {
-                float charge = MeleePatches.CachedCharge;
-                if (charge >= Min && charge <= Max)
-                    return (Scale ? charge : 1f) * Amount;
-            }
+            float charge = MeleePatches.CachedCharge;
+            if (charge >= Min && charge <= Max)
+                return (Scale ? charge : 1f) * Amount;
             return 0f;
         }
 

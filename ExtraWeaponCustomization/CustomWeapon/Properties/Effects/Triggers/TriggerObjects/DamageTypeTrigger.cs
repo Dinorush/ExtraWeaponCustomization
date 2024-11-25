@@ -17,11 +17,26 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             BlacklistType = blacklistType;
         }
 
-        public virtual float Invoke(WeaponTriggerContext context)
+        public virtual bool Invoke(WeaponTriggerContext context, out float amount)
         {
-            return context is TContext hitContext
+            amount = 0f;
+
+            if (context is TContext hitContext
                 && !hitContext.DamageType.HasAnyFlag(BlacklistType)
-                && hitContext.DamageType.HasFlag(DamageType) ? Amount : 0f;
+                && hitContext.DamageType.HasFlag(DamageType))
+            {
+                amount = Amount;
+                return true;
+            }
+            return false;
+        }
+
+        public virtual void Reset() { }
+
+        public virtual ITrigger Clone() => this;
+        protected void CloneValues(DamageTypeTrigger<TContext> trigger)
+        {
+            trigger.Amount = Amount;
         }
 
         public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)

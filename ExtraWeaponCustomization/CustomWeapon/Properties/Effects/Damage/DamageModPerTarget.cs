@@ -4,7 +4,6 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using Agents;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {

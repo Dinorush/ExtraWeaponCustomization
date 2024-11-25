@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine;
 using EWC.Utils;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 
@@ -28,7 +27,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             : base(data)
         {
             Damage = data.damage * Falloff;
-            var damBase = data.damageable!.GetBaseDamagable()?.TryCast<Dam_SyncedDamageBase>();
+            var damBase = Damageable.GetBaseDamagable()?.TryCast<Dam_SyncedDamageBase>();
             if (damBase != null)
                 Damage = Math.Min(Damage, damBase.HealthMax);
             else
