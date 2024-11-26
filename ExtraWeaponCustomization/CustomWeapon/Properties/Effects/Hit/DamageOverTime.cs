@@ -3,7 +3,6 @@ using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
-using EWC.Utils.Log;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -21,6 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public float TotalDamage { get; private set; } = 0f;
         public float PrecisionDamageMulti { get; private set; } = 0f;
+        public float FriendlyDamageMulti { get; private set; } = 1f;
         public float StaggerDamageMulti { get; private set; } = 0f;
         public float Duration { get; private set; } = 0f;
         public uint StackLimit { get; private set; } = 0;
@@ -35,7 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             get { return _tickRate; }
             private set { _tickRate = MathF.Max(0.01f, value); }
         }
-        public float FriendlyDamageMulti { get; private set; } = 1f;
+        public bool ApplyAttackCooldown { get; private set; } = false;
         public bool BatchStacks { get; private set; } = true;
 
         private readonly DOTController _controller = new();
@@ -140,6 +140,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(TotalDamage), TotalDamage);
             writer.WriteNumber(nameof(PrecisionDamageMulti), PrecisionDamageMulti);
             writer.WriteNumber(nameof(StaggerDamageMulti), StaggerDamageMulti);
+            writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteNumber(nameof(TickRate), TickRate);
             writer.WriteNumber(nameof(StackLimit), StackLimit);
@@ -148,7 +149,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
-            writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
+            writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
             SerializeTrigger(writer);
             writer.WriteBoolean(nameof(BatchStacks), BatchStacks);
             writer.WriteEndObject();
@@ -174,6 +175,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "staggermult":
                 case "stagger":
                     StaggerDamageMulti = reader.GetSingle();
+                    break;
+                case "friendlydamagemulti":
+                case "friendlymulti":
+                case "friendlymult":
+                    FriendlyDamageMulti = reader.GetSingle();
                     break;
                 case "duration":
                     Duration = reader.GetSingle();
@@ -204,10 +210,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "ignoredamagemod":
                     IgnoreDamageMods = reader.GetBoolean();
                     break;
-                case "friendlydamagemulti":
-                case "friendlymulti":
-                case "friendlymult":
-                    FriendlyDamageMulti = reader.GetSingle();
+                case "applyattackcooldowns":
+                case "applyattackcooldown":
+                    ApplyAttackCooldown = reader.GetBoolean();
                     break;
                 case "batchstacks":
                     BatchStacks = reader.GetBoolean();

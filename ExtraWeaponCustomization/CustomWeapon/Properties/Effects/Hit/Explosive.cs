@@ -20,12 +20,12 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float Radius { get; private set; } = 0f;
         public float PrecisionDamageMulti { get; private set; } = 0f;
         public float StaggerDamageMulti { get; private set; } = 1f;
+        public float FriendlyDamageMulti { get; private set; } = 1f;
         public bool IgnoreFalloff { get; private set; } = false;
         public bool DamageLimb { get; private set; } = true;
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
         public bool IgnoreDamageMods { get; private set; } = false;
-        public float FriendlyDamageMulti { get; private set; } = 1f;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = true;
         public bool DamageLocks { get; private set; } = true;
@@ -90,12 +90,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Radius), Radius);
             writer.WriteNumber(nameof(PrecisionDamageMulti), PrecisionDamageMulti);
             writer.WriteNumber(nameof(StaggerDamageMulti), StaggerDamageMulti);
+            writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
-            writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
@@ -139,6 +139,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "stagger":
                     StaggerDamageMulti = reader.GetSingle();
                     break;
+                case "friendlydamagemulti":
+                case "friendlymulti":
+                case "friendlymult":
+                    FriendlyDamageMulti = reader.GetSingle();
+                    break;
                 case "ignorefalloff":
                     IgnoreFalloff = reader.GetBoolean();
                     break;
@@ -156,11 +161,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "ignoredamagemods":
                 case "ignoredamagemod":
                     IgnoreDamageMods = reader.GetBoolean();
-                    break;
-                case "friendlydamagemulti":
-                case "friendlymulti":
-                case "friendlymult":
-                    FriendlyDamageMulti = reader.GetSingle();
                     break;
                 case "damagefriendly":
                 case "friendlyfire":

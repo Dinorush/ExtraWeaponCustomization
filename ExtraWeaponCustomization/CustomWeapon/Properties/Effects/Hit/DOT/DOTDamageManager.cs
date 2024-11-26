@@ -69,6 +69,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             data.limbID = (byte)(dotBase.DamageLimb ? limb.m_limbID : 0);
             data.localPosition.Set(limb.DamageTargetPos - damBase.Owner.Position, 10f);
             data.staggerMult.Set(dotBase.StaggerDamageMulti, MaxStagger);
+            data.setCooldowns = dotBase.ApplyAttackCooldown;
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = dotBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
@@ -109,7 +110,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             damBase.ReceiveFireDamage(data);
         }
 
-        internal static void Internal_ReceiveDOTEnemyDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult)
+        internal static void Internal_ReceiveDOTEnemyDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb? limb = limbID > 0 ? damBase.DamageLimbs[limbID] : null;
@@ -139,7 +140,36 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             if (limb != null && (willKill || limb.DoDamage(damage)))
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
 
-            damBase.ProcessReceivedDamage(damage, source, position, direction, hitreact, tryForceHitreact, limbID, staggerMult);
+            ProcessReceivedDOTDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
+        }
+
+        private static void ProcessReceivedDOTDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
+        {
+            EnemyAgent owner = damBase.Owner;
+            bool num = damBase.RegisterDamage(damage);
+            owner.RegisterDamageInflictor(damageSource);
+            if (setCooldowns)
+                owner.Abilities.OnTakeDamage(damage);
+            bool flag = false;
+            if (num)
+            {
+                hitreact = ES_HitreactType.ToDeath;
+                flag = true;
+            }
+            else
+            {
+                damBase.m_damBuildToHitreact += damage * staggerDamageMulti;
+                if (tryForceHitreact || damBase.m_damBuildToHitreact >= owner.EnemyBalancingData.Health.DamageUntilHitreact)
+                {
+                    flag = true;
+                    damBase.m_damBuildToHitreact = 0f;
+                }
+            }
+            if (flag && owner.Locomotion.Hitreact.CanHitreact(hitreact, tryForceHitreact))
+            {
+                ImpactDirection direction2 = ES_Hitreact.GetDirection(owner.transform, direction);
+                owner.Locomotion.Hitreact.ActivateState(hitreact, direction2, attackerIsPlayer: true, damageSource, position, DamageNoiseLevel.Normal);
+            }
         }
     }
 
@@ -151,5 +181,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         public LowResVector3 localPosition;
         public UFloat16 damage;
         public UFloat16 staggerMult;
+        public bool setCooldowns;
     }
 }
