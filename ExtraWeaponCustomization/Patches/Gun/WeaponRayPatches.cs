@@ -27,13 +27,15 @@ namespace EWC.Patches
         }
 
         private static CustomWeaponComponent? _cachedCWC = null;
+        private static IntPtr _cachedData = IntPtr.Zero;
 
         [HarmonyWrapSafe]
         [HarmonyPrefix]
         private static void PreRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
         {
             // Sentry filter
-            if (altRayCastMask != -1) return;
+            if (altRayCastMask != -1 || _cachedData == weaponRayData.Pointer) return;
+            _cachedData = weaponRayData.Pointer;
 
             if (CachedWeapon != null)
                 _cachedCWC = CachedWeapon.GetComponent<CustomWeaponComponent>();
@@ -51,9 +53,6 @@ namespace EWC.Patches
         [HarmonyPostfix]
         private static void PostRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask, ref bool __result)
         {
-            // Sentry filter
-            if (altRayCastMask != -1) return;
-
             if (_cachedCWC == null) return;
 
             s_hitData.Setup(weaponRayData);
@@ -65,6 +64,7 @@ namespace EWC.Patches
 
             __result = _cachedCWC.Invoke(new WeaponPostRayContext(s_hitData, originPos, __result)).Result;
             s_hitData.Apply();
+            _cachedCWC = null;
         }
     }
 }
