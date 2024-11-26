@@ -147,13 +147,13 @@ namespace EWC.Patches
                 if (agent != null && agent.Alive && agent.Type == AgentType.Enemy)
                 {
                     Dam_EnemyDamageLimb limb = damageable!.Cast<Dam_EnemyDamageLimb>();
-                    float backstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
-                    WeaponBackstabContext backContext = new();
+                    float origBackstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
+                    float backstab = origBackstab.Map(1f, 2f, 1f, cc.Invoke(new WeaponBackstabContext()).Value);
                     
                     WeaponHitDamageableContext hitContext = new(
                         hitData,
                         CachedBypassTumorCap,
-                        backstab.Map(1f, 2f, 1f, backContext.Value),
+                        backstab,
                         limb,
                         DamageType.Bullet
                     );
@@ -163,8 +163,8 @@ namespace EWC.Patches
 
                     KillTrackerManager.RegisterHit(weapon, hitContext);
 
-                    if (backContext.Value > 1f)
-                        hitData.damage *= hitContext.Backstab / backstab;
+                    if (backstab > 1f)
+                        hitData.damage *= backstab / origBackstab;
                     else
                         doBackstab = false;
                 }
