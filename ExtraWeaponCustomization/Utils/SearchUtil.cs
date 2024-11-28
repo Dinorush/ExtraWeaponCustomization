@@ -44,9 +44,9 @@ namespace EWC.Utils
         private static Vector3 ClosestPointOnBounds(Bounds bounds, Vector3 point)
         {
             return new(
-                Mathf.Clamp(point.x, bounds.min.x, bounds.max.x),
-                Mathf.Clamp(point.y, bounds.min.y, bounds.max.y),
-                Mathf.Clamp(point.z, bounds.min.z, bounds.max.z)
+                Math.Clamp(point.x, bounds.min.x, bounds.max.x),
+                Math.Clamp(point.y, bounds.min.y, bounds.max.y),
+                Math.Clamp(point.z, bounds.min.z, bounds.max.z)
                 );
         }
 
@@ -66,13 +66,13 @@ namespace EWC.Utils
             //   then check if it is within the valid distance at that point on the viewing cone.
             closest = Vector3.Project(localCenter, ray.direction);
             float diagonal = portal.m_cullPortal.m_portalBounds.extents.magnitude;
-            float reqDist = closest.magnitude * Mathf.Tan(angle * Mathf.Deg2Rad);
+            float reqDist = closest.magnitude * (float)Math.Tan(angle * Mathf.Deg2Rad);
             if (reqDist < 0) // If angle > 90, need to account for backwards angles
             {
                 // If in front or perpendicular, valid
                 if (dot >= 0) return true;
                 // Otherwise, it must be outside the circle instead
-                reqDist = Mathf.Max(0f, reqDist + diagonal);
+                reqDist = Math.Max(0f, reqDist + diagonal);
                 return (localCenter - closest).sqrMagnitude >= reqDist * reqDist;
             }
             
@@ -89,7 +89,7 @@ namespace EWC.Utils
             // I LOVE RAYCAST TO CLOSEST POINT FAILING!!! (it's probably tangent to the collider)
             Vector3 diff = collider.ClosestPoint(backupOrigin) - collider.bounds.center;
             Vector3 diffNormal = diff.normalized;
-            s_ray.origin = collider.bounds.center + diff + diffNormal * Mathf.Min(0.1f, range / 2);
+            s_ray.origin = collider.bounds.center + diff + diffNormal * Math.Min(0.1f, range / 2);
             s_ray.direction = -diffNormal;
             return collider.Raycast(s_ray, out hit, range);
         }
@@ -348,8 +348,8 @@ namespace EWC.Utils
         private static bool TryGetCell(LG_Grid grid, Vector3 pos, [MaybeNullWhen(false)] out LG_Cell cell)
         {
             pos -= grid.m_gridPosition;
-            int x = Mathf.RoundToInt((pos.x - grid.m_cellDimHalf) / grid.m_cellDim);
-            int z = Mathf.RoundToInt((pos.z - grid.m_cellDimHalf) / grid.m_cellDim);
+            int x = (int)Math.Round((pos.x - grid.m_cellDimHalf) / grid.m_cellDim);
+            int z = (int)Math.Round((pos.z - grid.m_cellDimHalf) / grid.m_cellDim);
             if (x < 0 || z < 0 || x >= grid.m_sizeX || z >= grid.m_sizeZ)
             {
                 cell = null;

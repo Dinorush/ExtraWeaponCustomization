@@ -1,32 +1,33 @@
 ﻿using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Utils.Log;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
-    public class DamageableTrigger<TContext> : DamageTypeTrigger<TContext> where TContext : WeaponHitContext
+    public class DamageableTrigger<TContext> : DamageTypeTrigger<TContext> where TContext : WeaponHitDamageableContextBase
     {
         public float UniqueThreshold { get; private set; } = 0f;
 
         private Dictionary<BaseDamageableWrapper, float>? _uniqueCounts;
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
-        public DamageableTrigger(TriggerName name, DamageType type = DamageType.Any, DamageType blacklistType = DamageType.Any) :
-            base(name, type, blacklistType) {}
+        public DamageableTrigger(TriggerName name, DamageType type = DamageType.Any) :
+            base(name, type) {}
 
         public override bool Invoke(WeaponTriggerContext context, out float amount)
         {
             if (!base.Invoke(context, out amount)) return false;
-            if (amount == 0f) return true;
 
             TContext tContext = (TContext) context;
             amount = InvokeInternal(tContext);
+            if (amount == 0f) return false;
+
             if (_uniqueCounts != null)
             {
-                TempWrapper.SetObject(tContext.Damageable!);
+                TempWrapper.SetObject(tContext.Damageable);
                 if (!_uniqueCounts.ContainsKey(TempWrapper))
                 {
                     _uniqueCounts.Keys
@@ -56,14 +57,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _uniqueCounts?.Clear();
         }
 
+        protected override bool CloneObject => UniqueThreshold > 0;
+
         public override ITrigger Clone()
         {
-            var trigger = new DamageableTrigger<TContext>(Name, DamageType, BlacklistType)
-            {
-                UniqueThreshold = UniqueThreshold,
-                _uniqueCounts = _uniqueCounts != null ? new() : null,
-            };
-            CloneValues(trigger);
+            if (!CloneObject) return this;
+
+            var trigger = (DamageableTrigger<TContext>) base.Clone();
+            trigger._uniqueCounts = _uniqueCounts != null ? new() : null;
             return trigger;
         }
 

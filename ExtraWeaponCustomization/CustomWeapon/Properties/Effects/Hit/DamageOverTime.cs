@@ -33,7 +33,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float TickRate
         {
             get { return _tickRate; }
-            private set { _tickRate = MathF.Max(0.01f, value); }
+            private set { _tickRate = Math.Max(0.01f, value); }
         }
         public bool ApplyAttackCooldown { get; private set; } = false;
         public bool BatchStacks { get; private set; } = true;

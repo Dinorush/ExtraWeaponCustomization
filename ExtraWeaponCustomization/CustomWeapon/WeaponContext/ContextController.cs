@@ -1,6 +1,7 @@
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
@@ -40,13 +41,17 @@ namespace EWC.CustomWeapon.WeaponContext
             private readonly List<IWeaponProperty<TContext>> _entries;
             private readonly IContextList? _baseContextList;
 
-            internal ContextList(ContextController manager)
+            internal ContextList(ContextController manager, IContextList? baseList = null)
             {
                 _entries = new();
 
-                Type? baseType = typeof(TContext).BaseType;
-                if (baseType != null && manager._allContextLists.ContainsKey(baseType))
-                    _baseContextList = manager._allContextLists[baseType];
+                _baseContextList = baseList;
+                if (_baseContextList == null)
+                {
+                    Type? baseType = typeof(TContext).BaseType;
+                    if (baseType != null && manager._allContextLists.ContainsKey(baseType))
+                        _baseContextList = manager._allContextLists[baseType];
+                }
             }
 
             public bool Add(IWeaponProperty property)
@@ -152,23 +157,25 @@ namespace EWC.CustomWeapon.WeaponContext
             return context;
         }
 
-        internal void RegisterContext<TContext>() where TContext : IWeaponContext
+        private ContextList<TContext> RegisterContext<TContext>(IContextList? baseList = null) where TContext : IWeaponContext
         {
-            _allContextLists.TryAdd(typeof(TContext), new ContextList<TContext>(this));
+            var newList = new ContextList<TContext>(this, baseList);
+            _allContextLists.TryAdd(typeof(TContext), newList);
+            return newList;
         }
 
         private void RegisterGunContexts()
         {
-            RegisterContext<WeaponTriggerContext>();
+            var triggerList = RegisterContext<WeaponTriggerContext>();
             RegisterContext<WeaponDamageTypeContext>();
             RegisterContext<WeaponAimContext>();
             RegisterContext<WeaponAimEndContext>();
-            RegisterContext<WeaponPostKillContext>();
+            RegisterContext<WeaponPostKillContext>(triggerList);
             RegisterContext<WeaponPostFireContext>();
             RegisterContext<WeaponPreFireContext>();
-            RegisterContext<WeaponHitContext>();
-            RegisterContext<WeaponPreHitDamageableContext>();
-            RegisterContext<WeaponHitDamageableContext>();
+            RegisterContext<WeaponHitContext>(triggerList);
+            RegisterContext<WeaponPreHitDamageableContext>(triggerList);
+            RegisterContext<WeaponHitDamageableContext>(triggerList);
             RegisterContext<WeaponPreReloadContext>();
             RegisterContext<WeaponPostReloadContext>();
             RegisterContext<WeaponReloadStartContext>();
@@ -205,13 +212,14 @@ namespace EWC.CustomWeapon.WeaponContext
 
         private void RegisterMeleeContexts()
         {
-            RegisterContext<WeaponTriggerContext>();
+            var triggerList = RegisterContext<WeaponTriggerContext>();
             RegisterContext<WeaponDamageTypeContext>();
-            RegisterContext<WeaponPostKillContext>();
+            RegisterContext<WeaponPostKillContext>(triggerList);
             RegisterContext<WeaponPostFireContext>();
             RegisterContext<WeaponPreFireContext>();
-            RegisterContext<WeaponHitContext>();
-            RegisterContext<WeaponHitDamageableContext>();
+            RegisterContext<WeaponHitContext>(triggerList);
+            RegisterContext<WeaponPreHitDamageableContext>(triggerList);
+            RegisterContext<WeaponHitDamageableContext>(triggerList);
             RegisterContext<WeaponWieldContext>();
 
             RegisterContext<WeaponArmorContext>();

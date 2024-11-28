@@ -133,14 +133,14 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             if (UseContinuousGrowth)
                 return (float) Math.Pow(FireRateMod, _progress);
-            return UnityEngine.Mathf.Lerp(1f, FireRateMod, (float) Math.Pow(_progress, AccelExponent));
+            return Math.Pow(_progress, AccelExponent).Lerp(1f, FireRateMod);
         }
 
         private float GetDamageMod()
         {
             if (UseContinuousGrowth)
                 return (float)Math.Pow(EndDamageMod, _progress);
-            return UnityEngine.Mathf.Lerp(1f, EndDamageMod, (float)Math.Pow(_progress, AccelExponent));
+            return Math.Pow(_progress, AccelExponent).Lerp(1f, EndDamageMod);
         }
 
         public override void Serialize(Utf8JsonWriter writer)

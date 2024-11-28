@@ -1,20 +1,20 @@
 ﻿using System;
 using EWC.Utils;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    public sealed class WeaponHitDamageableContext : WeaponHitContext
+    public sealed class WeaponHitDamageableContext : WeaponHitDamageableContextBase
     {
         public float Damage { get; }
         public float Backstab { get; }
-        public new IDamageable Damageable => base.Damageable!;
 
         public WeaponHitDamageableContext(float damage, float backstab, WeaponPreHitDamageableContext context)
-            : base(context.Position, context.Direction, context.Falloff, context.Damageable)
+            : base(context.Damageable, context.Position, context.Direction, context.Falloff)
         {
             Damage = damage;
-            Dam_SyncedDamageBase? baseDam = Damageable.GetBaseDamagable()?.TryCast<Dam_SyncedDamageBase>();
+            Dam_SyncedDamageBase? baseDam = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
             if (baseDam != null)
                 Damage = Math.Min(Damage, baseDam.HealthMax);
             else
@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             : base(data)
         {
             Damage = data.damage * Falloff;
-            var damBase = Damageable.GetBaseDamagable()?.TryCast<Dam_SyncedDamageBase>();
+            var damBase = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
             if (damBase != null)
                 Damage = Math.Min(Damage, damBase.HealthMax);
             else

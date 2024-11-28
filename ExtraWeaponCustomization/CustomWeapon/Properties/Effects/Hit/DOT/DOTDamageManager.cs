@@ -31,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             Agent? agent = damageable.GetBaseAgent();
             if (agent?.Type == AgentType.Player)
             {
-                Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
+                Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().Cast<Dam_PlayerDamageBase>();
                 damage *= playerBase.m_playerData.friendlyFireMulti * dotBase.FriendlyDamageMulti;
                 var prePlayerContext = dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                     damageable,

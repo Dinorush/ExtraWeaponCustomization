@@ -42,7 +42,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_targeting != null)
             {
                 _targeting.m_light.enabled = true;
-                _targeting.m_light.Color = Approximately(settings.GlowColor, Color.black) ? _origGlowColor : settings.GlowColor;
+                _targeting.m_light.Color = settings.GlowColor == Color.black ? _origGlowColor : settings.GlowColor;
                 _targeting.m_light.Range = settings.GlowRange < 0f ? _origGlowRange : settings.GlowRange;
 
                 if (_targeting.m_ricochetEffect != null)
@@ -53,7 +53,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 _trailRenderer.Clear();
                 _trailRenderer.enabled = settings.EnableTrail;
-                _trailRenderer.startColor = Approximately(settings.TrailColor, Color.black) ? _origTrailColor : settings.TrailColor;
+                _trailRenderer.startColor = settings.TrailColor == Color.black ? _origTrailColor : settings.TrailColor;
                 _trailRenderer.time = settings.TrailTime < 0f ? _origTrailDuration: settings.TrailTime;
                 _trailRenderer.widthMultiplier = settings.TrailWidth < 0f ? _origTrailWidth : settings.TrailWidth;
                 if (!settings.TrailCullOnDie)
@@ -151,14 +151,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             base.Cleanup();
             EWCProjectileManager.Shooter.ReturnToPool(this);
-        }
-
-        private static bool Approximately(Color color1, Color color2)
-        {
-            return Mathf.Approximately(color1.a, color2.a)
-                && Mathf.Approximately(color1.r, color2.r)
-                && Mathf.Approximately(color1.g, color2.g)
-                && Mathf.Approximately(color1.b, color2.b);
         }
     }
 }

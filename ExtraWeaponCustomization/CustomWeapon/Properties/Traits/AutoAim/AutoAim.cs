@@ -3,6 +3,7 @@ using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Enemies;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -157,9 +158,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             // If LockTime/LockDecayTime is 0, _progress is set straight to 0 or 1 immediately after target changes to prevent div by 0.
             if (_target != null && _progress < 1f)
-                _progress = Mathf.Min(1f, _progress + (Clock.Time - _lastUpdateTime) / LockTime);
+                _progress = Math.Min(1f, _progress + (Clock.Time - _lastUpdateTime) / LockTime);
             else if (_target == null && _progress > 0f)
-                _progress = Mathf.Max(0f, _progress - (Clock.Time - _lastUpdateTime) / LockDecayTime);
+                _progress = Math.Max(0f, _progress - (Clock.Time - _lastUpdateTime) / LockDecayTime);
 
             _lastUpdateTime = Clock.Time;
 
@@ -231,12 +232,12 @@ namespace EWC.CustomWeapon.Properties.Traits
                 // Color and rotation speed depend on square progress, size uses linear. Makes a more noticeable end to the lock.
                 float sqProgress = _progress * _progress;
                 if (_target != null)
-                    _reticle!.transform.localEulerAngles += new Vector3(0, 0, Mathf.Lerp(4, 1, sqProgress));
+                    _reticle!.transform.localEulerAngles += new Vector3(0, 0, sqProgress.Lerp(4, 1));
                 else
                     _reticle!.transform.localEulerAngles += new Vector3(0, 0, 5);
                 
                 _reticle!.m_hitColor = GetLockingColor(sqProgress);
-                _reticle.transform.localScale = Vector3.one * Mathf.Lerp(0, 1f, _progress);
+                _reticle.transform.localScale = Vector3.one * _progress.Lerp(0, 1f);
             }
 
             _reticle.transform.localScale *= AutoAimActive ? 1.6f : 1f;
@@ -259,9 +260,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         private Color GetLockingColor(float frac)
         {
             return new Color(
-                    Mathf.Lerp(_passiveDetection.r, _passiveLocked.r, frac),
-                    Mathf.Lerp(_passiveDetection.g, _passiveLocked.g, frac),
-                    Mathf.Lerp(_passiveDetection.b, _passiveLocked.b, frac),
+                    frac.Lerp(_passiveDetection.r, _passiveLocked.r),
+                    frac.Lerp(_passiveDetection.g, _passiveLocked.g),
+                    frac.Lerp(_passiveDetection.b, _passiveLocked.b),
                     1f
                 );
         }

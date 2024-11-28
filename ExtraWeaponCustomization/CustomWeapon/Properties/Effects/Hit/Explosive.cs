@@ -2,6 +2,7 @@
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.JSON;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -59,16 +60,19 @@ namespace EWC.CustomWeapon.Properties.Effects
                     CacheBackstab = killContext.Backstab;
                     ExplosionManager.DoExplosion(killContext.Position, killContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : killContext.Falloff, this, tContext.triggerAmt);
                 }
-                else if(tContext.context is WeaponHitContext hitContext)
+                else if(tContext.context is WeaponHitContextBase hitContext)
                 {
                     Vector3 position = hitContext.Position;
-                    if (hitContext.Damageable != null && hitContext.Damageable.GetBaseAgent() != null)
-                        position = hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Position;
-                    else if (hitContext.Damageable == null)
+                    if (hitContext is WeaponHitDamageableContextBase damContext)
+                    {
+                        Agents.Agent? agent = damContext.Damageable.GetBaseAgent();
+                        if (agent != null)
+                            position = damContext.LocalPosition + agent.Position;
+                        if (hitContext is WeaponHitDamageableContext enemyContext)
+                            CacheBackstab = enemyContext.Backstab;
+                    }
+                    else
                         position += hitContext.Direction * WallHitBuffer;
-
-                    if (hitContext is WeaponHitDamageableContext enemyContext)
-                        CacheBackstab = enemyContext.Backstab;
 
                     ExplosionManager.DoExplosion(position, hitContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt);
                 }

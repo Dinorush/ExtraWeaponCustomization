@@ -1,26 +1,24 @@
 ﻿using Enemies;
-using UnityEngine;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    public sealed class WeaponPostKillContext : WeaponDamageTypeContext
+    public sealed class WeaponPostKillContext : WeaponHitContextBase
     {
-        public Vector3 Position { get; }
-        public Vector3 Direction { get; }
-        public Vector3 LocalPosition { get; }
         public EnemyAgent Enemy { get; }
-        public float Falloff { get; }
         public float Backstab { get; }
 
-        public WeaponPostKillContext(WeaponHitDamageableContext hitContext) : base(hitContext.DamageType)
+        public WeaponPostKillContext(WeaponHitDamageableContext hitContext) :
+            base(
+                hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Cast<EnemyAgent>().Position,
+                hitContext.LocalPosition,
+                hitContext.Direction,
+                hitContext.Falloff
+                )
         {
-            Enemy = hitContext.Damageable.GetBaseAgent().TryCast<EnemyAgent>()!;
-
-            Position = hitContext.LocalPosition + Enemy.Position;
-            Direction = hitContext.Direction;
-            LocalPosition = hitContext.LocalPosition;
-            Falloff = hitContext.Falloff;
+            Enemy = hitContext.Damageable.GetBaseAgent().Cast<EnemyAgent>();
             Backstab = hitContext.Backstab;
+            DamageType = hitContext.DamageType;
         }
     }
 }

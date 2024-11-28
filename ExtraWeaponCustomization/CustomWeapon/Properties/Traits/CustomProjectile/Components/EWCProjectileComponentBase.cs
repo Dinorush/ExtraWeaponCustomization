@@ -160,7 +160,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                         deltaMod = progressMod + timeToAccel + _settings.AccelScale * (delta - timeToAccel);
                     }
                     _accelProgress = trgtProgress;
-                    _velocity = _baseVelocity * Mathf.Lerp(1f, _settings.AccelScale, Mathf.Pow(_accelProgress, _settings.AccelExponent));
+                    _velocity = _baseVelocity * Math.Pow(_accelProgress, _settings.AccelExponent).Lerp(1f, _settings.AccelScale);
                 }
             }
             else

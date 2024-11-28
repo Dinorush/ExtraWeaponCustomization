@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Hand
         private float _lastTickTime;
 
         public bool Done => Progress >= 1.0f;
-        public float Progress => Mathf.Clamp01(ProgressUnclamped);
+        public float Progress => Math.Clamp(ProgressUnclamped, 0, 1);
 
         public float ProgressUnclamped
         {
@@ -78,7 +78,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Hand
         public float Duration { get; private set; }
 
         public bool Done => Progress >= 1.0f;
-        public float Progress => Mathf.Clamp01(ProgressUnclamped);
+        public float Progress => Math.Clamp(ProgressUnclamped, 0, 1);
 
         public float ProgressUnclamped
         {

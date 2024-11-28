@@ -85,7 +85,7 @@ namespace EWC.Patches
 
             s_hitData.Setup(weaponRayData, additionalDis);
             IDamageable? damageable = s_hitData.damageable;
-            IDamageable? damBase = damageable?.GetBaseDamagable() != null ? damageable.GetBaseDamagable() : damageable;
+            IDamageable? damBase = damageable != null ? damageable.GetBaseDamagable() : damageable;
             if (damBase != null && damBase.GetHealthRel() <= 0) return;
 
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
@@ -123,8 +123,7 @@ namespace EWC.Patches
             CachedHitCC = cc;
 
             IDamageable? damageable = hitData.damageable;
-            IDamageable? baseDamageable = damageable?.GetBaseDamagable();
-            if (damageable != null && (baseDamageable == null || baseDamageable.GetHealthRel() > 0))
+            if (damageable != null && damageable.GetBaseDamagable().GetHealthRel() > 0)
             {
                 if (triggerHit)
                     cc.Invoke(new WeaponPreHitDamageableContext(hitData, DamageType.Bullet));
@@ -171,7 +170,8 @@ namespace EWC.Patches
                 else if (triggerHit)
                     cc.Invoke(new WeaponHitDamageableContext(hitData, DamageType.Bullet));
             }
-            else if (triggerHit)
+            
+            if (triggerHit)
                 cc.Invoke(new WeaponHitContext(hitData));
 
             hitData.Apply();

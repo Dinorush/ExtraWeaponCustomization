@@ -82,9 +82,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                     for (int j = 1; j < shotgunBullets; j++)
                     {
                         float angle = segmentSize * j;
-                        x += coneSize * Mathf.Cos(angle);
-                        y += coneSize * Mathf.Sin(angle);
-                        FireVisual(x + coneSize * Mathf.Cos(angle), y + coneSize * Mathf.Sin(angle), spread);
+                        x += coneSize * (float)Math.Cos(angle);
+                        y += coneSize * (float)Math.Sin(angle);
+                        FireVisual(x + coneSize * (float)Math.Cos(angle), y + coneSize * (float)Math.Sin(angle), spread);
                     }
                 }
             }
@@ -135,7 +135,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     for (int j = 1; j < shotgunBullets; j++)
                     {
                         float angle = segmentSize * j;
-                        Fire(x + coneSize * Mathf.Cos(angle), y + coneSize * Mathf.Sin(angle), spread);
+                        Fire(x + coneSize * (float)Math.Cos(angle), y + coneSize * (float)Math.Sin(angle), spread);
                     }
                 }
             }

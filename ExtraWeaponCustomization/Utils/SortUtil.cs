@@ -1,4 +1,5 @@
 ﻿using Enemies;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,7 +27,7 @@ namespace EWC.Utils
             foreach (RaycastHit hit in list)
             {
                 bool weakspot = DamageableUtil.GetDamageableFromRayHit(hit)?.TryCast<Dam_EnemyDamageLimb>()?.m_type == eLimbDamageType.Weakspot;
-                s_limbCache.Add((hit, weakspot ? Mathf.Max(hit.distance - SearchUtil.WeakspotBufferDist, 0) : hit.distance));
+                s_limbCache.Add((hit, weakspot ? Math.Max(hit.distance - SearchUtil.WeakspotBufferDist, 0) : hit.distance));
             }
             s_limbCache.Sort(FloatTuple);
             CopySortedList(s_limbCache, list);

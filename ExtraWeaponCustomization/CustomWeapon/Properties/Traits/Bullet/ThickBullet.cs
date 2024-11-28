@@ -185,12 +185,12 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private static bool AlreadyHit(IDamageable damageable, uint searchID)
         {
-            return searchID != 0 && damageable.GetBaseDamagable()?.TempSearchID == searchID;
+            return searchID != 0 && damageable.GetBaseDamagable().TempSearchID == searchID;
         }
 
         private static bool AlreadyHit(Collider collider, uint searchID)
         {
-            return searchID != 0 && DamageableUtil.GetDamageableFromCollider(collider)?.GetBaseDamagable()?.TempSearchID == searchID;
+            return searchID != 0 && DamageableUtil.GetDamageableFromCollider(collider)?.GetBaseDamagable().TempSearchID == searchID;
         }
 
         private bool BulletHit(HitData data) => BulletWeapon.BulletHit(data.Apply(Weapon.s_weaponRayData), true, 0, CWC.Gun!.m_damageSearchID, true);

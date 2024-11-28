@@ -1,15 +1,16 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.JSON;
 using GameData;
 using Gear;
 using Player;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
-using CollectionExtensions = BepInEx.Unity.IL2CPP.Utils.Collections.CollectionExtensions;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
@@ -104,7 +105,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (!GetData()) return;
 
             _endTime = Clock.Time + Duration;
-            _activeRoutine ??= CoroutineManager.StartCoroutine(CollectionExtensions.WrapToIl2Cpp(DeactivateAfterDelay()));
+            _activeRoutine ??= CoroutineManager.StartCoroutine(DeactivateAfterDelay().WrapToIl2Cpp());
         }
 
         private IEnumerator DeactivateAfterDelay()
@@ -229,7 +230,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 float newBuffer = clipCost;
                 _costBuffer += newBuffer + 1e-10f; // Some small constant to avoid rounding errors
-                int newMag = Mathf.Min(newClipSize, (int) (_costBuffer / slotAmmo.CostOfBullet));
+                int newMag = Math.Min(newClipSize, (int) (_costBuffer / slotAmmo.CostOfBullet));
                 _costBuffer -= newMag * slotAmmo.CostOfBullet;
                 newBuffer -= newMag * slotAmmo.CostOfBullet;
 
@@ -240,14 +241,14 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 // Calculate the target magazine
                 float newMagFloat = (float)clip / clipSize * newClipSize + _magBuffer;
-                int newMag = Mathf.Min(newClipSize, (int)newMagFloat);
+                int newMag = Math.Min(newClipSize, (int)newMagFloat);
 
                 // Calculate the maximum amount of ammo we can give
                 float maxCost = slotAmmo.AmmoInPack + clipCost;
                 if (maxCost < newMag * slotAmmo.CostOfBullet)
                     newMag = (int)(maxCost / slotAmmo.CostOfBullet);
 
-                _magBuffer = Mathf.Max(0, clip - newMag * clipSize / newClipSize);
+                _magBuffer = Math.Max(0, clip - newMag * clipSize / newClipSize);
                 slotAmmo.AmmoInPack += clipCost - newMag * slotAmmo.CostOfBullet;
                 CWC.Gun.SetCurrentClip(newMag); 
             }
@@ -288,7 +289,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 else if (newArch.m_archetypeData.FireMode == eWeaponFireMode.Burst)
                 {
                     var recvBurst = newArch.TryCast<BWA_Burst>()!;
-                    recvBurst.m_burstCurrentCount = Mathf.Min(sendBurst.m_burstCurrentCount, recvBurst.m_burstMax);
+                    recvBurst.m_burstCurrentCount = Math.Min(sendBurst.m_burstCurrentCount, recvBurst.m_burstMax);
                     sendBurst.m_burstCurrentCount = 0;
                 }
             }

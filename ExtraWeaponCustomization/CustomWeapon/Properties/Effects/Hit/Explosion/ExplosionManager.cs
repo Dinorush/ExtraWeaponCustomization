@@ -119,7 +119,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     return;
 
                 GuiManager.CrosshairLayer.PopFriendlyTarget();
-                Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().TryCast<Dam_PlayerDamageBase>()!;
+                Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().Cast<Dam_PlayerDamageBase>();
                 damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti;
                 damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
                 eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, preContext));

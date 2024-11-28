@@ -1,7 +1,7 @@
 ﻿using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using HarmonyLib;
-using UnityEngine;
+using System;
 
 namespace EWC.Patches
 {
@@ -41,7 +41,7 @@ namespace EWC.Patches
         {
             if (!WeaponPatches.CachedBypassTumorCap) return true;
 
-            __result = dam * Mathf.Max(__instance.m_weakspotDamageMulti * precisionMulti, 1) * __instance.m_armorDamageMulti;
+            __result = dam * Math.Max(__instance.m_weakspotDamageMulti * precisionMulti, 1) * __instance.m_armorDamageMulti;
             return false;
         }
     }

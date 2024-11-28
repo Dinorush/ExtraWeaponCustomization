@@ -7,6 +7,7 @@ using EWC.CustomWeapon.WeaponContext;
 using EWC.Utils;
 using Gear;
 using HarmonyLib;
+using System;
 
 namespace EWC.Patches.Melee
 {
@@ -65,7 +66,7 @@ namespace EWC.Patches.Melee
         {
             s_origHitDamage = __instance.m_damageToDeal;
             s_origHitPrecision = __instance.m_precisionMultiToDeal;
-            CachedCharge = dam == eMeleeWeaponDamage.Heavy ? scale : 0f;
+            CachedCharge = dam == eMeleeWeaponDamage.Heavy ? (float) Math.Cbrt(scale) : 0f;
         }
 
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.DoAttackDamage))]
