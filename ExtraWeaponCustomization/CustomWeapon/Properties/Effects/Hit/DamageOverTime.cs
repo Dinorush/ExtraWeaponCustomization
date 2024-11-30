@@ -42,10 +42,10 @@ namespace EWC.CustomWeapon.Properties.Effects
             private set { _tickRate = Math.Max(0.01f, value); }
         }
         public bool ApplyAttackCooldown { get; private set; } = false;
-        public bool BatchStacks { get; private set; } = true;
         public Color GlowColor { get; private set; } = Color.black;
         public float GlowIntensity { get; private set; } = 1f;
         public float GlowRange { get; private set; } = 0f;
+        public bool BatchStacks { get; private set; } = true;
 
         private readonly DOTController _controller = new();
         private readonly Dictionary<BaseDamageableWrapper, Queue<DOTInstance>> _lastDOTs = new();
@@ -187,12 +187,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
-            SerializeTrigger(writer);
-            writer.WriteBoolean(nameof(BatchStacks), BatchStacks);
             writer.WritePropertyName(nameof(GlowColor));
             EWCJson.Serialize(writer, GlowColor);
             writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
+            SerializeTrigger(writer);
+            writer.WriteBoolean(nameof(BatchStacks), BatchStacks);
             writer.WriteEndObject();
         }
 
@@ -255,9 +255,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "applyattackcooldown":
                     ApplyAttackCooldown = reader.GetBoolean();
                     break;
-                case "batchstacks":
-                    BatchStacks = reader.GetBoolean();
-                    break;
                 case "glowcolor":
                     GlowColor = EWCJson.Deserialize<Color>(ref reader);
                     break;
@@ -266,6 +263,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "glowrange":
                     GlowRange = reader.GetSingle();
+                    break;
+                case "batchstacks":
+                    BatchStacks = reader.GetBoolean();
                     break;
                 default:
                     break;
