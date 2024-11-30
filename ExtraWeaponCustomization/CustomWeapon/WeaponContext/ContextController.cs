@@ -1,7 +1,6 @@
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
@@ -32,7 +31,7 @@ namespace EWC.CustomWeapon.WeaponContext
             bool Add(IWeaponProperty property);
             bool Remove(IWeaponProperty property);
             void Clear();
-            void CopyTo(ContextController manager);
+            IContextList? CopyTo(ContextController manager);
             void Invoke(IWeaponContext context, List<Exception> exceptions);
         }
 
@@ -79,16 +78,17 @@ namespace EWC.CustomWeapon.WeaponContext
                 _entries.Clear();
             }
 
-            public void CopyTo(ContextController manager)
+            public IContextList? CopyTo(ContextController manager)
             {
                 Type type = typeof(TContext);
-                if (manager._allContextLists.ContainsKey(type)) return;
+                if (manager._allContextLists.TryGetValue(type, out var context)) return context;
 
-                _baseContextList?.CopyTo(manager);
+                IContextList? baseList = _baseContextList?.CopyTo(manager);
 
-                ContextList<TContext> copy = new(manager);
+                ContextList<TContext> copy = new(manager, baseList);
                 copy._entries.AddRange(_entries);
                 manager._allContextLists.Add(type, copy);
+                return copy;
             }
 
             public void Invoke(TContext context, List<Exception> exceptions)
