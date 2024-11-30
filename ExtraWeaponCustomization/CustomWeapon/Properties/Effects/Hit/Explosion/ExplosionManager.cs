@@ -85,7 +85,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, float distance, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)
         {
-            float damage = distance.Map(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage);
+            float damage = distance.MapInverted(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;
             damage *= triggerAmt;
             float precisionMult = eBase.PrecisionDamageMulti;

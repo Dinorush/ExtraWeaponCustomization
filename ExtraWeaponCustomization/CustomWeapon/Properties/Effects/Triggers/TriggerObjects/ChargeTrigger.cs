@@ -22,7 +22,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             float charge = MeleePatches.CachedCharge;
             if (charge >= MinRequired && charge <= MaxRequired)
             {
-                charge = Math.Pow(charge.Map(MinRequired, MaxRequired, 0f, 1f), Exponent).Lerp(Min, Max);
+                charge = charge.Map(MinRequired, MaxRequired, Min, Max, Exponent);
                 return charge * Amount;
             }
             return 0f;
