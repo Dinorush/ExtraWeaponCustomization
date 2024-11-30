@@ -40,7 +40,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     Max = reader.GetSingle();
                     break;
                 case "exponent":
-                case "expo":
                     Exponent = reader.GetSingle();
                     break;
                 case "minrequired":
