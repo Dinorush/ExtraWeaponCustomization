@@ -4,12 +4,12 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 
 #### Effects - Apply when a condition is triggered
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
-- Ammo Mod: Modifies the magazine/reserve ammo counts. [Gun]
+- Ammo Mod: Modifies the magazine/reserve ammo counts.
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
 - Damage Mod: Applies a damage modifier.
-- Damage Mod Per Target: Applies a damage modifier unique to each target. [Hit, Damage, Charge]
-- Damage Over Time: Applies a damage over time effect. [Hit, Damage, Charge]
+- Damage Mod Per Target: Applies a damage modifier unique to each target. [Prehit, Hit, Damage, Charge]
+- Damage Over Time: Applies a damage over time effect. [Prehit, Hit, Damage, Charge]
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
 - Fire Shot: Fires shots at offsets. [Gun]
