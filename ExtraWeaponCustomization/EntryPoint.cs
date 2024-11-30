@@ -19,7 +19,7 @@ using EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "2.13.1")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "2.14.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
