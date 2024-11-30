@@ -54,6 +54,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (ReceiverSlot != InventorySlot.None && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem) && bpItem.Instance != null)
                 weapon = bpItem.Instance.Cast<ItemEquippable>();
 
+            if (weapon == null) return;
+
             PlayerAmmoStorage ammoStorage = backpack.AmmoStorage;
             InventorySlotAmmo slotAmmo = ammoStorage.GetInventorySlotAmmo(weapon.AmmoType);
 
