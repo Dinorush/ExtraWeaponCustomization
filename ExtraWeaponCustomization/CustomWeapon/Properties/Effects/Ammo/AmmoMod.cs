@@ -5,13 +5,13 @@ using System.Text.Json;
 using System.Collections.Generic;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
-using Gear;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class AmmoMod :
         Effect,
         IGunProperty,
+        IMeleeProperty,
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponPostFireContext>
     {
@@ -36,6 +36,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             _bonusRound = false;
         }
 
+        public override bool ValidProperty()
+        {
+            return base.ValidProperty() && (CWC.IsGun || ReceiverSlot != InventorySlot.None);
+        }
+
         public override void TriggerReset()
         {
             _clipBuffer = 0;
@@ -45,7 +50,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
             PlayerBackpack backpack = PlayerBackpackManager.GetBackpack(CWC.Weapon.Owner.Owner);
-            ItemEquippable weapon = CWC.Gun!;
+            ItemEquippable? weapon = CWC.Gun;
             if (ReceiverSlot != InventorySlot.None && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem) && bpItem.Instance != null)
                 weapon = bpItem.Instance.Cast<ItemEquippable>();
 

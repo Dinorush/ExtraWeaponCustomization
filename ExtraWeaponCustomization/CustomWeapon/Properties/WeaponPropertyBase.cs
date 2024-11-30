@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.Properties
 
         private static readonly Dictionary<Type, List<PropertyInfo>> _classProperties = new();
 
-        public bool ValidProperty()
+        public virtual bool ValidProperty()
         {
             return (CWC.IsGun && this is IGunProperty)
                 || (CWC.IsMelee && this is IMeleeProperty);
