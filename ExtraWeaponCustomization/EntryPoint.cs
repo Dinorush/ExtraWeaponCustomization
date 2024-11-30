@@ -15,6 +15,7 @@ using EWC.Patches.Native;
 using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
+using EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX;
 
 namespace EWC;
 
@@ -54,6 +55,7 @@ internal sealed class EntryPoint : BasePlugin
     {
         CustomWeaponManager.Current.ResetCWCs(false);
         EWCProjectileManager.Reset();
+        DOTDamageManager.Reset();
     }
 
     private void LevelAPI_OnLevelEnter()
@@ -63,6 +65,7 @@ internal sealed class EntryPoint : BasePlugin
 
     private void AssetAPI_OnStartupAssetsLoaded()
     {
+        ClassInjector.RegisterTypeInIl2Cpp<DOTGlowHandler>();
         ClassInjector.RegisterTypeInIl2Cpp<ExplosionEffectHandler>();
         ClassInjector.RegisterTypeInIl2Cpp<CustomWeaponComponent>();
         ClassInjector.RegisterTypeInIl2Cpp<EWCProjectileComponentBase>();

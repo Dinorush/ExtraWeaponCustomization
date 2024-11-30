@@ -82,8 +82,6 @@ namespace EWC.CustomWeapon.Properties.Traits
                     for (int j = 1; j < shotgunBullets; j++)
                     {
                         float angle = segmentSize * j;
-                        x += coneSize * (float)Math.Cos(angle);
-                        y += coneSize * (float)Math.Sin(angle);
                         FireVisual(x + coneSize * (float)Math.Cos(angle), y + coneSize * (float)Math.Sin(angle), spread);
                     }
                 }

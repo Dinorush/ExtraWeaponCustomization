@@ -19,6 +19,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private int _pierceCount = 0;
 
+        private readonly static HashSet<IntPtr> s_hitEnts = new();
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
         private const float SightCheckMinSize = 0.5f;
@@ -28,6 +29,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (HitSize == 0) return;
 
             context.Result = false;
+            s_hitEnts.Clear();
+            s_hitEnts.Add(context.IgnoreEnt);
 
             s_ray = Weapon.s_ray;
             _pierceCount = CWC.Weapon.ArchetypeData.PiercingBullets ? CWC.Weapon.ArchetypeData.PiercingDamageCountLimit : 1;
@@ -55,8 +58,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
                     IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                     if (damageable == null) continue;
-                    if (AlreadyHit(damageable, CWC.Gun!.m_damageSearchID)) continue;
-
+                    if (AlreadyHit(damageable)) continue;
                     if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode) == false) continue;
                     if (wallPierce == null && !CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos, true)) continue;
 
@@ -80,7 +82,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 {
                     IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                     if (damageable == null) continue;
-                    if (AlreadyHit(damageable, CWC.Gun!.m_damageSearchID)) continue;
+                    if (AlreadyHit(damageable)) continue;
                     if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent().CourseNode) == false) continue;
 
                     context.Data.RayHit = hit;
@@ -107,7 +109,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             foreach (var pair in hits)
             {
                 RaycastHit hit = pair.hit;
-                if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
+                if (AlreadyHit(hit.collider)) continue;
                 if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, pair.enemy.CourseNode) == false) continue;
                 if (wallPierce == null && !CheckLineOfSight(hit.collider, origin, wallPos)) continue;
 
@@ -125,7 +127,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             foreach (var hit in lockHits)
             {
-                if (AlreadyHit(hit.collider, CWC.Gun!.m_damageSearchID)) continue;
+                if (AlreadyHit(hit.collider)) continue;
                 if (wallPierce == null && !CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
 
                 context.Data.RayHit = hit;
@@ -183,14 +185,15 @@ namespace EWC.CustomWeapon.Properties.Traits
                 hit = bestHit;
         }
 
-        private static bool AlreadyHit(IDamageable damageable, uint searchID)
+        private static bool AlreadyHit(IDamageable? damageable)
         {
-            return searchID != 0 && damageable.GetBaseDamagable().TempSearchID == searchID;
+            if (damageable == null) return false;
+            return !s_hitEnts.Add(damageable.GetBaseDamagable().Pointer);
         }
 
-        private static bool AlreadyHit(Collider collider, uint searchID)
+        private static bool AlreadyHit(Collider collider)
         {
-            return searchID != 0 && DamageableUtil.GetDamageableFromCollider(collider)?.GetBaseDamagable().TempSearchID == searchID;
+            return AlreadyHit(DamageableUtil.GetDamageableFromCollider(collider));
         }
 
         private bool BulletHit(HitData data) => BulletWeapon.BulletHit(data.Apply(Weapon.s_weaponRayData), true, 0, CWC.Gun!.m_damageSearchID, true);

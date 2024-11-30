@@ -32,6 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageLocks { get; private set; } = true;
         public uint SoundID { get; private set; } = EVENTS.STICKYMINEEXPLODE;
         public Color GlowColor { get; private set; } = new(1, 0.2f, 0, 1);
+        public float GlowIntensity { get; private set; } = 5f;
         public float GlowDuration { get; private set; } = 0.1f;
         public float GlowFadeDuration { get; private set; } = 0.1f;
 
@@ -107,6 +108,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WritePropertyName(nameof(GlowColor));
             EWCJson.Serialize(writer, GlowColor);
+            writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowDuration), GlowDuration);
             writer.WriteNumber(nameof(GlowFadeDuration), GlowFadeDuration);
             writer.WriteEndObject();
@@ -187,6 +189,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "glowcolor":
                 case "color":
                     GlowColor = EWCJson.Deserialize<Color>(ref reader);
+                    break;
+                case "glowintensity":
+                case "intensity":
+                    GlowIntensity = reader.GetSingle();
                     break;
                 case "glowduration":
                 case "duration":

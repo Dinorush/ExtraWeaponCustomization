@@ -1,21 +1,27 @@
-﻿using EWC.CustomWeapon.ObjectWrappers;
+﻿using Agents;
+using Enemies;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
+using EWC.JSON;
 using Player;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class DamageOverTime :
         Effect,
         IGunProperty,
-        IMeleeProperty
+        IMeleeProperty,
+        ITriggerCallbackAgentSync
     {
+        public ushort SyncID { get; set; }
         public PlayerAgent Owner => CWC.Weapon.Owner;
 
         public float TotalDamage { get; private set; } = 0f;
@@ -37,6 +43,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         }
         public bool ApplyAttackCooldown { get; private set; } = false;
         public bool BatchStacks { get; private set; } = true;
+        public Color GlowColor { get; private set; } = Color.black;
+        public float GlowIntensity { get; private set; } = 1f;
+        public float GlowRange { get; private set; } = 0f;
 
         private readonly DOTController _controller = new();
         private readonly Dictionary<BaseDamageableWrapper, Queue<DOTInstance>> _lastDOTs = new();
@@ -51,12 +60,40 @@ namespace EWC.CustomWeapon.Properties.Effects
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
             foreach (TriggerContext tContext in triggerList)
-                AddDOT((WeaponHitDamageableContext) tContext.context, tContext.triggerAmt);
+            {
+                var hitContext = (WeaponHitDamageableContext)tContext.context;
+                AddDOT(hitContext, tContext.triggerAmt);
+                Agent? agent = hitContext.Damageable.GetBaseAgent();
+                if (agent != null)
+                {
+                    TriggerApplySync(agent, tContext.triggerAmt);
+                    TriggerManager.SendInstance(this, agent, tContext.triggerAmt);
+                }
+            }
         }
 
         public override void TriggerReset()
         {
             _controller.Clear();
+            TriggerResetSync();
+        }
+
+        public void TriggerApplySync(Agent target, float mod)
+        {
+            IDamageable? damBase = target.Type switch
+            {
+                AgentType.Player => target.Cast<PlayerAgent>().Damage.Cast<IDamageable>(),
+                AgentType.Enemy => target.Cast<EnemyAgent>().Damage.Cast<IDamageable>(),
+                _ => null
+            };
+            if (damBase == null) return;
+
+            DOTGlowPooling.TryDoEffect(this, damBase, target.transform, mod);
+        }
+
+        public void TriggerResetSync()
+        {
+            DOTGlowPooling.TryEndEffect(this);
         }
 
         private void AddDOT(WeaponHitDamageableContext context, float triggerAmt)
@@ -152,6 +189,10 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
             SerializeTrigger(writer);
             writer.WriteBoolean(nameof(BatchStacks), BatchStacks);
+            writer.WritePropertyName(nameof(GlowColor));
+            EWCJson.Serialize(writer, GlowColor);
+            writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
+            writer.WriteNumber(nameof(GlowRange), GlowRange);
             writer.WriteEndObject();
         }
 
@@ -216,6 +257,15 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "batchstacks":
                     BatchStacks = reader.GetBoolean();
+                    break;
+                case "glowcolor":
+                    GlowColor = EWCJson.Deserialize<Color>(ref reader);
+                    break;
+                case "glowintensity":
+                    GlowIntensity = reader.GetSingle();
+                    break;
+                case "glowrange":
+                    GlowRange = reader.GetSingle();
                     break;
                 default:
                     break;

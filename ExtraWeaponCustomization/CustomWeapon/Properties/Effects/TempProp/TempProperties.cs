@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         Effect,
         IGunProperty,
         IMeleeProperty,
-        ITriggerCallbackSync
+        ITriggerCallbackBasicSync
     {
         public ushort SyncID { get; set; }
 

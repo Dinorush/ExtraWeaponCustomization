@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     public class Accelerate :
         Effect,
         IGunProperty,
-        ITriggerCallbackSync,
+        ITriggerCallbackBasicSync,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponPreFireContextSync>,
         IWeaponProperty<WeaponFireCanceledContext>,

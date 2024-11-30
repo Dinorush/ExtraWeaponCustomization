@@ -13,6 +13,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 packet.radius.Get(ExplosionManager.MaxRadius),
                 packet.soundID,
                 packet.color,
+                packet.intensity.Get(ExplosionFXManager.MaxGlowIntensity),
                 packet.duration.Get(ExplosionFXManager.MaxGlowDuration),
                 packet.fadeDuration.Get(ExplosionFXManager.MaxGlowDuration)
                 );

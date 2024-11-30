@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class DataSwap : 
         Trait,
         IGunProperty,
-        ITriggerCallbackSync,
+        ITriggerCallbackBasicSync,
         IWeaponProperty<WeaponOwnerSetContext>,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>

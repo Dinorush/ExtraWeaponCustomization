@@ -20,6 +20,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         internal static void Init()
         {
             Sync.Setup();
+            DOTGlowPooling.Initialize();
+        }
+
+        internal static void Reset()
+        {
+            DOTGlowPooling.Reset();
         }
 
         public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, bool bypassTumor, float backstabMulti, DamageOverTime dotBase)

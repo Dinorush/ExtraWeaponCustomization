@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.JSON;
 using EWC.Utils;
 using FX_EffectSystem;
@@ -16,7 +17,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class FireShot :
         Effect,
-        ITriggerCallbackSync,
+        ITriggerCallbackBasicSync,
+        ITriggerCallbackDirSync,
         IGunProperty
     {
         public ushort SyncID { get; set; }
@@ -25,6 +27,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         public uint Repeat { get; private set; } = 0;
         public bool ApplySpreadPerShot { get; private set; } = false;
         public bool ForceSingleBullet { get; private set; } = false;
+        public bool FireFromHitPos { get; private set; } = false;
+        public bool HitTriggerTarget { get; private set; } = false;
 
         private static WallPierce? _wallPierce;
         private bool _projectile = false;
@@ -32,23 +36,55 @@ namespace EWC.CustomWeapon.Properties.Effects
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
         private static Vector3 s_baseDir;
-        private readonly static HashSet<IntPtr> s_hitEnts = new();
+        private readonly HashSet<IntPtr> _hitEnts = new();
+        private IntPtr _ignoreEnt = IntPtr.Zero;
         private readonly static HitData s_hitData = new();
+        private const float WallHitBuffer = -0.03f;
 
         public override void TriggerReset() {}
         public void TriggerResetSync() {}
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
-            int iterations = (int) contexts.Sum(context => context.triggerAmt);
-            if (iterations == 0) return;
+            _ignoreEnt = IntPtr.Zero;
+            float iterations = 0;
+            List<(Vector3 pos, Vector3 dir, float amount, IDamageable? damBase)>? hitContexts = null;
+            if (FireFromHitPos)
+            {
+                hitContexts = new(5);
+                foreach (var context in contexts)
+                {
+                    if (context.context is WeaponHitContextBase hitContext)
+                    {
+                        if (context.triggerAmt < 1f) continue;
+
+                        IDamageable? damBase = null;
+                        Vector3 position = hitContext.Position;
+                        if (hitContext is WeaponHitDamageableContextBase damContext)
+                        {
+                            damBase = damContext.Damageable.GetBaseDamagable();
+                            Agents.Agent? agent = damContext.Damageable.GetBaseAgent();
+                            if (agent != null)
+                                position = damContext.LocalPosition + agent.Position;
+                        }
+                        else
+                            position += hitContext.Direction * WallHitBuffer;
+                        hitContexts.Add((position, hitContext.Direction, context.triggerAmt, damBase));
+                    }
+                    else
+                        iterations += context.triggerAmt;
+                }
+            }
+            else
+                iterations = contexts.Sum(context => context.triggerAmt);
+
+            if (iterations == 0 && (hitContexts == null || hitContexts.Count == 0)) return;
+
             _wallPierce = CWC.GetTrait<WallPierce>();
             _projectile = CWC.HasTrait<Traits.Projectile>();
 
             Ray lastRay = Weapon.s_ray;
 
-            s_ray.origin = CWC.Weapon.Owner.FPSCamera.Position;
-            s_baseDir = CWC.Gun!.Owner.FPSCamera.CameraRayDir;
             bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
 
             int shotgunBullets = 1;
@@ -71,22 +107,21 @@ namespace EWC.CustomWeapon.Properties.Effects
                     spread = CWC.Weapon.FPItemHolder.ItemAimTrigger ? archData.AimSpread : archData.HipFireSpread;
             }
 
+            s_ray.origin = CWC.Weapon.Owner.FPSCamera.Position;
+            s_baseDir = CWC.Gun!.Owner.FPSCamera.CameraRayDir;
             for (int iter = 0; iter < iterations; iter++)
-            {
-                for (uint mod = 1; mod <= Repeat + 1; mod++)
-                {
-                    for (int i = 0; i < Offsets.Count; i += 2)
-                    {
-                        float x = Offsets[i] * mod;
-                        float y = -Offsets[i + 1] * mod;
-                        Fire(x, y, spread);
+                FirePerTrigger(spread, shotgunBullets, segmentSize, coneSize, false);
 
-                        for (int j = 1; j < shotgunBullets; j++)
-                        {
-                            float angle = segmentSize * j;
-                            Fire(x + coneSize * (float)Math.Cos(angle), y + coneSize * (float)Math.Sin(angle), spread);
-                        }
-                    }
+            if (FireFromHitPos)
+            {
+                foreach (var (pos, dir, amount, baseDam) in hitContexts!)
+                {
+                    s_ray.origin = pos;
+                    s_baseDir = dir;
+                    if (!HitTriggerTarget && baseDam != null)
+                        _ignoreEnt = baseDam.Pointer;
+                    FirePerTrigger(spread, shotgunBullets, segmentSize, coneSize);
+                    TriggerManager.SendInstance(this, pos, dir, amount);
                 }
             }
             Weapon.s_ray = lastRay;
@@ -94,12 +129,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             TriggerManager.SendInstance(this, iterations);
         }
 
-        public void TriggerApplySync(float iterations)
+        public void TriggerApplySync(Vector3 position, Vector3 direction, float iterations)
         {
             if (CWC.HasTrait<Traits.Projectile>()) return;
 
-            s_ray.origin = CWC.Weapon.MuzzleAlign.position;
-            s_baseDir = CWC.Weapon.MuzzleAlign.forward;
+            s_ray.origin = position;
+            s_baseDir = direction;
             bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
 
             int shotgunBullets = 1;
@@ -115,22 +150,34 @@ namespace EWC.CustomWeapon.Properties.Effects
             float spread = ApplySpreadPerShot && isShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
 
             for (int iter = 0; iter < iterations; iter++)
-            {
-                for (uint mod = 1; mod <= Repeat + 1; mod++)
-                {
-                    for (int i = 0; i < Offsets.Count; i += 2)
-                    {
-                        float x = Offsets[i] * mod;
-                        float y = -Offsets[i + 1] * mod;
-                        FireVisual(x, y, spread);
+                FirePerTrigger(spread, shotgunBullets, segmentSize, coneSize, visual: true);
+        }
 
-                        for (int j = 1; j < shotgunBullets; j++)
-                        {
-                            float angle = segmentSize * j;
-                            x += coneSize * (float)Math.Cos(angle);
-                            y += coneSize * (float)Math.Sin(angle);
+        public void TriggerApplySync(float iterations)
+        {
+            TriggerApplySync(CWC.Weapon.MuzzleAlign.position, CWC.Weapon.MuzzleAlign.forward, iterations);
+        }
+
+        private void FirePerTrigger(float spread, int shotgunBullets, float segmentSize, float coneSize, bool visual = false)
+        {
+            for (uint mod = 1; mod <= Repeat + 1; mod++)
+            {
+                for (int i = 0; i < Offsets.Count; i += 2)
+                {
+                    float x = Offsets[i] * mod;
+                    float y = -Offsets[i + 1] * mod;
+                    if (visual)
+                        FireVisual(x, y, spread);
+                    else
+                        Fire(x, y, spread);
+
+                    for (int j = 1; j < shotgunBullets; j++)
+                    {
+                        float angle = segmentSize * j;
+                        if (visual)
                             FireVisual(x + coneSize * (float)Math.Cos(angle), y + coneSize * (float)Math.Sin(angle), spread);
-                        }
+                        else
+                            Fire(x + coneSize * (float)Math.Cos(angle), y + coneSize * (float)Math.Sin(angle), spread);
                     }
                 }
             }
@@ -147,7 +194,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             s_hitData.maxRayDist = CWC.Gun!.MaxRayDist;
             s_hitData.RayHit = default;
 
-            s_hitEnts.Clear();
+            _hitEnts.Add(_ignoreEnt);
             CalcRayDir(x, y, spread);
 
             // Stops at padlocks but that's the same behavior as vanilla so idc
@@ -158,10 +205,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             else
                 wallPos = s_ray.origin + s_ray.direction * s_hitData.maxRayDist;
 
-            WeaponPostRayContext context = new(s_hitData, s_ray.origin, hitWall);
+            WeaponPostRayContext context = new(s_hitData, s_ray.origin, hitWall, _ignoreEnt);
             CWC.Invoke(context);
             if (!context.Result)
             {
+                _hitEnts.Clear();
                 if (_projectile) return;
 
                 // Plays bullet FX, since Thick Bullet will cancel the ray but doesn't
@@ -191,6 +239,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             FX_Manager.PlayLocalVersion = false;
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
+            _hitEnts.Clear();
         }
 
         private void FireVisual(float x, float y, float spread)
@@ -235,7 +284,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         private bool AlreadyHit(IDamageable? damageable)
         {
             if (damageable == null) return false;
-            return !s_hitEnts.Add(damageable.GetBaseDamagable().Pointer);
+            return !_hitEnts.Add(damageable.GetBaseDamagable().Pointer);
         }
 
         private void CheckForHits(int pierceCount, float maxDist, int layer)
@@ -291,6 +340,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Repeat), Repeat);
             writer.WriteBoolean(nameof(ApplySpreadPerShot), ApplySpreadPerShot);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
+            writer.WriteBoolean(nameof(FireFromHitPos), FireFromHitPos);
+            writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -318,6 +369,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "forcesinglebullet":
                 case "singlebullet":
                     ForceSingleBullet = reader.GetBoolean();
+                    break;
+                case "firefromhitpos":
+                    FireFromHitPos = reader.GetBoolean();
+                    break;
+                case "hittriggertarget":
+                    HitTriggerTarget = reader.GetBoolean();
                     break;
             }
         }

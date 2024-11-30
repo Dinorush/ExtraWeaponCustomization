@@ -65,6 +65,9 @@ namespace EWC.JSON.Converters
         private static WeaponPropertyBase? NameToProperty(string name)
         {
             name = name.Replace(" ", "");
+            // Reference Property is not an effect or trait so it can't be dereferenced
+            if (name.ToLower() == nameof(ReferenceProperty).ToLower()) return new ReferenceProperty();
+
             Type? type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);
             if (type == null) return null;
 

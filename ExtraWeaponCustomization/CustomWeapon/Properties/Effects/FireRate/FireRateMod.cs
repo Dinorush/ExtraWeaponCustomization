@@ -9,7 +9,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         TriggerMod,
         IGunProperty,
         IMeleeProperty,
-        ITriggerCallbackSync,
+        ITriggerCallbackBasicSync,
         IWeaponProperty<WeaponFireRateContext>
     {
         public ushort SyncID { get; set; }

@@ -45,6 +45,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float TrailTime { get; private set; } = -1f;
         public bool TrailCullOnDie { get; private set; } = true;
         public Color GlowColor { get; private set; } = Color.black;
+        public float GlowIntensity { get; private set; } = 1f;
         public float GlowRange { get; private set; } = -1f;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = false;
@@ -97,6 +98,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (VisualLerpDist > 0)
                 comp.SetVisualPosition(CWC.Gun!.MuzzleAlign.position, visualDist);
+            comp.Hitbox.HitEnts.Add(context.IgnoreEnt);
         }
 
         // Cancel tracer FX
@@ -158,6 +160,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(TrailCullOnDie), TrailCullOnDie);
             writer.WritePropertyName(nameof(GlowColor));
             EWCJson.Serialize(writer, GlowColor);
+            writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
@@ -232,16 +235,11 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "glowcolor":
                     GlowColor = EWCJson.Deserialize<Color>(ref reader);
                     break;
-                case "color":
-                    GlowColor = EWCJson.Deserialize<Color>(ref reader);
-                    EWCLogger.Warning("Projectile \"Color\" is a deprecated alternative name for \"GlowColor\". Please change to GlowColor.");
+                case "glowintensity":
+                    GlowIntensity = reader.GetSingle();
                     break;
                 case "glowrange":
                     GlowRange = reader.GetSingle();
-                    break;
-                case "range":
-                    GlowRange = reader.GetSingle();
-                    EWCLogger.Warning("Projectile \"Range\" is a deprecated alternative name for \"GlowRange\". Please change to GlowColor.");
                     break;
                 case "damagefriendly":
                 case "friendlyfire":

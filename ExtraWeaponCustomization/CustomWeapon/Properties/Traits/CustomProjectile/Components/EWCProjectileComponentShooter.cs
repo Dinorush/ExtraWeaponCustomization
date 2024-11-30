@@ -44,6 +44,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _targeting.m_light.enabled = true;
                 _targeting.m_light.Color = settings.GlowColor == Color.black ? _origGlowColor : settings.GlowColor;
                 _targeting.m_light.Range = settings.GlowRange < 0f ? _origGlowRange : settings.GlowRange;
+                _targeting.m_light.Intensity = settings.GlowIntensity;
 
                 if (_targeting.m_ricochetEffect != null)
                     _targeting.m_ricochetEffect.active = true;

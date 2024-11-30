@@ -26,7 +26,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Hand
             }
 
             _light.UpdateVisibility(true);
-
             _light.Color = data.flashColor;
             _light.Range = data.range;
             _light.Intensity = _initIntensity = data.intensity;

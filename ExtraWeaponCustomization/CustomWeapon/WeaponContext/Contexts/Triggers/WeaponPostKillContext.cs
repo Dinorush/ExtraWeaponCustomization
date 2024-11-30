@@ -3,15 +3,15 @@ using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    public sealed class WeaponPostKillContext : WeaponHitContextBase
+    public sealed class WeaponPostKillContext : WeaponHitDamageableContextBase
     {
         public EnemyAgent Enemy { get; }
         public float Backstab { get; }
 
         public WeaponPostKillContext(WeaponHitDamageableContext hitContext) :
             base(
-                hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Cast<EnemyAgent>().Position,
-                hitContext.LocalPosition,
+                hitContext.Damageable,
+                hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Position,
                 hitContext.Direction,
                 hitContext.Falloff
                 )

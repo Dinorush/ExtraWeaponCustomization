@@ -13,6 +13,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         private static int _soundShotOverride = 0;
 
         public const float MaxGlowDuration = 50f;
+        public const float MaxGlowIntensity = 512f;
 
         internal static void Init()
         {
@@ -23,13 +24,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public static void DoExplosionFX(Vector3 position, Explosive eBase)
         {
             ExplosionFXData fxData = new() { position = position, soundID = eBase.SoundID, color = eBase.GlowColor };
+            fxData.intensity.Set(eBase.GlowIntensity, MaxGlowIntensity);
             fxData.radius.Set(eBase.Radius, ExplosionManager.MaxRadius);
             fxData.duration.Set(eBase.GlowDuration, MaxGlowDuration);
             fxData.fadeDuration.Set(eBase.GlowFadeDuration, MaxGlowDuration);
             FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
         }
 
-        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, uint soundID, Color color, float duration, float fadeDuration)
+        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, uint soundID, Color color, float intensity, float duration, float fadeDuration)
         {
             // Sound
             if (Configuration.PlayExplosionSFX)
@@ -50,7 +52,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 {
                     position = position,
                     flashColor = color,
-                    intensity = 5.0f,
+                    intensity = intensity,
                     range = radius,
                     duration = duration,
                     fadeDuration = fadeDuration
@@ -65,6 +67,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public UFloat16 radius;
         public uint soundID;
         public LowResColor color;
+        public UFloat16 intensity;
         public UFloat16 duration;
         public UFloat16 fadeDuration;
     }

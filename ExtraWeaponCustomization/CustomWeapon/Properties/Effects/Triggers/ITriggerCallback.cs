@@ -1,6 +1,8 @@
-﻿using EWC.CustomWeapon.WeaponContext;
+﻿using Agents;
+using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
@@ -21,7 +23,21 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     {
         public ushort SyncID { get; set; }
 
-        public void TriggerApplySync(float mod);
         public void TriggerResetSync();
+    }
+
+    public interface ITriggerCallbackBasicSync : ITriggerCallbackSync
+    {
+        public void TriggerApplySync(float mod);
+    }
+
+    public interface ITriggerCallbackDirSync : ITriggerCallbackSync
+    {
+        public void TriggerApplySync(Vector3 position, Vector3 dir, float mod);
+    }
+
+    public interface ITriggerCallbackAgentSync : ITriggerCallbackSync
+    {
+        public void TriggerApplySync(Agent target, float mod);
     }
 }

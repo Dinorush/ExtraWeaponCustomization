@@ -6,32 +6,27 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     {
         public override string GUID => "TRGIN";
 
-        protected override void Receive(TriggerInstanceData packet)
-        {
-            if (!packet.source.TryGetPlayer(out var player)) return;
+        protected override void Receive(TriggerInstanceData packet) => TriggerManager.Internal_ReceiveInstance(packet);
+    }
 
-            TriggerManager.Internal_ReceiveInstance(
-                player,
-                packet.slot,
-                packet.mod.Get(TriggerManager.MaxMod),
-                packet.id
-                );
-        }
+    internal sealed class TriggerDirSync : SyncedEvent<TriggerDirInstanceData>
+    {
+        public override string GUID => "TRGDIR";
+
+        protected override void Receive(TriggerDirInstanceData packet) => TriggerManager.Internal_ReceiveInstance(packet);
+    }
+
+    internal sealed class TriggerAgentSync : SyncedEvent<TriggerAgentInstanceData>
+    {
+        public override string GUID => "TRGAGT";
+
+        protected override void Receive(TriggerAgentInstanceData packet) => TriggerManager.Internal_ReceiveInstance(packet);
     }
 
     internal sealed class TriggerResetSync : SyncedEvent<TriggerResetData>
     {
         public override string GUID => "TRGRS";
 
-        protected override void Receive(TriggerResetData packet)
-        {
-            if (!packet.source.TryGetPlayer(out var player)) return;
-
-            TriggerManager.Internal_ReceiveReset(
-                player,
-                packet.slot,
-                packet.id
-                );
-        }
+        protected override void Receive(TriggerResetData packet) => TriggerManager.Internal_ReceiveReset(packet);
     }
 }
