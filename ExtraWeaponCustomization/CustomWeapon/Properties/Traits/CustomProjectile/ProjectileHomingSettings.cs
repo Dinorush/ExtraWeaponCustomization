@@ -115,7 +115,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
                     break;
                 case "searchstopmode":
                 case "stopmode":
-                    SearchStopMode = reader.GetString()!.ToEnum(StopSearchMode.None);
+                    SearchStopMode = ToStopSearchMode(reader.GetString()!);
                     break;
                 case "searchstayontarget":
                 case "stayontarget":
@@ -155,6 +155,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
 
             throw new JsonException("Expected EndObject token");
         }
+
+        private static StopSearchMode ToStopSearchMode(string value)
+        {
+            value = value.Replace(" ", null).ToLower();
+            StopSearchMode result = StopSearchMode.None;
+            if (value.Contains("pierce"))
+                result |= StopSearchMode.Pierce;
+            if (value.Contains("dead"))
+                result |= StopSearchMode.Dead;
+            if (value.Contains("novalid"))
+                result |= StopSearchMode.NoValid;
+            return result;
+        }
     }
 
     public enum SearchMode
@@ -170,6 +183,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         None = 0,
         Pierce = 1,
         Dead = 2,
-        PierceDead = Pierce | Dead, DeadPierce = PierceDead
+        NoValid = 4
     }
 }

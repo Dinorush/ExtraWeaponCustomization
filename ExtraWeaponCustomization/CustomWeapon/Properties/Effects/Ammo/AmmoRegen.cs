@@ -26,6 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool UseRawAmmo { get; private set; } = false;
         public bool AllowReload { get; private set; } = true;
         public bool ActiveInHolster { get; private set; } = true;
+        public bool ResetWhileFull { get; private set; } = true;
         public float DelayAfterTrigger { get; private set; } = 0f;
 
         private float _clipBuffer = 0f;
@@ -88,6 +89,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             return true;
         }
 
+        private bool CanAddBuffer(float regen, float curr, float bound)
+        {
+            if (!ResetWhileFull) return true;
+
+            return (regen > 0 && curr < bound) || (regen < 0 && curr > 0);
+        }
+
         public IEnumerator Update()
         {
             _lastTickTime = Clock.Time;
@@ -108,9 +116,22 @@ namespace EWC.CustomWeapon.Properties.Effects
                     continue;
                 }
 
+                int currClip = CWC.Weapon.GetCurrentClip();
+                int maxClip = CWC.Weapon.GetMaxClip();
+                float currPack = _slotAmmo!.AmmoInPack;
+                float maxPack = _slotAmmo.AmmoMaxCap;
+
                 float delta = Math.Min(time - _nextTickTime, time - _lastTickTime);
-                _clipBuffer += ClipRegen * delta;
-                _reserveBuffer += ReserveRegen * delta;
+                if (CanAddBuffer(ClipRegen, currClip, maxClip))
+                    _clipBuffer += ClipRegen * delta;
+                else
+                    _clipBuffer = 0;
+
+                if (CanAddBuffer(ReserveRegen, currPack, maxPack))
+                    _reserveBuffer += ReserveRegen * delta;
+                else
+                    _reserveBuffer = 0;
+
                 _lastTickTime = time;
 
                 float costOfBullet = _slotAmmo!.CostOfBullet;
@@ -128,9 +149,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
 
                 // Calculate the actual changes we can make to clip/ammo
-                int currClip = CWC.Weapon.GetCurrentClip();
                 int clipChange = (int)(PullFromReserve ? Math.Min(_clipBuffer, _slotAmmo.BulletsInPack) : _clipBuffer);
-                int newClip = Math.Clamp(currClip + clipChange, 0, CWC.Weapon.GetMaxClip());
+                int newClip = Math.Clamp(currClip + clipChange, 0, maxClip);
 
                 // If we overflow/underflow the magazine, send the rest to reserves (if not pulling from reserves)
                 int bonusReserve = OverflowToReserve ? clipChange - (newClip - currClip) : 0;
@@ -153,10 +173,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (_slotAmmo.IsFull)
                 {
                     if (reserveCost < 0)
-                        _slotAmmo.AmmoInPack = Math.Max(0, _slotAmmo.AmmoInPack + reserveCost);
+                        _slotAmmo.AmmoInPack = Math.Max(0, currPack + reserveCost);
                 }
                 else
-                    _slotAmmo.AmmoInPack = Math.Clamp(_slotAmmo.AmmoInPack + reserveCost, 0, _slotAmmo.AmmoMaxCap);
+                    _slotAmmo.AmmoInPack = Math.Clamp(currPack + reserveCost, 0, maxPack);
 
                 _slotAmmo.OnBulletsUpdateCallback?.Invoke(_slotAmmo.BulletsInPack);
                 _ammoStorage!.NeedsSync = true;
@@ -186,6 +206,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
             writer.WriteBoolean(nameof(AllowReload), AllowReload);
             writer.WriteBoolean(nameof(ActiveInHolster), ActiveInHolster);
+            writer.WriteBoolean(nameof(ResetWhileFull), ResetWhileFull);
             writer.WriteNumber(nameof(DelayAfterTrigger), DelayAfterTrigger);
             SerializeTrigger(writer);
             writer.WriteEndObject();
@@ -222,6 +243,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "activeinholster":
                     ActiveInHolster = reader.GetBoolean();
+                    break;
+                case "resetwhilefull":
+                    ResetWhileFull = reader.GetBoolean();
                     break;
                 case "delayaftertrigger":
                     DelayAfterTrigger = reader.GetSingle();
