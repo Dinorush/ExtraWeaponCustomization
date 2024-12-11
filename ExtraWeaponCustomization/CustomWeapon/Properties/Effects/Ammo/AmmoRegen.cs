@@ -89,13 +89,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             return true;
         }
 
-        private bool CanAddBuffer(float regen, float curr, float bound)
-        {
-            if (!ResetWhileFull) return true;
-
-            return (regen > 0 && curr < bound) || (regen < 0 && curr > 0);
-        }
-
         public IEnumerator Update()
         {
             _lastTickTime = Clock.Time;
@@ -120,21 +113,38 @@ namespace EWC.CustomWeapon.Properties.Effects
                 int maxClip = CWC.Weapon.GetMaxClip();
                 float currPack = _slotAmmo!.AmmoInPack;
                 float maxPack = _slotAmmo.AmmoMaxCap;
+                float costOfBullet = _slotAmmo!.CostOfBullet;
+
+                bool addClip = ClipRegen != 0;
+                bool addReserve = ReserveRegen != 0;
+                if (ResetWhileFull)
+                {
+                    if (ClipRegen > 0)
+                    {
+                        // Allow when clip is not full or we overflow to not full pack AND we don't pull from pack or pack is nonempty
+                        addClip = currClip < maxClip || (OverflowToReserve && currPack < maxPack);
+                        addClip &= !PullFromReserve || currPack >= costOfBullet;
+                    }
+                    else if (ClipRegen < 0)
+                    {
+                        // Allow when clip is nonempty or we overflow drain to nonempty pack
+                        addClip = currClip != 0 || (OverflowToReserve && currPack > 0);
+                    }
+
+                    if (ReserveRegen > 0)
+                        addReserve = currPack < maxPack;
+                    else if (ReserveRegen < 0)
+                    {
+                        addReserve = currPack > costOfBullet;
+                        addReserve &= !PullFromReserve || currClip < maxClip;
+                    }
+                }
 
                 float delta = Math.Min(time - _nextTickTime, time - _lastTickTime);
-                if (CanAddBuffer(ClipRegen, currClip, maxClip))
-                    _clipBuffer += ClipRegen * delta;
-                else
-                    _clipBuffer = 0;
-
-                if (CanAddBuffer(ReserveRegen, currPack, maxPack))
-                    _reserveBuffer += ReserveRegen * delta;
-                else
-                    _reserveBuffer = 0;
-
+                _clipBuffer = addClip ? _clipBuffer + ClipRegen * delta : 0;
+                _reserveBuffer = addReserve ? _reserveBuffer + ReserveRegen * delta : 0;
                 _lastTickTime = time;
 
-                float costOfBullet = _slotAmmo!.CostOfBullet;
                 float min = UseRawAmmo ? costOfBullet : 1f;
                 if (Math.Abs(_clipBuffer) < min && Math.Abs(_reserveBuffer) < min)
                 {
