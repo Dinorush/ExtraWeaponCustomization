@@ -72,6 +72,7 @@ namespace EWC.Patches
         public static bool CachedBypassTumorCap { get; private set; } = false;
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
+        [HarmonyPriority(Priority.Low)]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
         private static void HitCallback(ref WeaponHitData weaponRayData, bool doDamage, float additionalDis, uint damageSearchID, ref bool allowDirectionalBonus)
