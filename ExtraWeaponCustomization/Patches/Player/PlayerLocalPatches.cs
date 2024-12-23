@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 
-namespace EWC.Patches
+namespace EWC.Patches.Player
 {
     [HarmonyPatch]
     internal static class PlayerLocalPatches

@@ -4,7 +4,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using FirstPersonItem;
 using HarmonyLib;
 
-namespace EWC.Patches
+namespace EWC.Patches.Gun
 {
     [HarmonyPatch]
     internal static class FPISPatches

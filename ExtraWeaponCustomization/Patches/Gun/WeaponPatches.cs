@@ -8,7 +8,6 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
 using Gear;
 using HarmonyLib;
-using SNetwork;
 using static Weapon;
 
 namespace EWC.Patches
@@ -81,8 +80,8 @@ namespace EWC.Patches
             // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
             if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null || !doDamage) return;
 
-            // Bot/other player filter. All CWC behavior is handled client-side.
-            if (!weaponRayData.owner.IsLocallyOwned && (!SNet.IsMaster || !weaponRayData.owner.Owner.IsBot)) return;
+            // All CWC behavior is handled client-side.
+            if (!weaponRayData.owner.IsLocallyOwned) return;
 
             s_hitData.Setup(weaponRayData, additionalDis);
             IDamageable? damageable = s_hitData.damageable;

@@ -3,7 +3,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using HarmonyLib;
 using System;
 
-namespace EWC.Patches
+namespace EWC.Patches.Enemy
 {
     [HarmonyPatch]
     internal static class EnemyLimbPatches

@@ -8,7 +8,7 @@ using System;
 using Gear;
 using EWC.Utils;
 
-namespace EWC.Patches
+namespace EWC.Patches.Gun
 {
     [HarmonyPatch]
     internal static class WeaponRayPatches

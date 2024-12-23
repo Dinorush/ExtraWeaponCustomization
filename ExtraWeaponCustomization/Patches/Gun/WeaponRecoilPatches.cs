@@ -6,7 +6,7 @@ using Gear;
 using HarmonyLib;
 using UnityEngine;
 
-namespace EWC.Patches
+namespace EWC.Patches.Gun
 {
     [HarmonyPatch]
     internal static class WeaponRecoilPatches
