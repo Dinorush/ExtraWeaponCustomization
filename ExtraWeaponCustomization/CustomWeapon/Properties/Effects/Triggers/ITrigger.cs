@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
@@ -17,7 +18,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         PreHit,
         Charge,
         Damage,
-        Kill
+        Kill,
+        HitTaken,
+        DamageTaken
     }
 
     public interface ITrigger
@@ -44,7 +47,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "reloadstart" or "startreload" => new BasicTrigger<WeaponReloadStartContext>(TriggerName.ReloadStart),
                 "reload" => new BasicTrigger<WeaponPostReloadContext>(TriggerName.Reload),
                 "wield" => new BasicTrigger<WeaponWieldContext>(TriggerName.Wield),
-                "bulletlanded" or "landedbullet" or "meleelanded" or "landedmelee" => new BasicTrigger<WeaponHitContext>(TriggerName.BulletLanded),
+                "hittaken" => new BasicTrigger<WeaponDamageTakenContext>(TriggerName.HitTaken),
+                "damagetaken" => new DamageTakenTrigger(),
+                "bulletlanded" or "landedbullet" or "meleelanded" or "landedmelee" => new BulletLandedTrigger(),
                 string prehit when prehit.Contains("prehit") => new DamageableTrigger<WeaponPreHitDamageableContext>(TriggerName.PreHit, name.ToDamageType()),
                 string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageType()),
                 string charge when charge.Contains("charge") => new ChargeTrigger(name.ToDamageType()),

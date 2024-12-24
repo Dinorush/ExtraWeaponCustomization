@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Heal;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.Dependencies;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float HealthChangeRel { get; private set; } = 0f;
         public float CapRel { get; private set; } = -1f;
         public bool CancelRegen { get; private set; } = false;
+        public bool StopBleed { get; private set; } = false;
 
         public override void TriggerReset() {}
 
@@ -32,6 +34,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 cap * owner.Damage.HealthMax,
                 this
                 );
+
+            if (StopBleed)
+                EECAPIWrapper.StopBleed(owner);
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -41,6 +46,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(HealthChangeRel), HealthChangeRel);
             writer.WriteNumber(nameof(CapRel), CapRel);
             writer.WriteBoolean(nameof(CancelRegen), CancelRegen);
+            writer.WriteBoolean(nameof(StopBleed), StopBleed);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -64,6 +70,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "cancelregen":
                     CancelRegen = reader.GetBoolean();
+                    break;
+                case "stopbleed":
+                    StopBleed = reader.GetBoolean();
                     break;
                 default:
                     break;

@@ -166,22 +166,24 @@ namespace EWC.CustomWeapon.WeaponContext
 
         private void RegisterGunContexts()
         {
+            // Only contexts that aren't direct descendants of WeaponTriggerContext need to have it passed directly,
+            // but why not micro-optimize?
             var triggerList = RegisterContext<WeaponTriggerContext>();
-            RegisterContext<WeaponDamageTypeContext>();
-            RegisterContext<WeaponAimContext>();
-            RegisterContext<WeaponAimEndContext>();
+            RegisterContext<WeaponDamageTypeContext>(triggerList);
+            RegisterContext<WeaponAimContext>(triggerList);
+            RegisterContext<WeaponAimEndContext>(triggerList);
             RegisterContext<WeaponPostKillContext>(triggerList);
-            RegisterContext<WeaponPostFireContext>();
-            RegisterContext<WeaponPreFireContext>();
+            RegisterContext<WeaponPostFireContext>(triggerList);
+            RegisterContext<WeaponPreFireContext>(triggerList);
             RegisterContext<WeaponHitContext>(triggerList);
             RegisterContext<WeaponPreHitDamageableContext>(triggerList);
             RegisterContext<WeaponHitDamageableContext>(triggerList);
-            RegisterContext<WeaponPreReloadContext>();
-            RegisterContext<WeaponPostReloadContext>();
-            RegisterContext<WeaponReloadStartContext>();
-            RegisterContext<WeaponWieldContext>();
-            RegisterContext<WeaponUnWieldContext>();
+            RegisterContext<WeaponDamageTakenContext>(triggerList);
+            RegisterContext<WeaponPostReloadContext>(triggerList);
+            RegisterContext<WeaponReloadStartContext>(triggerList);
+            RegisterContext<WeaponWieldContext>(triggerList);
 
+            // Standard contexts
             RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponBackstabContext>();
             RegisterContext<WeaponFireCanceledContext>();
@@ -199,9 +201,12 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponCancelRayContext>();
             RegisterContext<WeaponPostRayContext>();
             RegisterContext<WeaponPostStopFiringContext>();
+            RegisterContext<WeaponPreReloadContext>();
+            RegisterContext<WeaponUnWieldContext>();
             RegisterContext<WeaponRecoilContext>();
             RegisterContext<WeaponStealthUpdateContext>();
 
+            // Component management contexts
             RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponSetupContext>();
             RegisterContext<WeaponOwnerSetContext>();
@@ -213,14 +218,15 @@ namespace EWC.CustomWeapon.WeaponContext
         private void RegisterMeleeContexts()
         {
             var triggerList = RegisterContext<WeaponTriggerContext>();
-            RegisterContext<WeaponDamageTypeContext>();
+            RegisterContext<WeaponDamageTypeContext>(triggerList);
             RegisterContext<WeaponPostKillContext>(triggerList);
-            RegisterContext<WeaponPostFireContext>();
-            RegisterContext<WeaponPreFireContext>();
+            RegisterContext<WeaponPostFireContext>(triggerList);
+            RegisterContext<WeaponPreFireContext>(triggerList);
             RegisterContext<WeaponHitContext>(triggerList);
             RegisterContext<WeaponPreHitDamageableContext>(triggerList);
             RegisterContext<WeaponHitDamageableContext>(triggerList);
-            RegisterContext<WeaponWieldContext>();
+            RegisterContext<WeaponDamageTakenContext>(triggerList);
+            RegisterContext<WeaponWieldContext>(triggerList);
 
             RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponBackstabContext>();

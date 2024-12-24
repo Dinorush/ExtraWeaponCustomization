@@ -16,6 +16,9 @@ using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
 using EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX;
+using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
+using EWC.Patches.Player;
+using System.Runtime.CompilerServices;
 
 namespace EWC;
 
@@ -26,7 +29,9 @@ namespace EWC;
 [BepInDependency(PDAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(EXPAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(ERDAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(EECAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(FSFAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(CCAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 internal sealed class EntryPoint : BasePlugin
 {
     public const string MODNAME = "ExtraWeaponCustomization";
@@ -42,8 +47,12 @@ internal sealed class EntryPoint : BasePlugin
         }
         Loaded = true;
 
-        new Harmony(MODNAME).PatchAll();
+        var harmony = new Harmony(MODNAME);
+        harmony.PatchAll();
         EnemyDetectionPatches.ApplyNativePatch();
+        if (!CCAPIWrapper.HasCC)
+            harmony.PatchAll(typeof(PlayerDamagePatches));
+
         Configuration.Init();
         LevelAPI.OnLevelCleanup += LevelAPI_OnLevelCleanup;
         LevelAPI.OnEnterLevel += LevelAPI_OnLevelEnter;
@@ -74,10 +83,11 @@ internal sealed class EntryPoint : BasePlugin
         LayerUtil.Init();
         ExplosionManager.Init();
         DOTDamageManager.Init();
+        FoamManager.Init();
         HealManager.Init();
         TriggerManager.Init();
         KillAPIWrapper.Init();
         EWCProjectileManager.Init();
-        CustomWeaponManager.Current.GetCustomGunData(0); // Just want to make it get custom weapon data on startup, need to call something
+        RuntimeHelpers.RunClassConstructor(typeof(CustomWeaponManager).TypeHandle);
     }
 }

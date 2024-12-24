@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         Flesh = 64,
         Enemy = 128,
         Player = 256,
-        Lock = 512, PlayerLock = Player | Lock
+        Lock = 512
     }
 
     public static class DamageTypeMethods
