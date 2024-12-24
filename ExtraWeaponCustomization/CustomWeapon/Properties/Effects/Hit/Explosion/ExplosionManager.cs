@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 {
     public static class ExplosionManager
     {
-        internal static ExplosionDamageSync DamageSync { get; private set; } = new();
+        private readonly static ExplosionDamageSync _sync = new();
 
         private const SearchSetting BaseSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
         private static SearchSetting s_searchSetting = BaseSettings;
@@ -29,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         internal static void Init()
         {
-            DamageSync.Setup();
+            _sync.Setup();
             ExplosionFXManager.Init();
         }
 
@@ -177,7 +177,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             KillTrackerManager.RegisterHit(eBase.CWC.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), position, armorMulti < 1f || damBase.IsImortal);
 
-            DamageSync.Send(data, SNet_ChannelType.GameNonCritical);
+            _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
         internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult)

@@ -7,7 +7,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 {
     internal static class ExplosionFXManager
     {
-        internal static ExplosionFXSync FXSync { get; private set; } = new();
+        private readonly static ExplosionFXSync _sync = new();
 
         private static float _lastSoundTime = 0f;
         private static int _soundShotOverride = 0;
@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         internal static void Init()
         {
-            FXSync.Setup();
+            _sync.Setup();
             ExplosionEffectPooling.Initialize();
         }
 
@@ -28,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             fxData.radius.Set(eBase.Radius, ExplosionManager.MaxRadius);
             fxData.duration.Set(eBase.GlowDuration, MaxGlowDuration);
             fxData.fadeDuration.Set(eBase.GlowFadeDuration, MaxGlowDuration);
-            FXSync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
+            _sync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
         }
 
         internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, uint soundID, Color color, float intensity, float duration, float fadeDuration)

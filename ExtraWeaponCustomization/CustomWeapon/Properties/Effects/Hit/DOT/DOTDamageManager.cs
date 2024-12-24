@@ -14,12 +14,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
     public static class DOTDamageManager
     {
-        internal static DOTEnemyDamageSync Sync { get; private set; } = new();
+        private readonly static DOTEnemyDamageSync _sync = new();
         public const float MaxStagger = 16384; // 2 ^ 14
 
         internal static void Init()
         {
-            Sync.Setup();
+            _sync.Setup();
             DOTGlowPooling.Initialize();
         }
 
@@ -100,7 +100,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             KillTrackerManager.RegisterHit(dotBase.CWC.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
-            Sync.Send(data, SNet_ChannelType.GameNonCritical);
+            _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
         // Not using damBase.FireDamage to avoid invoking XP's bleed resistance
