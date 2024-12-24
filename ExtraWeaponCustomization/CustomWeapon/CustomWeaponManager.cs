@@ -11,6 +11,7 @@ using MTFO.API;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,6 +28,7 @@ namespace EWC.CustomWeapon
         private readonly SortedDictionary<uint, CustomWeaponData> _customGunData = new();
         private readonly SortedDictionary<uint, CustomWeaponData> _customMeleeData = new();
         private readonly List<ItemEquippable> _listenCWs = new();
+        private readonly List<ISyncProperty> _syncedProperties = new();
 
         private readonly LiveEditListener _liveEditListener;
 
@@ -37,26 +39,33 @@ namespace EWC.CustomWeapon
             return "Printing manager: " + _customGunData.ToString();
         }
 
-        public void AddCustomWeaponData(CustomWeaponData? data, string file)
+        public static bool TryGetCustomGunData(uint id, [MaybeNullWhen(false)] out CustomWeaponData data)
         {
-            if (data == null) return;
+            data = GetCustomGunData(id);
+            return data != null;
+        }
+        public static CustomWeaponData? GetCustomGunData(uint id) => Current._customGunData.GetValueOrDefault(id);
 
-            if (data.ArchetypeID != 0)
-            {
-                _fileToGuns[file].Add(data.ArchetypeID);
-                _customGunData[data.ArchetypeID] = data;
-            }
+        public static bool TryGetCustomMeleeData(uint id, [MaybeNullWhen(false)] out CustomWeaponData data)
+        {
+            data = GetCustomMeleeData(id);
+            return data != null;
+        }
+        public static CustomWeaponData? GetCustomMeleeData(uint id) => Current._customMeleeData.GetValueOrDefault(id);
 
-            if (data.MeleeArchetypeID != 0)
-            {
-                _fileToMelees[file].Add(data.MeleeArchetypeID);
-                _customMeleeData[data.MeleeArchetypeID] = data;
-            }
+        public static bool TryGetSyncProperty<T>(ushort id, [MaybeNullWhen(false)] out T property) where T : ISyncProperty
+        {
+            property = GetSyncProperty<T>(id);
+            return property != null;
+        }
+        public static T? GetSyncProperty<T>(ushort id) where T : ISyncProperty
+        {
+            return id < Current._syncedProperties.Count && Current._syncedProperties[id] is T tProperty ? tProperty : default;
         }
 
         private void OnReload()
         {
-            RegisterProjectileSettings();
+            RegisterSyncedProperties();
             PrintCustomIDs();
             ResetCWCs();
         }
@@ -146,8 +155,22 @@ namespace EWC.CustomWeapon
             }
         }
 
-        public CustomWeaponData? GetCustomGunData(uint id) => _customGunData.GetValueOrDefault(id);
-        public CustomWeaponData? GetCustomMeleeData(uint id) => _customMeleeData.GetValueOrDefault(id);
+        private void AddCustomWeaponData(CustomWeaponData? data, string file)
+        {
+            if (data == null) return;
+
+            if (data.ArchetypeID != 0)
+            {
+                _fileToGuns[file].Add(data.ArchetypeID);
+                _customGunData[data.ArchetypeID] = data;
+            }
+
+            if (data.MeleeArchetypeID != 0)
+            {
+                _fileToMelees[file].Add(data.MeleeArchetypeID);
+                _customMeleeData[data.MeleeArchetypeID] = data;
+            }
+        }
 
         public void AddWeaponListener(ItemEquippable weapon)
         {
@@ -201,21 +224,28 @@ namespace EWC.CustomWeapon
             }
         }
 
-        private void RegisterProjectileSettings()
+        private void RegisterSyncedProperties()
         {
-            EWCProjectileManager.ClearSettings();
+            _syncedProperties.Clear();
             foreach (CustomWeaponData data in _customGunData.Values)
-                RegisterProjectileSettings_Recurse(data.Properties);
+                RegisterSyncedProperties_Recurse(data.Properties);
+
+            foreach (CustomWeaponData data in _customMeleeData.Values)
+                RegisterSyncedProperties_Recurse(data.Properties);
         }
 
-        private void RegisterProjectileSettings_Recurse(PropertyList list)
+        private void RegisterSyncedProperties_Recurse(PropertyList list)
         {
-            if (list.Traits?.TryGetValueAs<Type, Trait, Properties.Traits.Projectile>(typeof(Properties.Traits.Projectile), out var projectile) == true)
-                projectile.SettingsID = EWCProjectileManager.RegisterSetting(projectile);
-
             foreach (var property in list.Properties)
+            {
                 if (property is TempProperties tempProperties)
-                    RegisterProjectileSettings_Recurse(tempProperties.Properties);
+                    RegisterSyncedProperties_Recurse(tempProperties.Properties);
+                else if (property is ISyncProperty syncProperty)
+                {
+                    syncProperty.SyncPropertyID = (ushort) _syncedProperties.Count;
+                    _syncedProperties.Add(syncProperty);
+                }
+            }
         }
 
         internal void CreateTemplate()

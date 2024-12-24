@@ -51,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             {
                 playerIndex = index,
                 id = EWCProjectileManager.GetNextID(index),
-                settingsID = projBase.SettingsID,
+                propertyID = projBase.SyncPropertyID,
                 position = position
             };
             data.dir.Value = dir;
@@ -76,7 +76,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
     {
         public ushort playerIndex;
         public ushort id;
-        public ushort settingsID;
+        public ushort propertyID;
         public Vector3 position;
         public LowResVector3_Normalized dir;
     }

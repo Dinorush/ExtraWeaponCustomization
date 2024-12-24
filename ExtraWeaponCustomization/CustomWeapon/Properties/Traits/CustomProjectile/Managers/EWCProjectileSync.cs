@@ -31,12 +31,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         protected override void Receive(ProjectileDataShooter packet)
         {
-            if (packet.settingsID >= EWCProjectileManager.ProjectileSettings.Count) return;
+            if (!CustomWeaponManager.TryGetSyncProperty<Projectile>(packet.id, out var property)) return;
 
             EWCProjectileManager.Shooter.Internal_ReceiveProjectile(
                 packet.playerIndex,
                 packet.id,
-                EWCProjectileManager.ProjectileSettings[packet.settingsID],
+                property,
                 packet.position,
                 packet.dir.Value
                 );

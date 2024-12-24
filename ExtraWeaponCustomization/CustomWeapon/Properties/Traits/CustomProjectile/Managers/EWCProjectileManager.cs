@@ -10,7 +10,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
     {
         internal static readonly Dictionary<ushort, LinkedList<(ushort id, EWCProjectileComponentBase comp)>> PlayerProjectiles = new();
         private static readonly Dictionary<ushort, LinkedList<(ushort id, EnemyAgent? enemy, byte limbID)>> _cachedTargets = new();
-        internal static readonly List<Projectile> ProjectileSettings = new();
 
         public static readonly EWCProjectileManagerShooter Shooter = new();
 
@@ -30,14 +29,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             _cachedTargets.Clear();
             PlayerProjectiles.Clear();
         }
-
-        internal static ushort RegisterSetting(Projectile setting)
-        {
-            ProjectileSettings.Add(setting);
-            return (ushort) (ProjectileSettings.Count - 1);
-        }
-
-        internal static void ClearSettings() => ProjectileSettings.Clear();
 
         internal static ushort GetNextID(ushort playerIndex)
         {

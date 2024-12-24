@@ -17,13 +17,14 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class Projectile :
         Trait,
         IGunProperty,
+        ISyncProperty,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPostRayContext>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
     {
-        public ushort SettingsID { get; set; }
+        public ushort SyncPropertyID { get; set; }
 
         public ProjectileType ProjectileType { get; private set; } = ProjectileType.NotTargetingSmallFast;
         public float Speed { get; private set; } = 0f;
@@ -135,7 +136,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public override WeaponPropertyBase Clone()
         {
             Projectile copy = (Projectile) base.Clone();
-            copy.SettingsID = SettingsID;
+            copy.SyncPropertyID = SyncPropertyID;
             return copy;
         }
 

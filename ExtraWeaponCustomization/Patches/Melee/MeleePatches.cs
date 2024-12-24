@@ -21,8 +21,7 @@ namespace EWC.Patches.Melee
         {
             CachedCharge = 0f;
             CustomWeaponManager.Current.AddWeaponListener(__instance);
-            CustomWeaponData? data = CustomWeaponManager.Current.GetCustomMeleeData(__instance.MeleeArchetypeData.persistentID);
-            if (data == null) return;
+            if (!CustomWeaponManager.TryGetCustomMeleeData(__instance.MeleeArchetypeData.persistentID, out var data)) return;
 
             if (__instance.gameObject.GetComponent<CustomWeaponComponent>() != null) return;
 

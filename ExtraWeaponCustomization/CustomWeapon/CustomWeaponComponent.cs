@@ -78,7 +78,7 @@ namespace EWC.CustomWeapon
             Clear();
             _propertyController.ChangeToSyncContexts();
             _synced = true;
-            Register(CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID));
+            Register(CustomWeaponManager.GetCustomGunData(Weapon.ArchetypeID));
         }
 
         private void Update()
@@ -116,7 +116,7 @@ namespace EWC.CustomWeapon
 
             if (data == null)
             {
-                data = IsGun ? CustomWeaponManager.Current.GetCustomGunData(Weapon.ArchetypeID) : CustomWeaponManager.Current.GetCustomMeleeData(Weapon.MeleeArchetypeData.persistentID);
+                data = IsGun ? CustomWeaponManager.GetCustomGunData(Weapon.ArchetypeID) : CustomWeaponManager.GetCustomMeleeData(Weapon.MeleeArchetypeData.persistentID);
                 if (data == null) return;
             }
 

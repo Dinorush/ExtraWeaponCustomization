@@ -20,4 +20,10 @@ namespace EWC.CustomWeapon.Properties
     public interface IGunProperty { }
 
     public interface IMeleeProperty { }
+
+    // For networked properties to send only their sync ID so their fields can be retrieved locally.
+    public interface ISyncProperty
+    {
+        public ushort SyncPropertyID { get; set; }
+    }
 }

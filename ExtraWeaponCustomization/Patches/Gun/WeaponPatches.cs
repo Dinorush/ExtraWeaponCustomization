@@ -21,8 +21,7 @@ namespace EWC.Patches
         private static void SetupCallback(BulletWeapon __instance)
         {
             CustomWeaponManager.Current.AddWeaponListener(__instance);
-            CustomWeaponData? data = CustomWeaponManager.Current.GetCustomGunData(__instance.ArchetypeData.persistentID);
-            if (data == null) return;
+            if (!CustomWeaponManager.TryGetCustomGunData(__instance.ArchetypeData.persistentID, out var data)) return;
 
             if (__instance.gameObject.GetComponent<CustomWeaponComponent>() != null) return;
 
@@ -170,8 +169,7 @@ namespace EWC.Patches
                 else if (triggerHit)
                     cc.Invoke(new WeaponHitDamageableContext(hitData, DamageType.Bullet));
             }
-            
-            if (triggerHit)
+            else if (triggerHit)
                 cc.Invoke(new WeaponHitContext(hitData));
 
             hitData.Apply();
