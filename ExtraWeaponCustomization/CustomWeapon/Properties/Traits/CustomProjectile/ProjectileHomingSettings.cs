@@ -165,7 +165,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             if (value.Contains("dead"))
                 result |= StopSearchMode.Dead;
             if (value.Contains("novalid"))
-                result |= StopSearchMode.NoValid;
+                result |= StopSearchMode.Invalid;
             return result;
         }
     }
@@ -183,6 +183,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         None = 0,
         Pierce = 1,
         Dead = 2,
-        NoValid = 4
+        Invalid = 4
     }
 }

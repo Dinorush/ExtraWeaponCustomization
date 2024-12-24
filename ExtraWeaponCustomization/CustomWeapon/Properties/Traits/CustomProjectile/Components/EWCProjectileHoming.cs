@@ -84,6 +84,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     if (_settings.SearchInitialMode == SearchMode.AimDir)
                         s_dir = _owner!.FPSCamera.Forward;
                     FindHomingAgent();
+                    if (_homingAgent == null && _settings!.SearchStopMode.HasFlag(StopSearchMode.Invalid))
+                        _homingEnabled = false;
                 }
             }
         }
@@ -125,14 +127,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (_homingAgent == null || !_homingAgent.Alive || _homingAgent.Damage.Health <= 0)
             {
-                if (_settings!.SearchStopMode.HasFlag(StopSearchMode.NoValid)
-                || (_hadTarget && _settings!.SearchStopMode.HasFlag(StopSearchMode.Dead)))
+                if (_hadTarget && _settings!.SearchStopMode.HasFlag(StopSearchMode.Dead))
                 {
                     _homingEnabled = false;
                     return false;
                 }
 
                 FindHomingAgent();
+                if (_homingAgent == null && _settings!.SearchStopMode.HasFlag(StopSearchMode.Invalid))
+                {
+                    _homingEnabled = false;
+                    return false;
+                }
+
                 return _homingAgent != null;
             }
 
