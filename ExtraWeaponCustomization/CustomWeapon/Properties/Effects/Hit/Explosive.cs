@@ -52,10 +52,6 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             foreach (TriggerContext tContext in triggerList)
             {
-                // Fix bug where explosion and gun can have same search ID, causing gun to deal no damage
-                if (CWC.IsGun && CWC.Gun!.m_damageSearchID > 0 && CWC.Gun.m_damageSearchID - 1 == DamageUtil.SearchID)
-                    DamageUtil.IncrementSearchID();
-
                 CacheBackstab = 0f;
                 if (tContext.context is WeaponPostKillContext killContext)
                 {
