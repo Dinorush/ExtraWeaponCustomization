@@ -80,7 +80,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 // If the trigger isn't of the valid class, remove it
                 if (_validTriggers != null && !_validTriggers.Contains(name))
                 {
-                    EWCLogger.Warning(GetType().Name + " only allows triggers of the following types or subtypes: " + string.Join(", ", _validTriggers));
+                    EWCLogger.Warning($"{GetType().Name} has an invalid trigger {name}. Only the following are allowed: {string.Join(", ", _validTriggers)}");
                     Trigger.Activate.RemoveAt(i);
                     continue;
                 }
@@ -91,7 +91,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 // If all valid triggers are blacklisted, remove it
                 if (typeTrigger.DamageType.HasAnyFlag(typeTrigger.BlacklistType))
                 {
-                    EWCLogger.Warning(GetType().Name + " cannot have a hit trigger damage type matching " + _blacklistType.ToString());
+                    EWCLogger.Warning($"{GetType().Name} has a trigger {name} with invalid damage type {typeTrigger.DamageType}. It cannot contain any types within {_blacklistType}");
                     Trigger.Activate.RemoveAt(i);
                     continue;
                 }
