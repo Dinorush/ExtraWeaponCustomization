@@ -44,5 +44,18 @@ namespace EWC.Patches.Enemy
             __result = dam * Math.Max(__instance.m_weakspotDamageMulti * precisionMulti, 1) * __instance.m_armorDamageMulti;
             return false;
         }
+
+        [HarmonyPatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveGlueDamage))]
+        [HarmonyWrapSafe]
+        [HarmonyPrefix]
+        private static bool FixGlueDamage(Dam_EnemyDamageBase __instance, pMiniDamageData data)
+        {
+            GlueVolumeDesc glueVolumeDesc = default;
+            glueVolumeDesc.volume = data.damage.Get(100f); // Epic .Get(HealthMax) when .Set(100f) is used
+            glueVolumeDesc.expandVolume = 0f;
+            glueVolumeDesc.currentScale = 0f;
+            __instance.AddToTotalGlueVolume(null, glueVolumeDesc);
+            return false;
+        }
     }
 }

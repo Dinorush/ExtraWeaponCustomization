@@ -25,6 +25,7 @@ namespace EWC.JSON
                     new Explosive(),
                     new FireRateMod(),
                     new FireShot(),
+                    new Foam(),
                     new HealthMod(),
                     new RecoilMod(),
                     new TempProperties(),
