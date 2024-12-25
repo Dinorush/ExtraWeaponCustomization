@@ -8,10 +8,9 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
     public sealed class WeaponHitDamageableContext : WeaponHitDamageableContextBase
     {
         public float Damage { get; }
-        public float Backstab { get; }
 
-        public WeaponHitDamageableContext(float damage, float backstab, WeaponPreHitDamageableContext context)
-            : base(context.Damageable, context.Position, context.Direction, context.Falloff)
+        public WeaponHitDamageableContext(float damage, WeaponPreHitDamageableContext context)
+            : base(context.Damageable, context.Position, context.Direction, context.Backstab, context.Falloff)
         {
             Damage = damage;
             Dam_SyncedDamageBase? baseDam = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
@@ -19,12 +18,10 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 Damage = Math.Min(Damage, baseDam.HealthMax);
             else
                 Damage = Math.Min(Damage, DamageableUtil.LockHealth);
-            Backstab = backstab;
-            DamageType = context.DamageType;
         }
 
         public WeaponHitDamageableContext(HitData data, DamageType flag = DamageType.Any)
-            : base(data)
+            : base(data, 1f)
         {
             Damage = data.damage * Falloff;
             var damBase = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
@@ -33,13 +30,11 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             else
                 Damage = Math.Min(Damage, DamageableUtil.LockHealth);
             DamageType = flag.WithSubTypes(data.damageable!);
-            Backstab = 1f;
         }
 
         public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb, DamageType flag = DamageType.Any)
-            : base(data)
+            : base(data, backstab)
         {
-            Backstab = Math.Max(backstab, 1f);
             Damage = data.damage * Falloff;
             Damage = limb.ApplyWeakspotAndArmorModifiers(Damage, data.precisionMulti);
             Damage *= Backstab;

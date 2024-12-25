@@ -8,6 +8,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
 using Gear;
 using HarmonyLib;
+using static RootMotion.Demos.FBBIKSettings;
 using static Weapon;
 
 namespace EWC.Patches
@@ -92,9 +93,8 @@ namespace EWC.Patches
             CustomWeaponComponent? cwc = s_hitData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
             if (cwc == null)
             {
-                Agent? agent = damageable?.GetBaseAgent();
-                if (agent != null && agent.Type == AgentType.Enemy && agent.Alive)
-                    KillTrackerManager.ClearHit(agent.TryCast<EnemyAgent>()!);
+                if (damageable.IsEnemy())
+                    KillTrackerManager.ClearHit(damageable!.GetBaseAgent().Cast<EnemyAgent>());
                 return;
             }
 
@@ -124,8 +124,20 @@ namespace EWC.Patches
             IDamageable? damageable = hitData.damageable;
             if (damageable != null && damageable.GetBaseDamagable().GetHealthRel() > 0)
             {
+                float backstab = 1f;
+                float origBackstab = 1f;
+                Agent? agent = damageable.GetBaseAgent();
+                Dam_EnemyDamageLimb? limb = null;
+                bool enemy = agent != null && agent.Alive && agent.Type == AgentType.Enemy;
+                if (enemy)
+                {
+                    limb = damageable!.Cast<Dam_EnemyDamageLimb>();
+                    origBackstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
+                    backstab = origBackstab.Map(1f, 2f, 1f, cc.Invoke(new WeaponBackstabContext()).Value);
+                }
+
                 if (triggerHit)
-                    cc.Invoke(new WeaponPreHitDamageableContext(hitData, DamageType.Bullet));
+                    cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab, DamageType.Bullet));
 
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(hitData.damage, hitData.precisionMulti, damageable);
@@ -141,18 +153,13 @@ namespace EWC.Patches
                     pierceDamage = pierceContext.Value;
                 }
 
-                Agent? agent = damageable.GetBaseAgent();
-                if (agent != null && agent.Alive && agent.Type == AgentType.Enemy)
+                if (enemy)
                 {
-                    Dam_EnemyDamageLimb limb = damageable!.Cast<Dam_EnemyDamageLimb>();
-                    float origBackstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
-                    float backstab = origBackstab.Map(1f, 2f, 1f, cc.Invoke(new WeaponBackstabContext()).Value);
-                    
                     WeaponHitDamageableContext hitContext = new(
                         hitData,
                         CachedBypassTumorCap,
                         backstab,
-                        limb,
+                        limb!,
                         DamageType.Bullet
                     );
 

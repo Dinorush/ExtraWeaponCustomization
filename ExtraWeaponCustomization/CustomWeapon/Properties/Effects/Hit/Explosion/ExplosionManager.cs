@@ -90,10 +90,29 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             damage *= triggerAmt;
             float precisionMult = eBase.PrecisionDamageMulti;
 
+            float backstabMulti = 1f;
+            bool enemy = damageable.IsEnemy();
+            Dam_EnemyDamageLimb? limb = null;
+            if (enemy)
+            {
+                limb = damageable.Cast<Dam_EnemyDamageLimb>();
+                if (!eBase.IgnoreBackstab)
+                {
+                    if (eBase.CacheBackstab > 0f)
+                        backstabMulti = eBase.CacheBackstab;
+                    else
+                    {
+                        float mod = eBase.CWC.Invoke(new WeaponBackstabContext()).Value;
+                        backstabMulti = limb.ApplyDamageFromBehindBonus(1f, position, direction).Map(1f, 2f, 1f, mod);
+                    }
+                }
+            }
+
             var preContext = eBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                 damageable,
                 position,
                 direction,
+                backstabMulti,
                 falloffMod * distFalloff,
                 DamageType.Explosive
                 ));
@@ -122,14 +141,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().Cast<Dam_PlayerDamageBase>();
                 damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti;
                 damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
-                eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, preContext));
+                eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 // Only damage and direction are used AFAIK, but again, just in case...
                 playerBase.BulletDamage(damage, source, position, playerBase.DamageTargetPos - position, Vector3.zero);
                 return;
             }
             else if (agent == null) // Lock damage; direction doesn't matter
             {
-                eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, preContext));
+                eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 damageable.BulletDamage(damage, source, Vector3.zero, Vector3.zero, Vector3.zero);
                 return;
             }
@@ -137,10 +156,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             // Applied after FF damage since EXP mod doesn't affect FF damage
             damage *= EXPAPIWrapper.GetDamageMod(eBase.CWC.IsGun);
 
-            Dam_EnemyDamageLimb? limb = damageable.TryCast<Dam_EnemyDamageLimb>();
-            if (limb == null) return;
+            if (!enemy) return;
 
-            Dam_EnemyDamageBase damBase = limb.m_base;
+            Dam_EnemyDamageBase damBase = limb!.m_base;
             Vector3 localPosition = position - damBase.Owner.Position;
             ExplosionDamageData data = default;
             data.target.Set(damBase.Owner);
@@ -152,18 +170,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMult, 1f) : 1f;
-            float backstabMulti = 1f;
-            if (!eBase.IgnoreBackstab)
-            {
-                if (eBase.CacheBackstab > 0f)
-                    backstabMulti = eBase.CacheBackstab;
-                else
-                {
-                    WeaponBackstabContext backContext = new();
-                    eBase.CWC.Invoke(backContext);
-                    backstabMulti = limb.ApplyDamageFromBehindBonus(1f, position, direction).Map(1f, 2f, 1f, backContext.Value);
-                }
-            }
+            
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
@@ -172,7 +179,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             data.damage.Set(precDamage, damBase.DamageMax);
 
-            var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, backstabMulti, preContext));
+            var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             KillTrackerManager.RegisterHit(eBase.CWC.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), position, armorMulti < 1f || damBase.IsImortal);

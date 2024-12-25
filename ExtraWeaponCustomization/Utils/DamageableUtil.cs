@@ -20,6 +20,14 @@ namespace EWC.Utils
             return go.GetComponent<IDamageable>();
         }
 
+        public static bool IsEnemy(this IDamageable? damageable)
+        {
+            if (damageable == null) return false;
+
+            Agents.Agent? agent = damageable.GetBaseAgent();
+            return agent != null && agent.Alive && agent.Type == Agents.AgentType.Enemy;
+        }
+
         private static IntPtr _cachedExpedition = default;
         private static float _cachedHealth = 15f;
         public static float LockHealth

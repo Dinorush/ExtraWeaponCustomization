@@ -43,10 +43,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     damageable,
                     damageable.DamageTargetPos,
                     damageable.DamageTargetPos - playerBase.Owner.Position,
+                    backstabMulti,
                     falloff,
                     DamageType.DOT
                     ));
-                dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, prePlayerContext));
+                dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, prePlayerContext));
                 // Don't really need custom damage behavior, but BulletDamage triggers FF dialogue.
                 SendPlayerDOTDamage(damage, playerBase, dotBase.Owner);
                 return;
@@ -57,10 +58,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     damageable,
                     damageable.DamageTargetPos,
                     Vector3.up,
+                    1f,
                     falloff,
                     DamageType.DOT
                     ));
-                dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, 1f, preLockContext));
+                dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preLockContext));
                 damageable.BulletDamage(damage, dotBase.Owner, Vector3.zero, Vector3.zero, Vector3.zero);
                 return;
             }
@@ -92,10 +94,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 damageable,
                 limb.DamageTargetPos,
                 limb.DamageTargetPos - damBase.Owner.Position,
+                backstabMulti,
                 falloff,
                 DamageType.DOT
                 ));
-            var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, backstabMulti, preContext));
+            var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             KillTrackerManager.RegisterHit(dotBase.CWC.Weapon, hitContext);
             limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f || damBase.IsImortal);

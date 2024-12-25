@@ -12,6 +12,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             base(position, direction, falloff)
         {
             Collider = collider;
+            DamageType = Properties.Effects.Triggers.DamageType.Bullet;
         }
 
         public WeaponHitContext(HitData data) :

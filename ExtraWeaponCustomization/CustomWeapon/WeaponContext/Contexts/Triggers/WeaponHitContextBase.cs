@@ -9,7 +9,6 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
         public Vector3 Position { get; }
         public Vector3 Direction { get; }
         public float Falloff { get; }
-
         public WeaponHitContextBase(Vector3 position, Vector3 direction, float falloff) :
             base(Properties.Effects.Triggers.DamageType.Any)
         {
@@ -23,16 +22,18 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
     {
         public Vector3 LocalPosition { get; }
         public IDamageable Damageable { get; }
+        public float Backstab { get; }
 
-        public WeaponHitDamageableContextBase(IDamageable damageable, Vector3 position, Vector3 direction, float falloff) :
+        public WeaponHitDamageableContextBase(IDamageable damageable, Vector3 position, Vector3 direction, float backstab, float falloff) :
             base(position, direction, falloff)
         {
             Damageable = damageable ?? throw new ArgumentNullException(nameof(damageable));
             LocalPosition = position - damageable.GetBaseAgent()?.Position ?? Vector3.zero;
+            Backstab = backstab;
         }
 
-        public WeaponHitDamageableContextBase(HitData data) :
-            this(data.damageable!, data.hitPos, data.fireDir.normalized, data.falloff)
+        public WeaponHitDamageableContextBase(HitData data, float backstab) :
+            this(data.damageable!, data.hitPos, data.fireDir.normalized, backstab, data.falloff)
         { }
     }
 }

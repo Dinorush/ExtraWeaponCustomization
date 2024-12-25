@@ -7,14 +7,14 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public sealed class WeaponPreHitDamageableContext : WeaponHitDamageableContextBase
     {
-        public WeaponPreHitDamageableContext(IDamageable damageable, Vector3 position, Vector3 direction, float falloff, DamageType flag = DamageType.Any) : 
-            base(damageable, position, direction, falloff)
+        public WeaponPreHitDamageableContext(IDamageable damageable, Vector3 position, Vector3 direction, float backstab, float falloff, DamageType flag = DamageType.Any) : 
+            base(damageable, position, direction, backstab, falloff)
         {
             DamageType = flag.WithSubTypes(damageable);
         }
 
-        public WeaponPreHitDamageableContext(HitData data, DamageType flag = DamageType.Any) :
-            base(data)
+        public WeaponPreHitDamageableContext(HitData data, float backstab, DamageType flag = DamageType.Any) :
+            base(data, backstab)
         {
             DamageType = flag.WithSubTypes(Damageable);
         }
