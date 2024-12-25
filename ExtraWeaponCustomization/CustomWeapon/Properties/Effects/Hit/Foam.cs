@@ -23,7 +23,10 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public float Amount { get; private set; } = 0f;
         public float PrecisionAmountMulti { get; private set; } = 0f;
+        public float FoamTime { get; private set; } = 0f;
+        public FoamOverrideType FoamTimeType { get; private set; } = FoamOverrideType.Min;
         public bool IgnoreArmor { get; private set; } = false;
+        public bool IgnoreBackstab { get; private set; } = false;
         public float BubbleAmount { get; private set; } = 0f;
         public float BubbleStrength { get; private set; } = 1f;
         public float BubbleExpandSpeed { get; private set; } = 0.3f;
@@ -64,10 +67,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                     if (damContext.DamageType.HasFlag(DamageType.Weakspot))
                         amount = Math.Max(amount, amount * PrecisionAmountMulti * limb.m_weakspotDamageMulti);
 
+                    if (!IgnoreBackstab)
+                        amount *= damContext.Backstab;
+
                     if (!IgnoreArmor)
                         amount *= limb.m_armorDamageMulti;
 
-                    limb.GlueDamage(amount + 0.001f);
+                    FoamManager.FoamDirect(limb.m_base.Owner, amount, this);
                 }
                 else
                     position += baseContext.Direction * WallHitBuffer;
@@ -96,13 +102,29 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
         }
 
+        public float GetMaxFoamTime(float origTime)
+        {
+            if (FoamTime <= 0) return origTime;
+
+            return FoamTimeType switch
+            {
+                FoamOverrideType.Min => Math.Min(origTime, FoamTime),
+                FoamOverrideType.Mult => origTime * FoamTime,
+                FoamOverrideType.Override => FoamTime,
+                _ => origTime
+            };
+        }
+
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(Amount), Amount);
             writer.WriteNumber(nameof(PrecisionAmountMulti), PrecisionAmountMulti);
+            writer.WriteNumber(nameof(FoamTime), FoamTime);
+            writer.WriteString(nameof(FoamTimeType), FoamTimeType.ToString());
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
+            writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteNumber(nameof(BubbleAmount), BubbleAmount);
             writer.WriteNumber(nameof(BubbleStrength), BubbleStrength);
             writer.WriteNumber(nameof(BubbleExpandSpeed), BubbleExpandSpeed);
@@ -126,8 +148,19 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "precision":
                     PrecisionAmountMulti = reader.GetSingle();
                     break;
+                case "foamtime":
+                case "time":
+                    FoamTime = reader.GetSingle();
+                    break;
+                case "foamtimetype":
+                case "timetype":
+                    FoamTimeType = reader.GetString().ToEnum(FoamOverrideType.Min);
+                    break;
                 case "ignorearmor":
                     IgnoreArmor = reader.GetBoolean();
+                    break;
+                case "ignorebackstab":
+                    IgnoreBackstab = reader.GetBoolean();
                     break;
                 case "bubbleamount":
                 case "bubble":
@@ -151,5 +184,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
             }
         }
+    }
+
+    public enum FoamOverrideType
+    {
+        Min,
+        Mult, Multiply = Mult,
+        Override
     }
 }

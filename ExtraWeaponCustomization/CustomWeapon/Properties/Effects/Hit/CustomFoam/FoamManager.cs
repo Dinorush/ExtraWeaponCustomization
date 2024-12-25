@@ -1,4 +1,5 @@
 ﻿using Agents;
+using Enemies;
 using Player;
 using SNetwork;
 using System;
@@ -12,14 +13,20 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         private readonly static FoamStaticSync _staticSync = new();
         private readonly static FoamEnemySync _enemySync = new();
         private readonly static FoamDoorSync _doorSync = new();
+        private readonly static FoamDirectSync _directSync = new();
+        private readonly static FoamSync _foamSync = new();
 
         public const float MaxVolumeMod = 256f;
+        public const float MaxDirect = 100f;
+        public const float MaxFoam = 32f;
 
         internal static void Init()
         {
             _staticSync.Setup();
             _enemySync.Setup();
             _doorSync.Setup();
+            _directSync.Setup();
+            _foamSync.Setup();
         }
 
         public static void FoamEnemy(GameObject go, PlayerAgent source, Vector3 pos, float volumeMod, Foam property)
@@ -126,7 +133,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
             // Opting to modify volume by trigger amount/falloff rather than strength for better visual indication
             var volumeDesc = projectile.m_volumeDesc;
-            volumeDesc.expandVolume = property.BubbleAmount * volumeMod;
+            volumeDesc.expandVolume = (property.BubbleAmount + 0.001f) * volumeMod;
             projectile.m_volumeDesc = volumeDesc;
 
             projectile.m_expandSpeed = property.BubbleExpandSpeed * volumeMod;
@@ -135,6 +142,69 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             projectile.m_allowSplat = false;
 
             return projectile;
+        }
+
+        public static void FoamDirect(EnemyAgent enemy, float amount, Foam property)
+        {
+            FoamDirectData data = default;
+            data.target.Set(enemy);
+            data.amount.Set(amount + 0.001f, MaxDirect);
+            data.propertyID = property.SyncPropertyID;
+            _directSync.Send(data);
+        }
+
+        internal static void Internal_ReceiveFoamDirect(FoamDirectData packet)
+        {
+            if (!packet.target.TryGet(out var enemy) || !CustomWeaponManager.TryGetSyncProperty<Foam>(packet.propertyID, out var property)) return;
+
+            // If foam time isn't modified, we don't need to do anything
+            if (property.FoamTime <= 0)
+            {
+                pMiniDamageData data = default;
+                data.damage = packet.amount;
+                enemy.Damage.ReceiveGlueDamage(data);
+                return;
+            }
+
+            var damBase = enemy.Damage;
+            if (damBase.IsImortal) return;
+
+            float amount = packet.amount.Get(MaxDirect);
+            float attachedVolume = damBase.m_attachedGlueVolume;
+            float tolerance = enemy.EnemyBalancingData.GlueTolerance;
+            float origTime = enemy.EnemyBalancingData.GlueFadeOutTime;
+            float timeMod = property.GetMaxFoamTime(origTime) / origTime;
+            if (damBase.IsStuckInGlue)
+            {
+                damBase.m_attachedGlueVolume = Math.Min(attachedVolume + amount * timeMod, tolerance * timeMod);
+                FoamSync(enemy);
+            }
+            else if (attachedVolume + amount >= tolerance)
+            {
+                damBase.m_attachedGlueVolume = tolerance * timeMod;
+                FoamSync(enemy);
+                enemy.Locomotion.StuckInGlue.ActivateState();
+            }
+            else
+            {
+                damBase.m_attachedGlueVolume += amount;
+                FoamSync(enemy);
+            }
+        }
+
+        private static void FoamSync(EnemyAgent enemy)
+        {
+            FoamSyncData data = default;
+            data.target.Set(enemy);
+            data.amount.Set(enemy.Damage.AttachedGlueRel, MaxFoam);
+            _foamSync.Send(data);
+        }
+
+        internal static void Internal_ReceiveFoamSync(FoamSyncData packet)
+        {
+            if (!packet.target.TryGet(out var enemy)) return;
+
+            enemy.Damage.m_attachedGlueVolume = enemy.EnemyBalancingData.GlueTolerance * packet.amount.Get(MaxFoam);
         }
     }
 
@@ -164,5 +234,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         public Vector3 localPosition;
         public UFloat16 volumeMod;
         public ushort propertyID;
+    }
+
+    public struct FoamDirectData
+    {
+        public pEnemyAgent target;
+        public UFloat16 amount;
+        public ushort propertyID;
+    }
+
+    public struct FoamSyncData
+    {
+        public pEnemyAgent target;
+        public UFloat16 amount;
     }
 }

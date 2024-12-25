@@ -15,9 +15,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         DOT = 16,
         Armor = 32,
         Flesh = 64,
-        Enemy = 128,
-        Player = 256,
-        Lock = 512
+        Foamed = 128,
+        Unfoamed = 256,
+        Enemy = 512,
+        Player = 1024,
+        Lock = 2048
     }
 
     public static class DamageTypeMethods
@@ -32,6 +34,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 flag |= DamageType.Weakspot;
             else if (name.Contains("body"))
                 flag |= DamageType.Body;
+
+            if (name.Contains("unfoamed"))
+                flag |= DamageType.Unfoamed;
+            else if (name.Contains("foamed"))
+                flag |= DamageType.Foamed;
 
             if (name.Contains("armor"))
                 flag |= DamageType.Armor;
@@ -57,7 +64,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static bool HasAnyFlag(this DamageType type, DamageType flagSet) => (type & flagSet) != 0;
 
-        public static DamageType GetSubTypes(Dam_EnemyDamageLimb limb) => DamageType.Enemy | GetSubTypes(!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot, limb.m_armorDamageMulti);
+        public static DamageType GetSubTypes(Dam_EnemyDamageLimb limb) => DamageType.Enemy | GetSubTypes(!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot, limb.m_armorDamageMulti, limb.m_base.IsStuckInGlue);
 
         public static DamageType GetSubTypes(IDamageable damageable)
         {
@@ -72,11 +79,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             };
         }
 
-        public static DamageType GetSubTypes(bool precHit, float armorMulti)
+        public static DamageType GetSubTypes(bool precHit, float armorMulti, bool inGlue = false)
         {
             DamageType damageType = DamageType.Any;
             damageType |= precHit ? DamageType.Weakspot : DamageType.Body;
             damageType |= armorMulti < 1f ? DamageType.Armor : DamageType.Flesh;
+            damageType |= inGlue ? DamageType.Foamed : DamageType.Unfoamed;
             return damageType;
         }
 
