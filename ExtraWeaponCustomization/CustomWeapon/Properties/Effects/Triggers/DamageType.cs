@@ -69,12 +69,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public static DamageType GetSubTypes(IDamageable damageable)
         {
             Agent? agent = damageable.GetBaseAgent();
-            if (agent == null) return DamageType.Flesh | DamageType.Body | DamageType.Lock;
+            if (agent == null) return DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Lock;
 
             return agent.Type switch
             {
                 AgentType.Enemy => GetSubTypes(damageable.Cast<Dam_EnemyDamageLimb>()),
-                AgentType.Player => DamageType.Flesh | DamageType.Body | DamageType.Player,
+                AgentType.Player => DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Player,
                 _ => DamageType.Any
             };
         }
