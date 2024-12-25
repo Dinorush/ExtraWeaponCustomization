@@ -13,6 +13,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
 - Fire Shot: Fires shots at offsets. [Gun]
+- Foam: Applies foam where bullets land. [BulletLanded, Prehit, Hit, Damage, Charge]
 - Health Mod: Modifies the user's health.
 - Recoil Mod: Applies a recoil modifier. [Gun]
 - Temp Properties: Temporarily adds another set of properties.
