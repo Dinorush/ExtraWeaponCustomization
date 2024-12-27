@@ -405,7 +405,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 return;
             }
 
-            if (_weakspotLimb != null && _weakspotLimb.m_health > 0 && Clock.Time < _weakspotDetectionTick) return;
+            if (_weakspotLimb != null && !_weakspotLimb.IsDestroyed && Clock.Time < _weakspotDetectionTick) return;
             _weakspotDetectionTick = Clock.Time + Configuration.AutoAimTickDelay;
 
             _weakspotList.Sort(WeakspotCompare);
@@ -414,7 +414,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             for (int i = _weakspotList.Count - 1; i >= 0; i--)
             {
                 Dam_EnemyDamageLimb weakspot = _weakspotList[i].limb;
-                if (weakspot == null || weakspot.m_health <= 0)
+                if (weakspot == null || weakspot.IsDestroyed)
                 {
                     _weakspotList.RemoveAt(i);
                     continue;

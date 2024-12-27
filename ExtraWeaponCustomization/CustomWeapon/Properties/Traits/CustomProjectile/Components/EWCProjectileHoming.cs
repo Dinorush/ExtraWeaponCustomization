@@ -118,7 +118,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (!_base.IsLocal)
             {
                 if (_homingAgent == null || !_homingAgent.Alive || _homingAgent.Damage.Health <= 0) return false;
-                if (_homingLimb != null && _homingLimb.m_health > 0) return true;
+                if (_homingLimb != null && !_homingLimb.IsDestroyed) return true;
 
                 _homingTarget = GetHomingTarget(_homingAgent);
                 _homingLimb = null;
@@ -247,7 +247,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _weakspotList.Clear();
             foreach (Dam_EnemyDamageLimb limb in _homingAgent!.Damage.DamageLimbs)
-                if (limb.m_health > 0 && limb.m_type == eLimbDamageType.Weakspot)
+                if (!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot)
                     _weakspotList.Add(limb);
         }
 
@@ -260,14 +260,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 return;
             }
 
-            if (_homingLimb != null && _homingLimb.m_health > 0) return;
+            if (_homingLimb != null && !_homingLimb.IsDestroyed) return;
 
             _weakspotList.Sort(WeakspotCompare);
             _weakspotList.Reverse();
             for (int i = _weakspotList.Count - 1; i >= 0; i--)
             {
                 Dam_EnemyDamageLimb weakspot = _weakspotList[i];
-                if (weakspot == null || weakspot.m_health <= 0)
+                if (weakspot == null || !weakspot.IsDestroyed)
                 {
                     _weakspotList.RemoveAt(i);
                     continue;
