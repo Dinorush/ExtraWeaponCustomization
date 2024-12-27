@@ -1,5 +1,4 @@
-﻿using Enemies;
-using EWC.CustomWeapon.Properties.Traits.CustomProjectile;
+﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
@@ -131,13 +130,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 
                 effect.ReturnToPool();
             }
-        }
-
-        public override WeaponPropertyBase Clone()
-        {
-            Projectile copy = (Projectile) base.Clone();
-            copy.SyncPropertyID = SyncPropertyID;
-            return copy;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

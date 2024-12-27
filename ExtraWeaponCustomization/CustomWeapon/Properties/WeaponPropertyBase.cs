@@ -44,11 +44,15 @@ namespace EWC.CustomWeapon.Properties
                         properties.Add(prop);
                     }
                 }
+
+                if (type.IsAssignableTo(typeof(ISyncProperty)))
+                    properties.Add(type.GetProperty(nameof(ISyncProperty.SyncPropertyID))!);
             }
 
             WeaponPropertyBase copy = (WeaponPropertyBase)Activator.CreateInstance(type)!;
             foreach (var prop in _classProperties[type])
                 prop.SetValue(copy, prop.GetValue(this));
+
 
             return copy;
         }
