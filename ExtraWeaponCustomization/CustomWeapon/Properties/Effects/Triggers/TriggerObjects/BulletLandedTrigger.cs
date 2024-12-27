@@ -11,10 +11,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             // Want to trigger when a bullet lands but NOT on a pre-hit context
             if (base.Invoke(context, out amount) && context is not WeaponPreHitDamageableContext)
-            {
-                amount = Amount;
                 return true;
-            }
+            amount = 0;
             return false;
         }
     }

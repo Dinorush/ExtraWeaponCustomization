@@ -37,7 +37,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     IDamageable damageable = ((WeaponHitDamageableContext)context.context).Damageable;
                     if (damageable == null) continue;
 
-                    TempWrapper.SetObject(damageable);
+                    TempWrapper.Set(damageable);
                     if (!triggerDict.ContainsKey(TempWrapper))
                         triggerDict.Add(new BaseDamageableWrapper(TempWrapper), 0);
                     triggerDict[TempWrapper] += context.triggerAmt;
@@ -82,7 +82,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponDamageContext context)
         {
-            TempWrapper.SetObject(context.Damageable);
+            TempWrapper.Set(context.Damageable);
             if (!_expireTimes.TryGetValue(TempWrapper, out Queue<TriggerInstance>? queue)) return;
 
             while (queue.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) queue.Dequeue();

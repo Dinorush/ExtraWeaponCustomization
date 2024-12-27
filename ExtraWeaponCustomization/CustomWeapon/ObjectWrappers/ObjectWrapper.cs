@@ -31,10 +31,11 @@ namespace EWC.CustomWeapon.ObjectWrappers
             Object = obj;
         }
 
-        public virtual void SetObject(T obj)
+        public virtual ObjectWrapper<T> Set(T obj)
         {
             Pointer = obj.Pointer;
             Object = obj;
+            return this;
         }
 
         public override int GetHashCode()

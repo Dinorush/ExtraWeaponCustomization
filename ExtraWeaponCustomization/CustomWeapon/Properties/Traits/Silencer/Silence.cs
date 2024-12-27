@@ -70,7 +70,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponStealthUpdateContext context)
         {
-            TempWrapper.SetObject(context.Enemy);
+            TempWrapper.Set(context.Enemy);
             if (!_alertProgress.TryGetValue(TempWrapper, out float progress)) return;
 
             if (progress >= InstantWakeupProgress)
@@ -136,7 +136,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (!EnemyCanHear(enemy))
                     continue;
 
-                TempWrapper.SetObject(enemy);
+                TempWrapper.Set(enemy);
                 if (!_alertProgress.ContainsKey(TempWrapper))
                     _alertProgress.Add(new ObjectWrapper<Agent>(enemy), 0);
 
@@ -152,7 +152,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (!EnemyCanHear(enemy))
                     continue;
 
-                TempWrapper.SetObject(enemy);
+                TempWrapper.Set(enemy);
                 if (!_alertProgress.ContainsKey(TempWrapper))
                     _alertProgress.Add(new ObjectWrapper<Agent>(enemy), 0);
 

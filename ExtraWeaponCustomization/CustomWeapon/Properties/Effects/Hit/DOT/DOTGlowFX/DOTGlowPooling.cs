@@ -37,7 +37,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
         public static void TryDoEffect(DamageOverTime data, IDamageable damBase, Transform target, float mod)
         {
-            TempWrapper.SetObject(damBase);
+            TempWrapper.Set(damBase);
             if (_activeHandlers.TryGetValue(data, out var damDict))
             {
                 if (damDict.TryGetValue(TempWrapper, out var damHandler))

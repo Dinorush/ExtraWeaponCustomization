@@ -98,7 +98,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void AddDOT(WeaponHitDamageableContext context, float triggerAmt)
         {
-            TempWrapper.SetObject(context.Damageable);
+            TempWrapper.Set(context.Damageable);
 
             float falloff = IgnoreFalloff ? 1f : context.Falloff;
             float damage = TotalDamage * triggerAmt;

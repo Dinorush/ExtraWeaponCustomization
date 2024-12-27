@@ -1,7 +1,6 @@
 ﻿using AK;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
-using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.JSON;
 using System.Collections.Generic;

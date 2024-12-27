@@ -32,8 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 IDamageable damageable = ((WeaponHitDamageableContext)context.context).Damageable;
                 if (damageable == null) continue;
 
-                TempWrapper.SetObject(damageable.GetBaseAgent().Cast<EnemyAgent>());
-                if (!_cooldownTimes.TryGetValue(TempWrapper, out var expireTime))
+                if (!_cooldownTimes.TryGetValue(TempWrapper.Set(damageable.GetBaseAgent().Cast<EnemyAgent>()), out var expireTime))
                 {
                     // Clean dead agents from dict
                     _cooldownTimes.Keys

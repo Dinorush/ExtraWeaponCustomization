@@ -8,7 +8,6 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
 using Gear;
 using HarmonyLib;
-using static RootMotion.Demos.FBBIKSettings;
 using static Weapon;
 
 namespace EWC.Patches

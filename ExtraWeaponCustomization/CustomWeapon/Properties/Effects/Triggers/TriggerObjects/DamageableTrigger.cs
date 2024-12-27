@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
             if (_uniqueCounts != null)
             {
-                TempWrapper.SetObject(tContext.Damageable);
+                TempWrapper.Set(tContext.Damageable);
                 if (!_uniqueCounts.ContainsKey(TempWrapper))
                 {
                     _uniqueCounts.Keys

@@ -16,7 +16,7 @@ namespace EWC.CustomWeapon.KillTracker
 
         public static void ClearHit(EnemyAgent enemy)
         {
-            TempWrapper.SetObject(enemy);
+            TempWrapper.Set(enemy);
             _lastHits.Remove(TempWrapper);
             _shownHits.Remove(TempWrapper);
         }
@@ -30,8 +30,7 @@ namespace EWC.CustomWeapon.KillTracker
             KillAPIWrapper.TagEnemy(enemy, weapon, hitContext.LocalPosition);
 
             // Still need to track weapon since KIF doesn't do that for host (only uses wielded, which may not be right for DoT)
-            TempWrapper.SetObject(enemy);
-            if (_lastHits.ContainsKey(TempWrapper))
+            if (_lastHits.ContainsKey(TempWrapper.Set(enemy)))
                 _lastHits[TempWrapper] = (weapon, hitContext);
             else
             {
@@ -54,8 +53,7 @@ namespace EWC.CustomWeapon.KillTracker
 
             if (enemy == null) return null;
 
-            TempWrapper.SetObject(enemy);
-            if (!_shownHits.ContainsKey(TempWrapper) || _shownHits[TempWrapper])
+            if (!_shownHits.ContainsKey(TempWrapper.Set(enemy)) || _shownHits[TempWrapper])
                 return null;
 
             _shownHits[TempWrapper] = true;
