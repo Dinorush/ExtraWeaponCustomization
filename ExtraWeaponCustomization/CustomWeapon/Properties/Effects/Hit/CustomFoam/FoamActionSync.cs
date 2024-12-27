@@ -8,7 +8,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
         protected override void Receive(FoamEnemyData packet)
         {
-            FoamManager.Internal_ReceiveFoamEnemy(packet);
+            FoamActionManager.Internal_ReceiveFoamEnemy(packet);
         }
     }
 
@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
         protected override void Receive(FoamStaticData packet)
         {
-            FoamManager.Internal_ReceiveFoamStatic(packet);
+            FoamActionManager.Internal_ReceiveFoamStatic(packet);
         }
     }
 
@@ -28,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
         protected override void Receive(FoamDoorData packet)
         {
-            FoamManager.Internal_ReceiveFoamDoor(packet);
+            FoamActionManager.Internal_ReceiveFoamDoor(packet);
         }
     }
 
@@ -38,7 +38,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
         protected override void Receive(FoamDirectData packet)
         {
-            FoamManager.Internal_ReceiveFoamDirect(packet);
+            FoamActionManager.Internal_ReceiveFoamDirect(packet);
         }
     }
 
@@ -48,7 +48,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
         protected override void Receive(FoamSyncData packet)
         {
-            FoamManager.Internal_ReceiveFoamSync(packet);
+            FoamActionManager.Internal_ReceiveFoamSync(packet);
         }
     }
 }

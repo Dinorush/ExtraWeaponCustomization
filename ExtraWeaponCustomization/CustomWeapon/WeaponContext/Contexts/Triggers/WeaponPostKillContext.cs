@@ -13,11 +13,11 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Position,
                 hitContext.Direction,
                 hitContext.Backstab,
-                hitContext.Falloff
+                hitContext.Falloff,
+                hitContext.DamageType
                 )
         {
             Enemy = hitContext.Damageable.GetBaseAgent().Cast<EnemyAgent>();
-            DamageType = hitContext.DamageType;
         }
     }
 }

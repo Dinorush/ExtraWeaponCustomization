@@ -69,7 +69,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public static DamageType GetSubTypes(IDamageable damageable)
         {
             Agent? agent = damageable.GetBaseAgent();
-            if (agent == null) return DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Lock;
+            if (agent == null)
+            {
+                if (damageable.TryCast<LevelGeneration.LG_WeakLockDamage>() != null)
+                    return DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Lock;
+                else
+                    return DamageType.Any;
+            }
 
             return agent.Type switch
             {

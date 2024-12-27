@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public float Damage { get; }
 
         public WeaponHitDamageableContext(float damage, WeaponPreHitDamageableContext context)
-            : base(context.Damageable, context.Position, context.Direction, context.Backstab, context.Falloff)
+            : base(context.Damageable, context.Position, context.Direction, context.Backstab, context.Falloff, context.DamageType)
         {
             Damage = damage;
             Dam_SyncedDamageBase? baseDam = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
@@ -20,8 +20,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 Damage = Math.Min(Damage, DamageableUtil.LockHealth);
         }
 
-        public WeaponHitDamageableContext(HitData data, DamageType flag = DamageType.Any)
-            : base(data, 1f)
+        public WeaponHitDamageableContext(HitData data, DamageType flag)
+            : base(data, 1f, flag)
         {
             Damage = data.damage * Falloff;
             var damBase = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
@@ -29,11 +29,10 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 Damage = Math.Min(Damage, damBase.HealthMax);
             else
                 Damage = Math.Min(Damage, DamageableUtil.LockHealth);
-            DamageType = flag.WithSubTypes(data.damageable!);
         }
 
-        public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb, DamageType flag = DamageType.Any)
-            : base(data, backstab)
+        public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb, DamageType flag)
+            : base(data, backstab, flag)
         {
             Damage = data.damage * Falloff;
             Damage = limb.ApplyWeakspotAndArmorModifiers(Damage, data.precisionMulti);
@@ -41,8 +40,6 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             Damage = Math.Min(Damage, limb.m_base.HealthMax);
             if (!bypassTumor && limb.DestructionType == eLimbDestructionType.Custom)
                 Damage = Math.Min(Damage, limb.m_healthMax);
-
-            DamageType = flag.WithSubTypes(limb);
         }
     }
 }

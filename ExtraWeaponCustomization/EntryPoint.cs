@@ -83,7 +83,7 @@ internal sealed class EntryPoint : BasePlugin
         LayerUtil.Init();
         ExplosionManager.Init();
         DOTDamageManager.Init();
-        FoamManager.Init();
+        FoamActionManager.Init();
         HealManager.Init();
         TriggerManager.Init();
         KillAPIWrapper.Init();

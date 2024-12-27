@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext;
+﻿using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
+using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using HarmonyLib;
 using System;
@@ -46,7 +47,6 @@ namespace EWC.Patches.Enemy
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveGlueDamage))]
-        [HarmonyWrapSafe]
         [HarmonyPrefix]
         private static bool FixGlueDamage(Dam_EnemyDamageBase __instance, pMiniDamageData data)
         {
@@ -56,6 +56,15 @@ namespace EWC.Patches.Enemy
             glueVolumeDesc.currentScale = 0f;
             __instance.AddToTotalGlueVolume(null, glueVolumeDesc);
             return false;
+        }
+
+        [HarmonyPatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.AddToTotalGlueVolume))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void SyncWithFoamManager(Dam_EnemyDamageBase __instance, GlueGunProjectile? proj, GlueVolumeDesc volume)
+        {
+            float mod = proj != null ? proj.EffectMultiplier : 1f;
+            FoamManager.AddFoam(__instance, (volume.volume + volume.expandVolume) * mod, FoamManager.GetProjProperty(proj));
         }
     }
 }

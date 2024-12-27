@@ -4,6 +4,7 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Utils;
+using EWC.Utils.Log;
 using LevelGeneration;
 using Player;
 using System;
@@ -23,22 +24,25 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public float Amount { get; private set; } = 0f;
         public float PrecisionAmountMulti { get; private set; } = 0f;
-        public float FoamTime { get; private set; } = 0f;
-        public FoamOverrideType FoamTimeType { get; private set; } = FoamOverrideType.Min;
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
         public float BubbleAmount { get; private set; } = 0f;
         public float BubbleStrength { get; private set; } = 1f;
         public float BubbleExpandSpeed { get; private set; } = 0.3f;
+        public bool BubbleOnDoors { get; private set; } = true;
+        public float FoamTime { get; private set; } = 0f;
+        public FoamOverrideType FoamTimeType { get; private set; } = FoamOverrideType.Min;
         public bool IgnoreFalloff { get; private set; } = false;
         public bool IgnoreBooster { get; private set; } = true;
 
         private const float WallHitBuffer = -0.03f;
+        private int _layerDynamic;
+        private int LayerDynamic { get => _layerDynamic != 0 ? _layerDynamic : _layerDynamic = LayerManager.LAYER_DYNAMIC; }
 
         public Foam()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.BulletLanded));
-            SetValidTriggers(DamageType.Any, TriggerName.BulletLanded, TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(DamageType.Player | DamageType.Lock, TriggerName.BulletLanded, TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
         }
 
         public override void TriggerReset() {}
@@ -49,15 +53,17 @@ namespace EWC.CustomWeapon.Properties.Effects
             foreach (TriggerContext tContext in triggerList)
             {
                 var baseContext = (WeaponHitContextBase)tContext.context;
-                // Can't spawn glue on or do glue damage to players/locks
-                if (baseContext.DamageType.HasAnyFlag(DamageType.Player | DamageType.Lock)) continue;
+                // Can't spawn glue on or do glue damage to players/locks. If we hit a door (none of the damage types), ignore it if we don't bubble doors
+                if (baseContext.DamageType.HasAnyFlag(DamageType.Player | DamageType.Lock))
+                    continue;
 
                 float sizeMod = tContext.triggerAmt * (IgnoreFalloff ? 1f : baseContext.Falloff);
                 float amount = Amount * strengthMod * sizeMod;
                 Vector3 position = baseContext.Position;
                 GameObject? go = null;
-                if (baseContext is WeaponHitDamageableContextBase damContext)
+                if (baseContext.DamageType.HasFlag(DamageType.Enemy))
                 {
+                    var damContext = (WeaponHitDamageableContextBase) baseContext;
                     Dam_EnemyDamageLimb limb = damContext.Damageable.Cast<Dam_EnemyDamageLimb>();
                     go = limb.gameObject;
 
@@ -73,7 +79,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     if (!IgnoreArmor)
                         amount *= limb.m_armorDamageMulti;
 
-                    FoamManager.FoamDirect(limb.m_base.Owner, amount, this);
+                    FoamActionManager.FoamDirect(limb.m_base.Owner, amount, this);
                 }
                 else
                     position += baseContext.Direction * WallHitBuffer;
@@ -82,22 +88,31 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                 if (go != null)
                 {
-                    FoamManager.FoamEnemy(go, owner, position, sizeMod, this);
+                    FoamActionManager.FoamEnemy(go, owner, position, sizeMod, this);
                 }
                 // Didn't hit enemy/player/lock, must be an environment hit
                 else if (!baseContext.DamageType.HasFlag(DamageType.Enemy))
                 {
-                    var hitContext = (WeaponHitContext)baseContext;
-                    go = hitContext.Collider.gameObject;
-                    if (go != null && go.layer == LayerUtil.MaskDynamic)
+                    go = baseContext.Collider.gameObject;
+                    // Door check
+                    if (go != null && go.layer == LayerDynamic)
                     {
+                        // Don't spawn any foam if we hit a door and flag is disabled.
+                        // Could let it foam static, but then we get ugly floating blobs on door opening.
+                        if (!BubbleOnDoors) return;
+
                         iLG_WeakDoor_Destruction? comp = go.GetComponentInParent<iLG_WeakDoor_Destruction>();
                         if (comp != null && !comp.SkinnedDoorEnabled)
+                        {
                             comp.EnableSkinnedDoor();
-                        FoamManager.FoamDoor(go, owner, position, sizeMod, this);
+                            go = comp.FindCollider(position).gameObject;
+                        }
+                        FoamActionManager.FoamDoor(go, owner, position, sizeMod, this);
                     }
                     else
-                        FoamManager.FoamStatic(owner, position, sizeMod, this);
+                    {
+                        FoamActionManager.FoamStatic(owner, position, sizeMod, this);
+                    }
                 }
             }
         }
@@ -121,13 +136,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(Amount), Amount);
             writer.WriteNumber(nameof(PrecisionAmountMulti), PrecisionAmountMulti);
-            writer.WriteNumber(nameof(FoamTime), FoamTime);
-            writer.WriteString(nameof(FoamTimeType), FoamTimeType.ToString());
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteNumber(nameof(BubbleAmount), BubbleAmount);
             writer.WriteNumber(nameof(BubbleStrength), BubbleStrength);
             writer.WriteNumber(nameof(BubbleExpandSpeed), BubbleExpandSpeed);
+            writer.WriteBoolean(nameof(BubbleOnDoors), BubbleOnDoors);
+            writer.WriteNumber(nameof(FoamTime), FoamTime);
+            writer.WriteString(nameof(FoamTimeType), FoamTimeType.ToString());
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
             writer.WriteBoolean(nameof(IgnoreBooster), IgnoreBooster);
             SerializeTrigger(writer);
@@ -148,14 +164,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "precision":
                     PrecisionAmountMulti = reader.GetSingle();
                     break;
-                case "foamtime":
-                case "time":
-                    FoamTime = reader.GetSingle();
-                    break;
-                case "foamtimetype":
-                case "timetype":
-                    FoamTimeType = reader.GetString().ToEnum(FoamOverrideType.Min);
-                    break;
                 case "ignorearmor":
                     IgnoreArmor = reader.GetBoolean();
                     break;
@@ -173,6 +181,18 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "bubbleexpandspeed":
                 case "expandspeed":
                     BubbleExpandSpeed = reader.GetSingle();
+                    break;
+                case "bubbleondoors":
+                case "ondoors":
+                    BubbleOnDoors = reader.GetBoolean();
+                    break;
+                case "foamtime":
+                case "time":
+                    FoamTime = reader.GetSingle();
+                    break;
+                case "foamtimetype":
+                case "timetype":
+                    FoamTimeType = reader.GetString().ToEnum(FoamOverrideType.Min);
                     break;
                 case "ignorefalloff":
                     IgnoreFalloff = reader.GetBoolean();

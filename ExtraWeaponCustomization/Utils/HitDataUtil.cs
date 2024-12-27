@@ -17,6 +17,7 @@ namespace EWC.Utils
         public Vector3 fireDir;
         public Vector3 hitPos;
         public IDamageable? damageable;
+        public Collider collider;
         private RaycastHit _rayHit;
         public RaycastHit RayHit
         { 
@@ -25,6 +26,7 @@ namespace EWC.Utils
             { 
                 _rayHit = value;
                 hitPos = _rayHit.point;
+                collider = _rayHit.collider;
                 damageable = DamageableUtil.GetDamageableFromRayHit(_rayHit);
             }
         }

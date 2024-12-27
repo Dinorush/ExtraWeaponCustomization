@@ -1,251 +1,192 @@
-﻿using Agents;
-using Enemies;
-using Player;
+﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using EWC.CustomWeapon.ObjectWrappers;
 using SNetwork;
 using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 {
-    public static class FoamManager
+    public sealed class FoamManager
     {
-        private readonly static FoamStaticSync _staticSync = new();
-        private readonly static FoamEnemySync _enemySync = new();
-        private readonly static FoamDoorSync _doorSync = new();
-        private readonly static FoamDirectSync _directSync = new();
-        private readonly static FoamSync _foamSync = new();
+        private readonly static FoamManager Current = new();
+        private readonly Dictionary<BaseDamageableWrapper<Dam_EnemyDamageBase>, FoamTimeHandler> _foamTimes = new();
+        private readonly Dictionary<ObjectWrapper<GlueGunProjectile>, Foam> _customFoams = new();
+        private readonly LinkedList<FoamTimeHandler> _unfoamHandlers = new();
+        private Coroutine? _updateRoutine;
 
-        public const float MaxVolumeMod = 256f;
-        public const float MaxDirect = 100f;
-        public const float MaxFoam = 32f;
+        private static BaseDamageableWrapper<Dam_EnemyDamageBase> TempWrapper => BaseDamageableWrapper<Dam_EnemyDamageBase>.SharedInstance;
+        private static ObjectWrapper<GlueGunProjectile> ProjTempWrapper => ObjectWrapper<GlueGunProjectile>.SharedInstance;
 
-        internal static void Init()
+        public static void AddFoamBubble(GlueGunProjectile proj, Foam property) => Current._customFoams[new ObjectWrapper<GlueGunProjectile>(proj)] = property;
+        public static Foam? GetProjProperty(GlueGunProjectile? proj) => proj != null ? Current._customFoams.GetValueOrDefault(ProjTempWrapper.Set(proj)) : null;
+
+        public static void AddFoam(Dam_EnemyDamageBase damBase, float amount, Foam? property = null)
         {
-            _staticSync.Setup();
-            _enemySync.Setup();
-            _doorSync.Setup();
-            _directSync.Setup();
-            _foamSync.Setup();
-        }
-
-        public static void FoamEnemy(GameObject go, PlayerAgent source, Vector3 pos, float volumeMod, Foam property)
-        {
-            IGlueTarget component = go.GetComponent<IGlueTarget>();
-            if (component == null || component.GlueTargetEnemyAgent == null) return;
-
-            if (component.GlueTargetEnemyAgent != null)
+            if (!Current._foamTimes.TryGetValue(TempWrapper.Set(damBase), out var handler))
             {
-                FoamEnemyData data = default;
-                data.target.Set(component.GlueTargetEnemyAgent);
-                data.limbID = (byte)component.GlueTargetSubIndex;
-                data.source.Set(source);
-                data.localPosition = component.GlueTargetTransform.InverseTransformPoint(pos);
-                data.volumeMod.Set(volumeMod, MaxVolumeMod);
-                data.propertyID = property.SyncPropertyID;
-                _enemySync.Send(data);
-            }
-            else
-                FoamStatic(source, pos, volumeMod, property);
-        }
-
-        internal static void Internal_ReceiveFoamEnemy(FoamEnemyData packet)
-        {
-            if (!TrySpawnNewFoam(packet.source, packet.volumeMod.Get(MaxVolumeMod), packet.propertyID, out var proj)) return;
-
-            ProjectileManager.pSpawnGlueOnEnemyAgent data = default;
-            data.syncID = proj.SyncID;
-            data.onEnemyAgent = packet.target;
-            data.targetSubIndex = packet.limbID;
-            data.localPos = packet.localPosition;
-            data.volumeDesc = proj.m_volumeDesc;
-            data.effectMultiplier = proj.EffectMultiplier;
-            ProjectileManager.Current.DoSpawnGlueOnEnemyAgent(data);
-        }
-
-        public static void FoamDoor(GameObject go, PlayerAgent source, Vector3 pos, float volumeMod, Foam property)
-        {
-            IGlueTarget component = go.GetComponent<IGlueTarget>();
-            if (component == null) return;
-
-            FoamDoorData data = default;
-            data.door = component.GlueTargetDoorSyncStruct;
-            data.glueTarget = component.GlueTargetSubIndex;
-            data.source.Set(source);
-            data.localPosition = component.GlueTargetTransform.InverseTransformPoint(pos);
-            data.volumeMod.Set(volumeMod, MaxVolumeMod);
-            data.propertyID = property.SyncPropertyID;
-            _doorSync.Send(data);
-        }
-
-        internal static void Internal_ReceiveFoamDoor(FoamDoorData packet)
-        {
-            if (!TrySpawnNewFoam(packet.source, packet.volumeMod.Get(MaxVolumeMod), packet.propertyID, out var proj)) return;
-
-            ProjectileManager.pSpawnGlueOnDoor data = default;
-            data.syncID = proj.SyncID;
-            data.pDoor = packet.door;
-            data.targetSubIndex = packet.glueTarget;
-            data.localPos = packet.localPosition;
-            data.volumeDesc = proj.m_volumeDesc;
-            ProjectileManager.Current.DoSpawnGlueOnDoor(data);
-        }
-
-        public static void FoamStatic(PlayerAgent source, Vector3 pos, float volumeMod, Foam property)
-        {
-            FoamStaticData data = default;
-            data.source.Set(source);
-            data.position = pos;
-            data.volumeMod.Set(volumeMod, MaxVolumeMod);
-            data.propertyID = property.SyncPropertyID;
-            _staticSync.Send(data);
-        }
-
-        internal static void Internal_ReceiveFoamStatic(FoamStaticData packet)
-        {
-            if (!TrySpawnNewFoam(packet.source, packet.volumeMod.Get(MaxVolumeMod), packet.propertyID, out var proj)) return;
-
-            ProjectileManager.pSpawnGlueOnStatic data = default;
-            data.syncID = proj.SyncID;
-            data.position = packet.position;
-            data.volumeDesc = proj.m_volumeDesc;
-            ProjectileManager.Current.DoSpawnGlueStatic(data);
-        }
-
-        private static bool TrySpawnNewFoam(pPlayerAgent owner, float volumeMod, ushort propertyID, [MaybeNullWhen(false)] out GlueGunProjectile projectile)
-        {
-            projectile = null;
-            if (!owner.TryGet(out var source) || !CustomWeaponManager.TryGetSyncProperty<Foam>(propertyID, out var property)) return false;
-
-            projectile = SpawnNewFoam(source, volumeMod, property);
-            return true;
-        }
-
-        private static GlueGunProjectile SpawnNewFoam(PlayerAgent owner, float volumeMod, Foam property)
-        {
-            // Glue code depends on glue having been instanced as a projectile first, but we skip that step, so need to make our own manually.
-            uint id = ProjectileManager.GetNextSyncID();
-            var projectile = ProjectileManager.Current.SpawnGlueGunProjectileIfNeeded(id);
-
-            float strength = property.BubbleStrength;
-            strength *= property.IgnoreBooster ? 1f : AgentModifierManager.ApplyModifier(owner, AgentModifier.GlueStrength, 1f);
-            projectile.m_glueStrengthMultiplier = strength;
-
-            // Opting to modify volume by trigger amount/falloff rather than strength for better visual indication
-            var volumeDesc = projectile.m_volumeDesc;
-            volumeDesc.expandVolume = (property.BubbleAmount + 0.001f) * volumeMod;
-            projectile.m_volumeDesc = volumeDesc;
-
-            projectile.m_expandSpeed = property.BubbleExpandSpeed * volumeMod;
-
-            projectile.m_owner = owner;
-            projectile.m_allowSplat = false;
-
-            return projectile;
-        }
-
-        public static void FoamDirect(EnemyAgent enemy, float amount, Foam property)
-        {
-            FoamDirectData data = default;
-            data.target.Set(enemy);
-            data.amount.Set(amount + 0.001f, MaxDirect);
-            data.propertyID = property.SyncPropertyID;
-            _directSync.Send(data);
-        }
-
-        internal static void Internal_ReceiveFoamDirect(FoamDirectData packet)
-        {
-            if (!packet.target.TryGet(out var enemy) || !CustomWeaponManager.TryGetSyncProperty<Foam>(packet.propertyID, out var property)) return;
-
-            // If foam time isn't modified, we don't need to do anything
-            if (property.FoamTime <= 0)
-            {
-                pMiniDamageData data = default;
-                data.damage = packet.amount;
-                enemy.Damage.ReceiveGlueDamage(data);
-                return;
+                Current.Cleanup();
+                handler = Current._foamTimes[new BaseDamageableWrapper<Dam_EnemyDamageBase>(TempWrapper)] = new FoamTimeHandler(damBase);
             }
 
-            var damBase = enemy.Damage;
-            if (damBase.IsImortal) return;
+            if (handler.AddFoam(amount, property))
+                Current.AddUnfoamHandler(handler);
+        }
 
-            float amount = packet.amount.Get(MaxDirect);
-            float attachedVolume = damBase.m_attachedGlueVolume;
-            float tolerance = enemy.EnemyBalancingData.GlueTolerance;
-            float origTime = enemy.EnemyBalancingData.GlueFadeOutTime;
-            float timeMod = property.GetMaxFoamTime(origTime) / origTime;
-            if (damBase.IsStuckInGlue)
+        internal static void ReceiveSyncFoam(Dam_EnemyDamageBase damBase, float amountRel, float timeRel, bool unfoam)
+        {
+            if (!Current._foamTimes.TryGetValue(TempWrapper.Set(damBase), out var handler))
             {
-                damBase.m_attachedGlueVolume = Math.Min(attachedVolume + amount * timeMod, tolerance * timeMod);
-                FoamSync(enemy);
+                Current.Cleanup();
+                handler = Current._foamTimes[new BaseDamageableWrapper<Dam_EnemyDamageBase>(TempWrapper)] = new FoamTimeHandler(damBase);
             }
-            else if (attachedVolume + amount >= tolerance)
+
+            if (handler.ReceiveSyncFoam(amountRel, timeRel, unfoam))
+                Current.AddUnfoamHandler(handler);
+        }
+
+        private void Cleanup()
+        {
+            // Remove dead enemies
+            _foamTimes.Keys
+                .Where(wrapper => !wrapper.Alive)
+                .ToList()
+                .ForEach(wrapper =>
+                {
+                    var handler = _foamTimes[wrapper];
+                    _foamTimes.Remove(wrapper);
+                    _unfoamHandlers.Remove(handler);
+                });
+
+            if (_unfoamHandlers.Count == 0f && _updateRoutine != null)
             {
-                damBase.m_attachedGlueVolume = tolerance * timeMod;
-                FoamSync(enemy);
-                enemy.Locomotion.StuckInGlue.ActivateState();
-            }
-            else
-            {
-                damBase.m_attachedGlueVolume += amount;
-                FoamSync(enemy);
+                CoroutineManager.StopCoroutine(_updateRoutine);
+                _updateRoutine = null;
             }
         }
 
-        private static void FoamSync(EnemyAgent enemy)
+        private void AddUnfoamHandler(FoamTimeHandler handler)
         {
-            FoamSyncData data = default;
-            data.target.Set(enemy);
-            data.amount.Set(enemy.Damage.AttachedGlueRel, MaxFoam);
-            _foamSync.Send(data);
+            _unfoamHandlers.AddLast(handler);
+            _updateRoutine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
 
-        internal static void Internal_ReceiveFoamSync(FoamSyncData packet)
+        private IEnumerator Update()
         {
-            if (!packet.target.TryGet(out var enemy)) return;
+            while (_unfoamHandlers.Count > 0f)
+            {
+                var next = _unfoamHandlers.First;
+                for (var node = next; node != null; node = next)
+                {
+                    var handler = node.Value;
+                    next = node.Next;
+                    if (handler.DamBase == null || handler.DamBase.Health <= 0 || !handler.Update())
+                        _unfoamHandlers.Remove(node);
+                }
 
-            enemy.Damage.m_attachedGlueVolume = enemy.EnemyBalancingData.GlueTolerance * packet.amount.Get(MaxFoam);
+                yield return null;
+            }
+            _updateRoutine = null;
         }
-    }
 
-    public struct FoamEnemyData
-    {
-        public pEnemyAgent target;
-        public byte limbID;
-        public pPlayerAgent source;
-        public Vector3 localPosition;
-        public UFloat16 volumeMod;
-        public ushort propertyID;
-    }
+        class FoamTimeHandler
+        {
+            private float _totalAmount = 0f;
+            private float _totalTime = 0f;
+            private bool _unfoam = false;
+            private float _lastUpdateTime = 0f;
+            private float UnfoamAmount => Math.Min((_totalTime / _foamTime + 0.1f) * _tolerance, _tolerance);
 
-    public struct FoamStaticData
-    {
-        public pPlayerAgent source;
-        public Vector3 position;
-        public UFloat16 volumeMod;
-        public ushort propertyID;
-    }
+            public readonly Dam_EnemyDamageBase DamBase;
+            private readonly float _tolerance;
+            private readonly float _foamTime;
 
-    public struct FoamDoorData
-    {
-        public pStateReplicatorProvider door;
-        public int glueTarget;
-        public pPlayerAgent source;
-        public Vector3 localPosition;
-        public UFloat16 volumeMod;
-        public ushort propertyID;
-    }
+            public FoamTimeHandler(Dam_EnemyDamageBase damBase)
+            {
+                DamBase = damBase;
+                var block = damBase.Owner.EnemyBalancingData;
+                _tolerance = block.GlueTolerance;
+                _foamTime = block.GlueFadeOutTime * 0.9f;
+            }
 
-    public struct FoamDirectData
-    {
-        public pEnemyAgent target;
-        public UFloat16 amount;
-        public ushort propertyID;
-    }
+            public bool Update()
+            {
+                if (!_unfoam) return false;
 
-    public struct FoamSyncData
-    {
-        public pEnemyAgent target;
-        public UFloat16 amount;
+                float delta = Time.time - _lastUpdateTime;
+                _totalTime = Math.Max(0f, _totalTime - delta);
+                if (_totalTime == 0f)
+                {
+                    DamBase.m_attachedGlueVolume = 0f;
+                    _totalAmount = 0f;
+                    _unfoam = false;
+                    SendSyncFoam();
+                }
+                else
+                {
+                    _totalAmount = UnfoamAmount;
+                    DamBase.m_attachedGlueVolume = _totalAmount;
+                }
+
+                _lastUpdateTime = Time.time;
+                return _unfoam;
+            }
+
+            public bool AddFoam(float amount, Foam? property = null)
+            {
+                if (DamBase.IsImortal)
+                    return false;
+
+                float time = property != null ? property.GetMaxFoamTime(_foamTime) : _foamTime;
+
+                if (_unfoam && Update())
+                {
+                    if (_totalTime < time)
+                        _totalTime = Math.Min(time, _totalTime + amount / _tolerance * time);
+                    _totalAmount = UnfoamAmount;
+                    SendSyncFoam();
+                    return false;
+                }
+
+                if (_totalAmount + amount >= _tolerance)
+                {
+                    _totalTime += (_tolerance - _totalAmount) / _tolerance * time;
+                    _totalAmount = _tolerance;
+                    _unfoam = true;
+                    if (SNet.IsMaster && !DamBase.IsStuckInGlue)
+                        DamBase.Owner.Locomotion.StuckInGlue.ActivateState();
+                    _lastUpdateTime = Time.time;
+                }
+                else
+                {
+                    _totalTime += amount / _tolerance * time;
+                    _totalAmount += amount;
+                }
+
+                DamBase.m_attachedGlueVolume = _totalAmount;
+                SendSyncFoam();
+                return _unfoam;
+            }
+
+            internal bool ReceiveSyncFoam(float amountRel, float timeRel, bool unfoam)
+            {
+                bool addToHandlers = unfoam && !_unfoam;
+                _totalAmount = amountRel * _tolerance;
+                _totalTime = timeRel * _foamTime;
+                _unfoam = unfoam;
+                if (_unfoam)
+                    DamBase.m_attachedGlueVolume = UnfoamAmount;
+                else
+                    DamBase.m_attachedGlueVolume = amountRel * _tolerance;
+                return addToHandlers;
+            }
+
+            private void SendSyncFoam()
+            {
+                FoamActionManager.FoamSync(DamBase.Owner, _totalAmount / _tolerance, _totalTime / _foamTime, _unfoam);
+            }
+        }
     }
 }
