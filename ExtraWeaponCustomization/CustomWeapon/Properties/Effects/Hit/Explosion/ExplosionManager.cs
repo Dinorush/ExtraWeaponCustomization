@@ -125,6 +125,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             // 0.001f to account for rounding error
             damage = falloffMod * damage + 0.001f;
+            damage *= EXPAPIWrapper.GetDamageMod(eBase.CWC.IsGun);
 
             Agent? agent = damageable.GetBaseAgent();
             if (agent?.Type == AgentType.Player)
@@ -152,9 +153,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 damageable.BulletDamage(damage, source, Vector3.zero, Vector3.zero, Vector3.zero);
                 return;
             }
-
-            // Applied after FF damage since EXP mod doesn't affect FF damage
-            damage *= EXPAPIWrapper.GetDamageMod(eBase.CWC.IsGun);
 
             if (!enemy) return;
 
