@@ -17,12 +17,12 @@ namespace EWC.CustomWeapon.Properties
     }
 
     // Skeleton interfaces used to identify gun-specific or melee-specific properties
-    public interface IGunProperty { }
+    public interface IGunProperty : IWeaponProperty { }
 
-    public interface IMeleeProperty { }
+    public interface IMeleeProperty : IWeaponProperty { }
 
     // For networked properties to send only their sync ID so their fields can be retrieved locally.
-    public interface ISyncProperty
+    public interface ISyncProperty : IWeaponProperty
     {
         public ushort SyncPropertyID { get; set; }
     }
