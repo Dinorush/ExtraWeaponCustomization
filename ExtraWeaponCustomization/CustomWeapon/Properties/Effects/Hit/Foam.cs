@@ -4,7 +4,6 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Utils;
-using EWC.Utils.Log;
 using LevelGeneration;
 using Player;
 using System;
@@ -26,10 +25,12 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float PrecisionAmountMulti { get; private set; } = 0f;
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
+        public bool IgnoreDamageMods { get; private set; } = false;
         public float BubbleAmount { get; private set; } = 0f;
         public float BubbleStrength { get; private set; } = 1f;
         public float BubbleExpandSpeed { get; private set; } = 0.3f;
         public bool BubbleOnDoors { get; private set; } = true;
+        public bool BubbleIgnoreModifiers { get; private set; } = true;
         public float FoamTime { get; private set; } = 0f;
         public FoamOverrideType FoamTimeType { get; private set; } = FoamOverrideType.Min;
         public bool IgnoreFalloff { get; private set; } = false;
@@ -58,12 +59,21 @@ namespace EWC.CustomWeapon.Properties.Effects
                     continue;
 
                 float sizeMod = tContext.triggerAmt * (IgnoreFalloff ? 1f : baseContext.Falloff);
-                float amount = Amount * strengthMod * sizeMod;
+                float damageMod = 1f;
+
                 Vector3 position = baseContext.Position;
                 GameObject? go = null;
                 if (baseContext.DamageType.HasFlag(DamageType.Enemy))
                 {
                     var damContext = (WeaponHitDamageableContextBase) baseContext;
+                    float precisionMulti = PrecisionAmountMulti;
+
+                    WeaponDamageContext damageContext = new(damageMod, precisionMulti, damContext.Damageable);
+                    CWC.Invoke(damageContext);
+                    if (!IgnoreDamageMods)
+                        damageMod = damageContext.Damage.Value;
+                    precisionMulti = damageContext.Precision.Value;
+
                     Dam_EnemyDamageLimb limb = damContext.Damageable.Cast<Dam_EnemyDamageLimb>();
                     go = limb.gameObject;
 
@@ -71,20 +81,23 @@ namespace EWC.CustomWeapon.Properties.Effects
                     position = damContext.LocalPosition + agent.Position;
 
                     if (damContext.DamageType.HasFlag(DamageType.Weakspot))
-                        amount = Math.Max(amount, amount * PrecisionAmountMulti * limb.m_weakspotDamageMulti);
+                        damageMod = Math.Max(damageMod, damageMod * precisionMulti * limb.m_weakspotDamageMulti);
 
                     if (!IgnoreBackstab)
-                        amount *= damContext.Backstab;
+                        damageMod *= damContext.Backstab;
 
                     if (!IgnoreArmor)
-                        amount *= limb.m_armorDamageMulti;
+                        damageMod *= limb.m_armorDamageMulti;
 
-                    FoamActionManager.FoamDirect(limb.m_base.Owner, amount, this);
+                    FoamActionManager.FoamDirect(limb.m_base.Owner, Amount * strengthMod * sizeMod * damageMod, this);
                 }
                 else
                     position += baseContext.Direction * WallHitBuffer;
 
                 if (BubbleAmount <= 0) return;
+
+                if (!BubbleIgnoreModifiers)
+                    sizeMod *= damageMod;
 
                 if (go != null)
                 {
@@ -138,10 +151,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(PrecisionAmountMulti), PrecisionAmountMulti);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
+            writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
             writer.WriteNumber(nameof(BubbleAmount), BubbleAmount);
             writer.WriteNumber(nameof(BubbleStrength), BubbleStrength);
             writer.WriteNumber(nameof(BubbleExpandSpeed), BubbleExpandSpeed);
             writer.WriteBoolean(nameof(BubbleOnDoors), BubbleOnDoors);
+            writer.WriteBoolean(nameof(BubbleIgnoreModifiers), BubbleIgnoreModifiers);
             writer.WriteNumber(nameof(FoamTime), FoamTime);
             writer.WriteString(nameof(FoamTimeType), FoamTimeType.ToString());
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
@@ -170,6 +185,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "ignorebackstab":
                     IgnoreBackstab = reader.GetBoolean();
                     break;
+                case "ignoredamagemods":
+                    IgnoreDamageMods = reader.GetBoolean();
+                    break;
                 case "bubbleamount":
                 case "bubble":
                     BubbleAmount = reader.GetSingle();
@@ -185,6 +203,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "bubbleondoors":
                 case "ondoors":
                     BubbleOnDoors = reader.GetBoolean();
+                    break;
+                case "bubbleignoremodifiers":
+                case "bubbleignoremods":
+                    BubbleIgnoreModifiers = reader.GetBoolean();
                     break;
                 case "foamtime":
                 case "time":
