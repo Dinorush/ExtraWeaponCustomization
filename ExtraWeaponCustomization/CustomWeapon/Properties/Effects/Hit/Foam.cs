@@ -186,6 +186,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     IgnoreBackstab = reader.GetBoolean();
                     break;
                 case "ignoredamagemods":
+                case "ignoredamagemod":
                     IgnoreDamageMods = reader.GetBoolean();
                     break;
                 case "bubbleamount":
