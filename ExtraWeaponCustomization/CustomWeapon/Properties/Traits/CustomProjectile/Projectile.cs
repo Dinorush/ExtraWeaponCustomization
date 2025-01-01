@@ -26,7 +26,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         public ushort SyncPropertyID { get; set; }
 
         public ProjectileType ProjectileType { get; private set; } = ProjectileType.NotTargetingSmallFast;
-        public float Speed { get; private set; } = 0f;
+        public float MinSpeed { get; private set; } = 0f;
+        public float MaxSpeed { get; private set; } = 0f;
         public float AccelScale { get; private set; } = 1f;
         public float AccelExponent { get; private set; } = 1f;
         private float _accelTime = 0.001f;
@@ -137,7 +138,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteString(nameof(ProjectileType), ProjectileType.ToString());
-            writer.WriteNumber(nameof(Speed), Speed);
+            writer.WriteNumber(nameof(MinSpeed), MinSpeed);
+            writer.WriteNumber(nameof(MaxSpeed), MaxSpeed);
             writer.WriteNumber(nameof(AccelScale), AccelScale);
             writer.WriteNumber(nameof(AccelExponent), AccelExponent);
             writer.WriteNumber(nameof(AccelTime), AccelTime);
@@ -179,8 +181,12 @@ namespace EWC.CustomWeapon.Properties.Traits
                     if (ProjectileType == ProjectileType.GlueFlying || ProjectileType == ProjectileType.GlueLanded)
                         ProjectileType = ProjectileType.NotTargetingSmallFast;
                     break;
+                case "minspeed":
                 case "speed":
-                    Speed = reader.GetSingle();
+                    MinSpeed = reader.GetSingle();
+                    break;
+                case "maxspeed":
+                    MaxSpeed = reader.GetSingle();
                     break;
                 case "accelscale":
                 case "accel":

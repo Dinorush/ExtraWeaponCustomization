@@ -8,6 +8,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 {
     public abstract class EWCProjectileComponentBase : MonoBehaviour
     {
+        private static readonly System.Random Random = new();
+
         public EWCProjectileComponentBase(IntPtr ptr) : base(ptr)
         {
             Hitbox = new(this);
@@ -24,6 +26,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected float _inactiveLifetime = 0f;
         private Vector3 _baseDir;
         private Vector3 _baseVelocity;
+        private float _baseSpeed;
         private Vector3 _velocity;
         private float _accelProgress;
 
@@ -69,7 +72,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _endLifetime = Time.time + projBase.Lifetime;
 
             _position = position;
-            _velocity = dir * projBase.Speed;
+            _baseSpeed = projBase.MaxSpeed > projBase.MinSpeed ? Random.NextSingle().Lerp(projBase.MinSpeed, projBase.MaxSpeed) : projBase.MinSpeed;
+            _velocity = dir * _baseSpeed;
             _baseVelocity = _velocity;
             _baseDir = dir;
             _gravityVel = 0;
@@ -119,7 +123,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             Homing.Update(_position, ref _baseDir);
-            _baseVelocity = _baseDir * _settings.Speed;
+            _baseVelocity = _baseDir * _baseSpeed;
 
             Vector3 deltaVel = UpdateVelocity();
             Vector3 collisionVel = deltaVel.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaVel : _baseDir * EWCProjectileHitbox.MinCollisionDist;
