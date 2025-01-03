@@ -94,6 +94,7 @@ namespace EWC.Patches.Gun
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
             if (cwc == null || cwc.CancelShot) return;
 
+            cwc.NotifyShotFired();
             cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
         }
 
@@ -117,6 +118,7 @@ namespace EWC.Patches.Gun
             if (cwc == null) return;
             if (cwc.CancelShot)
             {
+                cwc.ModifyFireRate();
                 cwc.CancelShot = false;
                 return;
             }

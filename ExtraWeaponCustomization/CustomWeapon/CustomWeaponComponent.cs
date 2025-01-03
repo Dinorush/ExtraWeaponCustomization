@@ -25,12 +25,19 @@ namespace EWC.CustomWeapon
         private bool OwnerSet => _ownerPtr != IntPtr.Zero;
         private IntPtr _ownerPtr = IntPtr.Zero;
 
+        // To avoid patching an update function, we have to reset things back.
+        // We need this to keep track of cancels across multiple functions.
         public bool CancelShot { get; set; }
 
-        // When canceling a shot, holds the next shot timer so we can reset back to it
+        // When canceling a shot, holds the next shot timer so we can reset back to it.
         private float _lastShotTimer = 0f;
         private float _lastBurstTimer = 0f;
         private float _lastFireRate = 0f;
+
+        // Holds when the previous shot was fired.
+        // When canceling a shot that ends a burst/full-auto, we need to set cooldown based on the last shot.
+        private float _lastFireTime = 0f;
+
         private bool _synced = false;
         private bool _destroyed = false;
         public float CurrentFireRate { get; private set; }
@@ -187,6 +194,23 @@ namespace EWC.CustomWeapon
             return false;
         }
 
+        public void RefreshArchetypeCache()
+        {
+            if (IsGun)
+            {
+                BaseFireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+                _burstDelay = Gun.m_archeType.BurstDelay();
+                UpdateStoredFireRate();
+            }
+        }
+
+        public void RefreshSoundDelay()
+        {
+            Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
+        }
+
+        public void NotifyShotFired() => _lastFireTime = Clock.Time;
+
         public void UpdateStoredFireRate()
         {
             BulletWeaponArchetype bwa = Gun!.m_archeType;
@@ -204,31 +228,16 @@ namespace EWC.CustomWeapon
             }
         }
 
-        public void RefreshArchetypeCache()
-        {
-            if (IsGun)
-            {
-                BaseFireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
-                _burstDelay = Gun.m_archeType.BurstDelay();
-                UpdateStoredFireRate();
-            }
-        }
-
-        public void RefreshSoundDelay()
-        {
-            Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
-        }
-
         public void ModifyFireRate() {
             BulletWeaponArchetype bwa = Gun!.m_archeType;
-            bwa.m_nextShotTimer = Clock.Time + 1f / CurrentFireRate;
+            bwa.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
             if (bwa.BurstIsDone())
-                bwa.m_nextBurstTimer = Math.Max(Clock.Time + CurrentBurstDelay, bwa.m_nextShotTimer);
+                bwa.m_nextBurstTimer = Math.Max(_lastFireTime + CurrentBurstDelay, bwa.m_nextShotTimer);
         }
 
         public void ModifyFireRateSynced(BulletWeaponSynced synced)
         {
-            synced.m_lastFireTime = Clock.Time + 1f / CurrentFireRate - Weapon.ArchetypeData.ShotDelay;
+            synced.m_lastFireTime = _lastFireTime + 1f / CurrentFireRate - Weapon.ArchetypeData.ShotDelay;
         }
     }
 }

@@ -41,6 +41,7 @@ namespace EWC.Patches.Gun
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
+            cwc.NotifyShotFired();
             cwc.UpdateStoredFireRate();
             cwc.ModifyFireRateSynced(__instance);
             cwc.Invoke(StaticContext<WeaponPostFireContextSync>.Instance);
