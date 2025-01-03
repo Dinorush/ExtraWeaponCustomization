@@ -29,6 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             float mod = ConvertTriggersToMod(contexts);
             _expireTimes.Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
+            RefreshPreviousInstances(_expireTimes);
 
             TriggerManager.SendInstance(this, mod);
         }
@@ -42,7 +43,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             if (StackType == StackType.None)
                 _expireTimes.Clear();
+
             _expireTimes.Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
+            RefreshPreviousInstances(_expireTimes);
         }
 
         public void Invoke(WeaponFireRateContext context)

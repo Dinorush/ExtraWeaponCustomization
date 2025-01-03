@@ -23,6 +23,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _expireTimes.Clear();
 
             _expireTimes.Enqueue(new TriggerInstance(ConvertTriggersToMod(contexts), Clock.Time + Duration));
+            RefreshPreviousInstances(_expireTimes);
         }
 
         public void Invoke(WeaponRecoilContext context)

@@ -13,6 +13,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float Mod { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
         public float Duration { get; private set; } = 0f;
+        public bool RefreshPrevious { get; private set; } = false;
         public StackType StackType { get; private set; } = StackType.Add;
         public StackType StackLayer { get; private set; } = StackType.Multiply;
 
@@ -68,6 +69,21 @@ namespace EWC.CustomWeapon.Properties.Effects
             return mod;
         }
 
+        protected void RefreshPreviousInstances(Queue<TriggerInstance> queue)
+        {
+            if (!RefreshPrevious) return;
+
+            // To "refresh", combine stacks into a single instance.
+            if (queue.Peek().endTime < Clock.Time)
+                queue.Dequeue();
+            else
+            {
+                float mod = CalculateMod(queue);
+                queue.Clear();
+                queue.Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
+            }
+        }
+
         protected abstract void WriteName(Utf8JsonWriter writer);
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -77,6 +93,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Mod), Mod);
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteNumber(nameof(Duration), Duration);
+            writer.WriteBoolean(nameof(RefreshPrevious), RefreshPrevious);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
             SerializeTrigger(writer);
@@ -96,6 +113,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "duration":
                     Duration = reader.GetSingle();
+                    break;
+                case "refreshprevious":
+                case "refresh":
+                    RefreshPrevious = reader.GetBoolean();
                     break;
                 case "stacktype":
                 case "stack":

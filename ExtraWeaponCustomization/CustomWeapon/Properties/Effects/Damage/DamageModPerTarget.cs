@@ -78,6 +78,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (StackType == StackType.None) _expireTimes[wrapper].Clear();
 
             _expireTimes[wrapper].Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
+            RefreshPreviousInstances(_expireTimes[wrapper]);
         }
 
         public void Invoke(WeaponDamageContext context)
