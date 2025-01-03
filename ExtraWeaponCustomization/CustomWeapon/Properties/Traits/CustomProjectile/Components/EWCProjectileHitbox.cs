@@ -144,7 +144,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         public void Update(Vector3 position, Vector3 velocityDelta)
         {
-            if (!_enabled) return;
+            // Enabled should be false if not local, but attempting a fix for client projectiles not showing up sometimes
+            if (!_enabled || !_base.IsLocal) return;
 
             if (_settings == null || _weapon == null)
             {
