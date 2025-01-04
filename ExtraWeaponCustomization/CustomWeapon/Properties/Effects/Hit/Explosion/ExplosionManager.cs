@@ -2,6 +2,7 @@
 using AIGraph;
 using CharacterDestruction;
 using Enemies;
+using EWC.API;
 using EWC.CustomWeapon.KillTracker;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -214,6 +215,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             Vector3 position = localPos + target.Position;
             damBase.ProcessReceivedDamage(damage, source, position, Vector3.up * 1000f, hitreact, tryForceHitreact, limbID, staggerMult);
+            DamageAPI.FireExplosiveCallbacks(damage, target, source);
         }
     }
 

@@ -12,8 +12,11 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class Explosive : 
         Effect,
         IGunProperty,
-        IMeleeProperty
+        IMeleeProperty,
+        ISyncProperty
     {
+        public ushort SyncPropertyID { get; set; }
+
         public float MaxDamage { get; private set; } = 0f;
         public float MinDamage { get; private set; } = 0f;
         public float InnerRadius { get; private set; } = 0f;

@@ -8,14 +8,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         protected override void Receive(ExplosionFXData packet)
         {
+            if (!CustomWeaponManager.TryGetSyncProperty<Explosive>(packet.propertyID, out var property)) return;
+
             ExplosionFXManager.Internal_ReceiveExplosionFX(
                 packet.position,
-                packet.radius.Get(ExplosionManager.MaxRadius),
-                packet.soundID,
-                packet.color,
-                packet.intensity.Get(ExplosionFXManager.MaxGlowIntensity),
-                packet.duration.Get(ExplosionFXManager.MaxGlowDuration),
-                packet.fadeDuration.Get(ExplosionFXManager.MaxGlowDuration)
+                property
                 );
         }
 

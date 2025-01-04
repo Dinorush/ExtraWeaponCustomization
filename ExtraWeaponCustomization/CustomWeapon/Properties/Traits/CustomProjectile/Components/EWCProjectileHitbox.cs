@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private readonly EWCProjectileComponentBase _base;
 
         // Set on init
-        private Projectile? _settings;
+        private Projectile _settings;
         private BulletWeapon _weapon;
         private ContextController _contextController;
         private readonly HashSet<IntPtr> _initialPlayers = new();
@@ -144,14 +144,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         public void Update(Vector3 position, Vector3 velocityDelta)
         {
-            // Enabled should be false if not local, but attempting a fix for client projectiles not showing up sometimes
-            if (!_enabled || !_base.IsLocal) return;
-
-            if (_settings == null || _weapon == null)
-            {
-                _base.Die();
-                return;
-            }
+            if (!_enabled) return;
 
             s_ray.origin = position;
             s_ray.direction = velocityDelta;
@@ -182,7 +175,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private void CheckCollision()
         {
-            if (_settings!.HitSize == 0)
+            if (_settings.HitSize == 0)
                 s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, _entityLayer));
             else
             {
@@ -238,10 +231,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private void CheckCollisionWorld()
         {
             bool hit;
-            if (_settings!.HitSizeWorld == 0)
+            if (_settings.HitSizeWorld == 0)
                 hit = Physics.Raycast(s_ray, out s_rayHit, s_velMagnitude, LayerUtil.MaskWorld);
             else
-                hit = Physics.SphereCast(s_ray, _settings!.HitSizeWorld, out s_rayHit, s_velMagnitude, LayerUtil.MaskWorld);
+                hit = Physics.SphereCast(s_ray, _settings.HitSizeWorld, out s_rayHit, s_velMagnitude, LayerUtil.MaskWorld);
 
             if (hit)
             {
@@ -252,7 +245,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private void CheckCollisionInitialWorld()
         {
-            if (_settings!.HitSizeWorld == 0) return;
+            if (_settings.HitSizeWorld == 0) return;
 
             Vector3 pos = _weapon.Owner.FPSCamera.Position;
             Collider[] colliders = Physics.OverlapSphere(pos, _settings.HitSizeWorld, LayerUtil.MaskWorld);
@@ -283,7 +276,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             IntPtr basePtr = damageable.GetBaseDamagable().Pointer;
             HitEnts.Add(basePtr);
-            if (_settings!.HitCooldown >= 0)
+            if (_settings.HitCooldown >= 0)
                 _hitEntCooldowns.Enqueue((basePtr, Clock.Time + _settings.HitCooldown));
             if (damageable.GetBaseAgent() != null)
                 _ignoreWallsTime = Clock.Time + _settings.HitIgnoreWallsDuration;
@@ -337,7 +330,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             _hitData.damage = _baseDamage;
             _hitData.precisionMulti = _basePrecision;
-            _hitData.fireDir = (_settings!.HitFromOwnerPos ? s_rayHit.point - _weapon.Owner.FPSCamera.Position : s_ray.direction).normalized;
+            _hitData.fireDir = (_settings.HitFromOwnerPos ? s_rayHit.point - _weapon.Owner.FPSCamera.Position : s_ray.direction).normalized;
             _hitData.RayHit = s_rayHit;
             _hitData.SetFalloff(_distanceMoved);
 

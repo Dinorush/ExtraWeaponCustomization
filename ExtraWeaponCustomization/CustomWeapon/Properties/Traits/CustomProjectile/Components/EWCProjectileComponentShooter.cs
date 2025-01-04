@@ -31,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             base.Init(playerIndex, ID, settings, isLocal, position, dir);
 
-            _projectile.transform.SetPositionAndRotation(_position, s_tempRot);
+            _projectile.transform.SetPositionAndRotation(Position, s_tempRot);
 
             foreach (var effect in _projectile.m_effectsToStopEmittingOnImpact)
                 effect.Play();
@@ -136,7 +136,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             foreach (var go in _projectile.m_toDestroyOnImpact)
                 go.active = false;
 
-            if (_settings!.TrailCullOnDie && _trailRenderer != null)
+            if (Settings!.TrailCullOnDie && _trailRenderer != null)
                 _trailRenderer.Clear();
 
             if (_targeting != null)

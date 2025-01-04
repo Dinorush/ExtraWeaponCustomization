@@ -1,5 +1,5 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX;
-using EWC.Networking.Structs;
+﻿using EWC.API;
+using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX;
 using SNetwork;
 using UnityEngine;
 
@@ -23,52 +23,45 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         public static void DoExplosionFX(Vector3 position, Explosive eBase)
         {
-            ExplosionFXData fxData = new() { position = position, soundID = eBase.SoundID, color = eBase.GlowColor };
-            fxData.intensity.Set(eBase.GlowIntensity, MaxGlowIntensity);
-            fxData.radius.Set(eBase.Radius, ExplosionManager.MaxRadius);
-            fxData.duration.Set(eBase.GlowDuration, MaxGlowDuration);
-            fxData.fadeDuration.Set(eBase.GlowFadeDuration, MaxGlowDuration);
+            ExplosionFXData fxData = new() { position = position, propertyID = eBase.SyncPropertyID };
             _sync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
         }
 
-        internal static void Internal_ReceiveExplosionFX(Vector3 position, float radius, uint soundID, Color color, float intensity, float duration, float fadeDuration)
+        internal static void Internal_ReceiveExplosionFX(Vector3 position, Explosive eBase)
         {
             // Sound
             if (Configuration.PlayExplosionSFX)
             {
                 _soundShotOverride++;
-                if (_soundShotOverride > Configuration.ExplosionSFXShotOverride || Clock.Time - _lastSoundTime > Configuration.ExplosionSFXCooldown)
+                if (eBase.SoundID != 0 && (_soundShotOverride > Configuration.ExplosionSFXShotOverride || Clock.Time - _lastSoundTime > Configuration.ExplosionSFXCooldown))
                 {
-                    CellSound.Post(soundID, position);
+                    CellSound.Post(eBase.SoundID, position);
                     _soundShotOverride = 0;
                     _lastSoundTime = Clock.Time;
                 }
             }
 
             // Lighting
-            if (Configuration.ShowExplosionEffect)
+            if (Configuration.ShowExplosionEffect && eBase.Radius > 0 && eBase.GlowDuration > 0 && eBase.GlowIntensity > 0)
             {
                 ExplosionEffectPooling.TryDoEffect(new ExplosionEffectData()
                 {
                     position = position,
-                    flashColor = color,
-                    intensity = intensity,
-                    range = radius,
-                    duration = duration,
-                    fadeDuration = fadeDuration
+                    flashColor = eBase.GlowColor,
+                    intensity = eBase.GlowIntensity,
+                    range = eBase.Radius,
+                    duration = eBase.GlowDuration,
+                    fadeDuration = eBase.GlowFadeDuration
                 });
             }
+
+            ExplosionAPI.FireExplosionSpawnedCallback(position, eBase);
         }
     }
 
     public struct ExplosionFXData
     {
         public Vector3 position;
-        public UFloat16 radius;
-        public uint soundID;
-        public LowResColor color;
-        public UFloat16 intensity;
-        public UFloat16 duration;
-        public UFloat16 fadeDuration;
+        public ushort propertyID;
     }
 }

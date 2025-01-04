@@ -1,6 +1,7 @@
 ﻿using Agents;
 using CharacterDestruction;
 using Enemies;
+using EWC.API;
 using EWC.CustomWeapon.KillTracker;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -150,6 +151,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
 
             ProcessReceivedDOTDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
+            DamageAPI.FireDOTCallbacks(damage, target, source);
         }
 
         private static void ProcessReceivedDOTDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
