@@ -13,11 +13,10 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float Mod { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
         public float Duration { get; private set; } = 0f;
-        public float DecayTime { get; private set; } = -1f;
+        public bool RefreshPrevious { get; private set; } = false;
+        public float DecayTime { get; private set; } = 0f;
         public StackType StackType { get; private set; } = StackType.Add;
         public StackType StackLayer { get; private set; } = StackType.Multiply;
-
-        public bool IsStackingMod => DecayTime >= 0f;
 
         private float ClampToCap(float mod)
         {
@@ -61,6 +60,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Mod), Mod);
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteNumber(nameof(Duration), Duration);
+            writer.WriteBoolean(nameof(RefreshPrevious), RefreshPrevious);
             writer.WriteNumber(nameof(DecayTime), DecayTime);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
@@ -81,6 +81,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "duration":
                     Duration = reader.GetSingle();
+                    break;
+                case "refreshprevious":
+                case "refresh":
+                    RefreshPrevious = reader.GetBoolean();
                     break;
                 case "decaytime":
                 case "decay":
@@ -129,7 +133,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             public void Add(List<TriggerContext> contexts) => Add(Sum(contexts));
             public void Add(float num)
             {
-                if (_parent.IsStackingMod)
+                if (_parent.RefreshPrevious)
                 {
                     RefreshStackMod();
                     _currentStacks += num;
@@ -146,7 +150,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             public bool TryGetMod(out float mod)
             {
                 mod = 1f;
-                if (_parent.IsStackingMod)
+                if (_parent.RefreshPrevious)
                 {
                     if (_currentStacks == 0f) return false;
                     RefreshStackMod();
@@ -167,7 +171,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 float decayDelta = time - _lastStackTime - _parent.Duration;
                 if (decayDelta > 0f)
                 {
-                    if (_parent.DecayTime == 0f)
+                    if (_parent.DecayTime <= 0f)
                         _currentStacks = 0f;
                     else
                         _currentStacks = Math.Max(0f, _currentStacks - decayDelta / _parent.DecayTime);
