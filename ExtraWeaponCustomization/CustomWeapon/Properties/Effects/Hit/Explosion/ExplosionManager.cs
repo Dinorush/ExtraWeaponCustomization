@@ -192,6 +192,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             Dam_EnemyDamageLimb? limb = limbID > 0 ? damBase.DamageLimbs[limbID] : null;
             if (damBase.Health <= 0 || !damBase.Owner.Alive || damBase.IsImortal) return;
 
+            DamageAPI.FirePreExplosiveCallbacks(damage, target, source);
+
             ES_HitreactType hitreact = staggerMult > 0 ? ES_HitreactType.Light : ES_HitreactType.None;
             bool tryForceHitreact = false;
             bool willKill = damBase.WillDamageKill(damage);
@@ -215,7 +217,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             Vector3 position = localPos + target.Position;
             damBase.ProcessReceivedDamage(damage, source, position, Vector3.up * 1000f, hitreact, tryForceHitreact, limbID, staggerMult);
-            DamageAPI.FireExplosiveCallbacks(damage, target, source);
+            DamageAPI.FirePostExplosiveCallbacks(damage, target, source);
         }
     }
 

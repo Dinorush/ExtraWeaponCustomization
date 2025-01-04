@@ -126,6 +126,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             Dam_EnemyDamageLimb? limb = limbID > 0 ? damBase.DamageLimbs[limbID] : null;
             if (!target.Alive || damBase.IsImortal) return;
 
+            DamageAPI.FirePreDOTCallbacks(damage, target, source);
             // DoT should only stagger if threshold is reached. Need the hitreact to not be None for the threshold to do anything, though.
             bool staggers = damage * staggerMult + damBase.m_damBuildToHitreact >= target.EnemyBalancingData.Health.DamageUntilHitreact;
             ES_HitreactType hitreact = staggers ? ES_HitreactType.Light : ES_HitreactType.None;
@@ -151,7 +152,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
 
             ProcessReceivedDOTDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
-            DamageAPI.FireDOTCallbacks(damage, target, source);
+            DamageAPI.FirePostDOTCallbacks(damage, target, source);
         }
 
         private static void ProcessReceivedDOTDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
