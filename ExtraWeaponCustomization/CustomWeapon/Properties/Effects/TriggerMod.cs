@@ -13,8 +13,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float Mod { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
         public float Duration { get; private set; } = 0f;
-        public bool RefreshPrevious { get; private set; } = false;
-        public float DecayTime { get; private set; } = 0f;
+        public bool CombineModifiers { get; private set; } = false;
+        public float CombineDecayTime { get; private set; } = 0f;
         public StackType StackType { get; private set; } = StackType.Add;
         public StackType StackLayer { get; private set; } = StackType.Multiply;
 
@@ -60,8 +60,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Mod), Mod);
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteNumber(nameof(Duration), Duration);
-            writer.WriteBoolean(nameof(RefreshPrevious), RefreshPrevious);
-            writer.WriteNumber(nameof(DecayTime), DecayTime);
+            writer.WriteBoolean(nameof(CombineModifiers), CombineModifiers);
+            writer.WriteNumber(nameof(CombineDecayTime), CombineDecayTime);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
             SerializeTrigger(writer);
@@ -82,13 +82,15 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "duration":
                     Duration = reader.GetSingle();
                     break;
-                case "refreshprevious":
-                case "refresh":
-                    RefreshPrevious = reader.GetBoolean();
+                case "combinemodifiers":
+                case "combine":
+                    CombineModifiers = reader.GetBoolean();
                     break;
+                case "combinedecaytime":
+                case "combinedecay":
                 case "decaytime":
                 case "decay":
-                    DecayTime = reader.GetSingle();
+                    CombineDecayTime = reader.GetSingle();
                     break;
                 case "stacktype":
                 case "stack":
@@ -133,9 +135,10 @@ namespace EWC.CustomWeapon.Properties.Effects
             public void Add(List<TriggerContext> contexts) => Add(Sum(contexts));
             public void Add(float num)
             {
-                if (_parent.RefreshPrevious)
+                if (_parent.CombineModifiers)
                 {
                     RefreshStackMod();
+                    _lastStackTime = Clock.Time;
                     _currentStacks += num;
                     return;
                 }
@@ -150,7 +153,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             public bool TryGetMod(out float mod)
             {
                 mod = 1f;
-                if (_parent.RefreshPrevious)
+                if (_parent.CombineModifiers)
                 {
                     if (_currentStacks == 0f) return false;
                     RefreshStackMod();
@@ -167,16 +170,14 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             private void RefreshStackMod()
             {
-                float time = Clock.Time;
-                float decayDelta = time - _lastStackTime - _parent.Duration;
+                float decayDelta = Clock.Time - _lastStackTime - _parent.Duration;
                 if (decayDelta > 0f)
                 {
-                    if (_parent.DecayTime <= 0f)
+                    if (_parent.CombineDecayTime <= 0f)
                         _currentStacks = 0f;
                     else
-                        _currentStacks = Math.Max(0f, _currentStacks - decayDelta / _parent.DecayTime);
+                        _currentStacks = Math.Max(0f, _currentStacks - decayDelta / _parent.CombineDecayTime);
                 }
-                _lastStackTime = time;
             }
         }
     }
