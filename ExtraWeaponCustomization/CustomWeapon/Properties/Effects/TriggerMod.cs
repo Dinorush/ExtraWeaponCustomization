@@ -13,9 +13,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float Mod { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
         public float Duration { get; private set; } = 0f;
-        public bool RefreshPrevious { get; private set; } = false;
+        public float DecayTime { get; private set; } = -1f;
         public StackType StackType { get; private set; } = StackType.Add;
         public StackType StackLayer { get; private set; } = StackType.Multiply;
+
+        public bool IsStackingMod => DecayTime >= 0f;
 
         private float ClampToCap(float mod)
         {
@@ -50,50 +52,16 @@ namespace EWC.CustomWeapon.Properties.Effects
             };
         }
 
-        protected float ConvertTriggersToMod(IEnumerable<TriggerContext> count)
-        {
-            if (!count.Any()) return 1f;
-
-            float mod = 1f;
-            foreach(TriggerContext context in count)
-            {
-                float triggerMod = CalculateMod(context.triggerAmt);
-                mod = StackType switch
-                {
-                    StackType.None => triggerMod,
-                    StackType.Multiply => mod *= triggerMod,
-                    StackType.Add => mod += triggerMod - 1f,
-                    _ => mod
-                };
-            }
-            return mod;
-        }
-
-        protected void RefreshPreviousInstances(Queue<TriggerInstance> queue)
-        {
-            if (!RefreshPrevious) return;
-
-            // To "refresh", combine stacks into a single instance.
-            if (queue.Peek().endTime < Clock.Time)
-                queue.Dequeue();
-            else
-            {
-                float mod = CalculateMod(queue);
-                queue.Clear();
-                queue.Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
-            }
-        }
-
-        protected abstract void WriteName(Utf8JsonWriter writer);
+        protected static float Sum(IEnumerable<TriggerContext> contexts) => contexts.Sum(context => context.triggerAmt);
 
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
-            WriteName(writer);
+            writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(Mod), Mod);
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteNumber(nameof(Duration), Duration);
-            writer.WriteBoolean(nameof(RefreshPrevious), RefreshPrevious);
+            writer.WriteNumber(nameof(DecayTime), DecayTime);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
             SerializeTrigger(writer);
@@ -114,9 +82,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "duration":
                     Duration = reader.GetSingle();
                     break;
-                case "refreshprevious":
-                case "refresh":
-                    RefreshPrevious = reader.GetBoolean();
+                case "decaytime":
+                case "decay":
+                    DecayTime = reader.GetSingle();
                     break;
                 case "stacktype":
                 case "stack":
@@ -141,6 +109,71 @@ namespace EWC.CustomWeapon.Properties.Effects
                 this.mod = mod;
                 this.endTime = endTime;
             }
-        };
+        }
+
+        protected class TriggerStack
+        {
+            private float _currentStacks = 0f;
+            private float _lastStackTime = 0f;
+            private readonly Queue<TriggerInstance> _expireTimes = new();
+            private readonly TriggerMod _parent;
+
+            public TriggerStack(TriggerMod parent) => _parent = parent;
+
+            public void Clear()
+            {
+                _expireTimes.Clear();
+                _currentStacks = 0f;
+            }
+
+            public void Add(List<TriggerContext> contexts) => Add(Sum(contexts));
+            public void Add(float num)
+            {
+                if (_parent.IsStackingMod)
+                {
+                    RefreshStackMod();
+                    _currentStacks += num;
+                    return;
+                }
+
+                if (_parent.StackType == StackType.None)
+                    _expireTimes.Clear();
+
+                float endTime = Clock.Time + _parent.Duration;
+                _expireTimes.Enqueue(new TriggerInstance(_parent.CalculateMod(num), endTime));
+            }
+
+            public bool TryGetMod(out float mod)
+            {
+                mod = 1f;
+                if (_parent.IsStackingMod)
+                {
+                    if (_currentStacks == 0f) return false;
+                    RefreshStackMod();
+                    mod = _parent.CalculateMod(_currentStacks);
+                    return true;
+                }
+
+                while (_expireTimes.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) _expireTimes.Dequeue();
+
+                if (_expireTimes.Count == 0) return false;
+                mod = _parent.CalculateMod(_expireTimes);
+                return true;
+            }
+
+            private void RefreshStackMod()
+            {
+                float time = Clock.Time;
+                float decayDelta = time - _lastStackTime - _parent.Duration;
+                if (decayDelta > 0f)
+                {
+                    if (_parent.DecayTime == 0f)
+                        _currentStacks = 0f;
+                    else
+                        _currentStacks = Math.Max(0f, _currentStacks - decayDelta / _parent.DecayTime);
+                }
+                _lastStackTime = time;
+            }
+        }
     }
 }

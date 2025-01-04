@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
@@ -10,33 +9,16 @@ namespace EWC.CustomWeapon.Properties.Effects
         IGunProperty,
         IWeaponProperty<WeaponRecoilContext>
     {
-        private readonly Queue<TriggerInstance> _expireTimes = new();
+        private readonly TriggerStack _triggerStack;
 
-        public override void TriggerReset()
-        {
-            _expireTimes.Clear();
-        }
-
-        public override void TriggerApply(List<TriggerContext> contexts)
-        {
-            if (StackType == StackType.None)
-                _expireTimes.Clear();
-
-            _expireTimes.Enqueue(new TriggerInstance(ConvertTriggersToMod(contexts), Clock.Time + Duration));
-            RefreshPreviousInstances(_expireTimes);
-        }
+        public RecoilMod() => _triggerStack = new(this);
+        public override void TriggerReset() => _triggerStack.Clear();
+        public override void TriggerApply(List<TriggerContext> contexts) => _triggerStack.Add(contexts);
 
         public void Invoke(WeaponRecoilContext context)
         {
-            while (_expireTimes.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) _expireTimes.Dequeue();
-
-            if (_expireTimes.Count > 0)
-                context.AddMod(CalculateMod(_expireTimes), StackLayer);
-        }
-
-        protected override void WriteName(Utf8JsonWriter writer)
-        {
-            writer.WriteString("Name", GetType().Name);
+            if (_triggerStack.TryGetMod(out float mod))
+                context.AddMod(mod, StackLayer);
         }
     }
 }

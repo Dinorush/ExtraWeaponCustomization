@@ -3,7 +3,6 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
@@ -13,7 +12,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         IMeleeProperty,
         IWeaponProperty<WeaponDamageContext>
     {
-        private readonly Dictionary<BaseDamageableWrapper, Queue<TriggerInstance>> _expireTimes = new();
+        private readonly Dictionary<BaseDamageableWrapper, TriggerStack> _triggerStacks = new();
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
         public DamageModPerTarget()
@@ -24,7 +23,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerReset()
         {
-            _expireTimes.Clear();
+            _triggerStacks.Clear();
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
@@ -63,38 +62,29 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void AddTriggerInstance(BaseDamageableWrapper wrapper, float triggerAmt)
         {
-            float mod = CalculateMod(triggerAmt);
-            if (!_expireTimes.ContainsKey(wrapper))
+            if (!_triggerStacks.ContainsKey(wrapper))
             {
                 // Clean dead agents from dict. Doesn't need to happen here, but we don't need to run this often, so eh
-                _expireTimes.Keys
+                _triggerStacks.Keys
                     .Where(wrapper => !wrapper.Alive)
                     .ToList()
-                    .ForEach(wrapper => _expireTimes.Remove(wrapper));
+                    .ForEach(wrapper => _triggerStacks.Remove(wrapper));
 
-                _expireTimes[wrapper] = new Queue<TriggerInstance>();
+                _triggerStacks[wrapper] = new TriggerStack(this);
             }
 
-            if (StackType == StackType.None) _expireTimes[wrapper].Clear();
+            if (StackType == StackType.None) _triggerStacks[wrapper].Clear();
 
-            _expireTimes[wrapper].Enqueue(new TriggerInstance(mod, Clock.Time + Duration));
-            RefreshPreviousInstances(_expireTimes[wrapper]);
+            _triggerStacks[wrapper].Add(triggerAmt);
         }
 
         public void Invoke(WeaponDamageContext context)
         {
             TempWrapper.Set(context.Damageable);
-            if (!_expireTimes.TryGetValue(TempWrapper, out Queue<TriggerInstance>? queue)) return;
+            if (!_triggerStacks.TryGetValue(TempWrapper, out TriggerStack? triggerStack)) return;
 
-            while (queue.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) queue.Dequeue();
-
-            if (queue.Count > 0)
-                context.Damage.AddMod(CalculateMod(queue), StackLayer);
-        }
-
-        protected override void WriteName(Utf8JsonWriter writer)
-        {
-            writer.WriteString("Name", GetType().Name);
+            if (triggerStack.TryGetMod(out float mod))
+                context.Damage.AddMod(mod, StackLayer);
         }
     }
 }
