@@ -31,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         protected override void Receive(ProjectileDataShooter packet)
         {
-            if (!CustomWeaponManager.TryGetSyncProperty<Projectile>(packet.id, out var property)) return;
+            if (!CustomWeaponManager.TryGetSyncProperty<Projectile>(packet.propertyID, out var property)) return;
 
             EWCProjectileManager.Shooter.Internal_ReceiveProjectile(
                 packet.playerIndex,
