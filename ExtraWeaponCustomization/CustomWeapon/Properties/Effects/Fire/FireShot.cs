@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.API;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
@@ -214,6 +215,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                 // Plays bullet FX, since Thick Bullet will cancel the ray but doesn't
                 FX_Manager.EffectTargetPosition = wallPos;
+                FireShotAPI.FireShotFiredCallback(s_hitData, s_ray.origin, wallPos);
                 FX_Manager.PlayLocalVersion = false;
                 BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
                 return;
@@ -237,6 +239,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
             }
 
+            FireShotAPI.FireShotFiredCallback(s_hitData, s_ray.origin, FX_Manager.EffectTargetPosition);
             FX_Manager.PlayLocalVersion = false;
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
             _hitEnts.Clear();
@@ -244,6 +247,9 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void FireVisual(float x, float y, float spread)
         {
+            s_hitData.owner = CWC.Weapon.Owner;
+            s_hitData.damage = CWC.Weapon.ArchetypeData.Damage;
+
             CalcRayDir(x, y, spread, local: false);
 
             if (Physics.Raycast(s_ray, out s_rayHit, 20f, LayerUtil.MaskEntityAndWorld))
@@ -255,6 +261,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             else
                 FX_Manager.EffectTargetPosition = s_ray.origin + s_ray.direction * 20f;
 
+            FireShotAPI.FireShotFiredCallback(s_hitData, s_ray.origin, FX_Manager.EffectTargetPosition);
             FX_Manager.PlayLocalVersion = false;
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
         }

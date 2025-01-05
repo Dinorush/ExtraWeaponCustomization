@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.API;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
 using FX_EffectSystem;
@@ -8,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
+using static Il2CppSystem.IO.Directory;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
@@ -169,6 +171,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
                 // Plays bullet FX, since Thick Bullet will cancel the ray but doesn't
                 FX_Manager.EffectTargetPosition = wallPos;
+                FireShotAPI.FireShotFiredCallback(s_hitData, s_ray.origin, wallPos);
                 FX_Manager.PlayLocalVersion = false;
                 BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
                 return;
@@ -187,17 +190,21 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (pierceCount > 0 && hitWall && !AlreadyHit(DamageableUtil.GetDamageableFromRayHit(wallRayHit)))
                 {
                     s_hitData.RayHit = wallRayHit;
-                    FX_Manager.EffectTargetPosition = wallPos;
+                    FX_Manager.EffectTargetPosition = wallPos; // Set again since CheckForHits sets it to other things
                     BulletHit(s_hitData);
                 }
             }
 
+            FireShotAPI.FireShotFiredCallback(s_hitData, s_ray.origin, FX_Manager.EffectTargetPosition);
             FX_Manager.PlayLocalVersion = false;
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
         }
 
         private void FireVisual(float x, float y, float spread)
         {
+            s_hitData.owner = CWC.Weapon.Owner;
+            s_hitData.damage = CWC.Weapon.ArchetypeData.Damage;
+
             CalcRayDir(x, y, spread, local: false);
 
             if (Physics.Raycast(s_ray, out s_rayHit, 20f, LayerUtil.MaskEntityAndWorld))
@@ -209,6 +216,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             else
                 FX_Manager.EffectTargetPosition = s_ray.origin + s_ray.direction * 20f;
 
+            FireShotAPI.FireShotFiredCallback(s_hitData, s_ray.origin, FX_Manager.EffectTargetPosition);
             FX_Manager.PlayLocalVersion = false;
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
         }
