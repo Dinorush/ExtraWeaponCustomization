@@ -1,5 +1,7 @@
 ﻿using EWC.API;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX;
+using EWC.Utils;
+using Player;
 using SNetwork;
 using UnityEngine;
 
@@ -53,6 +55,21 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     duration = eBase.GlowDuration,
                     fadeDuration = eBase.GlowFadeDuration
                 });
+            }
+
+            // Screen Shake
+            if (Configuration.PlayExplosionShake && eBase.ScreenShakeIntensity > 0 && eBase.ScreenShakeDuration > 0)
+            {
+                float innerRadius = eBase.ScreenShakeInnerRadius > 0 ? eBase.ScreenShakeInnerRadius : eBase.InnerRadius;
+                float radius = eBase.ScreenShakeRadius > 0 ? eBase.ScreenShakeRadius : eBase.Radius;
+                PlayerAgent player = PlayerManager.GetLocalPlayerAgent();
+                Vector3 diff = position - player.Position;
+                float dist = diff.magnitude;
+                if (dist < radius)
+                {
+                    float strength = dist.MapInverted(innerRadius, radius, eBase.ScreenShakeIntensity, 0f, eBase.Exponent);
+                    player.FPSCamera.Shake(eBase.ScreenShakeDuration, strength, eBase.ScreenShakeFrequency, diff.normalized);
+                }
             }
 
             ExplosionAPI.FireExplosionSpawnedCallback(position, eBase);

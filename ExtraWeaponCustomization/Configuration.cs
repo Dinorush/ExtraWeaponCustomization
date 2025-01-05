@@ -3,28 +3,50 @@ using BepInEx;
 using System.IO;
 using GTFO.API.Utilities;
 using EWC.CustomWeapon;
-using System.Diagnostics.CodeAnalysis;
 
 namespace EWC
 {
     internal static class Configuration
     {
         private static ConfigEntry<bool> ForceCreateTemplate { get; set; }
-        public static bool ShowExplosionEffect { get; set; } = true;
-        public static bool PlayExplosionSFX { get; set; } = true;
-        public static float ExplosionSFXCooldown { get; set; } = 0.08f;
-        public static int ExplosionSFXShotOverride { get; set; } = 8;
 
-        public static float AutoAimTickDelay { get; set; } = 0.1f;
+        private readonly static ConfigEntry<bool> _showExplosionEffect;
+        public static bool ShowExplosionEffect => _showExplosionEffect.Value;
+        private readonly static ConfigEntry<bool> _playExplosionSFX;
+        public static bool PlayExplosionSFX => _playExplosionSFX.Value;
+        private readonly static ConfigEntry<float> _explosionSFXCooldown;
+        public static float ExplosionSFXCooldown => _explosionSFXCooldown.Value;
+        private readonly static ConfigEntry<int> _explosionSFXShotOverride;
+        public static int ExplosionSFXShotOverride => _explosionSFXShotOverride.Value;
+        private readonly static ConfigEntry<bool> _playExplosionShake;
+        public static bool PlayExplosionShake => _playExplosionShake.Value;
 
-        public static float HomingTickDelay { get; set; } = 0.1f;
+        private readonly static ConfigEntry<float> _autoAimTickDelay;
+        public static float AutoAimTickDelay => _autoAimTickDelay.Value;
+
+        private readonly static ConfigEntry<float> _homingTickDelay;
+        public static float HomingTickDelay => _homingTickDelay.Value;
 
         private readonly static ConfigFile configFile;
 
         static Configuration()
         {
             configFile = new ConfigFile(Path.Combine(Paths.ConfigPath, EntryPoint.MODNAME + ".cfg"), saveOnInit: true);
-            BindAll(configFile);
+            string section = "Auto Aim Settings";
+            _autoAimTickDelay = configFile.Bind(section, "Search Cooldown", 0.1f, "Time between attempted searches to acquire targets.");
+
+            section = "Explosion Settings";
+            _showExplosionEffect = configFile.Bind(section, "Show Effect", true, "Enables explosion visual FX.");
+            _playExplosionSFX = configFile.Bind(section, "Play Sound", true, "Enables explosion sound FX.");
+            _explosionSFXCooldown = configFile.Bind(section, "SFX Cooldown", 0.08f, "Minimum time between explosion sound effects, to prevent obnoxiously loud sounds.");
+            _explosionSFXShotOverride = configFile.Bind(section, "Shots to Override SFX Cooldown", 8, "Amount of shots fired before another explosion sound effect is forced, regardless of cooldown.\nSmaller numbers let fast-firing weapons and shotguns make more sounds in a short span of time.");
+            _playExplosionShake = configFile.Bind(section, "Play Screen Shake", true, "Enables explosion screen shake. Doesn't bypass the global screen shake settings modifier.");
+
+            section = "Projectile Settings";
+            _homingTickDelay = configFile.Bind(section, "Homing Search Cooldown", 0.1f, "Minimum time between attempted searches to acquire a new target.");
+
+            section = "Tools";
+            ForceCreateTemplate = configFile.Bind(section, "Force Create Template", false, "Creates the template file again.");
         }
 
         internal static void Init()
@@ -36,43 +58,12 @@ namespace EWC
         private static void OnFileChanged(LiveEditEventArgs _)
         {
             configFile.Reload();
-            string section = "Auto Aim Settings";
-            AutoAimTickDelay = (float)configFile[section, "Search Cooldown"].BoxedValue;
-
-            section = "Explosion Settings";
-            ShowExplosionEffect = (bool)configFile[section, "Show Effect"].BoxedValue;
-            PlayExplosionSFX = (bool)configFile[section, "Play Sound"].BoxedValue;
-            ExplosionSFXCooldown = (float)configFile[section, "SFX Cooldown"].BoxedValue;
-            ExplosionSFXShotOverride = (int)configFile[section, "Shots to Override SFX Cooldown"].BoxedValue;
-
-            section = "Projectile Settings";
-            HomingTickDelay = (float)configFile[section, "Homing Search Cooldown"].BoxedValue;
-
             CheckAndRefreshTemplate();
-        }
-
-        [MemberNotNull(nameof(ForceCreateTemplate))]
-        private static void BindAll(ConfigFile config)
-        {
-            string section = "Auto Aim Settings";
-            AutoAimTickDelay = config.Bind(section, "Search Cooldown", AutoAimTickDelay, "Time between attempted searches to acquire targets.").Value;
-
-            section = "Explosion Settings";
-            ShowExplosionEffect = config.Bind(section, "Show Effect", ShowExplosionEffect, "Enables explosion visual FX.").Value;
-            PlayExplosionSFX = config.Bind(section, "Play Sound", PlayExplosionSFX, "Enables explosion sound FX.").Value;
-            ExplosionSFXCooldown = config.Bind(section, "SFX Cooldown", ExplosionSFXCooldown, "Minimum time between explosion sound effects, to prevent obnoxiously loud sounds.").Value;
-            ExplosionSFXShotOverride = config.Bind(section, "Shots to Override SFX Cooldown", ExplosionSFXShotOverride, "Amount of shots fired before another explosion sound effect is forced, regardless of cooldown.\nSmaller numbers let fast-firing weapons and shotguns make more sounds in a short span of time.").Value;
-
-            section = "Projectile Settings";
-            HomingTickDelay = config.Bind(section, "Homing Search Cooldown", HomingTickDelay, "Minimum time between attempted searches to acquire a new target.").Value;
-
-            section = "Tools";
-            ForceCreateTemplate = config.Bind(section, "Force Create Template", false, "Creates the template file again.");
         }
 
         private static void CheckAndRefreshTemplate()
         {
-            if (ForceCreateTemplate.Value == true)
+            if (ForceCreateTemplate.Value)
             {
                 ForceCreateTemplate.Value = false;
                 CustomWeaponManager.Current.CreateTemplate();

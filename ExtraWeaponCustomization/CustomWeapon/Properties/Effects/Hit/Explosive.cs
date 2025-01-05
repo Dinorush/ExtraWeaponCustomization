@@ -38,6 +38,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float GlowIntensity { get; private set; } = 5f;
         public float GlowDuration { get; private set; } = 0.1f;
         public float GlowFadeDuration { get; private set; } = 0.1f;
+        public float ScreenShakeIntensity { get; private set; } = 0f;
+        public float ScreenShakeFrequency { get; private set; } = 30f;
+        public float ScreenShakeDuration { get; private set; } = 0f;
+        public float ScreenShakeInnerRadius { get; private set; } = 0f;
+        public float ScreenShakeRadius { get; private set; } = 0f;
 
         public float CacheBackstab { get; private set; } = 0f;
 
@@ -105,6 +110,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowDuration), GlowDuration);
             writer.WriteNumber(nameof(GlowFadeDuration), GlowFadeDuration);
+            writer.WriteNumber(nameof(ScreenShakeIntensity), ScreenShakeIntensity);
+            writer.WriteNumber(nameof(ScreenShakeFrequency), ScreenShakeFrequency);
+            writer.WriteNumber(nameof(ScreenShakeDuration), ScreenShakeDuration);
+            writer.WriteNumber(nameof(ScreenShakeInnerRadius), ScreenShakeInnerRadius);
+            writer.WriteNumber(nameof(ScreenShakeRadius), ScreenShakeRadius);
             writer.WriteEndObject();
         }
 
@@ -198,6 +208,26 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "glowfadeduration":
                 case "fadeduration":
                     GlowFadeDuration = reader.GetSingle();
+                    break;
+                case "screenshakeintensity":
+                case "shakeintensity":
+                    ScreenShakeIntensity = reader.GetSingle();
+                    break;
+                case "screenshakefrequency":
+                case "shakefrequency":
+                    ScreenShakeFrequency = reader.GetSingle();
+                    break;
+                case "screenshakeduration":
+                case "shakeduration":
+                    ScreenShakeDuration = reader.GetSingle();
+                    break;
+                case "screenshakeinnerradius":
+                case "shakeinnerradius":
+                    ScreenShakeRadius = reader.GetSingle();
+                    break;
+                case "screenshakeradius":
+                case "shakeradius":
+                    ScreenShakeRadius = reader.GetSingle();
                     break;
                 default:
                     break;
