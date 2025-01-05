@@ -12,13 +12,14 @@ namespace EWC.CustomWeapon.Properties.Traits
     {
         public float TumorDamageMulti { get; private set; } = 1f;
         public bool BypassCap { get; private set; } = false;
+        public bool OverrideWeakspotMulti { get; private set; } = false;
 
         public void Invoke(WeaponDamageContext context)
         {
             Dam_EnemyDamageLimb_Custom? tumor = context.Damageable.TryCast<Dam_EnemyDamageLimb_Custom>();
             if (tumor != null)
             {
-                context.Precision.AddMod(TumorDamageMulti, StackType.Multiply);
+                context.Precision.AddMod(OverrideWeakspotMulti ? TumorDamageMulti / tumor.m_weakspotDamageMulti : TumorDamageMulti, StackType.Multiply);
                 context.BypassTumorCap = BypassCap;
             }
         }
@@ -29,6 +30,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(TumorDamageMulti), TumorDamageMulti);
             writer.WriteBoolean(nameof(BypassCap), BypassCap);
+            writer.WriteBoolean(nameof(OverrideWeakspotMulti), OverrideWeakspotMulti);
             writer.WriteEndObject();
         }
 
@@ -45,6 +47,11 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "bypasstumorcap":
                 case "bypasscap":
                     BypassCap = reader.GetBoolean();
+                    break;
+                case "overrideweakspotmulti":
+                case "overridemulti":
+                case "override":
+                    OverrideWeakspotMulti = reader.GetBoolean();
                     break;
                 default:
                     break;
