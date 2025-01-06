@@ -24,31 +24,31 @@ namespace EWC.CustomWeapon.Properties.Effects
             return Math.Max(mod, Cap);
         }
 
-        protected float CalculateMod(IEnumerable<TriggerInstance> count)
+        protected float CalculateMod(IEnumerable<TriggerInstance> count, bool clamped = true)
         {
             if (!count.Any()) return 1f;
 
-            return ClampToCap(
-                StackType switch
-                {
-                    StackType.None => count.First().mod,
-                    StackType.Multiply => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod *= y.mod; return x; }, x => x.mod),
-                    StackType.Add => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod += (y.mod - 1f); return x; }, x => x.mod),
-                    StackType.Max => Mod > 1f ? count.Max(x => x.mod) : count.Min(x => x.mod),
-                    _ => 1f
-                }
-                );
+            float mod = StackType switch
+            {
+                StackType.None => count.First().mod,
+                StackType.Multiply => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod *= y.mod; return x; }, x => x.mod),
+                StackType.Add => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod += (y.mod - 1f); return x; }, x => x.mod),
+                StackType.Max => Mod > 1f ? count.Max(x => x.mod) : count.Min(x => x.mod),
+                _ => 1f
+            };
+            return clamped ? ClampToCap(mod) : mod;
         }
 
-        protected float CalculateMod(float num)
+        protected float CalculateMod(float num, bool clamped = true)
         {
-            return StackType switch
+            float mod = StackType switch
             {
                 StackType.None => Mod,
                 StackType.Multiply => (float)Math.Pow(Mod, num),
                 StackType.Add => 1f + (Mod - 1f) * num,
                 _ => 1f
             };
+            return clamped ? ClampToCap(mod) : mod;
         }
 
         protected static float Sum(IEnumerable<TriggerContext> contexts) => contexts.Sum(context => context.triggerAmt);
@@ -147,7 +147,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     _expireTimes.Clear();
 
                 float endTime = Clock.Time + _parent.Duration;
-                _expireTimes.Enqueue(new TriggerInstance(_parent.CalculateMod(num), endTime));
+                _expireTimes.Enqueue(new TriggerInstance(_parent.CalculateMod(num, clamped: false), endTime));
             }
 
             public bool TryGetMod(out float mod)
