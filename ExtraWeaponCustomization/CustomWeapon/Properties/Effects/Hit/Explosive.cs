@@ -46,7 +46,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public float CacheBackstab { get; private set; } = 0f;
 
-        private const float WallHitBuffer = -0.03f;
+        private const float WallHitBuffer = -0.05f;
 
         public Explosive()
         {

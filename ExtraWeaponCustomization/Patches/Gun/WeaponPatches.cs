@@ -93,7 +93,7 @@ namespace EWC.Patches
             if (cwc == null)
             {
                 if (damageable.IsEnemy())
-                    KillTrackerManager.ClearHit(damageable!.GetBaseAgent().Cast<EnemyAgent>());
+                    KillTrackerManager.ClearHit(damageable.GetBaseAgent().Cast<EnemyAgent>());
                 return;
             }
 
@@ -121,7 +121,7 @@ namespace EWC.Patches
             CachedHitCC = cc;
 
             IDamageable? damageable = hitData.damageable;
-            if (damageable != null && damageable.GetBaseDamagable().GetHealthRel() > 0)
+            if (damageable.IsValid() && damageable.GetBaseDamagable().GetHealthRel() > 0)
             {
                 float backstab = 1f;
                 float origBackstab = 1f;

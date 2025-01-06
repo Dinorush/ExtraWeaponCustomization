@@ -39,7 +39,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private float _ignoreWallsTime = 0f;
 
         // Static
-        public const float MinCollisionDist = 0.03f;
+        public const float MinCollisionDist = 0.05f;
         public const float MinCollisionSqrDist = MinCollisionDist * MinCollisionDist;
         private static ContextController? s_currentController;
         private static float s_lastControllerTime = 0f;
@@ -156,6 +156,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (_wallPierce == null && Clock.Time >= _ignoreWallsTime)
                 CheckCollisionWorld();
+
+            if (!_enabled) return; // Die on wall hit
 
             // Player moves on fixed time so only remove on fixed time
             if (_lastFixedTime != Time.fixedTime && _initialPlayers.Count != 0)

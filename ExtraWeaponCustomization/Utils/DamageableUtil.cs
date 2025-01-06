@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
 namespace EWC.Utils
@@ -20,7 +21,15 @@ namespace EWC.Utils
             return go.GetComponent<IDamageable>();
         }
 
-        public static bool IsEnemy(this IDamageable? damageable)
+        public static bool IsValid([NotNullWhen(true)] this IDamageable? damageable)
+        {
+            if (damageable == null) return false;
+            
+            Agents.Agent? agent = damageable.GetBaseAgent();
+            return agent != null || damageable.TryCast<LevelGeneration.LG_WeakLockDamage>() != null;
+        }
+
+        public static bool IsEnemy([NotNullWhen(true)] this IDamageable? damageable)
         {
             if (damageable == null) return false;
 
