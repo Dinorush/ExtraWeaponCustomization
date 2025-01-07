@@ -1,11 +1,12 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Patches.Melee;
 using EWC.Utils;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
-    public sealed class ChargeTrigger : DamageableTrigger<WeaponHitDamageableContext>
+    public sealed class ChargeLandedTrigger : DamageTypeTrigger<WeaponHitContextBase>
     {
         public float Min { get; private set; } = 0f;
         public float Max { get; private set; } = 1f;
@@ -13,17 +14,21 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float MinRequired { get; private set; } = 0f;
         public float MaxRequired { get; private set; } = 1f;
 
-        public ChargeTrigger(DamageType type = DamageType.Any) : base(TriggerName.Charge, type) {}
+        public ChargeLandedTrigger() : base(TriggerName.ChargeLanded, DamageType.Bullet) { }
 
-        protected override float InvokeInternal(WeaponHitDamageableContext context)
+        public override bool Invoke(WeaponTriggerContext context, out float amount)
         {
             float charge = MeleePatches.CachedCharge;
-            if (charge >= MinRequired && charge <= MaxRequired)
+            // Want to trigger when a melee hit lands but NOT on a pre-hit context
+            if (charge >= MinRequired && charge <= MaxRequired &&
+                base.Invoke(context, out amount) && context is not WeaponPreHitDamageableContext)
             {
                 charge = charge.Map(MinRequired, MaxRequired, Min, Max, Exponent);
-                return charge * Amount;
+                amount *= charge;
+                return true;
             }
-            return 0f;
+            amount = 0;
+            return false;
         }
 
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
