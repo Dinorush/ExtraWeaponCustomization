@@ -45,12 +45,16 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private Vector3 _baseVelocity;
 
         private Vector3 _dir;
-        public Vector3 Dir => _dir;
+        public Vector3 Dir
+        {
+            get => _dir;
+            private set { _dir = value == Vector3.zero ? _baseDir : value; }
+        }
         private Vector3 _velocity;
         public Vector3 Velocity
         {
             get => _velocity;
-            private set { _velocity = value; _dir = _velocity.normalized; }
+            private set{ _velocity = value; Dir = _velocity.normalized; }
         }
         private float _accelProgress;
 
@@ -132,7 +136,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_lerpProgress == 1f)
             {
                 _positionVisual = _position;
-                _dirVisual = _dir;
+                _dirVisual = Dir;
                 s_tempRot.SetLookRotation(_dirVisual);
                 return;
             }
@@ -140,7 +144,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _lerpProgress = Math.Min(1f, _lerpProgress + Time.deltaTime / _lerpTime);
             float invLerpSqr = 1f - (1f - _lerpProgress) * (1f - _lerpProgress);
             _positionVisual = _position + Vector3.Lerp(_positionVisualDiff, Vector3.zero, invLerpSqr);
-            _dirVisual = Vector3.Lerp(-_positionVisualDiff, _dir, invLerpSqr);
+            _dirVisual = Vector3.Lerp(-_positionVisualDiff, Dir, invLerpSqr);
             s_tempRot.SetLookRotation(_dirVisual);
         }
 
@@ -152,13 +156,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 return;
             }
 
-            Vector3 dir = _dir;
+            Vector3 dir = Dir;
             Homing.Update(_position, ref dir);
-            if (dir != _dir)
+            if (dir != Dir)
                 BaseDir = dir;
 
             Vector3 deltaMove = UpdateVelocity();
-            Vector3 collisionVel = deltaMove.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaMove : _dir  * EWCProjectileHitbox.MinCollisionDist;
+            Vector3 collisionVel = deltaMove.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaMove : Dir * EWCProjectileHitbox.MinCollisionDist;
             Hitbox.Update(_position, collisionVel, out var bounceHit);
             if (!enabled) return; // Died by hitbox
 
@@ -214,7 +218,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _baseVelocity = _baseDir * Speed;
             _velocity = _baseVelocity;
             _velocity.y -= _gravityVel;
-            _dir = _velocity.normalized;
+            Dir = _velocity.normalized;
             return deltaMove;
         }
 

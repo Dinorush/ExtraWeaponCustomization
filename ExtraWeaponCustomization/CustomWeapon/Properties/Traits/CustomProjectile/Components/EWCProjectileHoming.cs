@@ -249,7 +249,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _weakspotList.Clear();
             foreach (Dam_EnemyDamageLimb limb in _homingAgent!.Damage.DamageLimbs)
-                if (!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot)
+                if (!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot && limb.GetComponent<Collider>() != null)
                     _weakspotList.Add(limb);
         }
 
