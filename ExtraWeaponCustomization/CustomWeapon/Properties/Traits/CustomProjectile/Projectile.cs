@@ -269,6 +269,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "ricochet":
                     RicochetCount = reader.GetInt32();
                     break;
+                case "ricochetonenemies":
                 case "ricochetonenemy":
                     RicochetOnEnemy = reader.GetBoolean();
                     break;
