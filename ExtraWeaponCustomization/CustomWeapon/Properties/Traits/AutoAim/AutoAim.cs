@@ -387,6 +387,8 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (limb.m_health > 0)
                 {
                     Collider collider = limb.GetComponent<Collider>();
+                    if (collider == null) continue;
+
                     if (limb.m_type == eLimbDamageType.Weakspot)
                         _weakspotList.Add((collider, limb));
                     else
