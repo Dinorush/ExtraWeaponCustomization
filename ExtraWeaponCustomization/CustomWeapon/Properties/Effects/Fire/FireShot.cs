@@ -5,6 +5,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Log;
 using FX_EffectSystem;
 using GameData;
 using Gear;
@@ -26,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public readonly List<float> Offsets = new(2);
         public uint Repeat { get; private set; } = 0;
-        public bool ApplySpreadPerShot { get; private set; } = false;
+        public float Spread { get; private set; } = 0;
         public bool ForceSingleBullet { get; private set; } = false;
         public FireSetting FireFrom { get; private set; } = FireSetting.User;
         public bool HitTriggerTarget { get; private set; } = false;
@@ -105,8 +106,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
-            float spread = 0f;
-            if (ApplySpreadPerShot)
+            float spread = Spread;
+            if (spread < 0f)
             {
                 if (isShotgun)
                     spread = archData.ShotgunBulletSpread;
@@ -154,7 +155,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
-            float spread = ApplySpreadPerShot && isShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
+            float spread = Spread;
+            if (spread < 0f)
+                spread = isShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
 
             for (int iter = 0; iter < iterations; iter++)
                 FirePerTrigger(spread, shotgunBullets, segmentSize, coneSize, visual: true);
@@ -358,7 +361,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WritePropertyName(nameof(Offsets));
             EWCJson.Serialize(writer, Offsets);
             writer.WriteNumber(nameof(Repeat), Repeat);
-            writer.WriteBoolean(nameof(ApplySpreadPerShot), ApplySpreadPerShot);
+            writer.WriteNumber(nameof(Spread), Spread);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
             writer.WriteString(nameof(FireFrom), FireFrom.ToString());
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
@@ -383,9 +386,16 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "repeat":
                     Repeat = reader.GetUInt32();
                     break;
+                case "spread":
+                    Spread = reader.GetSingle();
+                    break;
                 case "applyspreadpershot":
                 case "applyspread":
-                    ApplySpreadPerShot = reader.GetBoolean();
+                    if (reader.GetBoolean())
+                    {
+                        EWCLogger.Warning("FireShot field \"ApplySpreadPerShot\" is deprecated. Please use \"Spread\" instead.");
+                        Spread = -1f;
+                    }
                     break;
                 case "forcesinglebullet":
                 case "singlebullet":

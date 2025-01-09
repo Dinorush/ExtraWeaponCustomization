@@ -2,6 +2,7 @@
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Log;
 using FX_EffectSystem;
 using GameData;
 using Gear;
@@ -23,8 +24,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         public readonly List<float> Offsets = new(2);
         public float AimOffsetMod { get; private set; } = 1f;
         public uint Repeat { get; private set; } = 0;
-        public bool IgnoreSpread { get; private set; } = false;
-        public bool ApplySpreadPerShot { get; private set; } = false;
+        public bool UseAimDir { get; private set; } = false;
+        public float Spread { get; private set; } = 0f;
         public bool CancelShot { get; private set; } = false;
         public bool ForceSingleBullet { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
@@ -57,7 +58,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             s_ray.origin = CWC.Weapon.MuzzleAlign.position;
             bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
-            s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
+            s_baseDir = UseAimDir || isShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
 
             if (CancelShot)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
@@ -72,7 +73,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
-            float spread = ApplySpreadPerShot && isShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
+            float spread = Spread;
+            if (spread < 0f)
+                spread = isShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
+
             for (uint mod = 1; mod <= Repeat + 1; mod++)
             {
                 for (int i = 0; i < Offsets.Count; i += 2)
@@ -97,7 +101,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             s_ray.origin = CWC.Weapon.Owner.FPSCamera.Position;
             bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
-            s_baseDir = IgnoreSpread || isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
+            s_baseDir = UseAimDir || isShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
 
             if (CancelShot && !s_isProjectile)
                 Projectile.CancelTracerFX(CWC.Gun!, isShotgun);
@@ -114,8 +118,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
 
             bool isADS = CWC.Weapon.FPItemHolder.ItemAimTrigger;
-            float spread = 0;
-            if (ApplySpreadPerShot)
+            float spread = Spread;
+            if (spread < 0f)
             {
                 if (isShotgun)
                     spread = archData.ShotgunBulletSpread;
@@ -307,8 +311,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             EWCJson.Serialize(writer, Offsets);
             writer.WriteNumber(nameof(AimOffsetMod), AimOffsetMod);
             writer.WriteNumber(nameof(Repeat), Repeat);
-            writer.WriteBoolean(nameof(IgnoreSpread), IgnoreSpread);
-            writer.WriteBoolean(nameof(ApplySpreadPerShot), ApplySpreadPerShot);
+            writer.WriteBoolean(nameof(UseAimDir), UseAimDir);
+            writer.WriteNumber(nameof(Spread), Spread);
             writer.WriteBoolean(nameof(CancelShot), CancelShot);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
             writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
@@ -335,12 +339,20 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "repeat":
                     Repeat = reader.GetUInt32();
                     break;
+                case "useaimdir":
                 case "ignorespread":
-                    IgnoreSpread = reader.GetBoolean();
+                    UseAimDir = reader.GetBoolean();
+                    break;
+                case "spread":
+                    Spread = reader.GetSingle();
                     break;
                 case "applyspreadpershot":
                 case "applyspread":
-                    ApplySpreadPerShot = reader.GetBoolean();
+                    if (reader.GetBoolean())
+                    {
+                        EWCLogger.Warning("FireShot field \"ApplySpreadPerShot\" is deprecated. Please use \"Spread\" instead.");
+                        Spread = -1f;
+                    }
                     break;
                 case "cancelnormalshot":
                 case "cancelshot":
