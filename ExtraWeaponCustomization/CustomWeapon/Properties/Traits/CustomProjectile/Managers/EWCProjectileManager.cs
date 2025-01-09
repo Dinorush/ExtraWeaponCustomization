@@ -1,8 +1,10 @@
 ﻿using Agents;
 using Enemies;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
+using SNetwork;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
@@ -15,12 +17,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         private static readonly EWCProjectileSyncDestroy _destroySync = new();
         private static readonly EWCProjectileSyncTarget _targetSync = new();
+        private static readonly EWCProjectileSyncBounce _bounceSync = new();
 
         internal static void Init()
         {
             Shooter.Init();
             _destroySync.Setup();
             _targetSync.Setup();
+            _bounceSync.Setup();
         }
 
         internal static void Reset()
@@ -82,17 +86,17 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             PlayerProjectiles[playerIndex].Remove(node);
         }
 
+        internal static void Internal_ReceiveProjectileDestroy(ushort playerIndex, ushort id)
+        {
+            if (!TryGetNode(playerIndex, id, out var node)) return;
+            node.Value.comp.Die();
+        }
+
         public static void DoProjectileTarget(ushort playerIndex, ushort id, EnemyAgent? target, byte limbID)
         {
             ProjectileDataTarget data = new() { playerIndex = playerIndex, id = id, limbID = limbID };
             data.target.Set(target);
             _targetSync.Send(data);
-        }
-
-        internal static void Internal_ReceiveProjectileDestroy(ushort playerIndex, ushort id)
-        {
-            if (!TryGetNode(playerIndex, id, out var node)) return;
-            node.Value.comp.Die();
         }
 
         internal static void Internal_ReceiveProjectileTarget(ushort playerIndex, ushort id, EnemyAgent? enemy, byte limbID)
@@ -105,6 +109,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
                 return;
             }
             node.Value.comp.Homing.SetHomingAgent(enemy, limbID > 0 && enemy != null ? enemy.Damage.DamageLimbs[limbID] : null);
+        }
+
+        public static void DoProjectileBounce(ushort playerIndex, ushort id, Vector3 pos, Vector3 dir)
+        {
+            ProjectileDataBounce data = new() { playerIndex = playerIndex, id = id, position = pos };
+            data.dir.Value = dir;
+            _bounceSync.Send(data);
+        }
+
+        internal static void Internal_ReceiveProjectileBounce(ushort playerIndex, ushort id, Vector3 pos, Vector3 dir)
+        {
+            if (!TryGetNode(playerIndex, id, out var node)) return;
+            node.Value.comp.SetPosition(pos, dir);
         }
     }
 
@@ -120,5 +137,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         public ushort id;
         public pEnemyAgent target;
         public byte limbID;
+    }
+
+    public struct ProjectileDataBounce
+    {
+        public ushort playerIndex;
+        public ushort id;
+        public Vector3 position;
+        public LowResVector3_Normalized dir;
     }
 }

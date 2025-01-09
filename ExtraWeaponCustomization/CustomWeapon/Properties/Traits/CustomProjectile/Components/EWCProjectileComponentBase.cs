@@ -121,6 +121,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             gameObject.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
 
+        public void SetPosition(Vector3 pos, Vector3 dir)
+        {
+            _position = pos;
+            BaseDir = dir;
+        }
+
         private void LerpVisualOffset()
         {
             if (_lerpProgress == 1f)
@@ -169,6 +175,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 BaseDir = Vector3.Reflect(Dir, bounce.normal);
                 deltaMove = Vector3.Reflect(collisionVel, bounce.normal).normalized * remainingDist;
                 _position = bounce.point;
+                EWCProjectileManager.DoProjectileBounce(PlayerIndex, SyncID, _position, Dir);
             }
 
             _position += deltaMove;

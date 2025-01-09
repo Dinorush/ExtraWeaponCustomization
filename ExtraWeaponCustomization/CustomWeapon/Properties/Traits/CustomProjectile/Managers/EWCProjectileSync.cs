@@ -25,6 +25,16 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         }
     }
 
+    internal sealed class EWCProjectileSyncBounce : SyncedEvent<ProjectileDataBounce>
+    {
+        public override string GUID => "PROJBNC";
+
+        protected override void Receive(ProjectileDataBounce packet)
+        {
+            EWCProjectileManager.Internal_ReceiveProjectileBounce(packet.playerIndex, packet.id, packet.position, packet.dir.Value);
+        }
+    }
+
     internal sealed class EWCProjectileSyncShooter : SyncedEvent<ProjectileDataShooter>
     {
         public override string GUID => "PROJSHT";
