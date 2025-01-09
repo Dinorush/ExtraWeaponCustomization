@@ -311,7 +311,8 @@ namespace EWC.Utils
         public static AIG_CourseNode GetCourseNode(Vector3 position, Agent agent)
         {
             Vector3 source = agent.Position;
-            if (TryGetGeomorphVolumeSilent(Dimension.GetDimensionFromPos(position).DimensionIndex, position, out var volume))
+            var dimension = Dimension.GetDimensionFromPos(position);
+            if (dimension != null && TryGetGeomorphVolumeSilent(dimension.DimensionIndex, position, out var volume))
             {
                 position.y = volume.Position.y;
                 source.y = position.y;
