@@ -233,7 +233,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     continue;
 
                 s_rayHit = hit;
-                if (_settings.RicochetOnEnemy)
+                if (_settings.RicochetOnHit)
                     bounceHit = hit;
 
                 if (damageable != null)
