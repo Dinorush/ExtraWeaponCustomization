@@ -75,6 +75,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     hit.collider.GetComponent<IDamageable>(),
                     hit.point,
                     direction,
+                    hit.normal,
                     hit.distance,
                     source,
                     falloffMod,
@@ -84,7 +85,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             s_hits.Clear();
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, float distance, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float distance, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)
         {
             float damage = distance.MapInverted(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;
@@ -113,6 +114,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 damageable,
                 position,
                 direction,
+                normal,
                 backstabMulti,
                 falloffMod * distFalloff,
                 DamageType.Explosive

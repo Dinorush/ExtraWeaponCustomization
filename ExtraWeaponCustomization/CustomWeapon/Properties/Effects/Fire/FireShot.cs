@@ -28,8 +28,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         public uint Repeat { get; private set; } = 0;
         public bool ApplySpreadPerShot { get; private set; } = false;
         public bool ForceSingleBullet { get; private set; } = false;
-        public bool FireFromHitPos { get; private set; } = false;
+        public FireSetting FireFrom { get; private set; } = FireSetting.User;
         public bool HitTriggerTarget { get; private set; } = false;
+        public bool RunHitTriggers { get; private set; } = true;
 
         private static WallPierce? _wallPierce;
         private bool _projectile = false;
@@ -50,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             _ignoreEnt = IntPtr.Zero;
             float iterations = 0;
             List<(Vector3 pos, Vector3 dir, float amount, IDamageable? damBase)>? hitContexts = null;
-            if (FireFromHitPos)
+            if (FireFrom != FireSetting.User)
             {
                 hitContexts = new(5);
                 foreach (var context in contexts)
@@ -70,7 +71,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                         }
                         else
                             position += hitContext.Direction * WallHitBuffer;
-                        hitContexts.Add((position, hitContext.Direction, context.triggerAmt, damBase));
+                        Vector3 direction = FireFrom switch {
+                            FireSetting.HitNormal => hitContext.Normal,
+                            FireSetting.HitReflect => Vector3.Reflect(hitContext.Direction, hitContext.Normal),
+                            _ => hitContext.Direction
+                        };
+                        hitContexts.Add((position, direction, context.triggerAmt, damBase));
                     }
                     else
                         iterations += context.triggerAmt;
@@ -113,7 +119,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             for (int iter = 0; iter < iterations; iter++)
                 FirePerTrigger(spread, shotgunBullets, segmentSize, coneSize, false);
 
-            if (FireFromHitPos)
+            if (FireFrom != FireSetting.User)
             {
                 foreach (var (pos, dir, amount, baseDam) in hitContexts!)
                 {
@@ -186,6 +192,9 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void Fire(float x, float y, float spread)
         {
+            if (!RunHitTriggers)
+                CWC.RunHitTriggers = false;
+
             ArchetypeDataBlock archData = CWC.Weapon.ArchetypeData;
             s_hitData.owner = CWC.Weapon.Owner;
             s_hitData.damage = archData.Damage;
@@ -210,6 +219,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             CWC.Invoke(context);
             if (!context.Result)
             {
+                if (!RunHitTriggers)
+                    CWC.RunHitTriggers = true;
                 _hitEnts.Clear();
                 if (_projectile) return;
 
@@ -243,6 +254,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             FX_Manager.PlayLocalVersion = false;
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
             _hitEnts.Clear();
+            if (!RunHitTriggers)
+                CWC.RunHitTriggers = true;
         }
 
         private void FireVisual(float x, float y, float spread)
@@ -347,8 +360,9 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Repeat), Repeat);
             writer.WriteBoolean(nameof(ApplySpreadPerShot), ApplySpreadPerShot);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
-            writer.WriteBoolean(nameof(FireFromHitPos), FireFromHitPos);
+            writer.WriteString(nameof(FireFrom), FireFrom.ToString());
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
+            writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -377,11 +391,22 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "singlebullet":
                     ForceSingleBullet = reader.GetBoolean();
                     break;
+                case "firefrom":
+                    FireFrom = reader.GetString().ToEnum(FireSetting.User);
+                    break;
                 case "firefromhitpos":
-                    FireFromHitPos = reader.GetBoolean();
+                    if (reader.GetBoolean())
+                    {
+                        FireFrom = FireSetting.HitPos;
+                        Utils.Log.EWCLogger.Warning("FireShot field \"FireFromHitPos\" is deprecated and will be removed in the future. Use \"FireFrom\" instead.");
+                    }
                     break;
                 case "hittriggertarget":
                     HitTriggerTarget = reader.GetBoolean();
+                    break;
+                case "runhittriggers":
+                case "hittriggers":
+                    RunHitTriggers = reader.GetBoolean();
                     break;
             }
         }
@@ -418,5 +443,13 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             throw new JsonException("Expected EndArray token");
         }
+    }
+
+    public enum FireSetting
+    {
+        User,
+        HitPos,
+        HitNormal,
+        HitReflect
     }
 }

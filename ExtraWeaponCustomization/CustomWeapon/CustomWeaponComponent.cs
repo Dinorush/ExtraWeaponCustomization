@@ -4,6 +4,7 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using Gear;
 using Il2CppInterop.Runtime.Attributes;
 using System;
@@ -37,6 +38,26 @@ namespace EWC.CustomWeapon
         // Holds when the previous shot was fired.
         // When canceling a shot that ends a burst/full-auto, we need to set cooldown based on the last shot.
         private float _lastFireTime = 0f;
+
+        // Used to prevent hit callbacks from firing. For some effects to prevent infinite recursion.
+        private int _ignoreStack = 0;
+        public bool RunHitTriggers
+        {
+            get { return _ignoreStack == 0; }
+            set 
+            {
+                if (!value)
+                {
+                    if (_ignoreStack++ == 0)
+                        _propertyController.GetContextController().BlacklistContext(typeof(WeaponHitContextBase));
+                }
+                else if (value && _ignoreStack > 0)
+                {
+                    if (--_ignoreStack == 0)
+                        _propertyController.GetContextController().WhitelistContext(typeof(WeaponHitContextBase));
+                }
+            }
+        }
 
         private bool _synced = false;
         private bool _destroyed = false;
@@ -113,7 +134,13 @@ namespace EWC.CustomWeapon
         }
 
         [HideFromIl2Cpp]
-        public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _propertyController.Invoke(context);
+        public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext
+        {
+            if (!RunHitTriggers && context is WeaponHitContextBase)
+                return context;
+
+            return _propertyController.Invoke(context);
+        }
 
         [HideFromIl2Cpp]
         public void Register(CustomWeaponData? data = null)

@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public float Damage { get; }
 
         public WeaponHitDamageableContext(float damage, WeaponPreHitDamageableContext context)
-            : base(context.Damageable, context.Position, context.Direction, context.Backstab, context.Falloff, context.DamageType)
+            : base(context.Damageable, context.Position, context.Direction, context.Normal, context.Backstab, context.Falloff, context.DamageType)
         {
             Damage = damage;
             Dam_SyncedDamageBase? baseDam = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();

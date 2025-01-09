@@ -90,7 +90,12 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             Vector3 position = context.Position + context.Data.fireDir * Math.Min(visualDist, 0.1f);
 
+            // Deprecated run triggers - remove later
+            if (!RunHitTriggers)
+                CWC.RunHitTriggers = false;
             var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, context.Data.fireDir);
+            if (!RunHitTriggers)
+                CWC.RunHitTriggers = true;
             if (comp == null)
             {
                 EWCLogger.Error("Unable to create shooter projectile!");
@@ -260,7 +265,11 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "runhittriggers":
                 case "hittriggers":
-                    RunHitTriggers = reader.GetBoolean();
+                    if (!reader.GetBoolean())
+                    {
+                        EWCLogger.Warning("Projectile field \"RunHitTriggers\" is deprecated and will be removed in the future. Set the field on MultiShot or FireShot instead.");
+                        RunHitTriggers = false;
+                    }
                     break;
                 case "visuallerpdist":
                 case "lerpdist":

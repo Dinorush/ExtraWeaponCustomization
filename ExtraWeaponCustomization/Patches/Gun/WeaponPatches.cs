@@ -68,7 +68,7 @@ namespace EWC.Patches
         }
 
         public static bool CachedBypassTumorCap { get; private set; } = false;
-
+        
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyPriority(Priority.Low)]
         [HarmonyWrapSafe]
@@ -113,9 +113,9 @@ namespace EWC.Patches
             ApplyEWCHit(cwc, s_hitData, damageSearchID != 0, ref s_origHitDamage, out allowDirectionalBonus);
         }
 
-        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab, bool triggerHit = true) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, hitData, pierce, ref pierceDamage, out doBackstab, triggerHit);
+        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, hitData, pierce, ref pierceDamage, out doBackstab);
 
-        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab, bool triggerHit = true)
+        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab)
         {
             doBackstab = true;
             CachedHitCC = cc;
@@ -135,8 +135,7 @@ namespace EWC.Patches
                     backstab = origBackstab.Map(1f, 2f, 1f, cc.Invoke(new WeaponBackstabContext()).Value);
                 }
 
-                if (triggerHit)
-                    cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab, DamageType.Bullet));
+                cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab, DamageType.Bullet));
 
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(hitData.damage, hitData.precisionMulti, damageable);
@@ -162,8 +161,7 @@ namespace EWC.Patches
                         DamageType.Bullet
                     );
 
-                    if (triggerHit)
-                        cc.Invoke(hitContext);
+                    cc.Invoke(hitContext);
 
                     KillTrackerManager.RegisterHit(weapon, hitContext);
 
@@ -172,10 +170,10 @@ namespace EWC.Patches
                     else
                         doBackstab = false;
                 }
-                else if (triggerHit)
+                else
                     cc.Invoke(new WeaponHitDamageableContext(hitData, DamageType.Bullet));
             }
-            else if (triggerHit)
+            else
                 cc.Invoke(new WeaponHitContext(hitData));
 
             hitData.Apply();

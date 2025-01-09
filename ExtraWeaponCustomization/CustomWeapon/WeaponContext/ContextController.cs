@@ -11,11 +11,13 @@ namespace EWC.CustomWeapon.WeaponContext
     public sealed class ContextController
     {
         private readonly Dictionary<Type, IContextList> _allContextLists = new();
+        private readonly List<Type> _blacklist;
 
         public ContextController(ContextController contextController)
         {
             foreach (IContextList list in contextController._allContextLists.Values)
                 list.CopyTo(this);
+            _blacklist = new(contextController._blacklist);
         }
 
         public ContextController(bool isGun)
@@ -24,6 +26,7 @@ namespace EWC.CustomWeapon.WeaponContext
                 RegisterGunContexts();
             else
                 RegisterMeleeContexts();
+            _blacklist = new();
         }
 
         private interface IContextList
@@ -145,9 +148,14 @@ namespace EWC.CustomWeapon.WeaponContext
             }
         }
 
-        internal TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext
+        public void BlacklistContext(Type type) => _blacklist.Add(type);
+        public void WhitelistContext(Type type) => _blacklist.Remove(type);
+
+        public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext
         {
-            if (!_allContextLists.TryGetValue(typeof(TContext), out IContextList? contextList)) return context;
+            Type type = typeof(TContext);
+            if (_blacklist.Count > 0 && _blacklist.Any(exclude => type.IsAssignableTo(exclude))) return context;
+            if (!_allContextLists.TryGetValue(type, out IContextList? contextList)) return context;
 
             List<Exception> exceptions = new();
             contextList.Invoke(context, exceptions);

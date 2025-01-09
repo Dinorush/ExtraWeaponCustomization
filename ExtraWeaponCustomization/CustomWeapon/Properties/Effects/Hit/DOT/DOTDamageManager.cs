@@ -43,7 +43,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 var prePlayerContext = dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                     damageable,
                     damageable.DamageTargetPos,
-                    damageable.DamageTargetPos - playerBase.Owner.Position,
+                    agent.Position - damageable.DamageTargetPos,
+                    damageable.DamageTargetPos - agent.Position,
                     backstabMulti,
                     falloff,
                     DamageType.DOT
@@ -58,6 +59,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 var preLockContext = dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                     damageable,
                     damageable.DamageTargetPos,
+                    Vector3.up,
                     Vector3.up,
                     1f,
                     falloff,
@@ -94,7 +96,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             var preContext = dotBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                 damageable,
                 limb.DamageTargetPos,
-                limb.DamageTargetPos - damBase.Owner.Position,
+                agent.Position - limb.DamageTargetPos,
+                limb.DamageTargetPos - agent.Position,
                 backstabMulti,
                 falloff,
                 DamageType.DOT

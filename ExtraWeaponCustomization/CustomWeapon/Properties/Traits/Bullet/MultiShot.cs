@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
-using static Il2CppSystem.IO.Directory;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
@@ -28,6 +27,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool ApplySpreadPerShot { get; private set; } = false;
         public bool CancelShot { get; private set; } = false;
         public bool ForceSingleBullet { get; private set; } = false;
+        public bool RunHitTriggers { get; private set; } = true;
 
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
@@ -143,6 +143,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private void Fire(float x, float y, float spread)
         {
+            if (!RunHitTriggers)
+                CWC.RunHitTriggers = false;
             ArchetypeDataBlock archData = CWC.Weapon.ArchetypeData;
             s_hitData.owner = CWC.Weapon.Owner;
             s_hitData.damage = archData.Damage;
@@ -167,6 +169,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             CWC.Invoke(context);
             if (!context.Result)
             {
+                if (!RunHitTriggers)
+                    CWC.RunHitTriggers = true;
                 if (s_isProjectile) return;
 
                 // Plays bullet FX, since Thick Bullet will cancel the ray but doesn't
@@ -198,6 +202,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             FireShotAPI.FireShotFiredCallback(s_hitData, s_ray.origin, FX_Manager.EffectTargetPosition);
             FX_Manager.PlayLocalVersion = false;
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, CWC.Weapon.MuzzleAlign.position, Quaternion.LookRotation(s_ray.direction));
+            if (!RunHitTriggers)
+                CWC.RunHitTriggers = true;
         }
 
         private void FireVisual(float x, float y, float spread)
@@ -305,6 +311,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(ApplySpreadPerShot), ApplySpreadPerShot);
             writer.WriteBoolean(nameof(CancelShot), CancelShot);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
+            writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
             writer.WriteEndObject();
         }
 
@@ -342,6 +349,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "forcesinglebullet":
                 case "singlebullet":
                     ForceSingleBullet = reader.GetBoolean();
+                    break;
+                case "runhittriggers":
+                case "hittriggers":
+                    RunHitTriggers = reader.GetBoolean();
                     break;
                 default:
                     break;

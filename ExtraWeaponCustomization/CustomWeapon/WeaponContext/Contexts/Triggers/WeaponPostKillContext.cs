@@ -12,6 +12,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 hitContext.Damageable,
                 hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Position,
                 hitContext.Direction,
+                hitContext.Normal,
                 hitContext.Backstab,
                 hitContext.Falloff,
                 hitContext.DamageType
