@@ -53,6 +53,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool HitFromOwnerPos { get; private set; } = false;
         public float HitCooldown { get; private set; } = -1;
         public float HitIgnoreWallsDuration { get; private set; } = 0f;
+        public int RicochetCount { get; private set; } = 0;
+        public bool RicochetOnEnemy { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
@@ -167,7 +169,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(HitFromOwnerPos), HitFromOwnerPos);
             writer.WriteNumber(nameof(HitCooldown), HitCooldown);
             writer.WriteNumber(nameof(HitIgnoreWallsDuration), HitIgnoreWallsDuration);
-            writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
+            writer.WriteNumber(nameof(RicochetCount), RicochetCount);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
             writer.WritePropertyName(nameof(HomingSettings));
@@ -262,6 +264,13 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "hitignorewallsduration":
                     HitIgnoreWallsDuration = reader.GetSingle();
+                    break;
+                case "ricochetcount":
+                case "ricochet":
+                    RicochetCount = reader.GetInt32();
+                    break;
+                case "ricochetonenemy":
+                    RicochetOnEnemy = reader.GetBoolean();
                     break;
                 case "runhittriggers":
                 case "hittriggers":

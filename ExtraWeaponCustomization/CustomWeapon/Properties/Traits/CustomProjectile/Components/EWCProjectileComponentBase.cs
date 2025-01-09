@@ -27,12 +27,31 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private readonly DelayedCallback _inactiveCallback;
         private float _endLifetime;
         protected float _inactiveLifetime = 0f;
+        private Vector3 _baseDir;
+        private Vector3 BaseDir
+        {
+            get => _baseDir;
+            set 
+            { 
+                _baseDir = value;
+                _baseVelocity = _baseDir * Speed;
+                _gravityVel = 0;
+                Velocity = _baseVelocity;
+            }
+        }
+
+        private float _baseSpeed;
+        private float Speed => Settings.AccelScale == 1f ? _baseSpeed : _baseSpeed * Math.Pow(_accelProgress, Settings.AccelExponent).Lerp(1f, Settings.AccelScale);
+        private Vector3 _baseVelocity;
+
         private Vector3 _dir;
         public Vector3 Dir => _dir;
-        private Vector3 _baseVelocity;
-        private float _baseSpeed;
         private Vector3 _velocity;
-        public Vector3 Velocity => _velocity;
+        public Vector3 Velocity
+        {
+            get => _velocity;
+            private set { _velocity = value; _dir = _velocity.normalized; }
+        }
         private float _accelProgress;
 
         private Vector3 _position;
@@ -79,26 +98,25 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _position = position;
             _baseSpeed = projBase.MaxSpeed > projBase.MinSpeed ? Random.NextSingle().Lerp(projBase.MinSpeed, projBase.MaxSpeed) : projBase.MinSpeed;
-            _velocity = dir * _baseSpeed;
-            _baseVelocity = _velocity;
-            _dir = dir;
-            _gravityVel = 0;
+            BaseDir = dir;
             IsLocal = isLocal;
 
-            Hitbox.Init(projBase);
             Homing.Init(projBase, position, dir);
             ProjectileAPI.FireProjectileSpawnedCallback(this);
+            Hitbox.Init(projBase, out var bounceHit);
+            if (bounceHit != null)
+                BaseDir = Vector3.Reflect(BaseDir, bounceHit.Value.normal);
         }
 
         public virtual void SetVisualPosition(Vector3 positionVisual, float lerpDist)
         {
-            if (_velocity.sqrMagnitude == 0) return;
+            if (_baseVelocity.sqrMagnitude == 0) return;
 
             _lerpProgress = 0f;
-            _lerpTime = lerpDist / _velocity.magnitude;
+            _lerpTime = lerpDist / _baseVelocity.magnitude;
             _positionVisual = positionVisual;
             _positionVisualDiff = _positionVisual - _position;
-            _dirVisual = _position + _velocity * _lerpTime - _positionVisual;
+            _dirVisual = _position + _baseVelocity * _lerpTime - _positionVisual;
             s_tempRot.SetLookRotation(_dirVisual);
             gameObject.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
@@ -108,16 +126,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_lerpProgress == 1f)
             {
                 _positionVisual = _position;
-                _dirVisual = _velocity.sqrMagnitude > 0.01f ? _velocity : _dir * .01f;
+                _dirVisual = _dir;
                 s_tempRot.SetLookRotation(_dirVisual);
                 return;
             }
 
             _lerpProgress = Math.Min(1f, _lerpProgress + Time.deltaTime / _lerpTime);
-            float invLerp = 1f - _lerpProgress;
-            Vector3 lastPos = _positionVisual;
-            _positionVisual = _position + Vector3.Lerp(_positionVisualDiff, Vector3.zero, 1f - invLerp * invLerp);
-            _dirVisual = _velocity + _positionVisual - lastPos;
+            float invLerpSqr = 1f - (1f - _lerpProgress) * (1f - _lerpProgress);
+            _positionVisual = _position + Vector3.Lerp(_positionVisualDiff, Vector3.zero, invLerpSqr);
+            _dirVisual = Vector3.Lerp(-_positionVisualDiff, _dir, invLerpSqr);
             s_tempRot.SetLookRotation(_dirVisual);
         }
 
@@ -129,12 +146,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 return;
             }
 
-            Homing.Update(_position, ref _dir);
-            _baseVelocity = _dir * _baseSpeed;
+            Vector3 dir = _dir;
+            Homing.Update(_position, ref dir);
+            if (dir != _dir)
+                BaseDir = dir;
 
-            Vector3 deltaVel = UpdateVelocity();
-            Vector3 collisionVel = deltaVel.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaVel : _dir * EWCProjectileHitbox.MinCollisionDist;
-            Hitbox.Update(_position, collisionVel);
+            Vector3 deltaMove = UpdateVelocity();
+            Vector3 collisionVel = deltaMove.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaMove : _dir  * EWCProjectileHitbox.MinCollisionDist;
+            Hitbox.Update(_position, collisionVel, out var bounceHit);
             if (!enabled) return; // Died by hitbox
 
             if (Time.time > _endLifetime)
@@ -143,49 +162,53 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 return;
             }
 
-            _position += deltaVel;
+            if (bounceHit != null)
+            {
+                var bounce = bounceHit.Value;
+                float remainingDist = collisionVel.magnitude - (bounce.point - _position).magnitude;
+                BaseDir = Vector3.Reflect(Dir, bounce.normal);
+                deltaMove = Vector3.Reflect(collisionVel, bounce.normal).normalized * remainingDist;
+                _position = bounce.point;
+            }
+
+            _position += deltaMove;
             LerpVisualOffset();
         }
 
         private Vector3 UpdateVelocity()
         {
             float delta = Time.deltaTime;
-            float deltaMod;
-            if (Settings!.AccelScale != 1f)
+            Vector3 deltaMove;
+            // Need to calculate how much distance was covered including the acceleration
+            if (Settings!.AccelScale != 1f && _accelProgress != 1f)
             {
-                if (_accelProgress == 1f)
+                float deltaMod;
+                // Get the progress we should have by the end of the delta
+                float trgtProgress = Math.Min(_accelProgress + delta / Settings.AccelTime, 1f);
+
+                // Integrate the accel time, calculating the effective delta needed (with base speed) to move as much as it should
+                float newExpo = Settings.AccelExponent + 1;
+                float progressMod = (float)(Settings.AccelTime * (Settings.AccelScale - 1.0) * (Math.Pow(trgtProgress, newExpo) - Math.Pow(_accelProgress, newExpo)) / newExpo);
+                if (trgtProgress < 1f) // Didn't cap speed, can directly add modifier
+                    deltaMod = delta + progressMod;
+                else // Capped speed, interpolate between modifier during acceleration and modifer after acceleration
                 {
-                    deltaMod = Settings.AccelScale * delta;
-                    _velocity = _baseVelocity * Settings!.AccelScale;
+                    float timeToAccel = (1f - _accelProgress) * Settings.AccelTime;
+                    deltaMod = progressMod + timeToAccel + Settings.AccelScale * (delta - timeToAccel);
                 }
-                else // Need to calculate how much distance was covered including the acceleration
-                {
-                    float trgtProgress = Math.Min(_accelProgress + delta / Settings.AccelTime, 1f);
-                    float newExpo = Settings.AccelExponent + 1;
-                    float progressMod = (float)(Settings.AccelTime * (Settings.AccelScale - 1.0) * (Math.Pow(trgtProgress, newExpo) - Math.Pow(_accelProgress, newExpo)) / newExpo);
-                    if (trgtProgress < 1f)
-                        deltaMod = delta + progressMod;
-                    else
-                    {
-                        float timeToAccel = (1f - _accelProgress) * Settings.AccelTime;
-                        deltaMod = progressMod + timeToAccel + Settings.AccelScale * (delta - timeToAccel);
-                    }
-                    _accelProgress = trgtProgress;
-                    _velocity = _baseVelocity * Math.Pow(_accelProgress, Settings.AccelExponent).Lerp(1f, Settings.AccelScale);
-                }
+                _accelProgress = trgtProgress;
+                deltaMove = _baseDir * _baseSpeed * deltaMod;
             }
             else
-            {
-                _velocity = _baseVelocity;
-                deltaMod = delta;
-            }
+                deltaMove = _baseVelocity * delta;
+            deltaMove.y -= 0.5f * Settings.Gravity * delta * delta + _gravityVel * delta;
 
-            Vector3 result = _baseVelocity * deltaMod;
-            result.y -= 0.5f * Settings.Gravity * delta * delta + _gravityVel * delta;
             _gravityVel += Settings.Gravity * delta;
+            _baseVelocity = _baseDir * Speed;
+            _velocity = _baseVelocity;
             _velocity.y -= _gravityVel;
-
-            return result;
+            _dir = _velocity.normalized;
+            return deltaMove;
         }
 
         public virtual void Die()
