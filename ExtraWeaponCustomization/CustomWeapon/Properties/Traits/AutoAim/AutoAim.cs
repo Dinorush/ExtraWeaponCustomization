@@ -292,7 +292,10 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 if (limb.IsDestroyed == true) continue;
 
-                Vector3 diff = limb.GetComponent<Collider>().ClosestPoint(position) - position;
+                var collider = limb.GetComponent<Collider>();
+                if (collider == null) continue;
+
+                Vector3 diff = collider.ClosestPoint(position) - position;
                 float sqrDist = diff.sqrMagnitude;
                 if (sqrDist < Range * Range && Vector3.Angle(_camera!.CameraRayDir, diff) < Angle)
                     return true;
