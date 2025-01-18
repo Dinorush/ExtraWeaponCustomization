@@ -223,7 +223,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "screenshakeinnerradius":
                 case "shakeinnerradius":
-                    ScreenShakeRadius = reader.GetSingle();
+                    ScreenShakeInnerRadius = reader.GetSingle();
                     break;
                 case "screenshakeradius":
                 case "shakeradius":
