@@ -33,10 +33,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             if (!dotBase.Owner.IsLocallyOwned || damage <= 0) return;
 
-            damage = damage * falloff + 0.001f; // Account for rounding errors            
-
-            Agent? agent = damageable.GetBaseAgent();
-            if (agent?.Type == AgentType.Player)
+            damage = damage * falloff + 0.001f; // Account for rounding errors
+            Agent agent = damageable.GetBaseAgent();
+            if (agent != null && agent.Type == AgentType.Player)
             {
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().Cast<Dam_PlayerDamageBase>();
                 damage *= playerBase.m_playerData.friendlyFireMulti * dotBase.FriendlyDamageMulti;

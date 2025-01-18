@@ -124,11 +124,16 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             // Used for batching shotgun hits on same shot
             public DOTInstance? LastInstance { get; set; }
-            public bool Alive => _baseDamageable != null && _baseDamageable.GetHealthRel() > 0;
+            // In some cases, a PlayerAgent becomes null but not their damageable and can crash later when getting DamageTargetPos.
+            public bool Alive => _baseDamageable != null && _baseDamageable.GetHealthRel() > 0 && _hasAgent == (_agent != null);
             private readonly IDamageable _baseDamageable;
+            private readonly bool _hasAgent;
+            private readonly Agents.Agent? _agent;
             public DOTDamageableWrapper(IDamageable damageable, IntPtr ptr) : base(damageable, ptr)
             {
                 _baseDamageable = damageable.GetBaseDamagable();
+                _agent = damageable.GetBaseAgent();
+                _hasAgent = _agent != null;
             }
         }
 
