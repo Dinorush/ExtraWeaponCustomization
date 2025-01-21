@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Effects;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 
