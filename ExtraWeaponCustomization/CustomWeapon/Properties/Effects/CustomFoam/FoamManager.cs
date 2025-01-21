@@ -1,5 +1,6 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
 using EWC.CustomWeapon.ObjectWrappers;
+using FluffyUnderware.Curvy.ThirdParty.LibTessDotNet;
 using SNetwork;
 using System;
 using System.Collections;
@@ -14,20 +15,30 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         private readonly static FoamManager Current = new();
         private readonly Dictionary<BaseDamageableWrapper<Dam_EnemyDamageBase>, FoamTimeHandler> _foamTimes = new();
         private readonly Dictionary<ObjectWrapper<GlueGunProjectile>, Foam> _customFoams = new();
+        private readonly PriorityQueue<ObjectWrapper<GlueGunProjectile>, float> _bubbleExpireTimes = new();
         private readonly LinkedList<FoamTimeHandler> _unfoamHandlers = new();
         private Coroutine? _updateRoutine;
+        private Coroutine? _expireRoutine;
 
         private static BaseDamageableWrapper<Dam_EnemyDamageBase> TempWrapper => BaseDamageableWrapper<Dam_EnemyDamageBase>.SharedInstance;
         private static ObjectWrapper<GlueGunProjectile> ProjTempWrapper => ObjectWrapper<GlueGunProjectile>.SharedInstance;
 
-        public static void AddFoamBubble(GlueGunProjectile proj, Foam property) => Current._customFoams[new ObjectWrapper<GlueGunProjectile>(proj)] = property;
+        public static void AddFoamBubble(GlueGunProjectile proj, Foam property)
+        {
+            Current.CleanupBubbles();
+
+            var wrapper = new ObjectWrapper<GlueGunProjectile>(proj);
+            Current._customFoams[wrapper] = property;
+            if (property.BubbleLifetime > 0)
+                Current.AddExpiringBubble(wrapper, property.BubbleLifetime);
+        }
         public static Foam? GetProjProperty(GlueGunProjectile? proj) => proj != null ? Current._customFoams.GetValueOrDefault(ProjTempWrapper.Set(proj)) : null;
 
         public static void AddFoam(Dam_EnemyDamageBase damBase, float amount, Foam? property = null)
         {
             if (!Current._foamTimes.TryGetValue(TempWrapper.Set(damBase), out var handler))
             {
-                Current.Cleanup();
+                Current.CleanupFoam();
                 handler = Current._foamTimes[new BaseDamageableWrapper<Dam_EnemyDamageBase>(TempWrapper)] = new FoamTimeHandler(damBase);
             }
 
@@ -39,7 +50,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         {
             if (!Current._foamTimes.TryGetValue(TempWrapper.Set(damBase), out var handler))
             {
-                Current.Cleanup();
+                Current.CleanupFoam();
                 handler = Current._foamTimes[new BaseDamageableWrapper<Dam_EnemyDamageBase>(TempWrapper)] = new FoamTimeHandler(damBase);
             }
 
@@ -47,7 +58,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                 Current.AddUnfoamHandler(handler);
         }
 
-        private void Cleanup()
+        private void CleanupFoam()
         {
             // Remove dead enemies
             _foamTimes.Keys
@@ -67,15 +78,42 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             }
         }
 
+        private void CleanupBubbles()
+        {
+            // Remove dead bubbles
+            _customFoams.Keys
+                .Where(wrapper => wrapper.Object == null)
+                .ToList()
+                .ForEach(wrapper =>
+                {
+                    _customFoams.Remove(wrapper);
+                });
+
+            if (_customFoams.Count == 0f && _expireRoutine != null)
+            {
+                CoroutineManager.StopCoroutine(_expireRoutine);
+                _expireRoutine = null;
+                _bubbleExpireTimes.Clear();
+            }
+        }
+
         private void AddUnfoamHandler(FoamTimeHandler handler)
         {
             _unfoamHandlers.AddLast(handler);
             _updateRoutine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
 
+        private void AddExpiringBubble(ObjectWrapper<GlueGunProjectile> wrapper, float lifetime)
+        {
+            if (!SNet.IsMaster) return;
+
+            _bubbleExpireTimes.Enqueue(wrapper, Clock.Time + lifetime);
+            _expireRoutine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
+        }
+
         private IEnumerator Update()
         {
-            while (_unfoamHandlers.Count > 0f)
+            while (_unfoamHandlers.Count > 0)
             {
                 var next = _unfoamHandlers.First;
                 for (var node = next; node != null; node = next)
@@ -84,6 +122,22 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                     next = node.Next;
                     if (handler.DamBase == null || handler.DamBase.Health <= 0 || !handler.Update())
                         _unfoamHandlers.Remove(node);
+                }
+
+                yield return null;
+            }
+            _updateRoutine = null;
+        }
+
+        private IEnumerator UpdateExpiring()
+        {
+            while (_bubbleExpireTimes.Count > 0)
+            {
+                float time = Clock.Time;
+                while (_bubbleExpireTimes.TryPeek(out var wrapper, out float endTime) && endTime < time)
+                {
+                    if (wrapper.Object != null)
+                        ProjectileManager.WantToDestroyGlue()
                 }
 
                 yield return null;

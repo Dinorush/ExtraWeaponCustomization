@@ -2,8 +2,8 @@
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using Player;
@@ -104,7 +104,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             KillTrackerManager.RegisterHit(dotBase.CWC.Weapon, hitContext);
-            limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f || damBase.IsImortal);
+            if (dotBase.ShowHitmarker)
+                limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }

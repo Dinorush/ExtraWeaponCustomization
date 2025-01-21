@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.ObjectWrappers;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;

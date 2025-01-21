@@ -1,11 +1,11 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Enums;
 using EWC.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-namespace EWC.CustomWeapon.Properties.Effects
+namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public abstract class TriggerMod :
         Effect
@@ -32,7 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 StackType.None => count.First().mod,
                 StackType.Multiply => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod *= y.mod; return x; }, x => x.mod),
-                StackType.Add => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod += (y.mod - 1f); return x; }, x => x.mod),
+                StackType.Add => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod += y.mod - 1f; return x; }, x => x.mod),
                 StackType.Max => Mod > 1f ? count.Max(x => x.mod) : count.Min(x => x.mod),
                 _ => 1f
             };

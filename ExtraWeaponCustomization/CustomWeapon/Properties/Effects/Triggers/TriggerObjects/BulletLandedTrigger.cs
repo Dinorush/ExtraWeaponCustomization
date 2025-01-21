@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers

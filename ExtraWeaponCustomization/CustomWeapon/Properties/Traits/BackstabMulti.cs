@@ -1,4 +1,4 @@
-﻿using EWC.CustomWeapon.Properties.Effects;
+﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 

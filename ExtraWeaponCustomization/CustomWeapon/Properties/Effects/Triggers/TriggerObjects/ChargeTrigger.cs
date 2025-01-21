@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Patches.Melee;
 using EWC.Utils;
 using System.Text.Json;

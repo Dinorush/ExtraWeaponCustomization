@@ -5,6 +5,7 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
 using EWC.JSON;
 using EWC.Utils.Log;
+using EWC.CustomWeapon.Enums;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {

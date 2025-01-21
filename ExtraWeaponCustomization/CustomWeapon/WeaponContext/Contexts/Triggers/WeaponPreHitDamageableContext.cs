@@ -1,4 +1,4 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Utils;
 using UnityEngine;

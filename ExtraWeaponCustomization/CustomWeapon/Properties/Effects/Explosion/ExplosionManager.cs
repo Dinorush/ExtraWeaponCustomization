@@ -3,8 +3,8 @@ using AIGraph;
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
@@ -69,6 +69,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             if (explosiveBase.DamageLocks)
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting));
 
+            bool hitmarker = explosiveBase.CWC.Invoke(new WeaponHitmarkerContext()).Result;
+
             foreach (RaycastHit hit in s_hits)
             {
                 SendExplosionDamage(
@@ -80,12 +82,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     source,
                     falloffMod,
                     explosiveBase,
-                    triggerAmt);
+                    triggerAmt,
+                    hitmarker);
             }
             s_hits.Clear();
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float distance, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float distance, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, bool showHitmarker)
         {
             float damage = distance.MapInverted(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;
@@ -183,7 +186,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             KillTrackerManager.RegisterHit(eBase.CWC.Weapon, hitContext);
-            limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), position, armorMulti < 1f || damBase.IsImortal);
+            if (showHitmarker)
+                limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), position, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }

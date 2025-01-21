@@ -1,4 +1,4 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Enums;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {

@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;

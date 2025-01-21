@@ -1,7 +1,7 @@
 ﻿using Agents;
 using System;
 
-namespace EWC.CustomWeapon.Properties.Effects.Triggers
+namespace EWC.CustomWeapon.Enums
 {
     [Flags]
     public enum DamageType

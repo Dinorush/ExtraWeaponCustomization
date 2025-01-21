@@ -1,4 +1,5 @@
 ﻿using Enemies;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -31,6 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float BubbleExpandSpeed { get; private set; } = 0.3f;
         public bool BubbleOnDoors { get; private set; } = true;
         public bool BubbleIgnoreModifiers { get; private set; } = true;
+        public float BubbleLifetime { get; private set; } = 0f;
         public float FoamTime { get; private set; } = 0f;
         public FoamOverrideType FoamTimeType { get; private set; } = FoamOverrideType.Min;
         public bool IgnoreFalloff { get; private set; } = false;
@@ -157,6 +159,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(BubbleExpandSpeed), BubbleExpandSpeed);
             writer.WriteBoolean(nameof(BubbleOnDoors), BubbleOnDoors);
             writer.WriteBoolean(nameof(BubbleIgnoreModifiers), BubbleIgnoreModifiers);
+            writer.WriteNumber(nameof(BubbleLifetime), BubbleLifetime);
             writer.WriteNumber(nameof(FoamTime), FoamTime);
             writer.WriteString(nameof(FoamTimeType), FoamTimeType.ToString());
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
@@ -208,6 +211,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "bubbleignoremodifiers":
                 case "bubbleignoremods":
                     BubbleIgnoreModifiers = reader.GetBoolean();
+                    break;
+                case "bubblelifetime":
+                case "lifetime":
+                    BubbleLifetime = reader.GetSingle();
                     break;
                 case "foamtime":
                 case "time":

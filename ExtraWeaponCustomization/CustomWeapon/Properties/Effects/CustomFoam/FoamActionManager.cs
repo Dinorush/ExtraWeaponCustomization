@@ -1,5 +1,6 @@
 ﻿using Agents;
 using Enemies;
+using EWC.CustomWeapon.Properties.Traits;
 using EWC.Utils.Log;
 using LevelGeneration;
 using Player;
@@ -18,6 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         private readonly static FoamDoorSync _doorSync = new();
         private readonly static FoamDirectSync _directSync = new();
         private readonly static FoamSync _foamSync = new();
+        private readonly static FoamBubbleSync _bubbleSync = new();
 
         public const float MaxVolumeMod = 256f;
         public const float MaxDirect = 100f;
@@ -31,6 +33,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             _doorSync.Setup();
             _directSync.Setup();
             _foamSync.Setup();
+            _bubbleSync.Setup();
         }
 
         public static void FoamEnemy(GameObject go, PlayerAgent source, Vector3 pos, float volumeMod, Foam property)
@@ -146,6 +149,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             projectile.m_owner = owner;
             projectile.m_allowSplat = false;
 
+            FoamBubbleSync(id, volumeMod, property);
+
             return projectile;
         }
 
@@ -184,6 +189,28 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             if (!packet.target.TryGet(out var enemy)) return;
 
             FoamManager.ReceiveSyncFoam(enemy.Damage, packet.amount.Get(MaxFoam), packet.time.Get(MaxTime), packet.unfoam);
+        }
+
+        public static void FoamBubbleSync(uint syncID, float volumeMod, Foam property)
+        {
+            // Only master should send syncs.
+            if (!SNet.IsMaster) return;
+
+            FoamBubbleSyncData data = new() { syncID = syncID, propertyID = property.SyncPropertyID };
+            data.volumeMod.Set(volumeMod, MaxVolumeMod);
+            _bubbleSync.Send(data);
+        }
+
+        internal static void Internal_ReceiveBubbleSync(FoamBubbleSyncData packet)
+        {
+            if (!ProjectileManager.Current.m_glueGunProjectiles.TryGetValue(packet.syncID, out var projectile) || projectile == null) return;
+            if (!CustomWeaponManager.TryGetSyncProperty<Foam>(packet.propertyID, out var property)) return;
+
+            float volumeMod = packet.volumeMod.Get(MaxVolumeMod);
+            var volumeDesc = projectile.m_volumeDesc;
+            volumeDesc.expandVolume = property.BubbleAmount * volumeMod;
+            projectile.m_volumeDesc = volumeDesc;
+            projectile.m_expandSpeed = property.BubbleExpandSpeed * volumeMod;
         }
     }
 
@@ -228,5 +255,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         public UFloat16 amount;
         public UFloat16 time;
         public bool unfoam;
+    }
+
+    public struct FoamBubbleSyncData
+    {
+        public uint syncID;
+        public UFloat16 volumeMod;
+        public ushort propertyID;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AK;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;

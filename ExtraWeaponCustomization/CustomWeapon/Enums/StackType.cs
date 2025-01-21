@@ -1,4 +1,4 @@
-﻿namespace EWC.CustomWeapon.Properties.Effects
+﻿namespace EWC.CustomWeapon.Enums
 {
     public enum StackType
     {
