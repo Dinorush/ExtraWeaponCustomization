@@ -69,7 +69,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             if (explosiveBase.DamageLocks)
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting));
 
-            bool hitmarker = explosiveBase.CWC.Invoke(new WeaponHitmarkerContext()).Result;
+            bool showHitmarker = explosiveBase.CWC.Invoke(new WeaponHitmarkerContext()).Result;
 
             foreach (RaycastHit hit in s_hits)
             {
@@ -83,7 +83,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     falloffMod,
                     explosiveBase,
                     triggerAmt,
-                    hitmarker);
+                    showHitmarker);
             }
             s_hits.Clear();
         }
@@ -185,9 +185,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
+            bool willKill = damBase.WillDamageKill(precDamage);
             KillTrackerManager.RegisterHit(eBase.CWC.Weapon, hitContext);
-            if (showHitmarker)
-                limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), position, armorMulti < 1f || damBase.IsImortal);
+            if (willKill || showHitmarker)
+                limb.ShowHitIndicator(precDamage > damage, willKill, position, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }

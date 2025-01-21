@@ -39,6 +39,7 @@ namespace EWC.JSON
                     new BioPing(),
                     new DataSwap(),
                     new EnforceFireRate(),
+                    new HitmarkerCooldown(),
                     new HoldBurst(),
                     new MultiShot(),
                     new PierceMulti(),

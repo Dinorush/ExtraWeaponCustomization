@@ -103,9 +103,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 ));
             var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
+            bool willKill = damBase.WillDamageKill(precDamage);
             KillTrackerManager.RegisterHit(dotBase.CWC.Weapon, hitContext);
-            if (dotBase.ShowHitmarker)
-                limb.ShowHitIndicator(precDamage > damage, damBase.WillDamageKill(precDamage), hitContext.Position, armorMulti < 1f || damBase.IsImortal);
+            if (willKill || dotBase.ShowHitmarker)
+                limb.ShowHitIndicator(precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }

@@ -36,6 +36,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         {
             Damage = data.damage * Falloff;
             Damage = limb.ApplyWeakspotAndArmorModifiers(Damage, data.precisionMulti);
+            // Need to set this AFTER calling the above function again since the patch will clear the cache.
+            Patches.Enemy.EnemyLimbPatches.CachedBypassTumorCap = bypassTumor;
             Damage *= Backstab;
             Damage = Math.Min(Damage, limb.m_base.HealthMax);
             if (!bypassTumor && limb.DestructionType == eLimbDestructionType.Custom)

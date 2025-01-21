@@ -6,6 +6,7 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class HitmarkerCooldown : 
         Trait,
         IGunProperty,
+        IMeleeProperty,
         IWeaponProperty<WeaponHitmarkerContext>
     {
         public float Cooldown { get; private set; } = 0f;

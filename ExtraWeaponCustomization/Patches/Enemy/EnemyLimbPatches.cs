@@ -28,11 +28,10 @@ namespace EWC.Patches.Enemy
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.ShowHitIndicator))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static bool Pre_ShowHitMarker()
+        private static bool Pre_ShowHitMarker(bool willDie)
         {
-            if (CachedCC == null) return true;
-            
-            return CachedCC.Invoke(new WeaponHitmarkerContext()).Result;
+            if (willDie) return true;
+            return CachedCC == null || CachedCC.Invoke(new WeaponHitmarkerContext()).Result;
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.BulletDamage))]
