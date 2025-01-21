@@ -80,7 +80,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
         private void CleanupBubbles()
         {
-            // Remove dead bubbles
+            // Remove dead bubbles. Doesn't clear expiring ones, but those will be cleaned when their timer finishes.
             _customFoams.Keys
                 .Where(wrapper => wrapper.Object == null)
                 .ToList()
@@ -108,7 +108,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             if (!SNet.IsMaster) return;
 
             _bubbleExpireTimes.Enqueue(wrapper, Clock.Time + lifetime);
-            _expireRoutine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
+            _expireRoutine ??= CoroutineManager.StartCoroutine(UpdateExpiring().WrapToIl2Cpp());
         }
 
         private IEnumerator Update()
@@ -137,12 +137,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                 while (_bubbleExpireTimes.TryPeek(out var wrapper, out float endTime) && endTime < time)
                 {
                     if (wrapper.Object != null)
-                        ProjectileManager.WantToDestroyGlue()
+                        ProjectileManager.WantToDestroyGlue(wrapper.Object.SyncID);
+                    _bubbleExpireTimes.Dequeue();
                 }
 
                 yield return null;
             }
-            _updateRoutine = null;
+            _expireRoutine = null;
         }
 
         class FoamTimeHandler
