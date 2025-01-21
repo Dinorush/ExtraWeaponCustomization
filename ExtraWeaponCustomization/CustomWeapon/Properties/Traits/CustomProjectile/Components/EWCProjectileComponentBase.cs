@@ -150,7 +150,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         protected virtual void Update()
         {
-            if (Settings == null) // JFS - if weapon is destroyed, this could possibly happen?
+            if (Settings == null || (IsLocal && Settings.CWC.Weapon == null)) // JFS - if weapon is destroyed, this could possibly happen?
             {
                 Die();
                 return;
