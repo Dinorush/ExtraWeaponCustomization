@@ -26,6 +26,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Backstab Multi: Applies a multiplier to backstab damage.
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
 - Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate. [Auto]
+- Sets a cooldown on how frequently the weapon can generate hitmarkers.
 - Hold Burst: Releasing the trigger ends a burst early. [Burst]
 - Multi Shot: Fires additional bullets per shot at given offsets. [Gun]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
