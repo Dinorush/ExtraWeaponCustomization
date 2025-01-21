@@ -25,22 +25,6 @@ namespace EWC.CustomWeapon.Properties.Effects
         public ushort SyncID { get; set; }
         public PlayerAgent Owner => CWC.Weapon.Owner;
 
-        private bool _showHitmarker = true;
-        private float _updateTime = 0f;
-        public bool ShowHitmarker
-        {
-            get
-            {
-                float time = Clock.Time;
-                if (_updateTime != time)
-                {
-                    _updateTime = time;
-                    _showHitmarker = CWC.Invoke(new WeaponHitmarkerContext()).Result;
-                }
-                return _showHitmarker;
-            }
-        }
-
         public float TotalDamage { get; private set; } = 0f;
         public float PrecisionDamageMulti { get; private set; } = 0f;
         public float FriendlyDamageMulti { get; private set; } = 1f;
