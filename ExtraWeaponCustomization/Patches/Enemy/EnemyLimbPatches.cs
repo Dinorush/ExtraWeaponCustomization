@@ -9,6 +9,9 @@ namespace EWC.Patches.Enemy
     internal static class EnemyLimbPatches
     {
         private static float _cachedArmor = 0f;
+        // Cached variables are set for each call that would require them (i.e. once per BulletHit) and cleared after use
+        public static ContextController? CachedCC { get; set; } = null;
+        public static bool CachedBypassTumorCap { get; set; } = false;
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.BulletDamage))]
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.MeleeDamage))]
@@ -16,11 +19,20 @@ namespace EWC.Patches.Enemy
         [HarmonyPrefix]
         private static void Pre_Damage(Dam_EnemyDamageLimb __instance)
         {
-            ContextController? cc = WeaponPatches.CachedHitCC;
-            if (cc == null || __instance.m_type != eLimbDamageType.Armor) return;
+            if (CachedCC == null || __instance.m_type != eLimbDamageType.Armor) return;
 
             _cachedArmor = __instance.m_armorDamageMulti;
-            __instance.m_armorDamageMulti = cc.Invoke(new WeaponArmorContext(_cachedArmor)).ArmorMulti;
+            __instance.m_armorDamageMulti = CachedCC.Invoke(new WeaponArmorContext(_cachedArmor)).ArmorMulti;
+        }
+
+        [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.ShowHitIndicator))]
+        [HarmonyWrapSafe]
+        [HarmonyPrefix]
+        private static bool Pre_ShowHitMarker()
+        {
+            if (CachedCC == null) return true;
+            
+            return CachedCC.Invoke(new WeaponHitmarkerContext()).Result;
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.BulletDamage))]
@@ -29,8 +41,10 @@ namespace EWC.Patches.Enemy
         [HarmonyPostfix]
         private static void Post_Damage(Dam_EnemyDamageLimb __instance)
         {
-            if (WeaponPatches.CachedHitCC == null || __instance.m_type != eLimbDamageType.Armor) return;
-
+            if (CachedCC == null) return;
+            CachedCC = null;
+            
+            if (__instance.m_type != eLimbDamageType.Armor) return;
             __instance.m_armorDamageMulti = _cachedArmor;
         }
 
@@ -39,9 +53,10 @@ namespace EWC.Patches.Enemy
         [HarmonyPrefix]
         private static bool Pre_WeakspotModifiers(Dam_EnemyDamageLimb_Custom __instance, float dam, float precisionMulti, ref float __result)
         {
-            if (!WeaponPatches.CachedBypassTumorCap) return true;
+            if (!CachedBypassTumorCap) return true;
 
             __result = dam * Math.Max(__instance.m_weakspotDamageMulti * precisionMulti, 1) * __instance.m_armorDamageMulti;
+            CachedBypassTumorCap = false;
             return false;
         }
     }

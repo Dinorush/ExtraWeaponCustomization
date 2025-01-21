@@ -1,8 +1,8 @@
 ﻿using Agents;
 using Enemies;
 using EWC.CustomWeapon;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
@@ -59,15 +59,6 @@ namespace EWC.Patches
         private static float s_origHitDamage = 0;
         private static float s_origHitPrecision = 0;
         private readonly static HitData s_hitData = new();
-
-        private static ContextController? _cachedHitCC = null;
-        public static ContextController? CachedHitCC
-        {
-            get { return _cachedHitCC; }
-            set { _cachedHitCC = value; CachedBypassTumorCap = false; }
-        }
-
-        public static bool CachedBypassTumorCap { get; private set; } = false;
         
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyPriority(Priority.Low)]
@@ -75,7 +66,6 @@ namespace EWC.Patches
         [HarmonyPrefix]
         private static void HitCallback(ref WeaponHitData weaponRayData, bool doDamage, float additionalDis, uint damageSearchID, ref bool allowDirectionalBonus)
         {
-            CachedHitCC = null;
             // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
             if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null || !doDamage) return;
 
@@ -118,7 +108,7 @@ namespace EWC.Patches
         public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab)
         {
             doBackstab = true;
-            CachedHitCC = cc;
+            Enemy.EnemyLimbPatches.CachedCC = cc;
 
             IDamageable? damageable = hitData.damageable;
             if (damageable.IsValid() && damageable.GetBaseDamagable().GetHealthRel() > 0)
@@ -142,7 +132,7 @@ namespace EWC.Patches
                 cc.Invoke(damageContext);
                 hitData.damage = damageContext.Damage.Value;
                 hitData.precisionMulti = damageContext.Precision.Value;
-                CachedBypassTumorCap = damageContext.BypassTumorCap;
+                bool bypassCap = Enemy.EnemyLimbPatches.CachedBypassTumorCap = damageContext.BypassTumorCap;
 
                 if (pierce)
                 {
@@ -155,7 +145,7 @@ namespace EWC.Patches
                 {
                     WeaponHitDamageableContext hitContext = new(
                         hitData,
-                        CachedBypassTumorCap,
+                        bypassCap,
                         backstab,
                         limb!,
                         DamageType.Bullet
