@@ -22,7 +22,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private ContextController _contextController;
         private readonly HashSet<IntPtr> _initialPlayers = new();
         private readonly HitData _hitData = new();
-        private int _entityLayer;
+        private int _friendlyLayer;
         private WallPierce? _wallPierce;
         private bool _runHitTriggers = true;
         private bool _enabled = false;
@@ -90,20 +90,20 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Vector3 pos = _weapon.Owner.FPSCamera.Position;
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
 
-            _entityLayer = LayerUtil.MaskEnemyDynamic;
+            _friendlyLayer = 0;
             _searchSettings = SearchSetting.CacheHit;
             IntPtr ownerPtr = _weapon.Owner.Pointer;
             if (projBase.DamageOwner)
             {
                 _searchSettings |= SearchSetting.CheckOwner;
                 _initialPlayers.Add(ownerPtr);
-                _entityLayer |= LayerUtil.MaskOwner;
+                _friendlyLayer |= LayerUtil.MaskOwner;
             }
 
             if (projBase.DamageFriendly)
             {
                 _searchSettings |= SearchSetting.CheckFriendly;
-                _entityLayer |= LayerUtil.MaskFriendly;
+                _friendlyLayer |= LayerUtil.MaskFriendly;
                 foreach (PlayerAgent agent in PlayerManager.PlayerAgentsInLevel)
                 {
                     Vector3 diff = agent.Position - pos;
@@ -193,7 +193,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private void CheckCollision(ref RaycastHit? bounceHit)
         {
             if (_settings.HitSize == 0)
-                s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, _entityLayer));
+                s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, LayerUtil.MaskEnemyDynamic));
             else
             {
                 // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
@@ -203,12 +203,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     s_hits.Add(hit);
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f));
 
-                if (_settings.DamageFriendly || _settings.DamageOwner)
-                    foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSize, 180f, _searchSettings))
-                        s_hits.Add(hit);
-
                 // Get all enemies/locks ahead of the projectile
-                RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, _entityLayer);
+                RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, LayerUtil.MaskEnemyDynamic);
                 for (int i = 0; i < castHits.Length; i++)
                 {
                     if (castHits[i].distance > 0) // Ignore anything overlapping the sphere (internal search hits these)
@@ -217,6 +213,29 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                         s_hits.Add(castHits[i]);
                     }
                 }
+            }
+
+            if (_friendlyLayer != 0)
+            {
+                if (_settings.HitSizeFriendly == 0)
+                    s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, _friendlyLayer));
+                else
+                {
+                    SearchUtil.DupeCheckSet = HitEnts;
+                    foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSizeFriendly, 180f, _searchSettings))
+                        s_hits.Add(hit);
+
+                    // Get all enemies/locks ahead of the projectile
+                    RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSizeFriendly, s_velMagnitude, LayerUtil.MaskFriendly);
+                    for (int i = 0; i < castHits.Length; i++)
+                    {
+                        if (castHits[i].distance > 0) // Ignore anything overlapping the sphere (internal search hits these)
+                        {
+                            castHits[i].distance += _settings.HitSize; // Need the full distance to sort hits correctly
+                            s_hits.Add(castHits[i]);
+                        }
+                    }
+                }                    
             }
 
             int prevCount = _pierceCount;

@@ -38,6 +38,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         }
         public float Gravity { get; private set; } = 0f;
         public float HitSize { get; private set; } = 0f;
+        public float HitSizeFriendly { get; private set; } = 0f;
         public float HitSizeWorld { get; private set; } = 0f;
         public float ModelScale { get; private set; } = 1f;
         public bool EnableTrail { get; private set; } = true;
@@ -152,6 +153,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(AccelTime), AccelTime);
             writer.WriteNumber(nameof(Gravity), Gravity);
             writer.WriteNumber(nameof(HitSize), HitSize);
+            writer.WriteNumber(nameof(HitSizeFriendly), HitSizeFriendly);
             writer.WriteNumber(nameof(HitSizeWorld), HitSizeWorld);
             writer.WriteNumber(nameof(ModelScale), ModelScale);
             writer.WriteBoolean(nameof(EnableTrail), EnableTrail);
@@ -212,6 +214,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "hitsize":
                 case "size":
                     HitSize = Math.Max(0, reader.GetSingle());
+                    break;
+                case "hitsizefriendly":
+                case "sizefriendly":
+                    HitSizeFriendly = Math.Max(0, reader.GetSingle());
                     break;
                 case "hitsizeworld":
                 case "sizeworld":
