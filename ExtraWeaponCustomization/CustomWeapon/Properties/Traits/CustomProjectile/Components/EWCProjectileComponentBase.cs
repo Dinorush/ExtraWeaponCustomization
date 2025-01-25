@@ -143,8 +143,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _lerpProgress = Math.Min(1f, _lerpProgress + Time.deltaTime / _lerpTime);
             float invLerpSqr = 1f - (1f - _lerpProgress) * (1f - _lerpProgress);
+            Vector3 lastPos = _positionVisual;
             _positionVisual = _position + Vector3.Lerp(_positionVisualDiff, Vector3.zero, invLerpSqr);
-            _dirVisual = Vector3.Lerp(-_positionVisualDiff, Dir, invLerpSqr);
+            _dirVisual = (_positionVisual - lastPos).normalized;
             s_tempRot.SetLookRotation(_dirVisual);
         }
 
