@@ -7,7 +7,8 @@ namespace EWC.Utils
 {
     public sealed class DelayedCallback
     {
-        private readonly Func<float> _getDelay;
+        private readonly float _delay;
+        private readonly Func<float>? _getDelay;
         private readonly Action? _onStart;
         private readonly Action? _onRefresh;
         private readonly Action? _onEnd;
@@ -15,19 +16,9 @@ namespace EWC.Utils
         private float _endTime;
         private Coroutine? _routine;
 
-        public DelayedCallback(Func<float> getDelay, Action? onEnd)
-        {
-            _getDelay = getDelay;
-            _onEnd = onEnd;
-        }
-
-        public DelayedCallback(Func<float> getDelay, Action? onStart, Action? onEnd)
-        {
-            _getDelay = getDelay;
-            _onStart = onStart;
-            _onEnd = onEnd;
-        }
-
+        // Takes a function for the delay. Use if the delay is not known on creation or has custom behavior.
+        public DelayedCallback(Func<float> getDelay, Action? onEnd) : this(getDelay, null, null, onEnd) { }
+        public DelayedCallback(Func<float> getDelay, Action? onStart, Action? onEnd) : this(getDelay, onStart, null, onEnd) { }
         public DelayedCallback(Func<float> getDelay, Action? onStart, Action? onRefresh, Action? onEnd)
         {
             _getDelay = getDelay;
@@ -36,13 +27,28 @@ namespace EWC.Utils
             _onEnd = onEnd;
         }
 
+        // Takes a constant for the delay. Use if the delay is known at creation time.
+        public DelayedCallback(float delay, Action? onEnd) : this(delay, null, null, onEnd) { }
+        public DelayedCallback(float delay, Action? onStart, Action? onEnd) : this(delay, onStart, null, onEnd) { }
+        public DelayedCallback(float delay, Action? onStart, Action? onRefresh, Action? onEnd)
+        {
+            _delay = delay;
+            _onStart = onStart;
+            _onRefresh = onRefresh;
+            _onEnd = onEnd;
+        }
+
+        // Starts or refreshes the delayed callback.
+        // OnRefresh will always be called, but OnStart is only called if the callback is currently inactive.
         public void Start()
         {
-            _endTime = Clock.Time + _getDelay.Invoke();
+            _endTime = Clock.Time + _getDelay?.Invoke() ?? _delay;
             _onRefresh?.Invoke();
             _routine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
 
+        // Loop created after Start() until the delay passes.
+        // If Start() is called while Update() is running, the delay is extended rather than starting another routine.
         public IEnumerator Update()
         {
             _onStart?.Invoke();
@@ -52,6 +58,7 @@ namespace EWC.Utils
             _onEnd?.Invoke();
         }
 
+        // Forcibly ends Update() and calls OnEnd if it was active.
         public void Stop()
         {
             if (_routine != null)
@@ -62,6 +69,7 @@ namespace EWC.Utils
             }
         }
 
+        // Forcibly ends Update(). Does NOT call OnEnd.
         public void Cancel()
         {
             if (_routine != null)
