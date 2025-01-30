@@ -26,6 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float CooldownOnApply { get; private set; } = 0f;
         public uint CooldownOnApplyThreshold { get; private set; } = 1;
         public float ApplyResetDelay { get; private set; } = 0f;
+        public float ApplyOverrideAmount { get; private set; } = 0f;
 
         public List<ITrigger>? Reset { get; private set; }
         public float ResetDelay { get; private set; } = 0f;
@@ -85,14 +86,15 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 Reset = CloneTriggers(Reset),
                 Cap = Cap,
                 Threshold = Threshold,
-                Chance = Chance,
                 Cooldown = Cooldown,
                 CooldownThreshold = CooldownThreshold,
+                Chance = Chance,
                 ActivateResetDelay = ActivateResetDelay,
                 ApplyDelay = ApplyDelay,
                 CooldownOnApply = CooldownOnApply,
                 CooldownOnApplyThreshold = CooldownOnApplyThreshold,
                 ApplyResetDelay = ApplyResetDelay,
+                ApplyOverrideAmount = ApplyOverrideAmount,
                 ResetDelay = ResetDelay,
                 ResetPreviousOnly = ResetPreviousOnly,
                 ResetResetDelay = ResetResetDelay,
@@ -110,13 +112,16 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public void Invoke(WeaponTriggerContext context)
         {
-            // Store valid activations (if any)
+            // Store valid activations (if any).
+            // Only allow activations to go through if 1. Not on cooldown, 2. Below cap, and 3. Chance succeeds.
             if (Clock.Time >= _nextActivateTime
              && (Cap == 0 || _activateSum < Cap)
              && (Chance == 1f || Chance > Random.NextSingle()))
             {
                 foreach (ITrigger trigger in Activate)
                 {
+                    // State-ful triggers may Invoke to trigger the reset delay but provide 0 amount.
+                    // We only want to include actual triggers providing some trigger amount.
                     if (trigger.Invoke(context, out float amount))
                     {
                         if (ActivateResetDelay > 0f)
@@ -128,6 +133,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 }
             }
 
+            // Check if we will want to apply anything.
+            // Necessary to check before resets for ResetPreviousOnly to function correctly.
             bool apply = false;
             if (_activateSum > 0 && _activateSum >= Threshold)
             {
@@ -135,6 +142,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 {
                     foreach (ITrigger trigger in Apply)
                     {
+                        // State-ful trigger checks
                         if (trigger.Invoke(context, out float amount))
                         {
                             if (ApplyResetDelay > 0f)
@@ -147,11 +155,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     apply = true;
             }
 
+            // Check if we will want to reset.
+            // Necessary to check before applying for ResetPreviousOnly to function correctly.
             bool reset = false;
             if (Reset != null)
             {
                 foreach (ITrigger trigger in Reset)
                 {
+                    // State-ful trigger checks
                     if (trigger.Invoke(context, out float amount))
                     {
                         if (ResetResetDelay > 0f)
@@ -161,6 +172,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 }
             }
 
+            // Similar to a standard reset, but fields needed to apply stored activations are preserved
             if (ResetPreviousOnly && reset)
                 ResetTriggers(!apply);
 
@@ -189,7 +201,29 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private void ApplyTriggers()
         {
             // Need to copy list and reset prior to applying trigger in case applying triggers causes another application
-            List<TriggerContext> temp = new(_accumulatedTriggers);
+            List<TriggerContext> temp;
+            if (ApplyOverrideAmount > 0f)
+            {
+                temp = new((int) ApplyOverrideAmount);
+                float total = 0f;
+                // Iterates backwards so most recent triggers are prioritized for more reactive behavior.
+                // Only last trigger is adjusted to account for underflow or overflow since it's the simplest solution.
+                for (int i = _accumulatedTriggers.Count - 1; i >= 0 && total < ApplyOverrideAmount; i--)
+                {
+                    total += _accumulatedTriggers[i].triggerAmt;
+                    temp.Add(_accumulatedTriggers[i]);
+                }
+
+                if (total != ApplyOverrideAmount)
+                {
+                    var tContext = temp[^1];
+                    tContext.triggerAmt += ApplyOverrideAmount - total;
+                    temp[^1] = tContext;
+                }
+            }
+            else
+                temp = new(_accumulatedTriggers);
+
             _accumulatedTriggers.Clear();
             _activateSum = 0f;
 
@@ -206,7 +240,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (ApplyDelay > 0f)
             {
-                var callback = new DelayedCallback(() => ApplyDelay, EndDelayedApply);
+                var callback = new DelayedCallback(ApplyDelay, EndDelayedApply);
                 _delayedApplies!.Enqueue((callback, triggerContexts));
                 callback.Start();
             }
@@ -223,7 +257,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private void ResetTriggers(bool resetAccumulated = true)
         {
             if (ResetDelay > 0f)
-                new DelayedCallback(() => ResetDelay, EndDelayedReset).Start();
+                new DelayedCallback(ResetDelay, EndDelayedReset).Start();
             else
                 DoReset(resetAccumulated);
         }
@@ -288,6 +322,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "applyresetdelay":
                     ApplyResetDelay = reader.GetSingle();
+                    break;
+                case "applyoverrideamount":
+                case "applyamount":
+                    ApplyOverrideAmount = reader.GetSingle();
                     break;
                 case "activate":
                 case "triggers":
