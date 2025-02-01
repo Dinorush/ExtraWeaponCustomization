@@ -42,7 +42,7 @@ namespace EWC.Utils
         // OnRefresh will always be called, but OnStart is only called if the callback is currently inactive.
         public void Start()
         {
-            _endTime = Clock.Time + _getDelay?.Invoke() ?? _delay;
+            _endTime = Clock.Time + (_getDelay?.Invoke() ?? _delay);
             _onRefresh?.Invoke();
             _routine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
