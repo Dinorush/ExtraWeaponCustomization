@@ -72,7 +72,7 @@ namespace EWC.CustomWeapon
 
         private void FileChanged(LiveEditEventArgs e)
         {
-            EWCLogger.Warning($"LiveEdit File Changed: {e.FullPath}");
+            EWCLogger.Warning($"LiveEdit File Changed: {e.FileName}");
             LiveEdit.TryReadFileContent(e.FullPath, (content) =>
             {
                 ReadFileContent(e.FullPath, content);
@@ -82,7 +82,7 @@ namespace EWC.CustomWeapon
 
         private void FileDeleted(LiveEditEventArgs e)
         {
-            EWCLogger.Warning($"LiveEdit File Removed: {e.FullPath}");
+            EWCLogger.Warning($"LiveEdit File Removed: {e.FileName}");
             if (!_fileToGuns.ContainsKey(e.FullPath))
             {
                 PrintCustomIDs();
@@ -102,7 +102,7 @@ namespace EWC.CustomWeapon
 
         private void FileCreated(LiveEditEventArgs e)
         {
-            EWCLogger.Warning($"LiveEdit File Created: {e.FullPath}");
+            EWCLogger.Warning($"LiveEdit File Created: {e.FileName}");
             LiveEdit.TryReadFileContent(e.FullPath, (content) =>
             {
                 ReadFileContent(e.FullPath, content);
