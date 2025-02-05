@@ -20,6 +20,8 @@ namespace EWC.Patches
         [HarmonyPostfix]
         private static void SetupCallback(BulletWeapon __instance)
         {
+            if (__instance.ArchetypeData == null) return;
+
             CustomWeaponManager.Current.AddWeaponListener(__instance);
             if (!CustomWeaponManager.TryGetCustomGunData(__instance.ArchetypeData.persistentID, out var data)) return;
 
