@@ -1,16 +1,14 @@
-﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.JSON;
+using EWC.Utils;
 using GameData;
 using Gear;
 using Player;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text.Json;
-using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
@@ -53,8 +51,16 @@ namespace EWC.CustomWeapon.Properties.Traits
         private WeaponAudioDataBlock? _cachedAudioBlock;
         private WeaponAudioDataBlock? _audioBlock;
 
-        private Coroutine? _activeRoutine;
-        private float _endTime = 0f;
+        private readonly DelayedCallback _applyCallback;
+
+        public DataSwap()
+        {
+            _applyCallback = new(
+                () => Duration,
+                ApplyData,
+                ClearData
+            );
+        }
 
         public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
 
@@ -69,7 +75,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponSetupContext context)
         {
-            if (GetData() && Clock.Time < _endTime) // In case it was previously cleared by Temp Properties
+            if (GetData() && _applyCallback.Active) // In case it was previously cleared by Temp Properties
                 ApplyData();
         }
 
@@ -83,13 +89,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void TriggerResetSync()
         {
-            _endTime = 0;
-            if (_activeRoutine != null)
-            {
-                CoroutineManager.StopCoroutine(_activeRoutine);
-                ClearData();
-            }
-            _activeRoutine = null;
+            _applyCallback.Stop();
         }
 
         public void TriggerApply(List<TriggerContext> contexts)
@@ -104,17 +104,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (!GetData()) return;
 
-            _endTime = Clock.Time + Duration;
-            _activeRoutine ??= CoroutineManager.StartCoroutine(DeactivateAfterDelay().WrapToIl2Cpp());
-        }
-
-        private IEnumerator DeactivateAfterDelay()
-        {
-            ApplyData();
-            while (Clock.Time < _endTime)
-                yield return new WaitForSeconds(_endTime - Clock.Time);
-            ClearData();
-            _activeRoutine = null;
+            _applyCallback.Start();
         }
 
         private bool GetData()

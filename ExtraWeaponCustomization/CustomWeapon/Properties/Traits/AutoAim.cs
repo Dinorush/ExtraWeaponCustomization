@@ -107,6 +107,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponSetupContext context)
         {
+            if (!CWC.IsLocal) return;
+
             _reticle = AutoAimReticle.Reticle;
             _reticleHolder = AutoAimReticle.ReticleHolder;
             OnEnable();
@@ -140,6 +142,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void OnDisable()
         {
+            if (!CWC.IsLocal) return;
+
             _progress = 0f;
             _target = null;
             if (_reticle != null)
@@ -215,7 +219,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (_target != null)
                 _reticleHolder!.transform.position = _camera!.m_camera.WorldToScreenPoint(GetTargetPos());
 
-            if (UseAutoAim)
+            if (UseAutoAim && HasAmmo)
             {
                 _reticle!.m_hitColor = _targetedColor;
                 _reticle!.transform.localScale = Vector3.one;
@@ -240,8 +244,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                 _reticle.transform.localScale = Vector3.one * _progress.Lerp(0, 1f);
             }
 
-            _reticle.transform.localScale *= AutoAimActive ? 1.6f : 1f;
-            _reticle.UpdateColorsWithAlphaMul(AutoAimActive ? 1.0f : 0.5f);
+            bool active = AutoAimActive && HasAmmo;
+            _reticle.transform.localScale *= active ? 1.6f : 1f;
+            _reticle.UpdateColorsWithAlphaMul(active ? 1.0f : 0.5f);
         }
 
         private IEnumerator AnimateReticleToCenter()
@@ -270,7 +275,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private bool HasAmmo => CWC.Gun!.GetCurrentClip() > 0 && CWC.Gun!.IsReloading == false;
         private bool CanLock => LockWhileEmpty || HasAmmo;
         private bool LockedTarget => _target != null && _progress == 1f;
-        private bool AutoAimActive => HasAmmo && (
+        private bool AutoAimActive => (
                AimActive == InputMapper.GetButtonKeyMouse(InputAction.Aim, eFocusState.FPS)
             || HipActive != InputMapper.GetButtonKeyMouse(InputAction.Aim, eFocusState.FPS)
             );
@@ -415,6 +420,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             _weakspotList.Sort(WeakspotCompare);
             _weakspotList.Reverse();
+            _weakspotLimb = null;
 
             for (int i = _weakspotList.Count - 1; i >= 0; i--)
             {
@@ -437,6 +443,14 @@ namespace EWC.CustomWeapon.Properties.Traits
                     return;
                 }
             }
+
+            if (_weakspotList.Count > 0)
+            {
+                _weakspotLimb = _weakspotList[0].limb;
+                _weakspotTarget = _weakspotList[0].collider.transform;
+            }
+            else
+                _weakspotTarget = _target!.AimTarget;
         }
 
         private int WeakspotCompare((Collider? collider, Dam_EnemyDamageLimb) x, (Collider? collider, Dam_EnemyDamageLimb) y)

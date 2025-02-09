@@ -40,13 +40,13 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponSetupContext _)
         {
-            if (ActiveInHolster && _updateRoutine == null)
+            if (CWC.IsLocal && ActiveInHolster && _updateRoutine == null)
                 _updateRoutine = CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
 
         public void Invoke(WeaponClearContext _)
         {
-            if (_updateRoutine != null)
+            if (CWC.IsLocal && _updateRoutine != null)
             {
                 CoroutineManager.StopCoroutine(_updateRoutine);
                 _updateRoutine = null;

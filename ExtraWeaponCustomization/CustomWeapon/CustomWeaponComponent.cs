@@ -23,6 +23,7 @@ namespace EWC.CustomWeapon
 
         private readonly PropertyController _propertyController;
 
+        public bool IsLocal { get; private set; } = true;
         private bool OwnerSet => _ownerPtr != IntPtr.Zero;
         private IntPtr _ownerPtr = IntPtr.Zero;
 
@@ -59,7 +60,6 @@ namespace EWC.CustomWeapon
             }
         }
 
-        private bool _synced = false;
         private bool _destroyed = false;
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
@@ -101,11 +101,11 @@ namespace EWC.CustomWeapon
 
         public void SetToSync()
         {
-            if (_synced) return;
+            if (!IsLocal) return;
             // Bots need full behavior but bots are pain and use different functions so idc for now
             Clear();
             _propertyController.ChangeToSyncContexts();
-            _synced = true;
+            IsLocal = false;
             Register(CustomWeaponManager.GetCustomGunData(Weapon.ArchetypeID));
         }
 
@@ -155,7 +155,7 @@ namespace EWC.CustomWeapon
             }
 
             // If called by Activate(), i.e. without data, need to ensure it gets set to sync when applicable
-            if (!_synced && Weapon.TryCast<BulletWeaponSynced>() != null)
+            if (IsLocal && Weapon.TryCast<BulletWeaponSynced>() != null)
             {
                 SetToSync();
                 return;

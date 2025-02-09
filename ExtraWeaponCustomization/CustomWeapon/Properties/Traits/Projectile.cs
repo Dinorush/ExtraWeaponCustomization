@@ -69,12 +69,16 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponSetupContext context)
         {
+            if (!CWC.IsLocal) return;
+
             _cachedRayDist = CWC.Gun!.MaxRayDist;
             CWC.Gun!.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
         }
 
         public void Invoke(WeaponClearContext context)
         {
+            if (!CWC.IsLocal) return;
+
             CWC.Gun!.MaxRayDist = _cachedRayDist;
         }
 

@@ -21,6 +21,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponSetupContext context)
         {
+            if (!CWC.IsLocal) return;
+
             if (AmmopackRefillRel > 0)
             {
                 PlayerDataBlock data = GameDataBlockBase<PlayerDataBlock>.GetBlock(1u);

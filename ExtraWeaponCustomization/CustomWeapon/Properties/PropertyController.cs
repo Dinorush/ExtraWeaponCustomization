@@ -30,7 +30,6 @@ namespace EWC.CustomWeapon.Properties
     {
         private PropertyNode? _root;
         private readonly ContextController _contextController;
-        private bool _isLocal = true;
         private readonly LinkedList<PropertyNode> _overrideStack = new();
         private readonly Dictionary<Type, Trait> _activeTraits = new();
         private readonly Dictionary<uint, PropertyRef> _idToProperty = new();
@@ -95,7 +94,6 @@ namespace EWC.CustomWeapon.Properties
         internal void ChangeToSyncContexts()
         {
             _contextController.ChangeToSyncContexts();
-            _isLocal = false;
         }
 
         private void RegisterSyncProperties(PropertyNode node)
@@ -207,7 +205,7 @@ namespace EWC.CustomWeapon.Properties
                     // UpdateRoot will register/add traits, so just need to invoke setups
                     UpdateRoot(node);
 
-                    if (_isLocal && node.List.SetupCallbacks != null)
+                    if (node.List.SetupCallbacks != null)
                     {
                         foreach (var property in node.List.SetupCallbacks)
                         {
@@ -238,7 +236,7 @@ namespace EWC.CustomWeapon.Properties
 
                 if (property is Trait trait && !_activeTraits.TryAdd(property.GetType(), trait)) continue;
                 
-                if (_isLocal && property is IWeaponProperty<WeaponSetupContext> setup)
+                if (property is IWeaponProperty<WeaponSetupContext> setup)
                     setup.Invoke(StaticContext<WeaponSetupContext>.Instance);
 
                 _contextController.Register(property);
@@ -274,7 +272,7 @@ namespace EWC.CustomWeapon.Properties
                 else
                     _activeTraits.Remove(type);
 
-                if (_isLocal && property is IWeaponProperty<WeaponClearContext> clear)
+                if (property is IWeaponProperty<WeaponClearContext> clear)
                     clear.Invoke(StaticContext<WeaponClearContext>.Instance);
 
                 _contextController.Unregister(property);
@@ -332,7 +330,7 @@ namespace EWC.CustomWeapon.Properties
             if (node == null || !node.Enabled || node == _overrideStack.Last!.Value) return;
             node.Enabled = false;
 
-            if (node.Active && _isLocal && node.List.ClearCallbacks != null)
+            if (node.Active && node.List.ClearCallbacks != null)
             {
                 foreach (var property in node.List.ClearCallbacks)
                 {
