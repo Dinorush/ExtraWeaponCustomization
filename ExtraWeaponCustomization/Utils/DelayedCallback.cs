@@ -38,13 +38,17 @@ namespace EWC.Utils
             _onEnd = onEnd;
         }
 
+        public bool Active => _endTime > Clock.Time && _routine != null;
+
         // Starts or refreshes the delayed callback.
-        // OnRefresh will always be called, but OnStart is only called if the callback is currently inactive.
+        // Calls OnStart if the callback is currently inactive, otherwise calls OnRefresh.
         public void Start()
         {
             _endTime = Clock.Time + (_getDelay?.Invoke() ?? _delay);
-            _onRefresh?.Invoke();
-            _routine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
+            if (_routine == null)
+                _routine = CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
+            else
+                _onRefresh?.Invoke();
         }
 
         // Loop created after Start() until the delay passes.
