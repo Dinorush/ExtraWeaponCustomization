@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
-    internal class TumorMulti :
+    public sealed class TumorMulti :
         Trait,
         IGunProperty,
         IMeleeProperty,

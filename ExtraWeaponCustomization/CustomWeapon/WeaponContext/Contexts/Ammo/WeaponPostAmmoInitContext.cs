@@ -2,7 +2,7 @@
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    public class WeaponPostAmmoInitContext : IWeaponContext
+    public sealed class WeaponPostAmmoInitContext : IWeaponContext
     {
         public PlayerAmmoStorage AmmoStorage { get; set; }
         public InventorySlotAmmo SlotAmmo { get; set; }

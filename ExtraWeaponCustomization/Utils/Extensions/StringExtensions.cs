@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EWC.Utils
+namespace EWC.Utils.Extensions
 {
     internal static class StringExtensions
     {

@@ -2,7 +2,7 @@
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Patches.Melee;
-using EWC.Utils;
+using EWC.Utils.Extensions;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers

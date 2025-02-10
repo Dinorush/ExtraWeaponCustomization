@@ -76,7 +76,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             DOTData data = default;
             data.target.Set(damBase.Owner);
             data.source.Set(dotBase.Owner);
-            data.limbID = (byte)(dotBase.DamageLimb ? limb.m_limbID : 0);
+            data.limbID = (byte) limb.m_limbID;
+            data.damageLimb = dotBase.DamageLimb;
             data.localPosition.Set(limb.DamageTargetPos - damBase.Owner.Position, 10f);
             data.staggerMult.Set(dotBase.StaggerDamageMulti, MaxStagger);
             data.setCooldowns = dotBase.ApplyAttackCooldown;
@@ -124,13 +125,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             damBase.ReceiveFireDamage(data);
         }
 
-        internal static void Internal_ReceiveDOTEnemyDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
+        internal static void Internal_ReceiveDOTEnemyDamage(EnemyAgent target, PlayerAgent? source, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
-            Dam_EnemyDamageLimb? limb = limbID > 0 ? damBase.DamageLimbs[limbID] : null;
+            Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
             if (!target.Alive || damBase.IsImortal) return;
 
-            DamageAPI.FirePreDOTCallbacks(damage, target, source);
+            DamageAPI.FirePreDOTCallbacks(damage, target, limb, source);
             // DoT should only stagger if threshold is reached. Need the hitreact to not be None for the threshold to do anything, though.
             bool staggers = damage * staggerMult + damBase.m_damBuildToHitreact >= target.EnemyBalancingData.Health.DamageUntilHitreact;
             ES_HitreactType hitreact = staggers ? ES_HitreactType.Light : ES_HitreactType.None;
@@ -152,11 +153,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
             Vector3 direction = target.TargetLookDir * -1;
             Vector3 position = localPos + target.Position;
-            if (limb != null && (willKill || limb.DoDamage(damage)))
+            if (damageLimb && (willKill || limb.DoDamage(damage)))
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
 
             ProcessReceivedDOTDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
-            DamageAPI.FirePostDOTCallbacks(damage, target, source);
+            DamageAPI.FirePostDOTCallbacks(damage, target, limb, source);
         }
 
         private static void ProcessReceivedDOTDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
@@ -194,6 +195,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         public pEnemyAgent target;
         public pPlayerAgent source;
         public byte limbID;
+        public bool damageLimb;
         public LowResVector3 localPosition;
         public UFloat16 damage;
         public UFloat16 staggerMult;

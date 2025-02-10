@@ -8,6 +8,7 @@ using EWC.CustomWeapon.KillTracker;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using EWC.Utils.Log;
 using Player;
 using SNetwork;
@@ -164,7 +165,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             ExplosionDamageData data = default;
             data.target.Set(damBase.Owner);
             data.source.Set(source);
-            data.limbID = (byte)(eBase.DamageLimb ? limb.m_limbID : 0);
+            data.limbID = (byte) limb.m_limbID;
+            data.damageLimb = eBase.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
             data.staggerMult.Set(eBase.StaggerDamageMulti, MaxStagger);
 
@@ -190,13 +192,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
-        internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, int limbID, Vector3 localPos, float damage, float staggerMult)
+        internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
-            Dam_EnemyDamageLimb? limb = limbID > 0 ? damBase.DamageLimbs[limbID] : null;
+            Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
             if (damBase.Health <= 0 || !damBase.Owner.Alive || damBase.IsImortal) return;
 
-            DamageAPI.FirePreExplosiveCallbacks(damage, target, source);
+            DamageAPI.FirePreExplosiveCallbacks(damage, target, limb, source);
 
             ES_HitreactType hitreact = staggerMult > 0 ? ES_HitreactType.Light : ES_HitreactType.None;
             bool tryForceHitreact = false;
@@ -216,12 +218,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             EXPAPIWrapper.RegisterDamage(target, source, damage, willKill);
 
             Vector3 direction = Vector3.up;
-            if (limb != null && (willKill || limb.DoDamage(damage)))
+            if (damageLimb && (willKill || limb.DoDamage(damage)))
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
 
             Vector3 position = localPos + target.Position;
             damBase.ProcessReceivedDamage(damage, source, position, Vector3.up * 1000f, hitreact, tryForceHitreact, limbID, staggerMult);
-            DamageAPI.FirePostExplosiveCallbacks(damage, target, source);
+            DamageAPI.FirePostExplosiveCallbacks(damage, target, limb, source);
         }
     }
 
@@ -230,6 +232,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public pEnemyAgent target;
         public pPlayerAgent source;
         public byte limbID;
+        public bool damageLimb;
         public LowResVector3 localPosition;
         public UFloat16 damage;
         public UFloat16 staggerMult;

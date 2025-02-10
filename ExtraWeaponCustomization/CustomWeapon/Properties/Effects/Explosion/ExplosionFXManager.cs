@@ -1,6 +1,6 @@
 ﻿using EWC.API;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX;
-using EWC.Utils;
+using EWC.Utils.Extensions;
 using Player;
 using SNetwork;
 using UnityEngine;

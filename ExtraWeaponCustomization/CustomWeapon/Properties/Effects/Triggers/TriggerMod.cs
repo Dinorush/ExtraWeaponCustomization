@@ -1,5 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
-using EWC.Utils;
+using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
-    internal class PierceMulti : 
+    public sealed class PierceMulti : 
         Trait,
         IGunProperty,
         IWeaponProperty<WeaponPierceContext>

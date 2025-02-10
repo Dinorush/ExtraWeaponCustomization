@@ -2,6 +2,7 @@
 using Enemies;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using LevelGeneration;
 using Player;
 using System;

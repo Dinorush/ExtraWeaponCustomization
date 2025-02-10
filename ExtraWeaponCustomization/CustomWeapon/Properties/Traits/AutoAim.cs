@@ -3,6 +3,7 @@ using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Enemies;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;

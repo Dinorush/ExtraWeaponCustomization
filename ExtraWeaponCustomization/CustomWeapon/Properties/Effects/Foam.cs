@@ -4,7 +4,7 @@ using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
-using EWC.Utils;
+using EWC.Utils.Extensions;
 using LevelGeneration;
 using Player;
 using System;

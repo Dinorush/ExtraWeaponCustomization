@@ -161,6 +161,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_hitEnts.Clear();
             CalcRayDir(x, y, spread);
 
+            FireShotAPI.FirePreShotFiredCallback(s_hitData, s_ray);
+
             // Stops at padlocks but that's the same behavior as vanilla so idc
             Vector3 wallPos;
             bool hitWall;
@@ -216,6 +218,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_hitData.damage = CWC.Weapon.ArchetypeData.Damage;
 
             CalcRayDir(x, y, spread, local: false);
+            FireShotAPI.FirePreShotFiredCallback(s_hitData, s_ray);
 
             if (Physics.Raycast(s_ray, out s_rayHit, 20f, LayerUtil.MaskEntityAndWorld))
             {

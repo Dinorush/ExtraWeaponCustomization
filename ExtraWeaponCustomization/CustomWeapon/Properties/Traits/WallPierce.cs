@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
-    internal class WallPierce : 
+    public sealed class WallPierce : 
         Trait,
         IGunProperty,
         IWeaponProperty<WeaponPostRayContext>

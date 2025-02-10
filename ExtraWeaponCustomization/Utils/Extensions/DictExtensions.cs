@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace EWC.Utils
+namespace EWC.Utils.Extensions
 {
     internal static class DictExtensions
     {

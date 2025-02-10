@@ -7,7 +7,7 @@ using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils.Log;
 using System.Diagnostics.CodeAnalysis;
-using EWC.Utils;
+using EWC.Utils.Extensions;
 
 namespace EWC.CustomWeapon.Properties
 {

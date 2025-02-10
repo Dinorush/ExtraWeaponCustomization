@@ -17,6 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 target,
                 source,
                 packet.limbID,
+                packet.damageLimb,
                 packet.localPosition.Get(10f),
                 packet.damage.Get(target.Damage.DamageMax),
                 packet.staggerMult.Get(ExplosionManager.MaxStagger)

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    public class WeaponHitContext : WeaponHitContextBase
+    public sealed class WeaponHitContext : WeaponHitContextBase
     {
         public WeaponHitContext(Collider collider, Vector3 position, Vector3 direction, Vector3 normal, float falloff) :
             base(collider, position, direction, normal, falloff, Enums.DamageType.Bullet) {}

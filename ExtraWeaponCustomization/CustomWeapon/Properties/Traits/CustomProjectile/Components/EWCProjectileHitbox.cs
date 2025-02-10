@@ -382,6 +382,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             DoImpactFX(damageable);
 
+            API.ProjectileAPI.FireProjectileHitCallback(_base, damageable);
+
             if (!_runHitTriggers)
                 _settings.CWC.RunHitTriggers = false;
             WeaponPatches.ApplyEWCHit(_contextController, _weapon, _hitData, _pierce, ref _baseDamage, out bool backstab);

@@ -1,6 +1,6 @@
 ﻿namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    public class WeaponPreAmmoUIContext : IWeaponContext
+    public sealed class WeaponPreAmmoUIContext : IWeaponContext
     {
         public int Clip { get; set; }
         public int Reserve { get; set; }

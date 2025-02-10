@@ -1,4 +1,4 @@
-﻿using EWC.Utils;
+﻿using EWC.Utils.Extensions;
 using System;
 using System.Text.Json;
 

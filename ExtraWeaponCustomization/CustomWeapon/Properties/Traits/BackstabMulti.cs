@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
-    internal class BackstabMulti : 
+    public sealed class BackstabMulti : 
         Trait,
         IGunProperty,
         IMeleeProperty,

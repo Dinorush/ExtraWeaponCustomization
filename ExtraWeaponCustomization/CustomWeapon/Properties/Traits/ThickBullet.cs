@@ -10,7 +10,7 @@ using Enemies;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
-    internal class ThickBullet : 
+    public sealed class ThickBullet : 
         Trait,
         IGunProperty,
         IWeaponProperty<WeaponPostRayContext>

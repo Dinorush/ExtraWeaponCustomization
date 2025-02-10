@@ -1,4 +1,5 @@
-﻿using Gear;
+﻿using EWC.Utils.Extensions;
+using Gear;
 using Player;
 using UnityEngine;
 using static Weapon;

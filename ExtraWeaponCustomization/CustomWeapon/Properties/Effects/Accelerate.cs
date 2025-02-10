@@ -2,14 +2,14 @@
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
-using EWC.Utils;
+using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
-    public class Accelerate :
+    public sealed class Accelerate :
         Effect,
         IGunProperty,
         ITriggerCallbackBasicSync,

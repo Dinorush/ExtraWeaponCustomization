@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EWC.Utils
+namespace EWC.Utils.Extensions
 {
     internal static class NumExtensions
     {
@@ -10,7 +10,7 @@ namespace EWC.Utils
 
             orig = Math.Clamp(orig, fromMin, fromMax);
             if (exponent != 1f)
-                return (float) Math.Pow((orig - fromMin) / (fromMax - fromMin), exponent) * (toMax - toMin) + toMin;
+                return (float)Math.Pow((orig - fromMin) / (fromMax - fromMin), exponent) * (toMax - toMin) + toMin;
             return (orig - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
         }
 
@@ -26,6 +26,6 @@ namespace EWC.Utils
 
         public static float Lerp(this float t, float min, float max) => (max - min) * Math.Clamp(t, 0, 1) + min;
 
-        public static float Lerp(this double t, float min, float max) => (max - min) * (float) Math.Clamp(t, 0, 1) + min;
+        public static float Lerp(this double t, float min, float max) => (max - min) * (float)Math.Clamp(t, 0, 1) + min;
     }
 }

@@ -5,6 +5,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using EWC.Utils.Log;
 using FX_EffectSystem;
 using GameData;
@@ -210,6 +211,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             _hitEnts.Add(_ignoreEnt);
             CalcRayDir(x, y, spread);
 
+            FireShotAPI.FirePreShotFiredCallback(s_hitData, s_ray);
+
             // Stops at padlocks but that's the same behavior as vanilla so idc
             Vector3 wallPos;
             bool hitWall;
@@ -267,6 +270,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             s_hitData.damage = CWC.Weapon.ArchetypeData.Damage;
 
             CalcRayDir(x, y, spread, local: false);
+            FireShotAPI.FirePreShotFiredCallback(s_hitData, s_ray);
 
             if (Physics.Raycast(s_ray, out s_rayHit, 20f, LayerUtil.MaskEntityAndWorld))
             {

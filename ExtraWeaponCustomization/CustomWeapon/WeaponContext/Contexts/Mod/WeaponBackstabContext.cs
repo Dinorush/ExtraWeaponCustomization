@@ -1,6 +1,6 @@
 ﻿namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    internal class WeaponBackstabContext : WeaponStackModContext
+    public sealed class WeaponBackstabContext : WeaponStackModContext
     {
         public WeaponBackstabContext() : base(2)
         {

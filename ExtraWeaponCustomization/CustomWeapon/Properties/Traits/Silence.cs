@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
-    internal class Silence :
+    public sealed class Silence :
         Trait,
         IGunProperty,
         IWeaponProperty<WeaponPreFireContext>,

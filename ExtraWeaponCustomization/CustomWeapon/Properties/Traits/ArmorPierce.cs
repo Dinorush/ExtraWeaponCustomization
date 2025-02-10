@@ -1,5 +1,5 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Utils;
+using EWC.Utils.Extensions;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits

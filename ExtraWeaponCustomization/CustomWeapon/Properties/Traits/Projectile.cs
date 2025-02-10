@@ -3,6 +3,7 @@ using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using EWC.Utils.Log;
 using FX_EffectSystem;
 using Gear;

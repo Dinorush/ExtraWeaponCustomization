@@ -1,6 +1,7 @@
 ﻿using EWC.API;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using Il2CppInterop.Runtime.Attributes;
 using System;
 using UnityEngine;
@@ -72,7 +73,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public bool IsLocal { get; private set; }
         public ushort SyncID { get; private set; }
         public ushort PlayerIndex { get; private set; }
-
 
         protected virtual void Awake()
         {

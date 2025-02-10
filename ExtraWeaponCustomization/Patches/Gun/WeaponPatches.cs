@@ -6,6 +6,7 @@ using EWC.CustomWeapon.KillTracker;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using Gear;
 using HarmonyLib;
 using static Weapon;

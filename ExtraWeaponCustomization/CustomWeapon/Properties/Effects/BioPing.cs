@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
-    internal class BioPing :
+    public sealed class BioPing :
         Effect,
         IGunProperty,
         IMeleeProperty
