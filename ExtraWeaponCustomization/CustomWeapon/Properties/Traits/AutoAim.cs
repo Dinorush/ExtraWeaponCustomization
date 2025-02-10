@@ -457,8 +457,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (x.collider == null) return 1;
             if (y.collider == null) return -1;
-            float angleX = Vector3.Angle(_camera!.CameraRayDir, x.collider.transform.position);
-            float angleY = Vector3.Angle(_camera!.CameraRayDir, y.collider.transform.position);
+            float angleX = Vector3.Angle(_camera!.CameraRayDir, x.collider.transform.position - _camera!.Position);
+            float angleY = Vector3.Angle(_camera!.CameraRayDir, y.collider.transform.position - _camera!.Position);
             return angleX < angleY ? -1 : 1;
         }
 
