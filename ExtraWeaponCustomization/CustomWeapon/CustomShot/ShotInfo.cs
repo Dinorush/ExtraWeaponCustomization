@@ -31,6 +31,7 @@ namespace EWC.CustomWeapon.CustomShot
         public ShotInfo(uint id)
         {
             ID = id;
+            _state = new(this);
         }
 
         public void Reset() => Reset(ShotManager.NextID);
@@ -47,7 +48,9 @@ namespace EWC.CustomWeapon.CustomShot
                 _hits.Add(type);
         }
 
-        public readonly struct Const
+        // Snapshot of ShotInfo to capture its current state
+        // in case the object changes in the future.
+        public class Const
         {
             public readonly uint ID;
             private readonly DamageType[] _hits;
