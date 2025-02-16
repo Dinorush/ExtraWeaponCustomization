@@ -16,7 +16,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using UnityEngine;
-using static Il2CppSystem.Globalization.CultureInfo;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {

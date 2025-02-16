@@ -1,6 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
