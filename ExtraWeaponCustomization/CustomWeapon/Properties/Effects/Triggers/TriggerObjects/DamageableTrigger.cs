@@ -15,8 +15,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private Dictionary<BaseDamageableWrapper, float>? _uniqueCounts;
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
-        public DamageableTrigger(TriggerName name, DamageType type = DamageType.Any) :
-            base(name, type) {}
+        public DamageableTrigger(TriggerName name, DamageType[] types) : base(name, types)
+        {
+            BlacklistType |= DamageType.Terrain;
+        }
 
         public override bool Invoke(WeaponTriggerContext context, out float amount)
         {

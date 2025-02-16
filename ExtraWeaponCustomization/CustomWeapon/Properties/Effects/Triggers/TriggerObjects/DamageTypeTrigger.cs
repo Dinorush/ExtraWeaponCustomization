@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -9,26 +10,27 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public class DamageTypeTrigger<TContext> : IDamageTypeTrigger where TContext : WeaponDamageTypeContext
     {
-        public DamageType DamageType { get; private set; }
+        public DamageType[] DamageTypes { get; }
         public DamageType BlacklistType { get; set; } = DamageType.Any;
         public TriggerName Name { get; private set; }
         public float Amount { get; private set; } = 1f;
+        public uint MaxPerShot { get; private set; } = 0;
 
         private static readonly Dictionary<Type, List<PropertyInfo>> _classProperties = new();
 
-        public DamageTypeTrigger(TriggerName name, DamageType type = DamageType.Any)
+        public DamageTypeTrigger(TriggerName name, params DamageType[] types)
         {
             Name = name;
-            DamageType = type;
+            DamageTypes = types.Length == 0 ? new[]{ DamageType.Any } : types;
         }
 
         public virtual bool Invoke(WeaponTriggerContext context, out float amount)
         {
             amount = 0f;
-
             if (context is TContext hitContext
                 && !hitContext.DamageType.HasAnyFlag(BlacklistType)
-                && hitContext.DamageType.HasFlag(DamageType))
+                && hitContext.DamageType.HasFlagIn(DamageTypes)
+                && (MaxPerShot == 0 || MaxPerShot > hitContext.ShotInfo.TypeHits(DamageTypes, BlacklistType)))
             {
                 amount = Amount;
                 return true;
@@ -65,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 }
             }
 
-            ITrigger copy = (ITrigger) (type.GetConstructor(new Type[] { typeof(DamageType) }) != null ? Activator.CreateInstance(type, DamageType) : Activator.CreateInstance(type, Name, DamageType))!;
+            ITrigger copy = (ITrigger) (type.GetConstructor(new Type[] { typeof(DamageType[]) }) != null ? Activator.CreateInstance(type, DamageTypes) : Activator.CreateInstance(type, Name, DamageTypes))!;
             foreach (var prop in _classProperties[type])
                 prop.SetValue(copy, prop.GetValue(this));
 
@@ -82,6 +84,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "triggeramount":
                 case "amount":
                     Amount = reader.GetSingle();
+                    break;
+                case "maxpershot":
+                    MaxPerShot = reader.GetUInt32();
                     break;
             }
         }

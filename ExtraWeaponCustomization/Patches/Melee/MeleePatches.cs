@@ -65,6 +65,7 @@ namespace EWC.Patches.Melee
         {
             s_origHitDamage = __instance.m_damageToDeal;
             s_origHitPrecision = __instance.m_precisionMultiToDeal;
+            s_hitData.shotInfo.Reset();
             CachedCharge = dam == eMeleeWeaponDamage.Heavy ? (float) Math.Cbrt(scale) : 0f;
         }
 

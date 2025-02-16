@@ -1,4 +1,5 @@
-﻿using EWC.Utils.Extensions;
+﻿using EWC.CustomWeapon.CustomShot;
+using EWC.Utils.Extensions;
 using Gear;
 using Player;
 using UnityEngine;
@@ -31,13 +32,14 @@ namespace EWC.Utils
                 damageable = DamageableUtil.GetDamageableFromRayHit(_rayHit);
             }
         }
+        public ShotInfo shotInfo = new();
 
         private WeaponHitData? _weaponHitData;
         private MeleeWeaponFirstPerson? _meleeWeapon;
 
-#pragma warning disable CS8618 // All used fields are set
+#pragma warning disable CS8618
+        // All used fields are set
         public HitData(WeaponHitData hitData, float additionalDist = 0) => Setup(hitData, additionalDist);
-
         public HitData(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData) => Setup(melee, hitData);
         
         // Class responsible for using this should ensure fields are set!
@@ -49,6 +51,7 @@ namespace EWC.Utils
             _weaponHitData = hitData;
             _meleeWeapon = null;
 
+            shotInfo = ShotManager.GetVanillaShotInfo(hitData);
             damage = hitData.damage;
             damageFalloff = hitData.damageFalloff;
             precisionMulti = hitData.precisionMulti;
@@ -71,8 +74,7 @@ namespace EWC.Utils
             falloff = 1f;
             fireDir = hitData.hitPos - hitData.sourcePos;
             hitPos = hitData.hitPos;
-
-            damageable = DamageableUtil.GetDamageableFromGO(hitData.damageGO);
+            damageable = hitData.damageComp;
         }
 
         public void Apply()

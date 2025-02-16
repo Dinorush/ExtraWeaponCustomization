@@ -8,7 +8,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     public sealed class DamageTrigger : DamageableTrigger<WeaponHitDamageableContext>
     {
         public float Cap { get; private set; } = 0f;
-        public DamageTrigger(DamageType type = DamageType.Any) : base(TriggerName.Damage, type) {}
+        public DamageTrigger(params DamageType[] types) : base(TriggerName.Damage, types) {}
 
         protected override float InvokeInternal(WeaponHitDamageableContext context)
         {

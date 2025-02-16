@@ -34,6 +34,12 @@ namespace EWC.Patches.Player
                 CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
                 cwc?.Invoke(new WeaponDamageTakenContext(damage));
             }
+
+            if (backpack.TryGetBackpackItem(InventorySlot.GearMelee, out BackpackItem melee))
+            {
+                CustomWeaponComponent? cwc = melee.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(new WeaponDamageTakenContext(damage));
+            }
         }
     }
 }

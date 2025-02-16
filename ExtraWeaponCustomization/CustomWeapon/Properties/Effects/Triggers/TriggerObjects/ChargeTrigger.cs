@@ -14,7 +14,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float MinRequired { get; private set; } = 0f;
         public float MaxRequired { get; private set; } = 1f;
 
-        public ChargeTrigger(DamageType type = DamageType.Any) : base(TriggerName.Charge, type) {}
+        public ChargeTrigger(params DamageType[] types) : base(TriggerName.Charge, types) {}
 
         protected override float InvokeInternal(WeaponHitDamageableContext context)
         {

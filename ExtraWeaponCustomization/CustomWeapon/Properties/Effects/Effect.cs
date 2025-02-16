@@ -90,9 +90,9 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                 typeTrigger.BlacklistType |= _blacklistType;
                 // If all valid triggers are blacklisted, remove it
-                if (typeTrigger.DamageType.HasAnyFlag(typeTrigger.BlacklistType))
+                if (typeTrigger.DamageTypes.All(type => type.HasAnyFlag(typeTrigger.BlacklistType)))
                 {
-                    EWCLogger.Warning($"{GetType().Name} has a trigger {name} with invalid damage type {typeTrigger.DamageType}. It cannot contain any types within {_blacklistType}");
+                    EWCLogger.Warning($"{GetType().Name} has a trigger {name} with invalid damage types {string.Join(", ", typeTrigger.DamageTypes)}. It cannot contain any types within {_blacklistType}");
                     Trigger.Activate.RemoveAt(i);
                     continue;
                 }

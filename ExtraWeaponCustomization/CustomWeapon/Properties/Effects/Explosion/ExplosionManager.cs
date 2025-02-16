@@ -3,6 +3,7 @@ using AIGraph;
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -28,6 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public const float MaxStagger = 16384f; // 2^14
 
         private readonly static List<RaycastHit> s_hits = new();
+        private readonly static ShotInfo s_shotInfo = new();
 
         internal static void Init()
         {
@@ -80,13 +82,15 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     hit.distance,
                     source,
                     falloffMod,
+                    s_shotInfo,
                     explosiveBase,
                     triggerAmt);
             }
+            s_shotInfo.Reset();
             s_hits.Clear();
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float distance, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float distance, PlayerAgent source, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
         {
             float damage = distance.MapInverted(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;
@@ -118,8 +122,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 normal,
                 backstabMulti,
                 falloffMod * distFalloff,
+                info,
                 DamageType.Explosive
                 ));
+            info.AddHit(preContext.DamageType);
 
             WeaponDamageContext damageContext = new(damage, precisionMult, damageable);
             eBase.CWC.Invoke(damageContext);

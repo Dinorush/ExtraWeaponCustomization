@@ -19,16 +19,35 @@ namespace EWC.CustomWeapon.Enums
         Unfoamed = 256,
         Enemy = 512,
         Player = 1024,
-        Lock = 2048
+        Lock = 2048,
+        Terrain = 4096
     }
 
     public static class DamageTypeMethods
     {
+        public static DamageType[] ToDamageTypes(this string? name)
+        {
+            if (name == null) return new[] { DamageType.Invalid };
+
+            name = name.Replace(" ", null).ToLowerInvariant();
+            string[] names = name.Split('|');
+            DamageType[] types = new DamageType[names.Length];
+            for (int i = 0; i < names.Length; i++)
+                types[i] = Internal_ToDamageType(names[i]);
+
+            return types;
+        }
+
         public static DamageType ToDamageType(this string? name)
         {
             if (name == null) return DamageType.Invalid;
 
             name = name.Replace(" ", null).ToLowerInvariant();
+            return Internal_ToDamageType(name);
+        }
+
+        private static DamageType Internal_ToDamageType(string name)
+        {
             DamageType flag = DamageType.Any;
             if (name.Contains("prec") || name.Contains("weakspot"))
                 flag |= DamageType.Weakspot;
@@ -63,6 +82,13 @@ namespace EWC.CustomWeapon.Enums
         }
 
         public static bool HasAnyFlag(this DamageType type, DamageType flagSet) => (type & flagSet) != 0;
+        public static bool HasFlagIn(this DamageType type, DamageType[] flagSet)
+        {
+            foreach (var flag in flagSet)
+                if (type.HasFlag(flag))
+                    return true;
+            return false;
+        }
 
         public static DamageType GetSubTypes(Dam_EnemyDamageLimb limb) => DamageType.Enemy | GetSubTypes(!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot, limb.m_armorDamageMulti, limb.m_base.IsStuckInGlue);
 

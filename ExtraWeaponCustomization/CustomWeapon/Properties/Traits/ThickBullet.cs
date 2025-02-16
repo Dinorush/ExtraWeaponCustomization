@@ -7,6 +7,7 @@ using System;
 using Gear;
 using Agents;
 using Enemies;
+using EWC.CustomWeapon.CustomShot;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
@@ -66,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     CheckDirectHit(ref s_rayHit);
 
                     context.Data.RayHit = s_rayHit;
-                    if (BulletHit(context.Data))
+                    if (ShotManager.BulletHit(context.Data))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return;
@@ -86,7 +87,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent().CourseNode) == false) continue;
 
                     context.Data.RayHit = hit;
-                    if (BulletHit(context.Data))
+                    if (ShotManager.BulletHit(context.Data))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return;
@@ -96,7 +97,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (!hitWall) return;
 
             context.Data.RayHit = wallRayHit;
-            BulletHit(context.Data);
+            ShotManager.BulletHit(context.Data);
         }
 
         // Check for enemies within the initial sphere (if hitsize is big enough)
@@ -116,7 +117,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 CheckDirectHit(ref hit);
 
                 context.Data.RayHit = hit;
-                if (BulletHit(context.Data))
+                if (ShotManager.BulletHit(context.Data))
                     _pierceCount--;
 
                 if (_pierceCount <= 0) break;
@@ -131,7 +132,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (wallPierce == null && !CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
 
                 context.Data.RayHit = hit;
-                if (BulletHit(context.Data))
+                if (ShotManager.BulletHit(context.Data))
                     _pierceCount--;
 
                 if (_pierceCount <= 0) break;
@@ -195,8 +196,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             return AlreadyHit(DamageableUtil.GetDamageableFromCollider(collider));
         }
-
-        private bool BulletHit(HitData data) => BulletWeapon.BulletHit(data.Apply(Weapon.s_weaponRayData), true, 0, CWC.Gun!.m_damageSearchID, true);
 
         public override void Serialize(Utf8JsonWriter writer)
         {

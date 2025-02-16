@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.Enums;
+﻿using EWC.CustomWeapon.CustomShot;
+using EWC.CustomWeapon.Enums;
 using EWC.Utils;
 using System;
 using UnityEngine;
@@ -15,8 +16,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
         public Collider Collider { get => _collider ??= SetCollider(); }
         protected virtual Collider SetCollider() => throw new NotImplementedException();
 
-        public WeaponHitContextBase(Collider collider, Vector3 position, Vector3 direction, Vector3 normal, float falloff, DamageType flag) :
-            base(flag)
+        public WeaponHitContextBase(Collider collider, Vector3 position, Vector3 direction, Vector3 normal, float falloff, ShotInfo.Const info, DamageType flag) :
+            base(flag, info)
         {
             _collider = collider;
             Position = position;
@@ -25,8 +26,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
             Falloff = falloff;
         }
 
-        public WeaponHitContextBase(Vector3 position, Vector3 direction, Vector3 normal, float falloff, DamageType flag) :
-            base(flag)
+        public WeaponHitContextBase(Vector3 position, Vector3 direction, Vector3 normal, float falloff, ShotInfo.Const info, DamageType flag) :
+            base(flag, info)
         {
             Position = position;
             Direction = direction.normalized;
@@ -42,8 +43,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
         public float Backstab { get; }
         protected override Collider SetCollider() => Damageable.Cast<MonoBehaviour>().GetComponent<Collider>();
 
-        public WeaponHitDamageableContextBase(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float backstab, float falloff, DamageType flag) :
-            base(position, direction, normal, falloff, flag.WithSubTypes(damageable))
+        public WeaponHitDamageableContextBase(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float backstab, float falloff, ShotInfo.Const info, DamageType flag) :
+            base(position, direction, normal, falloff, info, flag.WithSubTypes(damageable))
         {
             Damageable = damageable ?? throw new ArgumentNullException(nameof(damageable));
             LocalPosition = position - damageable.GetBaseAgent()?.Position ?? Vector3.zero;
@@ -51,7 +52,11 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
         }
 
         public WeaponHitDamageableContextBase(HitData data, float backstab, DamageType flag) :
-            this(data.damageable!, data.hitPos, data.fireDir.normalized, data.RayHit.normal, backstab, data.falloff, flag.WithSubTypes(data.damageable!))
+            this(data.damageable!, data.hitPos, data.fireDir.normalized, data.RayHit.normal, backstab, data.falloff, data.shotInfo, flag.WithSubTypes(data.damageable!))
+        { }
+
+        public WeaponHitDamageableContextBase(WeaponHitDamageableContextBase context) :
+            this(context.Damageable, context.Position, context.Direction, context.Normal, context.Backstab, context.Falloff, context.ShotInfo, context.DamageType)
         { }
     }
 }

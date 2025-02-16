@@ -133,6 +133,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _hitData.damageFalloff = archData.DamageFalloff;
             _hitData.staggerMulti = archData.StaggerDamageMulti;
             _hitData.precisionMulti = archData.PrecisionDamageMulti;
+            _hitData.shotInfo.Reset();
 
             _baseDamage = _hitData.damage;
             _basePrecision = _hitData.precisionMulti;

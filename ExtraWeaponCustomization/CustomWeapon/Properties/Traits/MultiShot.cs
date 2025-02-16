@@ -1,4 +1,5 @@
 ﻿using EWC.API;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
@@ -157,6 +158,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_hitData.precisionMulti = archData.PrecisionDamageMulti;
             s_hitData.maxRayDist = CWC.Gun!.MaxRayDist;
             s_hitData.RayHit = default;
+            s_hitData.shotInfo.Reset();
 
             s_hitEnts.Clear();
             CalcRayDir(x, y, spread);
@@ -201,7 +203,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 {
                     s_hitData.RayHit = wallRayHit;
                     FX_Manager.EffectTargetPosition = wallPos; // Set again since CheckForHits sets it to other things
-                    BulletHit(s_hitData);
+                    ShotManager.BulletHit(s_hitData);
                 }
             }
 
@@ -290,14 +292,12 @@ namespace EWC.CustomWeapon.Properties.Traits
 
                 s_hitData.RayHit = hit;
                 FX_Manager.EffectTargetPosition = hit.point;
-                if (BulletHit(s_hitData))
+                if (ShotManager.BulletHit(s_hitData))
                     pierceCount--;
 
                 if (pierceCount == 0) return;
             }
         }
-
-        private bool BulletHit(HitData data) => BulletWeapon.BulletHit(data.Apply(Weapon.s_weaponRayData), true, 0, 0, true);
 
         public override WeaponPropertyBase Clone()
         {

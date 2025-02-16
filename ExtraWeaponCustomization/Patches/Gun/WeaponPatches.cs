@@ -9,6 +9,7 @@ using EWC.Utils;
 using EWC.Utils.Extensions;
 using Gear;
 using HarmonyLib;
+using System;
 using static Weapon;
 
 namespace EWC.Patches
@@ -42,7 +43,6 @@ namespace EWC.Patches
 
             cwc.Invoke(StaticContext<WeaponWieldContext>.Instance);
             cwc.RefreshSoundDelay();
-            s_lastSearchID = 0;
         }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnUnWield))]
@@ -58,7 +58,6 @@ namespace EWC.Patches
 
         // Used to correctly apply HitCallback damage modification on piercing shots
         // (otherwise damage mods apply to future pierce shots exponentially)
-        private static uint s_lastSearchID = 0;
         private static float s_origHitDamage = 0;
         private static float s_origHitPrecision = 0;
         private readonly static HitData s_hitData = new();
@@ -93,9 +92,8 @@ namespace EWC.Patches
             // Correct piercing damage back to base damage to apply damage mods
             if (damageable != null && damageSearchID != 0)
             {
-                if (s_lastSearchID != damageSearchID)
+                if (s_hitData.shotInfo.Hits == 0)
                 {
-                    s_lastSearchID = damageSearchID;
                     s_origHitDamage = s_hitData.damage;
                     s_origHitPrecision = s_hitData.precisionMulti;
                 }
@@ -114,6 +112,7 @@ namespace EWC.Patches
             Enemy.EnemyLimbPatches.CachedCC = cc;
 
             IDamageable? damageable = hitData.damageable;
+            DamageType damageType;
             if (damageable.IsValid() && damageable.GetBaseDamagable().GetHealthRel() > 0)
             {
                 float backstab = 1f;
@@ -128,7 +127,7 @@ namespace EWC.Patches
                     backstab = origBackstab.Map(1f, 2f, 1f, cc.Invoke(new WeaponBackstabContext()).Value);
                 }
 
-                cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab, DamageType.Bullet));
+                damageType = cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab, DamageType.Bullet)).DamageType;
 
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
                 WeaponDamageContext damageContext = new(hitData.damage, hitData.precisionMulti, damageable);
@@ -167,8 +166,9 @@ namespace EWC.Patches
                     cc.Invoke(new WeaponHitDamageableContext(hitData, DamageType.Bullet));
             }
             else
-                cc.Invoke(new WeaponHitContext(hitData));
+                damageType = cc.Invoke(new WeaponHitContext(hitData)).DamageType;
 
+            hitData.shotInfo.AddHit(damageType);
             hitData.Apply();
         }
     }

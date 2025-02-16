@@ -1,6 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
@@ -53,11 +52,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "damagetaken" => new DamageTakenTrigger(),
                 "bulletlanded" or "landedbullet" or "meleelanded" or "landedmelee" => new BulletLandedTrigger(),
                 "chargelanded" or "landedcharge" => new ChargeLandedTrigger(),
-                string prehit when prehit.Contains("prehit") => new DamageableTrigger<WeaponPreHitDamageableContext>(TriggerName.PreHit, name.ToDamageType()),
-                string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageType()),
-                string charge when charge.Contains("charge") => new ChargeTrigger(name.ToDamageType()),
-                string damage when damage.Contains("damage") => new DamageTrigger(name.ToDamageType()),
-                string kill when kill.Contains("kill") => new DamageTypeTrigger<WeaponPostKillContext>(TriggerName.Kill, name.ToDamageType()),
+                string prehit when prehit.Contains("prehit") => new DamageableTrigger<WeaponPreHitDamageableContext>(TriggerName.PreHit, name.ToDamageTypes()),
+                string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageTypes()),
+                string charge when charge.Contains("charge") => new ChargeTrigger(name.ToDamageTypes()),
+                string damage when damage.Contains("damage") => new DamageTrigger(name.ToDamageTypes()),
+                string kill when kill.Contains("kill") => new DamageTypeTrigger<WeaponPostKillContext>(TriggerName.Kill, name.ToDamageTypes()),
                 _ => null
             };
         }
@@ -65,7 +64,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
     public interface IDamageTypeTrigger : ITrigger
     {
-        DamageType DamageType { get; }
+        DamageType[] DamageTypes { get; }
         DamageType BlacklistType { get; set; }
     }
 }

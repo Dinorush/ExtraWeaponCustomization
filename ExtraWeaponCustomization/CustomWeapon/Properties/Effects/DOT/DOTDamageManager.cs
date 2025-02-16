@@ -2,6 +2,7 @@
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -29,7 +30,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             DOTGlowPooling.Reset();
         }
 
-        public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, bool bypassTumor, float backstabMulti, DamageOverTime dotBase)
+        public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, bool bypassTumor, float backstabMulti, int ticks, ShotInfo shotInfo, DamageOverTime dotBase)
         {
             if (!dotBase.Owner.IsLocallyOwned || damage <= 0) return;
 
@@ -46,11 +47,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     damageable.DamageTargetPos - agent.Position,
                     backstabMulti,
                     falloff,
+                    shotInfo,
                     DamageType.DOT
                     ));
                 dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, prePlayerContext));
                 // Don't really need custom damage behavior, but BulletDamage triggers FF dialogue.
                 SendPlayerDOTDamage(damage, playerBase, dotBase.Owner);
+                shotInfo.AddHits(prePlayerContext.DamageType, ticks);
                 return;
             }
             else if (agent == null) // Lock damage; direction and damage function don't matter
@@ -62,10 +65,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     Vector3.up,
                     1f,
                     falloff,
+                    shotInfo,
                     DamageType.DOT
                     ));
                 dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preLockContext));
                 damageable.BulletDamage(damage, dotBase.Owner, Vector3.zero, Vector3.zero, Vector3.zero);
+                shotInfo.AddHits(preLockContext.DamageType, ticks);
                 return;
             }
 
@@ -100,6 +105,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 limb.DamageTargetPos - agent.Position,
                 backstabMulti,
                 falloff,
+                shotInfo,
                 DamageType.DOT
                 ));
             var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
@@ -109,6 +115,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             if (willKill || dotBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result)
                 limb.ShowHitIndicator(precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
+            shotInfo.AddHits(hitContext.DamageType, ticks);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 

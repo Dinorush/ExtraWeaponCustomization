@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EWC.CustomWeapon.CustomShot;
+using System;
 
 namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
@@ -14,6 +15,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private readonly bool _bypassTumor = false;
         private readonly float _backstabMulti = 1f;
         private readonly float _falloff = 1f;
+        private readonly ShotInfo _shotInfo = new();
 
         public DOTInstance(float totalDamage, float falloff, float precision, bool bypassTumor, float backstab, DamageOverTime dotBase)
         {
@@ -64,7 +66,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             _lastTickTime += damageTicks * TickDelay;
             _ticks -= damageTicks;
 
-            DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _precisionMulti, _bypassTumor, _backstabMulti, DotBase);
+            DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _precisionMulti, _bypassTumor, _backstabMulti, damageTicks, _shotInfo, DotBase);
         }
     }
 }
