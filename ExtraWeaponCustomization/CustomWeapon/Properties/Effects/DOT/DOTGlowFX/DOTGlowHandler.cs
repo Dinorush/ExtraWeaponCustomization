@@ -52,7 +52,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX
 
         internal void ForceEnd() => OnDone();
 
-        private Vector3 TargetPosition => _targetTransform != null ? _targetTransform.position : _targetPos;
+        private Vector3 TargetPosition => _targetTransform != null ? _targetPos = _targetTransform.position : _targetPos;
 
         private void Update()
         {
