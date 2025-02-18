@@ -148,8 +148,8 @@ namespace EWC.CustomWeapon.WeaponContext
             }
         }
 
-        public void BlacklistContext(Type type) => _blacklist.Add(type);
-        public void WhitelistContext(Type type) => _blacklist.Remove(type);
+        public void BlacklistContext<T>() where T : IWeaponContext => _blacklist.Add(typeof(T));
+        public void WhitelistContext<T>() where T : IWeaponContext => _blacklist.Remove(typeof(T));
 
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext
         {
@@ -190,6 +190,12 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponPostReloadContext>(triggerList);
             RegisterContext<WeaponReloadStartContext>(triggerList);
             RegisterContext<WeaponWieldContext>(triggerList);
+            RegisterContext<WeaponCrouchContext>(triggerList);
+            RegisterContext<WeaponCrouchEndContext>(triggerList);
+            RegisterContext<WeaponSprintContext>(triggerList);
+            RegisterContext<WeaponSprintEndContext>(triggerList);
+            RegisterContext<WeaponJumpContext>(triggerList);
+            RegisterContext<WeaponJumpEndContext>(triggerList);
 
             // Standard contexts
             RegisterContext<WeaponArmorContext>();
@@ -236,6 +242,12 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponHitDamageableContext>(triggerList);
             RegisterContext<WeaponDamageTakenContext>(triggerList);
             RegisterContext<WeaponWieldContext>(triggerList);
+            RegisterContext<WeaponCrouchContext>(triggerList);
+            RegisterContext<WeaponCrouchEndContext>(triggerList);
+            RegisterContext<WeaponSprintContext>(triggerList);
+            RegisterContext<WeaponSprintEndContext>(triggerList);
+            RegisterContext<WeaponJumpContext>(triggerList);
+            RegisterContext<WeaponJumpEndContext>(triggerList);
 
             RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponBackstabContext>();

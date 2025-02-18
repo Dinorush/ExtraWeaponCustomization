@@ -5,7 +5,7 @@ using Gear;
 using HarmonyLib;
 using Player;
 
-namespace EWC.Patches.Gun
+namespace EWC.Patches.Player
 {
     [HarmonyPatch]
     internal static class PlayerInventoryPatches

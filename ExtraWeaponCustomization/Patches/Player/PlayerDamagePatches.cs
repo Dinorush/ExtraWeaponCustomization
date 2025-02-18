@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon;
 using HarmonyLib;
-using Player;
 
 namespace EWC.Patches.Player
 {
@@ -21,25 +20,9 @@ namespace EWC.Patches.Player
         [HarmonyPostfix]
         private static void Post_TakeDamage(Dam_PlayerDamageBase __instance, float damage)
         {
-            if (_ignoreCall || !PlayerBackpackManager.TryGetBackpack(__instance.Owner.Owner, out var backpack)) return;
+            if (_ignoreCall) return;
 
-            if (backpack.TryGetBackpackItem(InventorySlot.GearStandard, out BackpackItem primary))
-            {
-                CustomWeaponComponent? cwc = primary.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(new WeaponDamageTakenContext(damage));
-            }
-
-            if (backpack.TryGetBackpackItem(InventorySlot.GearSpecial, out BackpackItem special))
-            {
-                CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(new WeaponDamageTakenContext(damage));
-            }
-
-            if (backpack.TryGetBackpackItem(InventorySlot.GearMelee, out BackpackItem melee))
-            {
-                CustomWeaponComponent? cwc = melee.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(new WeaponDamageTakenContext(damage));
-            }
+            CustomWeaponManager.InvokeOnGear(__instance.Owner.Owner, new WeaponDamageTakenContext(damage));
         }
     }
 }

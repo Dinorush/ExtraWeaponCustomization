@@ -1,13 +1,11 @@
 ﻿using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects;
-using EWC.CustomWeapon.Properties.Traits;
-using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.JSON;
-using EWC.Utils;
 using EWC.Utils.Log;
 using Gear;
 using GTFO.API.Utilities;
 using MTFO.API;
+using Player;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -25,6 +23,7 @@ namespace EWC.CustomWeapon
 
         private readonly Dictionary<string, HashSet<uint>> _fileToGuns = new();
         private readonly Dictionary<string, HashSet<uint>> _fileToMelees = new();
+        // Sorted for clean printing. Accesses are infrequent.
         private readonly SortedDictionary<uint, CustomWeaponData> _customGunData = new();
         private readonly SortedDictionary<uint, CustomWeaponData> _customMeleeData = new();
         private readonly List<ItemEquippable> _listenCWs = new();
@@ -33,11 +32,6 @@ namespace EWC.CustomWeapon
         private readonly LiveEditListener _liveEditListener;
 
         public string DEFINITION_PATH { get; private set; }
-
-        public override string ToString()
-        {
-            return "Printing manager: " + _customGunData.ToString();
-        }
 
         public static bool TryGetCustomGunData(uint id, [MaybeNullWhen(false)] out CustomWeaponData data)
         {
@@ -61,6 +55,39 @@ namespace EWC.CustomWeapon
         public static T? GetSyncProperty<T>(ushort id) where T : ISyncProperty
         {
             return id < Current._syncedProperties.Count && Current._syncedProperties[id] is T tProperty ? tProperty : default;
+        }
+
+        public void AddWeaponListener(ItemEquippable weapon)
+        {
+            // Prevent duplicates (not using IL2CPP list so don't trust Contains)
+            if (_listenCWs.Any(listener => listener.Pointer == weapon.Pointer)) return;
+
+            _listenCWs.Add(weapon);
+        }
+
+        public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, T context, bool gunsOnly = false) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (null, context), gunsOnly);
+        public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, Func<T>? func, bool gunsOnly = false) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (func, default(T)), gunsOnly);
+        private static void InvokeOnGear<T>(SNetwork.SNet_Player owner, (Func<T>? func, T? obj) pair, bool gunsOnly = false) where T : WeaponContext.IWeaponContext
+        {
+            if (!PlayerBackpackManager.TryGetBackpack(owner, out var backpack)) return;
+
+            if (backpack.TryGetBackpackItem(InventorySlot.GearStandard, out BackpackItem primary))
+            {
+                CustomWeaponComponent? cwc = primary.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
+            }
+
+            if (backpack.TryGetBackpackItem(InventorySlot.GearSpecial, out BackpackItem special))
+            {
+                CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
+            }
+
+            if (!gunsOnly && backpack.TryGetBackpackItem(InventorySlot.GearMelee, out BackpackItem melee))
+            {
+                CustomWeaponComponent? cwc = melee.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
+            }
         }
 
         private void OnReload()
@@ -170,14 +197,6 @@ namespace EWC.CustomWeapon
                 _fileToMelees[file].Add(data.MeleeArchetypeID);
                 _customMeleeData[data.MeleeArchetypeID] = data;
             }
-        }
-
-        public void AddWeaponListener(ItemEquippable weapon)
-        {
-            // Prevent duplicates (not using IL2CPP list so don't trust Contains)
-            if (_listenCWs.Any(listener => listener.Pointer == weapon.Pointer)) return;
-
-            _listenCWs.Add(weapon);
         }
 
         internal void ResetCWCs(bool activate = true)

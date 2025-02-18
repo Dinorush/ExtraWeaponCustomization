@@ -50,12 +50,12 @@ namespace EWC.CustomWeapon
                 if (!value)
                 {
                     if (_ignoreStack++ == 0)
-                        _propertyController.GetContextController().BlacklistContext(typeof(WeaponHitContextBase));
+                        _propertyController.GetContextController().BlacklistContext<WeaponHitContextBase>();
                 }
                 else if (value && _ignoreStack > 0)
                 {
                     if (--_ignoreStack == 0)
-                        _propertyController.GetContextController().WhitelistContext(typeof(WeaponHitContextBase));
+                        _propertyController.GetContextController().WhitelistContext<WeaponHitContextBase>();
                 }
             }
         }
