@@ -44,11 +44,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool HomingOnly { get; private set; } = false;
 
         public CrosshairHitIndicator? _reticle;
-        private GameObject? _reticleHolder;
         private FPSCamera? _camera;
         private float _detectionTick;
         private EnemyAgent? _target;
         private bool _hasTarget = false;
+        private Vector3 _lastTargetPos;
         private float _progress;
         private float _lastUpdateTime;
 
@@ -111,7 +111,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (!CWC.IsLocal) return;
 
             _reticle = AutoAimReticle.Reticle;
-            _reticleHolder = AutoAimReticle.ReticleHolder;
             OnEnable();
         }
 
@@ -126,18 +125,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (_camera == null && CWC.Weapon.Owner != null)
                 _camera = CWC.Weapon.Owner.FPSCamera;
 
-            bool hasTarget = _hasTarget;
             UpdateDetection();
-            if (LockDecayTime > 0)
-            {
-                if (hasTarget && !_hasTarget)
-                    targetLostAnimator = CoroutineManager.StartCoroutine(AnimateReticleToCenter().WrapToIl2Cpp());
-                else if(!hasTarget && _hasTarget && targetLostAnimator != null)
-                {
-                    CoroutineManager.StopCoroutine(targetLostAnimator);
-                    targetLostAnimator = null;
-                }
-            }
             UpdateAnimate();
         }
 
@@ -218,7 +206,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         private void UpdateAnimate()
         {
             if (_target != null)
-                _reticleHolder!.transform.position = _camera!.m_camera.WorldToScreenPoint(GetTargetPos());
+                _lastTargetPos = GetTargetPos();
+            _reticle!.transform.position = _camera!.m_camera.WorldToScreenPoint(_lastTargetPos);
 
             if (UseAutoAim && HasAmmo)
             {
@@ -248,19 +237,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             bool active = AutoAimActive && HasAmmo;
             _reticle.transform.localScale *= active ? 1.6f : 1f;
             _reticle.UpdateColorsWithAlphaMul(active ? 1.0f : 0.5f);
-        }
-
-        private IEnumerator AnimateReticleToCenter()
-        {
-            Vector3 startPos = _reticleHolder!.transform.position;
-            Vector3 endPos = _camera!.m_camera.ViewportToScreenPoint(new Vector3(0.5f, 0.5f));
-            float startProgress = _progress;
-            while(_progress > 0)
-            {
-                _reticleHolder.transform.position = Vector3.Lerp(endPos, startPos, _progress / startProgress);
-                yield return null;
-            }
-            targetLostAnimator = null;
         }
 
         private Color GetLockingColor(float frac)
