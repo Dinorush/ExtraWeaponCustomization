@@ -74,7 +74,8 @@ namespace EWC.Utils
             falloff = 1f;
             fireDir = hitData.hitPos - hitData.sourcePos;
             hitPos = hitData.hitPos;
-            damageable = hitData.damageComp;
+            // Don't need to use overriden null check since we only care about when damageComp isn't set at all
+            damageable = hitData.damageComp ?? hitData.damageGO.GetComponent<IDamageable>();
         }
 
         public void Apply()
