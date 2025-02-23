@@ -9,7 +9,6 @@ using EWC.Utils;
 using EWC.Utils.Extensions;
 using Gear;
 using HarmonyLib;
-using System;
 using static Weapon;
 
 namespace EWC.Patches

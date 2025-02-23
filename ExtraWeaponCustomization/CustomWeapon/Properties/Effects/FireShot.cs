@@ -32,6 +32,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float Spread { get; private set; } = 0;
         public bool ForceSingleBullet { get; private set; } = false;
         public FireSetting FireFrom { get; private set; } = FireSetting.User;
+        public bool DamageFriendly { get; private set; } = true;
+        public bool DamageOwner { get; private set; } = false;
         public bool HitTriggerTarget { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
 
@@ -243,7 +245,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             FX_Manager.EffectTargetPosition = wallPos;
             int pierceCount = archData.PiercingBullets ? archData.PiercingDamageCountLimit : 1;
             float maxDist = (s_ray.origin - wallPos).magnitude;
-            CheckForHits(pierceCount, maxDist, LayerUtil.MaskEntity3P);
+            int mask = LayerUtil.MaskEnemy;
+            if (DamageFriendly) mask |= LayerUtil.MaskFriendly;
+            if (DamageOwner) mask |= LayerUtil.MaskOwner;
+
+            CheckForHits(pierceCount, maxDist, mask);
 
             if (pierceCount > 0)
             {
@@ -414,6 +420,14 @@ namespace EWC.CustomWeapon.Properties.Effects
                         FireFrom = FireSetting.HitPos;
                         Utils.Log.EWCLogger.Warning("FireShot field \"FireFromHitPos\" is deprecated and will be removed in the future. Use \"FireFrom\" instead.");
                     }
+                    break;
+                case "damagefriendly":
+                case "friendlyfire":
+                    DamageFriendly = reader.GetBoolean();
+                    break;
+                case "damageowner":
+                case "damageuser":
+                    DamageOwner = reader.GetBoolean();
                     break;
                 case "hittriggertarget":
                     HitTriggerTarget = reader.GetBoolean();

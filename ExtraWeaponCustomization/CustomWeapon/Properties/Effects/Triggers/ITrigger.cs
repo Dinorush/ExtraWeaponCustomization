@@ -27,7 +27,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         Sprint,
         SprintEnd,
         Jump,
-        JumpEnd
+        JumpEnd,
+        Init
     }
 
     public interface ITrigger
@@ -57,11 +58,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "hittaken" => new BasicTrigger<WeaponDamageTakenContext>(TriggerName.HitTaken),
                 "damagetaken" => new DamageTakenTrigger(),
                 "crouch" => new BasicTrigger<WeaponCrouchContext>(TriggerName.Crouch),
-                "crouchend" or "uncrouch" => new BasicTrigger<WeaponCrouchEndContext>(TriggerName.CrouchEnd),
+                "crouchend" or "uncrouch" or "stand" => new BasicTrigger<WeaponCrouchEndContext>(TriggerName.CrouchEnd),
                 "sprint" or "run" => new BasicTrigger<WeaponSprintContext>(TriggerName.Sprint),
                 "sprintend" or "runend" => new BasicTrigger<WeaponSprintEndContext>(TriggerName.SprintEnd),
                 "jump" => new BasicTrigger<WeaponJumpContext>(TriggerName.Jump),
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
+                "setup" or "init" or "drop" => new BasicTrigger<WeaponInitContext>(TriggerName.Init),
                 "bulletlanded" or "landedbullet" or "meleelanded" or "landedmelee" => new BulletLandedTrigger(),
                 "chargelanded" or "landedcharge" => new ChargeLandedTrigger(),
                 string prehit when prehit.Contains("prehit") => new DamageableTrigger<WeaponPreHitDamageableContext>(TriggerName.PreHit, name.ToDamageTypes()),

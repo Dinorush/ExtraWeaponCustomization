@@ -70,6 +70,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected Vector3 _dirVisual;
 
         protected static Quaternion s_tempRot;
+
+        private const float WallHitBuffer = -0.05f;
+
         public bool IsLocal { get; private set; }
         public ushort SyncID { get; private set; }
         public ushort PlayerIndex { get; private set; }
@@ -176,6 +179,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (bounceHit != null)
             {
                 var bounce = bounceHit.Value;
+                bounce.point += Dir * WallHitBuffer;
                 float remainingDist = collisionVel.magnitude - (bounce.point - _position).magnitude;
                 BaseDir = Vector3.Reflect(Dir, bounce.normal);
                 deltaMove = Vector3.Reflect(collisionVel, bounce.normal).normalized * remainingDist;
