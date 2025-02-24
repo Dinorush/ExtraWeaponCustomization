@@ -36,7 +36,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             _totalTicks = (int)(dotBase.Duration * dotBase.TickRate);
 
             _expoPlusOne = dotBase.Exponent + 1;
-            _expoModifier = _expoPlusOne / (dotBase.EndDamageFrac * dotBase.Exponent + 1) / _totalTicks;
+            _expoModifier = _expoPlusOne / ((dotBase.EndDamageFrac * dotBase.Exponent + 1) * _totalTicks);
             _expoDivisor = _expoPlusOne * Math.Pow(_totalTicks, dotBase.Exponent);
             AddInstance(totalDamage);
         }
@@ -77,7 +77,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             if (!CanTick || Expired) return;
 
-            int damageTicks = Math.Min(_totalTicks, (int)((Clock.Time - _lastTickTime) * DotBase.TickRate));
+            int damageTicks = Math.Min(_totalTicks - _tick, (int)((Clock.Time - _lastTickTime) * DotBase.TickRate));
             float damage;
             if (DotBase.EndDamageFrac == 1f)
                 damage = _damagePerTick * damageTicks;
