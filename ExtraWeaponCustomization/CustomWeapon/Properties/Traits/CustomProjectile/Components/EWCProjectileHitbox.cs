@@ -253,17 +253,22 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     continue;
 
                 s_rayHit = hit;
-                if (_settings.RicochetOnHit)
-                    bounceHit = hit;
-
+                
                 if (damageable != null)
                     DoDamage(damageable);
-
+                
                 if (_pierceCount <= 0) break;
             }
 
             if (_pierceCount > 0 && _pierceCount != prevCount)
+            {
+                if (_settings.RicochetOnHit)
+                {
+                    s_rayHit.point += (s_ray.origin - s_rayHit.point) * _settings.HitSize;
+                    bounceHit = s_rayHit;
+                }
                 _base.Homing.UpdateOnPierce();
+            }
             s_hits.Clear();
         }
 
@@ -275,7 +280,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             else
             {
                 hit = Physics.SphereCast(s_ray, _settings.HitSizeWorld, out s_rayHit, s_velMagnitude, LayerUtil.MaskWorld);
-                if (s_rayHit.distance == 0)
+                if (hit && s_rayHit.distance == 0)
                 {
                     s_ray.direction = s_rayHit.point - s_ray.origin;
                     hit = Physics.Raycast(s_ray, out s_rayHit, _settings.HitSizeWorld, LayerUtil.MaskWorld);
@@ -285,6 +290,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (hit)
             {
                 BulletHit(null);
+                s_rayHit.point += (s_ray.origin - s_rayHit.point) * _settings.HitSizeWorld;
                 bounceHit = s_rayHit;
             }
         }
