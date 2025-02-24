@@ -1,9 +1,12 @@
 ﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using FX_EffectSystem;
 using Gear;
 using HarmonyLib;
 using Player;
+using static GameData.GD;
 
 namespace EWC.Patches.Gun
 {
@@ -95,6 +98,9 @@ namespace EWC.Patches.Gun
             if (cwc == null || cwc.CancelShot) return;
 
             cwc.NotifyShotFired();
+            if (!cwc.Invoke(new WeaponCancelTracerContext()).Allow)
+                ShotManager.CancelTracerFX(__instance.m_archetypeData, __instance.m_weapon!.TryCast<Shotgun>() != null);
+
             cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
         }
 

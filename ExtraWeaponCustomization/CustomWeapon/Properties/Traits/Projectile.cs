@@ -5,8 +5,6 @@ using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using EWC.Utils.Log;
-using FX_EffectSystem;
-using Gear;
 using SNetwork;
 using System;
 using System.Text.Json;
@@ -21,8 +19,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPostRayContext>,
-        IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponPostFireContextSync>
+        IWeaponProperty<WeaponCancelTracerContext>
     {
         public ushort SyncPropertyID { get; set; }
 
@@ -70,16 +67,12 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponSetupContext context)
         {
-            if (!CWC.IsLocal) return;
-
             _cachedRayDist = CWC.Gun!.MaxRayDist;
             CWC.Gun!.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            if (!CWC.IsLocal) return;
-
             CWC.Gun!.MaxRayDist = _cachedRayDist;
         }
 
@@ -116,34 +109,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         }
 
         // Cancel tracer FX
-        public void Invoke(WeaponPostFireContext context)
+        public void Invoke(WeaponCancelTracerContext context)
         {
-            if (!CWC.Gun!.Owner.IsLocallyOwned) return;
-
-            CancelTracerFX(CWC.Gun!, CWC.Gun!.TryCast<Shotgun>() != null);
-        }
-
-        public void Invoke(WeaponPostFireContextSync context)
-        {
-            CancelTracerFX(CWC.Gun!, CWC.Gun!.TryCast<ShotgunSynced>() != null);
-        }
-
-        public static void CancelTracerFX(BulletWeapon weapon, bool isShotgun)
-        {
-            int shots = 1;
-            if (isShotgun)
-                shots = weapon.ArchetypeData.ShotgunBulletCount;
-
-            for (int i = 0; i < shots; i++)
-            {
-                var effect = BulletWeapon.s_tracerPool.m_inUse[^1].TryCast<FX_Effect>();
-                if (effect == null) return; // JFS - Shouldn't happen
-
-                foreach (var link in effect.m_links)
-                    link.TryCast<FX_EffectLink>()!.m_playingEffect?.ReturnToPool();
-
-                effect.ReturnToPool();
-            }
+            context.Allow = false;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

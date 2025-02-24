@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using Gear;
@@ -44,6 +45,9 @@ namespace EWC.Patches.Gun
             cwc.NotifyShotFired();
             cwc.UpdateStoredFireRate();
             cwc.ModifyFireRateSynced(__instance);
+
+            if (!cwc.Invoke(new WeaponCancelTracerContext()).Allow)
+                ShotManager.CancelTracerFX(__instance.ArchetypeData, __instance!.TryCast<ShotgunSynced>() != null);
             cwc.Invoke(StaticContext<WeaponPostFireContextSync>.Instance);
         }
     }

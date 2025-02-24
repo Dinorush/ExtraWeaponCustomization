@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.CustomShot;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using Gear;
 using Player;
@@ -13,10 +14,12 @@ namespace EWC.CustomWeapon.Properties.Traits
         IGunProperty,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponPostFireContextSync>
+        IWeaponProperty<WeaponPostFireContextSync>,
+        IWeaponProperty<WeaponCancelTracerContext>
     {
         private int _lastSyncShotCount = 0;
         private float _lastShotTime = 0f;
+        private bool _cancelTracer = false;
         private float _shotBuffer = 0f;
         private float _fixedTime = 0f;
         private readonly static float FixedDelta;
@@ -29,6 +32,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostStartFireContext context)
         {
             _shotBuffer = 0;
+            _cancelTracer = false;
             _lastShotTime = Clock.Time;
         }
 
@@ -52,11 +56,17 @@ namespace EWC.CustomWeapon.Properties.Traits
             _shotBuffer -= extraShots;
         }
 
+        public void Invoke(WeaponCancelTracerContext context)
+        {
+            context.Allow = _cancelTracer;
+        }
+
         public void Invoke(WeaponPostFireContext context)
         {
             // Acts as a lock against recursive calls and first shot
             if (_lastShotTime == Clock.Time) return;
 
+            _cancelTracer = true;
             BulletWeaponArchetype archetype = CWC.Gun!.m_archeType;
             float shotDelay = 1f / CWC.CurrentFireRate;
 

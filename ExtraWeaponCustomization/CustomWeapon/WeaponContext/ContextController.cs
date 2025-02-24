@@ -218,6 +218,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponPostRayContext>();
             RegisterContext<WeaponPostStopFiringContext>();
             RegisterContext<WeaponPreReloadContext>();
+            RegisterContext<WeaponCancelTracerContext>();
             RegisterContext<WeaponUnWieldContext>();
             RegisterContext<WeaponRecoilContext>();
             RegisterContext<WeaponStealthUpdateContext>();
@@ -268,6 +269,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponFireRateContext>();
             RegisterContext<WeaponPreFireContextSync>();
             RegisterContext<WeaponPostFireContextSync>();
+            RegisterContext<WeaponCancelTracerContext>();
         }
     }
 }
