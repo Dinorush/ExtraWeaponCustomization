@@ -26,6 +26,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         public PlayerAgent Owner => CWC.Weapon.Owner;
 
         public float TotalDamage { get; private set; } = 0f;
+        public float EndDamageFrac { get; private set; } = 1f;
+        public float Exponent { get; private set; } = 1f;
         public float PrecisionDamageMulti { get; private set; } = 0f;
         public float FriendlyDamageMulti { get; private set; } = 1f;
         public float StaggerDamageMulti { get; private set; } = 0f;
@@ -176,6 +178,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(TotalDamage), TotalDamage);
+            writer.WriteNumber(nameof(EndDamageFrac), EndDamageFrac);
+            writer.WriteNumber(nameof(Exponent), Exponent);
             writer.WriteNumber(nameof(PrecisionDamageMulti), PrecisionDamageMulti);
             writer.WriteNumber(nameof(StaggerDamageMulti), StaggerDamageMulti);
             writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
@@ -205,6 +209,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "totaldamage":
                 case "damage":
                     TotalDamage = reader.GetSingle();
+                    break;
+                case "enddamagefrac":
+                case "damageendfrac":
+                    EndDamageFrac = reader.GetSingle();
+                    break;
+                case "exponent":
+                    Exponent = reader.GetSingle();
                     break;
                 case "precisiondamagemulti":
                 case "precisionmulti":
