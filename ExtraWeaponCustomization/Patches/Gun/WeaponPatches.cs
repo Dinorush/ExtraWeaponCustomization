@@ -89,7 +89,7 @@ namespace EWC.Patches
             }
 
             // Correct piercing damage back to base damage to apply damage mods
-            if (damageable != null && damageSearchID != 0)
+            if (damageable != null)
             {
                 if (s_hitData.shotInfo.Hits == 0)
                 {
@@ -100,12 +100,12 @@ namespace EWC.Patches
                 s_hitData.precisionMulti = s_origHitPrecision;
             }
 
-            ApplyEWCHit(cwc, s_hitData, damageSearchID != 0, ref s_origHitDamage, out allowDirectionalBonus);
+            ApplyEWCHit(cwc, s_hitData, ref s_origHitDamage, out allowDirectionalBonus);
         }
 
-        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, hitData, pierce, ref pierceDamage, out doBackstab);
+        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, ref float pierceDamage, out bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, hitData, ref pierceDamage, out doBackstab);
 
-        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, bool pierce, ref float pierceDamage, out bool doBackstab)
+        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, ref float pierceDamage, out bool doBackstab)
         {
             doBackstab = true;
             Enemy.EnemyLimbPatches.CachedCC = cc;
@@ -135,12 +135,9 @@ namespace EWC.Patches
                 hitData.precisionMulti = damageContext.Precision.Value;
                 bool bypassCap = Enemy.EnemyLimbPatches.CachedBypassTumorCap = damageContext.BypassTumorCap;
 
-                if (pierce)
-                {
-                    WeaponPierceContext pierceContext = new(pierceDamage, damageable);
-                    cc.Invoke(pierceContext);
-                    pierceDamage = pierceContext.Value;
-                }
+                WeaponPierceContext pierceContext = new(pierceDamage, damageable);
+                cc.Invoke(pierceContext);
+                pierceDamage = pierceContext.Value;
 
                 if (enemy)
                 {

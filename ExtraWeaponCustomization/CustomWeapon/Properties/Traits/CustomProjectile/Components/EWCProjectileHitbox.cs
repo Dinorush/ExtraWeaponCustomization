@@ -28,7 +28,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private bool _enabled = false;
 
         // Variables
-        private bool _pierce;
         private int _pierceCount = 1;
         private int _ricochetCount = 0;
         private float _distanceMoved;
@@ -114,16 +113,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _wallPierce = cwc.GetTrait<WallPierce>();
 
+            _pierceCount = 1;
             if (_weapon.ArchetypeData.PiercingBullets && _weapon.ArchetypeData.PiercingDamageCountLimit > 1)
-            {
-                _pierce = true;
                 _pierceCount = _weapon.ArchetypeData.PiercingDamageCountLimit;
-            }
-            else
-            {
-                _pierce = false;
-                _pierceCount = 1;
-            }
 
             _ricochetCount = _settings.RicochetCount;
 
@@ -393,7 +385,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (!_runHitTriggers)
                 _settings.CWC.RunHitTriggers = false;
-            WeaponPatches.ApplyEWCHit(_contextController, _weapon, _hitData, _pierce, ref _baseDamage, out bool backstab);
+            WeaponPatches.ApplyEWCHit(_contextController, _weapon, _hitData, ref _baseDamage, out bool backstab);
             if (!_runHitTriggers)
                 _settings.CWC.RunHitTriggers = true;
 
