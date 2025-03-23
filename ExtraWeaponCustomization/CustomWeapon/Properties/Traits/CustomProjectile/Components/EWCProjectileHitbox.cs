@@ -117,19 +117,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             else
                 _pierceCount = 1;
 
-            {
-                _pierce = false;
-                _pierceCount = 1;
-            }
-            {
-                _pierce = false;
-                _pierceCount = 1;
-            }
-            {
-                _pierce = false;
-                _pierceCount = 1;
-            }
-
             _ricochetCount = _settings.RicochetCount;
             _hitData = hitData!;
 
@@ -381,7 +368,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             FX_Manager.PlayEffect(false, impactFX, null, s_rayHit.point, Quaternion.LookRotation(s_rayHit.normal), isDecalsAllowed);
         }
 
-            WeaponPatches.ApplyEWCHit(_settings.CWC, _contextController, _hitData, out bool backstab);
         private void BulletHit(IDamageable? damageable)
         {
             _hitData.damage = _hitData.shotInfo.OrigDamage;
@@ -397,7 +383,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (!_runHitTriggers)
                 _settings.CWC.RunHitTriggers = false;
-            WeaponPatches.ApplyEWCHit(_contextController, _weapon, _hitData, _pierce, ref _baseDamage, out bool backstab);
+            WeaponPatches.ApplyEWCHit(_settings.CWC, _contextController, _hitData, out bool backstab);
             if (!_runHitTriggers)
                 _settings.CWC.RunHitTriggers = true;
 
