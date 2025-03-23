@@ -23,8 +23,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
-            writer.WriteString(nameof(ModDamageType), ModDamageType[0].ToString());
             writer.WriteNumber(nameof(PierceDamageMulti), PierceDamageMulti);
+            writer.WriteString(nameof(ModDamageType), ModDamageType[0].ToString());
             writer.WriteEndObject();
         }
 
