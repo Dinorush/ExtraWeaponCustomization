@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Il2CppInterop.Runtime.Attributes;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX
         private Transform? _targetTransform;
         private Vector3 _targetPos;
 
+        [HideFromIl2Cpp]
         internal void DoEffect(DamageOverTime data, IDamageable damBase, Transform target, float mod)
         {
             _data = data;

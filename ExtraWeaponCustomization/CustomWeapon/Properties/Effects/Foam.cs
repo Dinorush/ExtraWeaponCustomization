@@ -26,7 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float PrecisionAmountMulti { get; private set; } = 0f;
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
-        public bool IgnoreDamageMods { get; private set; } = false;
+        public bool IgnoreShotMods { get; private set; } = false;
         public float BubbleAmount { get; private set; } = 0f;
         public float BubbleStrength { get; private set; } = 1f;
         public float BubbleExpandSpeed { get; private set; } = 0.3f;
@@ -70,11 +70,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                     var damContext = (WeaponHitDamageableContextBase) baseContext;
                     float precisionMulti = PrecisionAmountMulti;
 
-                    WeaponDamageContext damageContext = new(damageMod, precisionMulti, damContext.Damageable);
-                    CWC.Invoke(damageContext);
-                    if (!IgnoreDamageMods)
-                        damageMod = damageContext.Damage.Value;
-                    precisionMulti = damageContext.Precision.Value;
+                    if (!IgnoreShotMods)
+                    {
+                        WeaponStatContext damageContext = new(damageMod, precisionMulti, 1f, DamageType.Foam.WithSubTypes(damContext.Damageable), damContext.Damageable, baseContext.ShotInfo.Orig);
+                        CWC.Invoke(damageContext);
+                        damageMod = damageContext.Damage;
+                        precisionMulti = damageContext.Precision;
+                    }
 
                     Dam_EnemyDamageLimb limb = damContext.Damageable.Cast<Dam_EnemyDamageLimb>();
                     go = limb.gameObject;
@@ -153,7 +155,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(PrecisionAmountMulti), PrecisionAmountMulti);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
-            writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
+            writer.WriteBoolean(nameof(IgnoreShotMods), IgnoreShotMods);
             writer.WriteNumber(nameof(BubbleAmount), BubbleAmount);
             writer.WriteNumber(nameof(BubbleStrength), BubbleStrength);
             writer.WriteNumber(nameof(BubbleExpandSpeed), BubbleExpandSpeed);
@@ -190,7 +192,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "ignoredamagemods":
                 case "ignoredamagemod":
-                    IgnoreDamageMods = reader.GetBoolean();
+                case "ignoreshotmods":
+                case "ignoreshotmod":
+                    IgnoreShotMods = reader.GetBoolean();
                     break;
                 case "bubbleamount":
                 case "bubble":

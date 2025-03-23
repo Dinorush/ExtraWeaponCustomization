@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -10,7 +11,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         Effect,
         IGunProperty,
         IMeleeProperty,
-        ITriggerCallbackBasicSync
+        ITriggerCallbackBasicSync,
+        IReferenceHolder
     {
         public ushort SyncID { get; set; }
 
@@ -37,27 +39,22 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             TriggerApplySync();
             TriggerManager.SendInstance(this);
-            
-            if (_callbackProperties != null)
-                foreach (var callback in _callbackProperties)
-                    if (callback.Trigger == null)
-                        callback.TriggerApply(contexts);
+
+            foreach (var callback in _callbackProperties.OrEmptyIfNull())
+                if (callback.Trigger == null)
+                    callback.TriggerApply(contexts);
         }
 
-        public void TriggerApplySync(float mod = 1f)
-        {
-            _applyCallback.Start();
-        }
+        public void TriggerApplySync(float mod = 1f) => CWC.StartDelayedCallback(_applyCallback);
 
         public override void TriggerReset()
         {
             TriggerResetSync();
             TriggerManager.SendReset(this);
 
-            if (_callbackProperties != null)
-                foreach (var callback in _callbackProperties)
-                    if (callback.Trigger == null)
-                        callback.TriggerReset();
+            foreach (var callback in _callbackProperties.OrEmptyIfNull())
+                if (callback.Trigger == null)
+                    callback.TriggerReset();
         }
 
         public void TriggerResetSync()
@@ -77,7 +74,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (ResetTriggersOnEnd && _callbackProperties != null)
             {
                 foreach (var property in _callbackProperties)
-                    property.TriggerReset();
+                    property.RemoteReset();
             }
         }
 
@@ -99,6 +96,12 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             _callbackProperties ??= new();
             _callbackProperties.Add(callback);
+        }
+
+        public void OnReferenceSet(WeaponPropertyBase property)
+        {
+            if (property is ITriggerCallback callback)
+                AddTriggerCallback(callback);
         }
 
         public override void Serialize(Utf8JsonWriter writer)

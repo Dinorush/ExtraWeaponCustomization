@@ -42,10 +42,19 @@ namespace EWC.Utils
 
         // Starts or refreshes the delayed callback.
         // Calls OnStart if the callback is currently inactive, otherwise calls OnRefresh.
-        public void Start()
+        public void Start(bool checkEnd = false, bool refresh = true)
         {
+            bool active = Active;
+            if (!refresh && Active) return;
+
+            // Catch case where callback should have ended but coroutine hasn't ran yet.
             _endTime = Clock.Time + (_getDelay?.Invoke() ?? _delay);
-            if (_routine == null)
+            if (checkEnd && !active && _routine != null)
+            {
+                _onEnd?.Invoke();
+                _onStart?.Invoke();
+            }
+            else if (_routine == null)
                 _routine = CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
             else
                 _onRefresh?.Invoke();
@@ -65,22 +74,27 @@ namespace EWC.Utils
         // Forcibly ends Update() and calls OnEnd if it was active.
         public void Stop()
         {
-            if (_routine != null)
-            {
-                CoroutineManager.StopCoroutine(_routine);
-                _routine = null;
+            if (CoroutineUtil.Stop(ref _routine))
                 _onEnd?.Invoke();
-            }
         }
 
         // Forcibly ends Update(). Does NOT call OnEnd.
         public void Cancel()
         {
-            if (_routine != null)
+            CoroutineUtil.Stop(ref _routine);
+        }
+
+        // Checks if the coroutine is active and should stop. Useful if timing is very important.
+        public bool CheckEnd()
+        {
+            if (_routine == null) return true;
+
+            if (!Active && CoroutineUtil.Stop(ref _routine))
             {
-                CoroutineManager.StopCoroutine(_routine);
-                _routine = null;
+                _onEnd?.Invoke();
+                return true;
             }
+            return false;
         }
     }
 }

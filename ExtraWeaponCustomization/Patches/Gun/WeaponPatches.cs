@@ -1,5 +1,4 @@
 ﻿using Agents;
-using Enemies;
 using EWC.CustomWeapon;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
@@ -40,6 +39,7 @@ namespace EWC.Patches
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
+            cwc.SpreadController!.Active = true;
             cwc.Invoke(StaticContext<WeaponWieldContext>.Instance);
             cwc.RefreshSoundDelay();
         }
@@ -53,14 +53,9 @@ namespace EWC.Patches
             if (cwc == null) return;
 
             cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
+            cwc.SpreadController!.Active = false;
         }
 
-        // Used to correctly apply HitCallback damage modification on piercing shots
-        // (otherwise damage mods apply to future pierce shots exponentially)
-        private static float s_origHitDamage = 0;
-        private static float s_origHitPrecision = 0;
-        private readonly static HitData s_hitData = new();
-        
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
         [HarmonyPriority(Priority.Low)]
         [HarmonyWrapSafe]
@@ -68,55 +63,41 @@ namespace EWC.Patches
         private static void HitCallback(ref WeaponHitData weaponRayData, bool doDamage, float additionalDis, uint damageSearchID, ref bool allowDirectionalBonus)
         {
             // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
-            if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null || !doDamage) return;
+            if (!doDamage || !allowDirectionalBonus || weaponRayData.vfxBulletHit != null) return;
 
             // All CWC behavior is handled client-side.
             if (!weaponRayData.owner.IsLocallyOwned) return;
 
-            s_hitData.Setup(weaponRayData, additionalDis);
-            IDamageable? damageable = s_hitData.damageable;
+            IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(weaponRayData.rayHit);
             IDamageable? damBase = damageable != null ? damageable.GetBaseDamagable() : damageable;
             if (damBase != null && damBase.GetHealthRel() <= 0) return;
 
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
 
-            CustomWeaponComponent? cwc = s_hitData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null)
-            {
-                if (damageable.IsEnemy())
-                    KillTrackerManager.ClearHit(damageable.GetBaseAgent().Cast<EnemyAgent>());
-                return;
-            }
+            CustomWeaponComponent? cwc = weaponRayData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
+            if (cwc == null) return;
 
-            // Correct piercing damage back to base damage to apply damage mods
-            if (damageable != null)
-            {
-                if (s_hitData.shotInfo.Hits == 0)
-                {
-                    s_origHitDamage = s_hitData.damage;
-                    s_origHitPrecision = s_hitData.precisionMulti;
-                }
-                s_hitData.damage = s_origHitDamage;
-                s_hitData.precisionMulti = s_origHitPrecision;
-            }
-
-            ApplyEWCHit(cwc, s_hitData, ref s_origHitDamage, out allowDirectionalBonus);
+            // Can't cache a single object since this function might be called by triggers during a previous call
+            HitData data = new(weaponRayData, cwc, additionalDis);
+            ApplyEWCHit(cwc, data, out allowDirectionalBonus);
         }
 
-        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, ref float pierceDamage, out bool doBackstab) => ApplyEWCHit(cwc.GetContextController(), cwc.Weapon, hitData, ref pierceDamage, out doBackstab);
+        public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, out bool doBackstab) => ApplyEWCHit(cwc, cwc.GetContextController(), hitData, out doBackstab);
 
-        public static void ApplyEWCHit(ContextController cc, ItemEquippable weapon, HitData hitData, ref float pierceDamage, out bool doBackstab)
+        public static void ApplyEWCHit(CustomWeaponComponent cwc, ContextController cc, HitData hitData, out bool doBackstab)
         {
+            hitData.ResetDamage();
             doBackstab = true;
             Enemy.EnemyLimbPatches.CachedCC = cc;
 
             IDamageable? damageable = hitData.damageable;
-            DamageType damageType;
-            if (damageable.IsValid() && damageable.GetBaseDamagable().GetHealthRel() > 0)
+            bool isValid = damageable.IsValid();
+            bool alive = isValid && damageable!.GetBaseDamagable().GetHealthRel() > 0;
+            if (alive)
             {
                 float backstab = 1f;
                 float origBackstab = 1f;
-                Agent? agent = damageable.GetBaseAgent();
+                Agent? agent = damageable!.GetBaseAgent();
                 Dam_EnemyDamageLimb? limb = null;
                 bool enemy = agent != null && agent.Alive && agent.Type == AgentType.Enemy;
                 if (enemy)
@@ -126,18 +107,15 @@ namespace EWC.Patches
                     backstab = origBackstab.Map(1f, 2f, 1f, cc.Invoke(new WeaponBackstabContext()).Value);
                 }
 
-                damageType = cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab, DamageType.Bullet)).DamageType;
+                cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab));
 
                 // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
-                WeaponDamageContext damageContext = new(hitData.damage, hitData.precisionMulti, damageable);
+                WeaponStatContext damageContext = new(hitData);
                 cc.Invoke(damageContext);
-                hitData.damage = damageContext.Damage.Value;
-                hitData.precisionMulti = damageContext.Precision.Value;
+                hitData.damage = damageContext.Damage;
+                hitData.staggerMulti = damageContext.Stagger;
+                hitData.precisionMulti = damageContext.Precision;
                 bool bypassCap = Enemy.EnemyLimbPatches.CachedBypassTumorCap = damageContext.BypassTumorCap;
-
-                WeaponPierceContext pierceContext = new(pierceDamage, damageable);
-                cc.Invoke(pierceContext);
-                pierceDamage = pierceContext.Value;
 
                 if (enemy)
                 {
@@ -151,7 +129,7 @@ namespace EWC.Patches
 
                     cc.Invoke(hitContext);
 
-                    KillTrackerManager.RegisterHit(weapon, hitContext);
+                    KillTrackerManager.RegisterHit(cwc, hitContext);
 
                     if (backstab > 1f)
                         hitData.damage *= backstab / origBackstab;
@@ -159,12 +137,12 @@ namespace EWC.Patches
                         doBackstab = false;
                 }
                 else
-                    cc.Invoke(new WeaponHitDamageableContext(hitData, DamageType.Bullet));
+                    cc.Invoke(new WeaponHitDamageableContext(hitData));
             }
             else
-                damageType = cc.Invoke(new WeaponHitContext(hitData)).DamageType;
+                cc.Invoke(new WeaponHitContext(hitData, isValid && !alive));
 
-            hitData.shotInfo.AddHit(damageType);
+            hitData.shotInfo.AddHit(hitData.damageType);
             hitData.Apply();
         }
     }

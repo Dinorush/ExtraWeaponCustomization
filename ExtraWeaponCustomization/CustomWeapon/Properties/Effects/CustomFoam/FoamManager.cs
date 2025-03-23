@@ -70,11 +70,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                     _unfoamHandlers.Remove(handler);
                 });
 
-            if (_unfoamHandlers.Count == 0f && _updateRoutine != null)
-            {
-                CoroutineManager.StopCoroutine(_updateRoutine);
-                _updateRoutine = null;
-            }
+            if (_unfoamHandlers.Count == 0f)
+                Utils.CoroutineUtil.Stop(ref _updateRoutine);
         }
 
         private void CleanupBubbles()
@@ -88,12 +85,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                     _customFoams.Remove(wrapper);
                 });
 
-            if (_customFoams.Count == 0f && _expireRoutine != null)
-            {
-                CoroutineManager.StopCoroutine(_expireRoutine);
-                _expireRoutine = null;
+            if (_customFoams.Count == 0f && Utils.CoroutineUtil.Stop(ref _expireRoutine))
                 _bubbleExpireTimes.Clear();
-            }
         }
 
         private void AddUnfoamHandler(FoamTimeHandler handler)

@@ -1,10 +1,13 @@
 ﻿using Agents;
 using Enemies;
 using EWC.CustomWeapon.ObjectWrappers;
+using EWC.CustomWeapon.Properties.Effects;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using Player;
 using SNetwork;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -25,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float AlertRadius { get; private set; } = 0f;
         public float AlertAmount { get; private set; } = 0f;
         public float WakeUpRadius { get; private set; } = 0f;
-        public bool CrossDoors { get; private set; } = false;
+        public CrossDoorMode CrossDoorMode { get; private set; } = CrossDoorMode.Normal;
 
         private readonly Dictionary<ObjectWrapper<Agent>, float> _alertProgress = new();
 
@@ -35,7 +38,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private static Agent.NoiseType s_cachedNoise;
         private static float s_cachedTimestamp;
-        private static Ray s_ray;
+        private static Ray s_ray = new(Vector3.zero, Vector3.forward);
         private const SearchSetting SearchSettings = SearchSetting.CheckDoors;
 
         private const float InstantWakeupProgress = 1000f;
@@ -45,6 +48,16 @@ namespace EWC.CustomWeapon.Properties.Traits
         private const float AlertOutput = 0.95f;
 
         private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
+
+        public override bool ShouldRegister(Type contextType)
+        {
+            if (contextType == typeof(WeaponPreFireContext)
+             || contextType == typeof(WeaponPostFireContext)
+             || contextType == typeof(WeaponStealthUpdateContext))
+                return SNet.IsMaster;
+
+            return base.ShouldRegister(contextType);
+        }
 
         public void Invoke(WeaponPreFireContext context)
         {
@@ -103,7 +116,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             bool runFakeAlert = FakeAlertRadius > AlertRadius && FakeAlertRadius > WakeUpRadius;
 
             s_ray.origin = owner.IsLocallyOwned ? Weapon.s_ray.origin : owner.EyePosition;
-            s_ray.direction = owner.IsLocallyOwned ? owner.FPSCamera.CameraRayDir : CWC.Weapon.MuzzleAlign.forward;
 
             // Cache enemies
             if (runFakeAlert)
@@ -133,7 +145,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     RemoveFromList(enemy, s_alertList);
                 if (runFakeAlert)
                     RemoveFromList(enemy, s_fakeAlertList);
-                if (!EnemyCanHear(enemy))
+                if (!EnemyCanHear(enemy, WakeUpRadius))
                     continue;
 
                 TempWrapper.Set(enemy);
@@ -149,7 +161,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 EnemyAgent enemy = s_alertList[i];
                 if (runFakeAlert)
                     RemoveFromList(enemy, s_fakeAlertList);
-                if (!EnemyCanHear(enemy))
+                if (!EnemyCanHear(enemy, AlertRadius))
                     continue;
 
                 TempWrapper.Set(enemy);
@@ -168,21 +180,27 @@ namespace EWC.CustomWeapon.Properties.Traits
             // Fake pulse
             foreach (var enemy in s_fakeAlertList)
             {
-                if (!EnemyCanHear(enemy))
+                if (!EnemyCanHear(enemy, FakeAlertRadius))
                     continue;
 
                 enemy.AI.m_locomotion.Hibernate.Heartbeat(0.5f, CWC.Weapon.Owner.Position);
             }
         }
 
-        private bool EnemyCanHear(EnemyAgent enemy)
+        private bool EnemyCanHear(EnemyAgent enemy, float range)
         {
             if (!enemy.ListenerReady) return false;
 
             PlayerAgent owner = CWC.Weapon.Owner;
-            if (!CrossDoors && enemy.CourseNode.NodeID != owner.CourseNode.NodeID) return false;
+            float nodeDistance = enemy.CourseNode.m_playerCoverage.GetNodeDistanceToPlayer_Unblocked(owner);
+            if (!enemy.AI.m_detection.GetWeaponDetectionDistance(nodeDistance, out float weaponDist)) return false;
 
-            float weaponDist = enemy.EnemyDetectionData.weaponDetectionDistanceMax;
+            if (CrossDoorMode == CrossDoorMode.None && enemy.CourseNode.NodeID != owner.CourseNode.NodeID) return false;
+
+            float baseDist = enemy.EnemyDetectionData.weaponDetectionDistanceMax;
+            if (CrossDoorMode == CrossDoorMode.Normal)
+                weaponDist = Math.Max(0, range - (baseDist - weaponDist));
+
             if ((owner.Position - enemy.Position).sqrMagnitude >= weaponDist * weaponDist) return false;
 
             return true;
@@ -209,7 +227,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(AlertRadius), AlertRadius);
             writer.WriteNumber(nameof(AlertAmount), AlertAmount);
             writer.WriteNumber(nameof(WakeUpRadius), WakeUpRadius);
-            writer.WriteBoolean(nameof(CrossDoors), CrossDoors);
+            writer.WriteString(nameof(CrossDoorMode), CrossDoorMode.ToString());
             writer.WriteEndObject();
         }
 
@@ -233,12 +251,29 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "wakeup":
                     WakeUpRadius = reader.GetSingle();
                     break;
+                case "crossdoormode":
                 case "crossdoors":
-                    CrossDoors = reader.GetBoolean();
+                case "crossdoor":
+                    if (reader.TokenType == JsonTokenType.False || reader.TokenType == JsonTokenType.True)
+                    {
+                        Utils.Log.EWCLogger.Warning("CrossDoors using true/false is deprecated. Use \"Normal\", \"None\", or \"NoPenalty\" instead.");
+                        if (reader.GetBoolean())
+                            CrossDoorMode = CrossDoorMode.Normal;
+                        else
+                            CrossDoorMode = CrossDoorMode.None;
+                    }
+                    CrossDoorMode = reader.GetString().ToEnum(CrossDoorMode.Normal);
                     break;
                 default:
                     break;
             }
         }
+    }
+
+    public enum CrossDoorMode
+    {
+        Normal,
+        None,
+        NoPenalty
     }
 }

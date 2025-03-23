@@ -38,39 +38,41 @@ namespace EWC.CustomWeapon.Properties.Effects
         private float _nextTickTime = 0f;
         private Coroutine? _updateRoutine;
 
+        public override bool ShouldRegister(Type contextType)
+        {
+            if (contextType == typeof(WeaponSetupContext)) return ActiveInHolster && CWC.IsLocal;
+            if (contextType == typeof(WeaponClearContext)) return CWC.IsLocal;
+            if (contextType == typeof(WeaponWieldContext) || contextType == typeof(WeaponUnWieldContext)) return !ActiveInHolster;
+            if (contextType == typeof(WeaponPreReloadContext)) return !AllowReload;
+
+            return base.ShouldRegister(contextType);
+        }
+
         public void Invoke(WeaponSetupContext _)
         {
-            if (CWC.IsLocal && ActiveInHolster && _updateRoutine == null)
+            if (_updateRoutine == null)
                 _updateRoutine = CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
 
         public void Invoke(WeaponClearContext _)
         {
-            if (CWC.IsLocal && _updateRoutine != null)
-            {
-                CoroutineManager.StopCoroutine(_updateRoutine);
-                _updateRoutine = null;
-            }
+            Utils.CoroutineUtil.Stop(ref _updateRoutine);
         }
 
         public void Invoke(WeaponWieldContext _)
         {
-            if (!ActiveInHolster && _updateRoutine == null)
+            if (_updateRoutine == null)
                 _updateRoutine = CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
         }
 
         public void Invoke(WeaponUnWieldContext _)
         {
-            if (!ActiveInHolster && _updateRoutine != null)
-            {
-                CoroutineManager.StopCoroutine(_updateRoutine);
-                _updateRoutine = null;
-            }
+            Utils.CoroutineUtil.Stop(ref _updateRoutine);
         }
 
         public void Invoke(WeaponPreReloadContext context)
         {
-            context.Allow &= AllowReload;
+            context.Allow = false;
         }
 
         private bool ResetCache()

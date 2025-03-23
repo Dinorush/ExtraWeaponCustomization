@@ -1,4 +1,5 @@
-﻿using EWC.Utils;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils;
 using FX_EffectSystem;
 using Gear;
 using System;
@@ -9,13 +10,30 @@ namespace EWC.CustomWeapon.CustomShot
     {
         public static uint CurrentID { get; private set; } = 0;
         public static uint NextID => ++CurrentID;
+        public static ShotInfoMod CurrentGroupMod { get; private set; } = new();
+        public static Shotgun? CachedShotgun { get; set; }
+
+        private static float s_lastShotTime = 0f;
 
         private static (IntPtr ptr, ShotInfo info) s_vanillaShotInfo = (IntPtr.Zero, new ShotInfo());
-        public static ShotInfo GetVanillaShotInfo(Weapon.WeaponHitData vanillaData)
+        public static ShotInfo GetVanillaShotInfo(Weapon.WeaponHitData vanillaData, CustomWeaponComponent cwc)
         {
             if (vanillaData.Pointer != s_vanillaShotInfo.ptr)
             {
-                s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo());
+                // Shotguns only assign these AFTER CastWeaponRay runs, which breaks a lot of logic that rely on them being set.
+                if (CachedShotgun != null)
+                {
+                    var archData = CachedShotgun.ArchetypeData;
+                    vanillaData.owner = CachedShotgun.Owner;
+                    vanillaData.damage = archData.GetDamageWithBoosterEffect(CachedShotgun.Owner, CachedShotgun.ItemDataBlock.inventorySlot);
+                    vanillaData.staggerMulti = archData.StaggerDamageMulti;
+                    vanillaData.precisionMulti = archData.PrecisionDamageMulti;
+                    vanillaData.damageFalloff = archData.DamageFalloff;
+                }
+
+                s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(vanillaData.damage, vanillaData.precisionMulti, vanillaData.staggerMulti));
+                s_vanillaShotInfo.info.GroupMod = CurrentGroupMod;
+                cwc.Invoke(new WeaponShotInitContext(s_vanillaShotInfo.info.Mod));
             }
             return s_vanillaShotInfo.info;
         }
@@ -43,6 +61,22 @@ namespace EWC.CustomWeapon.CustomShot
 
                 effect.ReturnToPool();
             }
+        }
+
+        public static void AdvanceGroupMod(CustomWeaponComponent cwc)
+        {
+            CurrentGroupMod = new();
+            cwc.Invoke(new WeaponShotGroupInitContext(CurrentGroupMod));
+        }
+
+        public static void AdvanceGroupModIfOld(CustomWeaponComponent cwc)
+        {
+            float time = Clock.Time;
+            if (time == s_lastShotTime) return;
+
+            CurrentGroupMod = new();
+            cwc.Invoke(new WeaponShotGroupInitContext(CurrentGroupMod));
+            s_lastShotTime = time;
         }
     }
 }

@@ -1,8 +1,7 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils;
 using System;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
@@ -14,8 +13,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public TriggerName Name { get; private set; }
         public float Amount { get; private set; } = 1f;
         public uint MaxPerShot { get; private set; } = 0;
-
-        private static readonly Dictionary<Type, List<PropertyInfo>> _classProperties = new();
 
         public DamageTypeTrigger(TriggerName name, params DamageType[] types)
         {
@@ -46,29 +43,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (!CloneObject) return this;
 
             Type type = GetType();
-            if (!_classProperties.ContainsKey(type))
-            {
-                List<PropertyInfo> properties = new();
-                _classProperties.Add(type, properties);
-
-                for (Type currentType = type; currentType.BaseType != null; currentType = currentType.BaseType)
-                {
-                    foreach (var prop in currentType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
-                    {
-                        MethodInfo? mget = prop.GetGetMethod(false);
-                        MethodInfo? mset = prop.GetSetMethod(true);
-
-                        // Only want properties with public get and private set
-                        if (mget == null || mset == null || mset.IsPublic || !prop.CanWrite) continue;
-
-                        properties.Add(prop);
-                    }
-                }
-            }
-
-            ITrigger copy = (ITrigger) (type.GetConstructor(new Type[] { typeof(DamageType[]) }) != null ? Activator.CreateInstance(type, DamageTypes) : Activator.CreateInstance(type, Name, DamageTypes))!;
-            foreach (var prop in _classProperties[type])
-                prop.SetValue(copy, prop.GetValue(this));
+            ITrigger copy = type.GetConstructor(new Type[] { typeof(DamageType[]) }) != null ? CopyUtil<ITrigger>.Clone(this, DamageTypes) : CopyUtil<ITrigger>.Clone(this, Name, DamageTypes);
 
             var typeTrigger = (DamageTypeTrigger<TContext>)copy;
             typeTrigger.BlacklistType = BlacklistType;

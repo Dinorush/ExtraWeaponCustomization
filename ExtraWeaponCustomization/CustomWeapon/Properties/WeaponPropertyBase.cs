@@ -1,6 +1,6 @@
-﻿using System;
+﻿using EWC.Utils;
+using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties
@@ -15,7 +15,10 @@ namespace EWC.CustomWeapon.Properties
         private readonly static Dictionary<string, uint> s_stringToIDDict = new();
         private static uint s_nextID = uint.MaxValue;
 
-        private static readonly Dictionary<Type, List<PropertyInfo>> _classProperties = new();
+        private static int s_debugID = 0;
+        public int DebugID { get; } = s_debugID++;
+
+        public virtual bool ShouldRegister(Type contextType) => true;
 
         public virtual bool ValidProperty()
         {
@@ -25,38 +28,8 @@ namespace EWC.CustomWeapon.Properties
 
         public virtual WeaponPropertyBase Clone()
         {
-            Type type = GetType();
-            if (!_classProperties.ContainsKey(type))
-            {
-                List<PropertyInfo> properties = new();
-                _classProperties.Add(type, properties);
-
-                for (Type currentType = type; currentType.BaseType != null; currentType = currentType.BaseType)
-                {
-                    foreach (var prop in currentType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
-                    {
-                        MethodInfo? mget = prop.GetGetMethod(false);
-                        MethodInfo? mset = prop.GetSetMethod(true);
-
-                        // Only want properties with public get and private set
-                        if (mget == null || mset == null || mset.IsPublic || !prop.CanWrite) continue;
-
-                        properties.Add(prop);
-                    }
-                }
-
-                if (type.IsAssignableTo(typeof(ISyncProperty)))
-                    properties.Add(type.GetProperty(nameof(ISyncProperty.SyncPropertyID))!);
-            }
-
-            WeaponPropertyBase copy = (WeaponPropertyBase)Activator.CreateInstance(type)!;
-            foreach (var prop in _classProperties[type])
-                prop.SetValue(copy, prop.GetValue(this));
-
-
-            return copy;
+            return CopyUtil<WeaponPropertyBase>.Clone(this);
         }
-
         public abstract void Serialize(Utf8JsonWriter writer);
 
         public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)

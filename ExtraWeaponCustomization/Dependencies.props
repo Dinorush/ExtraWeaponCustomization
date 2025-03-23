@@ -26,10 +26,6 @@
         <Reference Remove="$(GameAssembliesFolder)/netstandard.dll" />
         <Reference Remove="$(GameAssembliesFolder)/mscorlib.dll" />
         <Reference Remove="$(GameAssembliesFolder)/Newtonsoft.Json.dll" />
-
-		<!-- Base Assemblies -->
-		<Reference Include="$(CorLibsFolder)\*.dll" Private="false" />
-		<Reference Include="$(DotNetFolder)\System.Private.CoreLib.dll" Private="false" />
     </ItemGroup>
 
 	<!-- Plugins -->
@@ -39,6 +35,7 @@
 		<Reference Include="$(PluginsFolder)\**\KillIndicatorFix.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\GTFuckingXP.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\EndskApi.dll" Private="false" />
-	    <Reference Include="$(PluginsFolder)\**\ExtraRecoilData.dll" Private="false" />
+		<Reference Include="$(PluginsFolder)\**\AccurateCrosshair.dll" Private="false" />
+		<Reference Include="$(PluginsFolder)\**\ExtraRecoilData.dll" Private="false" />
 	</ItemGroup>
 </Project>

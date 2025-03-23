@@ -65,11 +65,16 @@ namespace EWC.CustomWeapon.Properties.Traits
         private readonly Color _passiveLocked = new(0.8f, 0.3f, 0.2f, 1f);
         private readonly Color _passiveDetection = new(0.5f, 0.5f, 0.5f, 1f);
         private readonly Vector3 _targetedAngles = new(0f, 0f, 45f);
-        private Coroutine? targetLostAnimator = null;
 
-        public void Invoke(WeaponPreStartFireContext context)
+        public override bool ShouldRegister(Type contextType)
         {
-            context.Allow &= !RequireLock || UseAutoAim;
+            if (!RequireLock && (contextType == typeof(WeaponPreStartFireContext) || contextType == typeof(WeaponFireCancelContext))) return false;
+            return base.ShouldRegister(contextType);
+        }
+
+        public void Invoke(WeaponPreStartFireContext context) // Registered if RequireLock is true
+        {
+            context.Allow &= UseAutoAim;
         }
 
         public void Invoke(WeaponFireCancelContext context)
@@ -78,7 +83,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (CWC.Gun!.ArchetypeData.FireMode == eWeaponFireMode.Burst && !CWC.Gun!.m_archeType.BurstIsDone())
                 return;
 
-            context.Allow &= !RequireLock || UseAutoAim;
+            context.Allow &= UseAutoAim;
         }
 
         public void Invoke(WeaponPreRayContext context)

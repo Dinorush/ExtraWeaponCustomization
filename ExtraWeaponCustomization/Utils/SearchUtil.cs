@@ -267,7 +267,7 @@ namespace EWC.Utils
             return s_lockCache;
         }
 
-        public static List<(PlayerAgent, RaycastHit)> GetPlayerHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.CheckFriendly | SearchSetting.CheckOwner)
+        public static List<(PlayerAgent player, RaycastHit hit)> GetPlayerHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.CheckFriendly | SearchSetting.CheckOwner)
         {
             s_combinedCachePlayer.Clear();
             if (range == 0 || angle == 0)

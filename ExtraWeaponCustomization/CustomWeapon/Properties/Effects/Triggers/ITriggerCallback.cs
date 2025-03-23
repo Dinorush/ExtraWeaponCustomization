@@ -17,6 +17,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public TriggerCoordinator? Trigger { get; set; }
         public void TriggerApply(List<TriggerContext> triggerList);
         public void TriggerReset();
+        public void RemoteReset()
+        {
+            if (Trigger != null)
+                Trigger.ForceReset();
+            else
+                TriggerReset();
+        }
     }
 
     public interface ITriggerCallbackSync : ITriggerCallback, IWeaponProperty<WeaponTriggerContext>

@@ -14,12 +14,10 @@ namespace EWC.CustomWeapon.Properties.Traits
         IGunProperty,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
-        IWeaponProperty<WeaponPostFireContextSync>,
-        IWeaponProperty<WeaponCancelTracerContext>
+        IWeaponProperty<WeaponPostFireContextSync>
     {
         private int _lastSyncShotCount = 0;
         private float _lastShotTime = 0f;
-        private bool _cancelTracer = false;
         private float _shotBuffer = 0f;
         private float _fixedTime = 0f;
         private readonly static float FixedDelta;
@@ -32,7 +30,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostStartFireContext context)
         {
             _shotBuffer = 0;
-            _cancelTracer = false;
             _lastShotTime = Clock.Time;
         }
 
@@ -56,17 +53,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             _shotBuffer -= extraShots;
         }
 
-        public void Invoke(WeaponCancelTracerContext context)
-        {
-            context.Allow = _cancelTracer;
-        }
-
         public void Invoke(WeaponPostFireContext context)
         {
             // Acts as a lock against recursive calls and first shot
             if (_lastShotTime == Clock.Time) return;
 
-            _cancelTracer = true;
             BulletWeaponArchetype archetype = CWC.Gun!.m_archeType;
             float shotDelay = 1f / CWC.CurrentFireRate;
 
@@ -84,6 +75,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             shotDelay = Math.Min(shotDelay, delta);
             // Modify delta time so FPS_Update() moves the correct amount
             Clock.Delta = shotDelay;
+            CWC.ShotComponent!.CancelAllFX = true;
             for (int i = 0; i < extraShots; i++)
             {
                 // Update camera to where it should be
@@ -97,6 +89,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 }
                 archetype.OnFireShot();
             }
+            CWC.ShotComponent!.CancelAllFX = false;
 
             Clock.Delta = delta;
             _shotBuffer -= extraShots;

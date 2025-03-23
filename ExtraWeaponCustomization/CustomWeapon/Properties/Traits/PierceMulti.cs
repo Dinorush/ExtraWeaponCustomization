@@ -7,19 +7,23 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class PierceMulti : 
         Trait,
         IGunProperty,
-        IWeaponProperty<WeaponPierceContext>
+        IWeaponProperty<WeaponHitDamageableContext>
     {
+        private static readonly DamageType[] BulletType = new[] { DamageType.Bullet };
+
+        public DamageType[] ModDamageType { get; private set; } = BulletType;
         public float PierceDamageMulti { get; private set; } = 1f;
 
-        public void Invoke(WeaponPierceContext context)
+        public void Invoke(WeaponHitDamageableContext context)
         {
-            context.AddMod(PierceDamageMulti, StackType.Multiply);
+            context.ShotInfo.Orig.Mod.Add(this, StatType.Damage, PierceDamageMulti, 0f, StackType.Multiply, StackType.Multiply);
         }
 
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
+            writer.WriteString(nameof(ModDamageType), ModDamageType[0].ToString());
             writer.WriteNumber(nameof(PierceDamageMulti), PierceDamageMulti);
             writer.WriteEndObject();
         }
@@ -33,6 +37,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "piercemulti":
                 case "multi":
                     PierceDamageMulti = reader.GetSingle();
+                    break;
+                case "moddamagetype":
+                case "damagetype":
+                    ModDamageType = reader.GetString().ToDamageTypes();
                     break;
                 default:
                     break;

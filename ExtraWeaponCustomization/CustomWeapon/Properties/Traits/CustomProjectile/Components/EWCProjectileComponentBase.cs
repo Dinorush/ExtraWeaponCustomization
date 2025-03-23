@@ -23,6 +23,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         public readonly EWCProjectileHitbox Hitbox;
         public readonly EWCProjectileHoming Homing;
+        [HideFromIl2Cpp]
         public Projectile Settings { get; private set; }
 
         private readonly DelayedCallback _inactiveCallback;
@@ -70,6 +71,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected Vector3 _dirVisual;
 
         protected static Quaternion s_tempRot;
+        private const int MaxCollisionCheck = 3;
 
         public bool IsLocal { get; private set; }
         public ushort SyncID { get; private set; }
@@ -81,7 +83,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 
         [HideFromIl2Cpp]
-        public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isLocal, Vector3 position, Vector3 dir)
+        public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isLocal, Vector3 position, Vector3 dir, HitData? hitData = null)
         {
             if (enabled) return;
 
@@ -108,7 +110,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             Homing.Init(projBase, position, dir);
             ProjectileAPI.FireProjectileSpawnedCallback(this);
-            Hitbox.Init(projBase, out var bounceHit);
+            Hitbox.Init(projBase, hitData, out var bounceHit);
             if (bounceHit != null)
                 BaseDir = Vector3.Reflect(BaseDir, bounceHit.Value.normal);
         }
@@ -165,7 +167,20 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             Vector3 deltaMove = UpdateVelocity();
             Vector3 collisionVel = deltaMove.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaMove : Dir * EWCProjectileHitbox.MinCollisionDist;
-            Hitbox.Update(_position, collisionVel, out var bounceHit);
+            
+            bool syncPos = false;
+            for(int i = 0; i < MaxCollisionCheck && Hitbox.Update(_position, collisionVel, out var bounce); i++)
+            {
+                float angleFactor = Math.Abs(Vector3.Dot(Dir, bounce.normal));
+                _baseSpeed *= (1f - Settings.RicochetSpeedAngleFactor * angleFactor).Lerp(Settings.RicochetSpeedMod, 1f);
+                float remainingDist = collisionVel.magnitude - (bounce.point - _position).magnitude;
+                BaseDir = Vector3.Reflect(Dir, bounce.normal);
+                deltaMove = Vector3.Reflect(collisionVel, bounce.normal).normalized * remainingDist;
+                collisionVel = remainingDist > EWCProjectileHitbox.MinRicochetDist ? deltaMove : Dir * EWCProjectileHitbox.MinRicochetDist;
+                _position = bounce.point;
+                syncPos = true;
+            }
+
             if (!enabled) return; // Died by hitbox
 
             if (Time.time > _endLifetime)
@@ -174,17 +189,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 return;
             }
 
-            if (bounceHit != null)
-            {
-                var bounce = bounceHit.Value;
-                float remainingDist = collisionVel.magnitude - (bounce.point - _position).magnitude;
-                BaseDir = Vector3.Reflect(Dir, bounce.normal);
-                deltaMove = Vector3.Reflect(collisionVel, bounce.normal).normalized * remainingDist;
-                _position = bounce.point;
-                EWCProjectileManager.DoProjectileBounce(PlayerIndex, SyncID, _position, Dir);
-            }
-
             _position += deltaMove;
+            if (syncPos)
+                EWCProjectileManager.DoProjectileBounce(PlayerIndex, SyncID, _position, Dir);
+
             LerpVisualOffset();
         }
 

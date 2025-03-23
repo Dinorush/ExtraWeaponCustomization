@@ -12,7 +12,7 @@ namespace EWC.Patches.Player
         [HarmonyPrefix]
         private static void Pre_TakeDamage(Dam_PlayerDamageBase __instance, float damage)
         {
-            _ignoreCall = damage <= 0 || __instance.Health <= 0;
+            _ignoreCall = damage <= 0 || __instance.Health <= 0 || !__instance.Owner.IsLocallyOwned;
         }
 
         [HarmonyPatch(typeof(Dam_PlayerDamageBase), nameof(Dam_PlayerDamageBase.OnIncomingDamage))]

@@ -51,8 +51,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
             Backstab = backstab;
         }
 
-        public WeaponHitDamageableContextBase(HitData data, float backstab, DamageType flag) :
-            this(data.damageable!, data.hitPos, data.fireDir.normalized, data.RayHit.normal, backstab, data.falloff, data.shotInfo, flag.WithSubTypes(data.damageable!))
+        public WeaponHitDamageableContextBase(HitData data, float backstab) :
+            this(data.damageable!, data.hitPos, data.fireDir.normalized, data.RayHit.normal, backstab, data.falloff, data.shotInfo, data.damageType)
         { }
 
         public WeaponHitDamageableContextBase(WeaponHitDamageableContextBase context) :

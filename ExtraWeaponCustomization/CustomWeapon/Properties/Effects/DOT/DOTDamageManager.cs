@@ -111,7 +111,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             bool willKill = damBase.WillDamageKill(precDamage);
-            KillTrackerManager.RegisterHit(dotBase.CWC.Weapon, hitContext);
+            KillTrackerManager.RegisterHit(dotBase.CWC, hitContext);
             if (willKill || dotBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result)
                 limb.ShowHitIndicator(precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 

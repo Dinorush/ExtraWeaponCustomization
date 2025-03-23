@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using SNetwork;
+using EWC.Utils;
 
 namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
@@ -44,7 +45,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             return comp;
         }
 
-        public EWCProjectileComponentShooter CreateAndSendProjectile(Projectile projBase, Vector3 position, Vector3 dir)
+        public EWCProjectileComponentShooter CreateAndSendProjectile(Projectile projBase, Vector3 position, HitData hitData)
         {
             ushort index = (ushort) projBase.CWC.Weapon.Owner.PlayerSlotIndex;
             ProjectileDataShooter data = new()
@@ -54,12 +55,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
                 propertyID = projBase.SyncPropertyID,
                 position = position
             };
-            data.dir.Value = dir;
+            data.dir.Value = hitData.fireDir;
 
             s_shooterSync.Send(data);
             EWCProjectileComponentShooter comp = GetFromPool(projBase.ProjectileType);
             EWCProjectileManager.AddProjectile(index, data.id, comp);
-            comp.Init(index, data.id, projBase, true, position, dir);
+            comp.Init(index, data.id, projBase, true, position, hitData.fireDir, hitData);
             return comp;
         }
 

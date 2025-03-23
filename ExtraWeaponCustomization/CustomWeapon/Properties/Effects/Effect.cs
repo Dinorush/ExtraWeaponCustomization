@@ -24,10 +24,18 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
         }
 
+        protected virtual bool IsTriggerValid => Trigger?.Activate.Triggers.Any() == true;
+
         private TriggerName[]? _validTriggers;
         private DamageType _blacklistType = DamageType.Any;
 
-        public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
+        public override bool ShouldRegister(System.Type contextType)
+        {
+            if (Trigger == null && contextType == typeof(WeaponTriggerContext)) return false;
+            return base.ShouldRegister(contextType);
+        }
+
+        public void Invoke(WeaponTriggerContext context) => Trigger!.Invoke(context);
 
         protected void SetValidTriggers(DamageType blacklist = DamageType.Any, params TriggerName[] names)
         {
@@ -64,8 +72,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             switch(property)
             {
                 case "triggertype":
-                case "trigger":
-                    Trigger = EWCJson.Deserialize<TriggerCoordinator>(ref reader);
+                case "trigger": 
+                    Trigger = TriggerCoordinator.Deserialize(ref reader, true);
                     VerifyTriggers();
                     break;
             }
@@ -75,30 +83,30 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             if (Trigger == null) return;
 
-            for (int i = Trigger.Activate.Count - 1; i >= 0; i--)
+            for (int i = Trigger.Activate.Triggers.Count - 1; i >= 0; i--)
             {
-                TriggerName name = Trigger.Activate[i].Name;
+                TriggerName name = Trigger.Activate.Triggers[i].Name;
                 // If the trigger isn't of the valid class, remove it
                 if (_validTriggers != null && !_validTriggers.Contains(name))
                 {
                     EWCLogger.Warning($"{GetType().Name} has an invalid trigger {name}. Only the following are allowed: {string.Join(", ", _validTriggers)}");
-                    Trigger.Activate.RemoveAt(i);
+                    Trigger.Activate.Triggers.RemoveAt(i);
                     continue;
                 }
 
-                if (Trigger.Activate[i] is not IDamageTypeTrigger typeTrigger) continue;
+                if (Trigger.Activate.Triggers[i] is not IDamageTypeTrigger typeTrigger) continue;
 
                 typeTrigger.BlacklistType |= _blacklistType;
                 // If all valid triggers are blacklisted, remove it
                 if (typeTrigger.DamageTypes.All(type => type.HasAnyFlag(typeTrigger.BlacklistType)))
                 {
                     EWCLogger.Warning($"{GetType().Name} has a trigger {name} with invalid damage types {string.Join(", ", typeTrigger.DamageTypes)}. It cannot contain any types within {_blacklistType}");
-                    Trigger.Activate.RemoveAt(i);
+                    Trigger.Activate.Triggers.RemoveAt(i);
                     continue;
                 }
             }
 
-            if (!Trigger.Activate.Any())
+            if (!IsTriggerValid)
                 Trigger = null;
         }
     }

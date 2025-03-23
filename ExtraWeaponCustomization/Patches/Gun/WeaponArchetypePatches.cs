@@ -2,11 +2,9 @@
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using FX_EffectSystem;
 using Gear;
 using HarmonyLib;
 using Player;
-using static GameData.GD;
 
 namespace EWC.Patches.Gun
 {
@@ -37,13 +35,12 @@ namespace EWC.Patches.Gun
             if (cwc == null) return true;
 
             cwc.CancelShot = false;
-            WeaponPreStartFireContext context = new();
-            cwc.Invoke(context);
+            bool allow = cwc.Invoke(new WeaponPreStartFireContext()).Allow;
             cwc.UpdateStoredFireRate(); // Need to update prior to firing to predict weapon sound delay
-            if (!context.Allow)
+            if (!allow)
                 cwc.StoreCancelShot();
 
-            return context.Allow;
+            return allow;
         }
 
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStartFiring))]
@@ -82,7 +79,10 @@ namespace EWC.Patches.Gun
             if (!context.Allow)
                 cwc.StoreCancelShot();
             else
+            {
                 cwc.Invoke(StaticContext<WeaponPreFireContext>.Instance);
+                ShotManager.AdvanceGroupMod(cwc);
+            }
 
             return context.Allow;
         }
@@ -98,7 +98,7 @@ namespace EWC.Patches.Gun
             if (cwc == null || cwc.CancelShot) return;
 
             cwc.NotifyShotFired();
-            if (!cwc.Invoke(new WeaponCancelTracerContext()).Allow)
+            if (cwc.ShotComponent!.CancelNormalShot)
                 ShotManager.CancelTracerFX(__instance.m_archetypeData, __instance.m_weapon!.TryCast<Shotgun>() != null);
 
             cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);

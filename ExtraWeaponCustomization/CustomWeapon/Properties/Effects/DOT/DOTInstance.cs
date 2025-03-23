@@ -12,33 +12,38 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private float _lastTickTime = 0f;
 
         private readonly int _totalTicks;
+        private readonly float _totalDamage;
         private readonly float _precisionMulti;
+        private readonly float _staggerMulti;
         private readonly bool _bypassTumor;
         private readonly float _backstabMulti;
         private readonly float _falloff;
         private readonly float _tickDelay;
-        private readonly ShotInfo _shotInfo = new();
+        private readonly ShotInfo _shotInfo;
 
         // Stored math constants
         private readonly float _expoPlusOne;
         private readonly double _expoModifier;
         private readonly double _expoDivisor;
 
-        public DOTInstance(float totalDamage, float falloff, float precision, bool bypassTumor, float backstab, DamageOverTime dotBase)
+        public DOTInstance(float totalDamage, float falloff, float precision, float stagger, bool bypassTumor, float backstab, ShotInfo info, DamageOverTime dotBase)
         {
             DotBase = dotBase;
+            _totalDamage = totalDamage;
             _precisionMulti = precision;
+            _staggerMulti = stagger;
             _bypassTumor = bypassTumor;
             _backstabMulti = backstab;
             _falloff = falloff;
             _tickDelay = 1f / dotBase.TickRate;
             _lastTickTime = Clock.Time;
             _totalTicks = (int)(dotBase.Duration * dotBase.TickRate);
+            _shotInfo = info;
 
             _expoPlusOne = dotBase.Exponent + 1;
             _expoModifier = _expoPlusOne / ((dotBase.EndDamageFrac * dotBase.Exponent + 1) * _totalTicks);
             _expoDivisor = _expoPlusOne * Math.Pow(_totalTicks, dotBase.Exponent);
-            AddInstance(totalDamage);
+            AddInstance(this);
         }
 
         public bool Expired => _tick >= _totalTicks;
@@ -53,9 +58,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         }
 
         // This should only be called before the first damage tick.
-        public void AddInstance(float totalDamage)
+        public void AddInstance(DOTInstance instance)
         {
-            _damagePerTick += (float) (totalDamage * _expoModifier);
+            _damagePerTick += (float)(instance._totalDamage * _expoModifier);
         }
 
         public void StartWithTargetTime(float nextTickTime)

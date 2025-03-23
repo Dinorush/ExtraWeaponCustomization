@@ -9,18 +9,24 @@ namespace EWC.CustomWeapon.Enums
         Invalid = -1,
         Any = 0,
         Body = 1,
-        Weakspot = 2,
-        Bullet = 4,
-        Explosive = 8,
-        DOT = 16,
-        Armor = 32,
-        Flesh = 64,
-        Foamed = 128,
-        Unfoamed = 256,
-        Enemy = 512,
-        Player = 1024,
-        Lock = 2048,
-        Terrain = 4096
+        Weakspot = 1<<1,
+        Bullet = 1<<2,
+        Explosive = 1<<3,
+        DOT = 1<<4,
+        Foam = 1<<5,
+        Armor = 1<<6,
+        Flesh = 1<<7,
+        Foamed = 1<<8,
+        Unfoamed = 1<<9,
+        Enemy = 1<<10,
+        Player = 1<<11,
+        Lock = 1<<12,
+        Terrain = 1<<13
+    }
+
+    public static class DamageTypeConst
+    {
+        public static readonly DamageType[] Any = new[] { DamageType.Any };
     }
 
     public static class DamageTypeMethods
@@ -31,6 +37,7 @@ namespace EWC.CustomWeapon.Enums
 
             name = name.Replace(" ", null).ToLowerInvariant();
             string[] names = name.Split('|');
+
             DamageType[] types = new DamageType[names.Length];
             for (int i = 0; i < names.Length; i++)
                 types[i] = Internal_ToDamageType(names[i]);

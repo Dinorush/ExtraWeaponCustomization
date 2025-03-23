@@ -8,18 +8,18 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IGunProperty,
         IMeleeProperty,
-        IWeaponProperty<WeaponDamageContext>
+        IWeaponProperty<WeaponStatContext>
     {
         public float TumorDamageMulti { get; private set; } = 1f;
         public bool BypassCap { get; private set; } = false;
         public bool OverrideWeakspotMulti { get; private set; } = false;
 
-        public void Invoke(WeaponDamageContext context)
+        public void Invoke(WeaponStatContext context)
         {
             Dam_EnemyDamageLimb_Custom? tumor = context.Damageable.TryCast<Dam_EnemyDamageLimb_Custom>();
             if (tumor != null)
             {
-                context.Precision.AddMod(OverrideWeakspotMulti ? TumorDamageMulti / tumor.m_weakspotDamageMulti : TumorDamageMulti, StackType.Multiply);
+                context.AddMod(StatType.Precision, OverrideWeakspotMulti ? TumorDamageMulti / tumor.m_weakspotDamageMulti : TumorDamageMulti, StackType.Multiply);
                 context.BypassTumorCap = BypassCap;
             }
         }

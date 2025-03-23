@@ -1,13 +1,17 @@
 ﻿using AK;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Properties;
+using EWC.CustomWeapon.Properties.Effects.Spread;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.Utils;
 using Gear;
 using Il2CppInterop.Runtime.Attributes;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
@@ -18,8 +22,11 @@ namespace EWC.CustomWeapon
         public readonly ItemEquippable Weapon;
         public readonly BulletWeapon? Gun;
         public readonly bool IsGun;
+        public readonly bool IsShotgun;
         public readonly MeleeWeaponFirstPerson? Melee;
         public readonly bool IsMelee;
+        public readonly CustomShotComponent? ShotComponent;
+        public readonly SpreadController? SpreadController;
 
         private readonly PropertyController _propertyController;
 
@@ -60,6 +67,10 @@ namespace EWC.CustomWeapon
             }
         }
 
+        // Used to update delayed callbacks before invocations happen.
+        private readonly LinkedList<DelayedCallback> _timeSensitiveCallbacks;
+        private float _lastInvokeTime = 0f;
+
         private bool _destroyed = false;
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
@@ -75,9 +86,9 @@ namespace EWC.CustomWeapon
             Gun = item.TryCast<BulletWeapon>();
             Melee = item.TryCast<MeleeWeaponFirstPerson>();
             IsGun = Gun != null;
+            IsShotgun = false;
             IsMelee = !IsGun;
 
-            _propertyController = new(IsGun);
             if (IsGun)
             {
                 BaseFireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
@@ -85,7 +96,15 @@ namespace EWC.CustomWeapon
                 CurrentFireRate = BaseFireRate;
                 _burstDelay = Gun.m_archeType.BurstDelay();
                 CurrentBurstDelay = _burstDelay;
+                IsLocal = Gun.TryCast<BulletWeaponSynced>() == null;
+                IsShotgun = IsLocal ? Weapon.TryCast<Shotgun>() != null : Weapon.TryCast<ShotgunSynced>() != null;
+                ShotComponent = new(this);
+                if (IsLocal)
+                    SpreadController = new();
             }
+
+            _propertyController = new(IsGun, IsLocal);
+            _timeSensitiveCallbacks = new();
             enabled = false;
         }
 
@@ -95,18 +114,8 @@ namespace EWC.CustomWeapon
             IntPtr ptr = Gun!.m_archeType.m_owner.Pointer;
             if (ptr == IntPtr.Zero || ptr == _ownerPtr || !enabled) return;
 
-            _ownerPtr = Gun!.m_archeType.m_owner.Pointer;
+            _ownerPtr = ptr;
             Invoke(StaticContext<WeaponOwnerSetContext>.Instance);
-        }
-
-        public void SetToSync()
-        {
-            if (!IsLocal) return;
-            // Bots need full behavior but bots are pain and use different functions so idc for now
-            Clear();
-            _propertyController.ChangeToSyncContexts();
-            IsLocal = false;
-            Register(CustomWeaponManager.GetCustomGunData(Weapon.ArchetypeID));
         }
 
         private void Update()
@@ -130,14 +139,24 @@ namespace EWC.CustomWeapon
         private void OnDestroy()
         {
             _destroyed = true;
-            Invoke(StaticContext<WeaponClearContext>.Instance);
+            Clear();
         }
 
         [HideFromIl2Cpp]
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext
         {
-            if (!RunHitTriggers && context is WeaponHitContextBase)
-                return context;
+            float time = Clock.Time;
+            if (_lastInvokeTime != time)
+            {
+                _lastInvokeTime = time;
+                var next = _timeSensitiveCallbacks.First;
+                for (var node = next; node != null; node = next)
+                {
+                    next = node.Next;
+                    if (node.Value.CheckEnd())
+                        _timeSensitiveCallbacks.Remove(node);
+                }
+            }
 
             return _propertyController.Invoke(context);
         }
@@ -154,13 +173,6 @@ namespace EWC.CustomWeapon
                 if (data == null) return;
             }
 
-            // If called by Activate(), i.e. without data, need to ensure it gets set to sync when applicable
-            if (IsLocal && Weapon.TryCast<BulletWeaponSynced>() != null)
-            {
-                SetToSync();
-                return;
-            }
-
             _propertyController.Init(this, data.Properties.Clone());
             if (Gun?.m_archeType?.m_owner != null)
                 OwnerInit();
@@ -169,12 +181,14 @@ namespace EWC.CustomWeapon
         public void Clear()
         {
             Invoke(StaticContext<WeaponClearContext>.Instance);
+            SpreadController?.Reset();
             _propertyController.Clear();
             _ownerPtr = IntPtr.Zero;
             enabled = false;
             CurrentFireRate = BaseFireRate;
             CurrentBurstDelay = _burstDelay;
-            Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
+            if (!_destroyed)
+                Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
         [HideFromIl2Cpp]
@@ -195,6 +209,19 @@ namespace EWC.CustomWeapon
         [HideFromIl2Cpp]
         public ContextController GetContextController() => _propertyController.GetContextController();
         public bool HasTempProperties() => _propertyController.HasTempProperties();
+
+        // Starts a delayed callback. Its end will be checked on Invoke prior to actually running the Invoke.
+        [HideFromIl2Cpp]
+        public void StartDelayedCallback(DelayedCallback callback, bool checkEnd = false, bool refresh = true)
+        {
+            if (!_timeSensitiveCallbacks.Contains(callback))
+            {
+                _timeSensitiveCallbacks.AddLast(callback);
+                callback.Start(checkEnd, refresh);
+            }
+            else
+                callback.Start(checkEnd, refresh);
+        }
 
         public void StoreCancelShot()
         {

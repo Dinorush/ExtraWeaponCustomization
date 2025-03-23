@@ -5,7 +5,6 @@ using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using EWC.Utils.Log;
-using SNetwork;
 using System;
 using System.Text.Json;
 using UnityEngine;
@@ -17,9 +16,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         IGunProperty,
         ISyncProperty,
         IWeaponProperty<WeaponSetupContext>,
-        IWeaponProperty<WeaponClearContext>,
-        IWeaponProperty<WeaponPostRayContext>,
-        IWeaponProperty<WeaponCancelTracerContext>
+        IWeaponProperty<WeaponClearContext>
     {
         public ushort SyncPropertyID { get; set; }
 
@@ -53,8 +50,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float HitCooldown { get; private set; } = -1;
         public float HitIgnoreWallsDuration { get; private set; } = 0f;
         public int RicochetCount { get; private set; } = 0;
+        public float RicochetSpeedMod { get; private set; } = 1f;
+        public float RicochetSpeedAngleFactor { get; private set; } = 0f;
         public bool RicochetOnHit { get; private set; } = false;
-        public bool RunHitTriggers { get; private set; } = true;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
 
@@ -62,41 +60,29 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private float _cachedRayDist;
 
-        private static Ray s_ray;
         private static RaycastHit s_rayHit;
 
         public void Invoke(WeaponSetupContext context)
         {
             _cachedRayDist = CWC.Gun!.MaxRayDist;
             CWC.Gun!.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
+            CWC.ShotComponent!.Projectile = this;
         }
 
         public void Invoke(WeaponClearContext context)
         {
             CWC.Gun!.MaxRayDist = _cachedRayDist;
+            CWC.ShotComponent!.Projectile = null;
         }
 
-        public void Invoke(WeaponPostRayContext context)
+        public void Fire(Ray ray, HitData hitData, IntPtr ignoreEnt)
         {
-            if (!CWC.Gun!.Owner.IsLocallyOwned && (!SNet.IsMaster || CWC.Gun!.Owner.Owner.IsBot)) return;
-
-            context.Result = false;
-            context.Data.maxRayDist = 0f;
-
-            s_ray.origin = context.Position;
-            s_ray.direction = context.Data.fireDir;
             float visualDist = VisualLerpDist > 0.1f ? VisualLerpDist : 0.1f;
-            if (Physics.Raycast(s_ray, out s_rayHit, visualDist, LayerUtil.MaskEntityAndWorld3P))
+            if (Physics.Raycast(ray, out s_rayHit, visualDist, LayerUtil.MaskEntityAndWorld3P))
                 visualDist = s_rayHit.distance;
 
-            Vector3 position = context.Position + context.Data.fireDir * Math.Min(visualDist, 0.1f);
-
-            // Deprecated run triggers - remove later
-            if (!RunHitTriggers)
-                CWC.RunHitTriggers = false;
-            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, context.Data.fireDir);
-            if (!RunHitTriggers)
-                CWC.RunHitTriggers = true;
+            Vector3 position = ray.origin + ray.direction * Math.Min(visualDist, 0.1f);
+            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, hitData);
             if (comp == null)
             {
                 EWCLogger.Error("Unable to create shooter projectile!");
@@ -105,13 +91,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (VisualLerpDist > 0)
                 comp.SetVisualPosition(CWC.Gun!.MuzzleAlign.position, visualDist);
-            comp.Hitbox.HitEnts.Add(context.IgnoreEnt);
-        }
-
-        // Cancel tracer FX
-        public void Invoke(WeaponCancelTracerContext context)
-        {
-            context.Allow = false;
+            comp.Hitbox.HitEnts.Add(ignoreEnt);
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -145,6 +125,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(HitCooldown), HitCooldown);
             writer.WriteNumber(nameof(HitIgnoreWallsDuration), HitIgnoreWallsDuration);
             writer.WriteNumber(nameof(RicochetCount), RicochetCount);
+            writer.WriteNumber(nameof(RicochetSpeedMod), RicochetSpeedMod);
+            writer.WriteNumber(nameof(RicochetSpeedAngleFactor), RicochetSpeedAngleFactor);
+            writer.WriteBoolean(nameof(RicochetOnHit), RicochetOnHit);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
             writer.WritePropertyName(nameof(HomingSettings));
@@ -248,16 +231,14 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "ricochet":
                     RicochetCount = reader.GetInt32();
                     break;
+                case "ricochetspeedmod":
+                    RicochetSpeedMod = reader.GetSingle();
+                    break;
+                case "ricochetspeedanglefactor":
+                    RicochetSpeedAngleFactor = reader.GetSingle();
+                    break;
                 case "ricochetonhit":
                     RicochetOnHit = reader.GetBoolean();
-                    break;
-                case "runhittriggers":
-                case "hittriggers":
-                    if (!reader.GetBoolean())
-                    {
-                        EWCLogger.Warning("Projectile field \"RunHitTriggers\" is deprecated and will be removed in the future. Set the field on MultiShot or FireShot instead.");
-                        RunHitTriggers = false;
-                    }
                     break;
                 case "visuallerpdist":
                 case "lerpdist":

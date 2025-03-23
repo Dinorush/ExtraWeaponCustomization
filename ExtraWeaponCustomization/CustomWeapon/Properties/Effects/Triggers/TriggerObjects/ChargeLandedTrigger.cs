@@ -14,6 +14,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float Exponent { get; private set; } = 3f;
         public float MinRequired { get; private set; } = 0f;
         public float MaxRequired { get; private set; } = 1f;
+        public bool TerrainOnly { get; set; } = false;
 
         public ChargeLandedTrigger() : base(TriggerName.ChargeLanded, DamageType.Bullet) { }
 
@@ -22,14 +23,27 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             float charge = MeleePatches.CachedCharge;
             // Want to trigger when a melee hit lands but NOT on a pre-hit context
             if (charge >= MinRequired && charge <= MaxRequired &&
-                base.Invoke(context, out amount) && context is not WeaponPreHitDamageableContext)
+                base.Invoke(context, out amount) && 
+                context is not WeaponPreHitDamageableContext)
             {
-                charge = charge.Map(MinRequired, MaxRequired, Min, Max, Exponent);
-                amount *= charge;
-                return true;
+                if ((TerrainOnly && HitTerrain(context))
+                 || (!TerrainOnly && context is not WeaponPreHitDamageableContext))
+                {
+                    charge = charge.Map(MinRequired, MaxRequired, Min, Max, Exponent);
+                    amount *= charge;
+                    return true;
+                }
             }
             amount = 0;
             return false;
+        }
+
+        private bool HitTerrain(WeaponTriggerContext context)
+        {
+            var baseContext = (WeaponHitContextBase)context;
+            if (!baseContext.DamageType.HasFlag(DamageType.Terrain)) return false;
+            var hitContext = (WeaponHitContext)context;
+            return !hitContext.HitCorpse;
         }
 
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
@@ -53,6 +67,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "maxrequired":
                 case "maxreq":
                     MaxRequired = reader.GetSingle();
+                    break;
+                case "terrainonly":
+                case "terrain":
+                    TerrainOnly = reader.GetBoolean();
                     break;
             }
         }

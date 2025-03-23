@@ -1,36 +1,37 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
-using UnityEngine;
 using System.Text.Json;
-using EWC.Utils;
 using AIGraph;
 using LevelGeneration;
 using System.Collections.Generic;
+using System;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class WallPierce : 
         Trait,
         IGunProperty,
-        IWeaponProperty<WeaponPostRayContext>
+        IWeaponProperty<WeaponSetupContext>,
+        IWeaponProperty<WeaponClearContext>
     {
-        private static RaycastHit s_rayHit;
-        private static Queue<AIG_CourseNode> s_nodeQueue = new();
+        private static readonly Queue<AIG_CourseNode> s_nodeQueue = new();
 
         public bool RequireOpenPath { get; private set; } = false;
 
-        public void Invoke(WeaponPostRayContext context)
+        public override bool ShouldRegister(Type contextType)
         {
-            if (!context.Result || CWC.HasTrait<ThickBullet>() || CWC.HasTrait<Projectile>()) return;
-            if (context.Data.RayHit.collider == null) return;
-            if (context.Data.RayHit.collider.gameObject.IsInLayerMask(LayerUtil.MaskEntity3P)) return;
+            if (!CWC.IsLocal) return false;
 
-            if (!Physics.Raycast(Weapon.s_ray, out s_rayHit, context.Data.maxRayDist, LayerUtil.MaskEntity3P)) return;
+            return base.ShouldRegister(contextType);
+        }
 
-            IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(s_rayHit);
-            if (damageable == null || !IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode)) return;
+        public void Invoke(WeaponSetupContext context)
+        {
+            CWC.ShotComponent!.WallPierce = this;
+        }
 
-            context.Result = true;
-            context.Data.RayHit = s_rayHit;
+        public void Invoke(WeaponClearContext context)
+        {
+            CWC.ShotComponent!.WallPierce = null;
         }
 
         public bool IsTargetReachable(AIG_CourseNode? source, AIG_CourseNode? target)

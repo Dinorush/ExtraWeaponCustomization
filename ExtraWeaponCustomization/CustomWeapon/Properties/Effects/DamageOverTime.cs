@@ -1,10 +1,12 @@
 ﻿using Agents;
 using Enemies;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Dependencies;
 using EWC.JSON;
 using Player;
@@ -37,7 +39,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageLimb { get; private set; } = true;
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
-        public bool IgnoreDamageMods { get; private set; } = false;
+        public bool IgnoreShotMods { get; private set; } = false;
         private float _tickRate = 2f;
         public float TickRate
         {
@@ -62,9 +64,11 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
+            if (Owner == null) return;
+
             foreach (TriggerContext tContext in triggerList)
             {
-                var hitContext = (WeaponHitDamageableContext)tContext.context;
+                var hitContext = (WeaponHitDamageableContextBase)tContext.context;
                 AddDOT(hitContext, tContext.triggerAmt);
                 Agent? agent = hitContext.Damageable.GetBaseAgent();
                 if (agent != null)
@@ -99,7 +103,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             DOTGlowPooling.TryEndEffect(this);
         }
 
-        private void AddDOT(WeaponHitDamageableContext context, float triggerAmt)
+        private void AddDOT(WeaponHitDamageableContextBase context, float triggerAmt)
         {
             TempWrapper.Set(context.Damageable);
 
@@ -110,17 +114,23 @@ namespace EWC.CustomWeapon.Properties.Effects
                 backstabMulti = context.Backstab;
 
             float precisionMulti = PrecisionDamageMulti;
-
-            WeaponDamageContext damageContext = new(damage, precisionMulti, context.Damageable);
-            CWC.Invoke(damageContext);
-            if (!IgnoreDamageMods)
-                damage = damageContext.Damage.Value;
-            precisionMulti = damageContext.Precision.Value;
+            float staggerMulti = StaggerDamageMulti;
 
             damage *= EXPAPIWrapper.GetDamageMod(CWC.IsGun);
 
+            ShotInfo info = new(context.ShotInfo.Orig, true);
+            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, DamageType.DOT.WithSubTypes(context.Damageable), context.Damageable, context.ShotInfo.Orig);
+            CWC.Invoke(statContext);
+            if (!IgnoreShotMods)
+            {
+                damage = statContext.Damage;
+                precisionMulti = statContext.Precision;
+                staggerMulti = statContext.Stagger;
+            }
+
+            DOTInstance newDot = new(damage, falloff, precisionMulti, staggerMulti, statContext.BypassTumorCap, backstabMulti, info, this);
             if (StackLimit == 0)
-                _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
+                _controller.AddDOT(ref newDot, context.Damageable);
             else
             {
                 ClearDeadQueues();
@@ -143,7 +153,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 else
                     _lastDOTs.Add(new BaseDamageableWrapper(context.Damageable), queue = new Queue<DOTInstance>());
 
-                DOTInstance? newDot = _controller.AddDOT(damage, falloff, precisionMulti, damageContext.BypassTumorCap, backstabMulti, context.Damageable, this);
+                _controller.AddDOT(ref newDot, context.Damageable);
                 if (newDot != null)
                 {
                     queue.Enqueue(newDot);
@@ -190,7 +200,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
-            writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
+            writer.WriteBoolean(nameof(IgnoreShotMods), IgnoreShotMods);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
             writer.WritePropertyName(nameof(GlowColor));
             EWCJson.Serialize(writer, GlowColor);
@@ -261,7 +271,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "ignoredamagemods":
                 case "ignoredamagemod":
-                    IgnoreDamageMods = reader.GetBoolean();
+                case "ignoreshotmods":
+                case "ignoreshotmod":
+                    IgnoreShotMods = reader.GetBoolean();
                     break;
                 case "applyattackcooldowns":
                 case "applyattackcooldown":

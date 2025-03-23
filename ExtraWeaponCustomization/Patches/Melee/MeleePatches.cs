@@ -1,13 +1,11 @@
-﻿using Agents;
-using Enemies;
-using EWC.CustomWeapon;
-using EWC.CustomWeapon.KillTracker;
+﻿using EWC.CustomWeapon;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.Utils;
 using Gear;
 using HarmonyLib;
 using System;
+using EWC.CustomWeapon.CustomShot;
 
 namespace EWC.Patches.Melee
 {
@@ -53,9 +51,8 @@ namespace EWC.Patches.Melee
             cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
         }
 
-        private readonly static HitData s_hitData = new();
-        private static float s_origHitDamage = 0f;
-        private static float s_origHitPrecision = 0f;
+        private readonly static HitData s_hitData = new(CustomWeapon.Enums.DamageType.Bullet);
+        private static CustomWeaponComponent? _cachedCWC = null;
         public static float CachedCharge { get; private set; } = 0f;
 
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.SetNextDamageToDeal))]
@@ -63,10 +60,13 @@ namespace EWC.Patches.Melee
         [HarmonyPostfix]
         private static void SetDamageCallback(MeleeWeaponFirstPerson __instance, eMeleeWeaponDamage dam, float scale)
         {
-            s_origHitDamage = __instance.m_damageToDeal;
-            s_origHitPrecision = __instance.m_precisionMultiToDeal;
-            s_hitData.shotInfo.Reset();
-            CachedCharge = dam == eMeleeWeaponDamage.Heavy ? (float) Math.Cbrt(scale) : 0f;
+            _cachedCWC = __instance.GetComponent<CustomWeaponComponent>();
+            if (_cachedCWC == null) return;
+            ShotManager.AdvanceGroupMod(_cachedCWC);
+
+            s_hitData.shotInfo.Reset(__instance.m_damageToDeal, __instance.m_precisionMultiToDeal, __instance.m_staggerMultiToDeal);
+            s_hitData.shotInfo.NewShot(_cachedCWC);
+            CachedCharge = dam == eMeleeWeaponDamage.Heavy ? (float)Math.Cbrt(scale) : 0f;
         }
 
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.DoAttackDamage))]
@@ -74,7 +74,7 @@ namespace EWC.Patches.Melee
         [HarmonyPrefix]
         private static void HitCallback(MeleeWeaponFirstPerson __instance, MeleeWeaponDamageData data, bool isPush)
         {
-            if (isPush) return;
+            if (isPush || _cachedCWC == null) return;
 
             s_hitData.Setup(__instance, data);
             IDamageable? damageable = s_hitData.damageable;
@@ -82,19 +82,9 @@ namespace EWC.Patches.Melee
             if (baseDamageable != null && baseDamageable.GetHealthRel() <= 0) return;
 
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
-            if (cwc == null)
-            {
-                Agent? agent = damageable?.GetBaseAgent();
-                if (agent != null && agent.Type == AgentType.Enemy && agent.Alive)
-                    KillTrackerManager.ClearHit(agent.Cast<EnemyAgent>());
-                return;
-            }
+            if (cwc == null) return;
 
-            // Correct damage back to base damage to apply damage mods
-            s_hitData.damage = s_origHitDamage;
-            s_hitData.precisionMulti = s_origHitPrecision;
-
-            WeaponPatches.ApplyEWCHit(cwc, s_hitData, ref s_origHitDamage, out _);
+            WeaponPatches.ApplyEWCHit(cwc, s_hitData, out _);
         }
     }
 }
