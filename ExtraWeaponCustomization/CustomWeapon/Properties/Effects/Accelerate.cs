@@ -162,8 +162,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(EndFireRateMod), EndFireRateMod);
             writer.WriteString(nameof(FireRateStackLayer), FireRateStackLayer.ToString());
             writer.WriteNumber(nameof(EndShotMod), EndShotMod);
-            writer.WriteString(nameof(ModDamageType), ModDamageType[0].ToString());
             writer.WriteString(nameof(ModStatType), ModStatType.ToString());
+            writer.WriteString(nameof(ModDamageType), ModDamageType[0].ToString());
             writer.WriteString(nameof(ModStackLayer), ModStackLayer.ToString());
             writer.WriteBoolean(nameof(StoreModOnGroup), StoreModOnGroup);
             writer.WriteNumber(nameof(AccelTime), AccelTime);
