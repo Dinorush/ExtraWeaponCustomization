@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public WeaponPreHitDamageableContext(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float backstab, float falloff, ShotInfo.Const info, DamageType flag) : 
             base(damageable, position, direction, normal, backstab, falloff, info, flag) {}
 
-        public WeaponPreHitDamageableContext(HitData data, float backstab, DamageType flag) :
-            base(data, backstab, flag) {}
+        public WeaponPreHitDamageableContext(HitData data, float backstab) :
+            base(data, backstab) {}
     }
 }

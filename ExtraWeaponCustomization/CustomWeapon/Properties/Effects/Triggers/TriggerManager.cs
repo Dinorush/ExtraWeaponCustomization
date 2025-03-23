@@ -114,7 +114,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 EWCLogger.Error("Received a networked trigger for a weapon that has no custom info. Client has incorrect EWC properties.");
                 cwc = item.Instance.gameObject.AddComponent<CustomWeaponComponent>();
-                cwc.SetToSync();
             }
 
             callback = cwc.GetTriggerSync(id);

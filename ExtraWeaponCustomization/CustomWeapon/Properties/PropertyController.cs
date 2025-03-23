@@ -11,21 +11,6 @@ using EWC.Utils.Extensions;
 
 namespace EWC.CustomWeapon.Properties
 {
-    internal sealed class PropertyNode
-    {
-        public readonly PropertyList List;
-        public readonly List<PropertyNode> Children;
-        public bool Active { get; set; } = false;
-        public bool Enabled { get; set; } = true;
-
-        public PropertyNode(PropertyList list, PropertyNode? parent)
-        {
-            List = list;
-            Children = new List<PropertyNode>();
-            parent?.Children.Add(this);
-        }
-    }
-
     internal sealed class PropertyController
     {
         private PropertyNode? _root;
@@ -36,9 +21,9 @@ namespace EWC.CustomWeapon.Properties
         private static readonly HashSet<WeaponPropertyBase> s_ignoreRefs = new();
         private readonly List<ITriggerCallbackSync> _syncList = new(1);
 
-        public PropertyController(bool isGun)
+        public PropertyController(bool isGun, bool isLocal)
         {
-            _contextController = new(isGun);
+            _contextController = new(isGun, isLocal);
         }
 
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
@@ -58,14 +43,16 @@ namespace EWC.CustomWeapon.Properties
         private PropertyNode CreateTree(CustomWeaponComponent cwc, PropertyList list, PropertyNode? parent = null)
         {
             PropertyNode curNode = new(list, parent);
+            list.SetCWC(cwc);
             foreach (WeaponPropertyBase property in list.Properties)
             {
-                property.CWC = cwc;
                 if (property is TempProperties tempProperties)
                 {
                     if (!tempProperties.Properties.Empty)
                         tempProperties.Node = CreateTree(cwc, tempProperties.Properties, curNode);
                 }
+                else if (property is IReferenceHolder refHolder)
+                    refHolder.Properties.SetCWC(cwc);
             }
             return curNode;
         }
@@ -90,11 +77,6 @@ namespace EWC.CustomWeapon.Properties
 
             foreach (var child in node.Children)
                 RemoveInvalidProperties(child, isGun);
-        }
-
-        internal void ChangeToSyncContexts()
-        {
-            _contextController.ChangeToSyncContexts();
         }
 
         private void RegisterSyncProperties(PropertyNode node)
@@ -137,13 +119,17 @@ namespace EWC.CustomWeapon.Properties
 
         private void SetReferenceProperties(PropertyNode node)
         {
-            if (node.List.ReferenceProperties != null)
+            foreach (var refHolder in node.List.ReferenceHolders.OrEmptyIfNull())
             {
-                foreach (var property in node.List.ReferenceProperties)
+                foreach (var property in refHolder.Properties.ReferenceProperties.OrEmptyIfNull())
                 {
-                    property.Reference = _idToProperty.GetValueOrDefault(property.ReferenceID);
-                    if (node.List.Owner != null && property.Reference?.property is ITriggerCallback callback)
-                        node.List.Owner.AddTriggerCallback(callback);
+                    if (_idToProperty.TryGetValue(property.ReferenceID, out var refProperty))
+                    {
+                        property.Reference = refProperty;
+                        refHolder.OnReferenceSet(refProperty.property);
+                    }
+                    else if (property.ReferenceID != 0)
+                        EWCLogger.Error($"Unable to find property with ID {property.ReferenceID}!");
                 }
             }
 
@@ -206,14 +192,11 @@ namespace EWC.CustomWeapon.Properties
                     // UpdateRoot will register/add traits, so just need to invoke setups
                     UpdateRoot(node);
 
-                    if (node.List.SetupCallbacks != null)
+                    foreach (var property in node.List.SetupCallbacks.OrEmptyIfNull())
                     {
-                        foreach (var property in node.List.SetupCallbacks)
-                        {
-                            if (s_ignoreRefs.Contains((WeaponPropertyBase) property)) continue;
+                        if (s_ignoreRefs.Contains((WeaponPropertyBase) property)) continue;
 
-                            property.Invoke(StaticContext<WeaponSetupContext>.Instance);
-                        }
+                        property.Invoke(StaticContext<WeaponSetupContext>.Instance);
                     }
                 }
                 else
@@ -237,7 +220,7 @@ namespace EWC.CustomWeapon.Properties
 
                 if (property is Trait trait && !_activeTraits.TryAdd(property.GetType(), trait)) continue;
                 
-                if (property is IWeaponProperty<WeaponSetupContext> setup)
+                if (property.IsProperty<WeaponSetupContext>(out var setup))
                     setup.Invoke(StaticContext<WeaponSetupContext>.Instance);
 
                 _contextController.Register(property);
@@ -273,7 +256,7 @@ namespace EWC.CustomWeapon.Properties
                 else
                     _activeTraits.Remove(type);
 
-                if (property is IWeaponProperty<WeaponClearContext> clear)
+                if (property.IsProperty<WeaponClearContext>(out var clear))
                     clear.Invoke(StaticContext<WeaponClearContext>.Instance);
 
                 _contextController.Unregister(property);
@@ -317,10 +300,9 @@ namespace EWC.CustomWeapon.Properties
         {
             if (node == null || (!node.Active && !allowFirst)) return;
 
-            if (node.List.ReferenceProperties != null)
-                foreach (var refProp in node.List.ReferenceProperties)
-                    if (refProp.Reference != null)
-                        s_ignoreRefs.Add(refProp.Reference.property);
+            foreach (var refProp in node.List.ReferenceProperties.OrEmptyIfNull())
+                if (refProp.Reference != null)
+                    s_ignoreRefs.Add(refProp.Reference.property);
 
             foreach (var child in node.Children)
                 CacheIgnoreRefs(child, false);

@@ -5,27 +5,21 @@ using EWC.Dependencies;
 using GTFO.API;
 using Il2CppInterop.Runtime.Injection;
 using EWC.CustomWeapon;
-using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
-using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
-using EWC.CustomWeapon.Properties.Effects.Heal;
 using EWC.Utils.Log;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils;
 using EWC.Patches.Native;
-using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
-using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
-using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
-using EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX;
-using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
 using EWC.Patches.Player;
 using System.Runtime.CompilerServices;
+using EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX;
+using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "2.23.0")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.0.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
-[BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(PDAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(EXPAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(ERDAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -39,7 +33,6 @@ internal sealed class EntryPoint : BasePlugin
 
     public override void Load()
     {
-        EWCLogger.Log("Loading " + MODNAME);
         if (!MTFOAPIWrapper.HasCustomContent)
         {
             EWCLogger.Error("No MTFO datablocks detected. Not loading EWC...");
@@ -63,8 +56,8 @@ internal sealed class EntryPoint : BasePlugin
     private void LevelAPI_OnLevelCleanup()
     {
         CustomWeaponManager.Current.ResetCWCs(false);
-        EWCProjectileManager.Reset();
-        DOTDamageManager.Reset();
+        CustomWeapon.Properties.Traits.CustomProjectile.Managers.EWCProjectileManager.Reset();
+        CustomWeapon.Properties.Effects.Hit.DOT.DOTDamageManager.Reset();
     }
 
     private void LevelAPI_OnLevelEnter()
@@ -81,13 +74,12 @@ internal sealed class EntryPoint : BasePlugin
         ClassInjector.RegisterTypeInIl2Cpp<EWCProjectileComponentShooter>();
 
         LayerUtil.Init();
-        ExplosionManager.Init();
-        DOTDamageManager.Init();
-        FoamActionManager.Init();
-        HealManager.Init();
-        TriggerManager.Init();
-        KillAPIWrapper.Init();
-        EWCProjectileManager.Init();
+        CustomWeapon.Properties.Effects.Hit.Explosion.ExplosionManager.Init();
+        CustomWeapon.Properties.Effects.Hit.DOT.DOTDamageManager.Init();
+        CustomWeapon.Properties.Effects.Hit.CustomFoam.FoamActionManager.Init();
+        CustomWeapon.Properties.Effects.Heal.HealManager.Init();
+        CustomWeapon.Properties.Effects.Triggers.TriggerManager.Init();
+        CustomWeapon.Properties.Traits.CustomProjectile.Managers.EWCProjectileManager.Init();
         RuntimeHelpers.RunClassConstructor(typeof(CustomWeaponManager).TypeHandle);
     }
 }

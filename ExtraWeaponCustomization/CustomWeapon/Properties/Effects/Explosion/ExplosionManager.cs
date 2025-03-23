@@ -24,12 +24,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         private readonly static ExplosionDamageSync _sync = new();
 
         private const SearchSetting BaseSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
-        private static SearchSetting s_searchSetting = BaseSettings;
         public const float MaxRadius = 1024f;
         public const float MaxStagger = 16384f; // 2^14
-
-        private readonly static List<RaycastHit> s_hits = new();
-        private readonly static ShotInfo s_shotInfo = new();
 
         internal static void Init()
         {
@@ -37,15 +33,15 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             ExplosionFXManager.Init();
         }
 
-        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt)
+        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, ShotInfo? triggerInfo = null)
         {
             if (!source.IsLocallyOwned) return;
 
             ExplosionFXManager.DoExplosionFX(position, eBase);
-            DoExplosionDamage(position, direction, source, falloffMod, eBase, triggerAmt);
+            DoExplosionDamage(position, direction, source, falloffMod, eBase, triggerAmt, triggerInfo);
         }
 
-        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt)
+        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt, ShotInfo? triggerInfo)
         {
             AIG_CourseNode? node = SearchUtil.GetCourseNode(position, source);
             if (node == null)
@@ -55,24 +51,36 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             }
 
             Ray ray = new(position, direction);
-            s_searchSetting = BaseSettings;
+            SearchSetting searchSetting = BaseSettings;
             if (explosiveBase.DamageOwner)
-                s_searchSetting |= SearchSetting.CheckOwner;
+                searchSetting |= SearchSetting.CheckOwner;
             if (explosiveBase.DamageFriendly)
-                s_searchSetting |= SearchSetting.CheckFriendly;
+                searchSetting |= SearchSetting.CheckFriendly;
 
+            List<RaycastHit> hits = new();
             SearchUtil.SightBlockLayer = LayerUtil.MaskWorldExcProj;
-            foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(ray, explosiveBase.Radius, 180f, node, s_searchSetting))
-                s_hits.Add(hit);
+            foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(ray, explosiveBase.Radius, 180f, node, searchSetting))
+                hits.Add(hit);
 
             if (explosiveBase.DamageFriendly || explosiveBase.DamageOwner)
-                foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting))
-                    s_hits.Add(hit);
+                foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, searchSetting))
+                    hits.Add(hit);
 
             if (explosiveBase.DamageLocks)
-                s_hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, s_searchSetting));
+                hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, searchSetting));
+            
+            if (hits.Count == 0) return;
 
-            foreach (RaycastHit hit in s_hits)
+            ShotInfo shotInfo;
+            if (triggerInfo != null)
+                shotInfo = new(triggerInfo, true);
+            else
+            {
+                shotInfo = new();
+                shotInfo.NewShot(explosiveBase.CWC);
+            }
+
+            foreach (RaycastHit hit in hits)
             {
                 SendExplosionDamage(
                     hit.collider.GetComponent<IDamageable>(),
@@ -82,12 +90,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     hit.distance,
                     source,
                     falloffMod,
-                    s_shotInfo,
+                    shotInfo,
                     explosiveBase,
                     triggerAmt);
             }
-            s_shotInfo.Reset();
-            s_hits.Clear();
         }
 
         internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float distance, PlayerAgent source, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
@@ -96,6 +102,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             float distFalloff = damage / eBase.MaxDamage;
             damage *= triggerAmt;
             float precisionMult = eBase.PrecisionDamageMulti;
+            float staggerMult = eBase.StaggerDamageMulti;
 
             float backstabMulti = 1f;
             bool enemy = damageable.IsEnemy();
@@ -125,13 +132,17 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 info,
                 DamageType.Explosive
                 ));
-            info.AddHit(preContext.DamageType);
 
-            WeaponDamageContext damageContext = new(damage, precisionMult, damageable);
-            eBase.CWC.Invoke(damageContext);
-            if (!eBase.IgnoreDamageMods)
-                damage = damageContext.Damage.Value;
-            precisionMult = damageContext.Precision.Value;
+            WeaponStatContext statContext = new(damage, precisionMult, staggerMult, preContext.DamageType, damageable, info);
+            eBase.CWC.Invoke(statContext);
+            if (!eBase.IgnoreShotMods)
+            {
+                damage = statContext.Damage;
+                precisionMult = statContext.Precision;
+                staggerMult = statContext.Stagger;
+            }
+
+            info.AddHit(preContext.DamageType);
 
             // 0.001f to account for rounding error
             damage = falloffMod * damage + 0.001f;
@@ -174,7 +185,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             data.limbID = (byte) limb.m_limbID;
             data.damageLimb = eBase.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
-            data.staggerMult.Set(eBase.StaggerDamageMulti, MaxStagger);
+            data.staggerMult.Set(staggerMult, MaxStagger);
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
@@ -183,7 +194,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
-            if (!damageContext.BypassTumorCap && limb.DestructionType == eLimbDestructionType.Custom)
+            if (!statContext.BypassTumorCap && limb.DestructionType == eLimbDestructionType.Custom)
                 precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
 
             data.damage.Set(precDamage, damBase.DamageMax);
@@ -191,7 +202,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             bool willKill = damBase.WillDamageKill(precDamage);
-            KillTrackerManager.RegisterHit(eBase.CWC.Weapon, hitContext);
+            KillTrackerManager.RegisterHit(eBase.CWC, hitContext);
             if (willKill || eBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result)
                 limb.ShowHitIndicator(precDamage > damage, willKill, position, armorMulti < 1f || damBase.IsImortal);
 

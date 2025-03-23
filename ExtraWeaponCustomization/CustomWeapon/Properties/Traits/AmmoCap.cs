@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using GameData;
 using Player;
+using System;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
@@ -19,10 +20,14 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private const float DefaultPackConv = 5f;
 
+        public override bool ShouldRegister(Type contextType)
+        {
+            if (contextType == typeof(WeaponPostAmmoInitContext)) return ApplyOnDrop;
+            return base.ShouldRegister(contextType);
+        }
+
         public void Invoke(WeaponSetupContext context)
         {
-            if (!CWC.IsLocal) return;
-
             if (AmmopackRefillRel > 0)
             {
                 PlayerDataBlock data = GameDataBlockBase<PlayerDataBlock>.GetBlock(1u);
@@ -49,8 +54,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostAmmoInitContext context)
         {
-            if (!ApplyOnDrop) return;
-
             // Fix the starting ammo for the weapon.
             InventorySlotAmmo slot = context.SlotAmmo;
             slot.AmmoInPack = (CWC.Weapon.GetCurrentClip() * slot.CostOfBullet + slot.AmmoInPack) * AmmoCapRel;

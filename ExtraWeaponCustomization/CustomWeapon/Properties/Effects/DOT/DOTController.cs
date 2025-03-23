@@ -18,21 +18,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private Coroutine? _updateRoutine = null;
         private float _nextTickTime = float.MaxValue;
 
-        public DOTInstance? AddDOT(float totalDamage, float falloff, float precision, bool bypassTumor, float backstab, IDamageable damageable, DamageOverTime dotBase)
+        public void AddDOT(ref DOTInstance newDot, IDamageable damageable)
         {
-            if (dotBase.Owner == null) return null;
-
             IntPtr ptr = damageable.Pointer;
 
             // If the limb doesn't exist in activeDots, initialize a new Wrapper and add it
-            DOTInstance dot = new(totalDamage, falloff, precision, bypassTumor, backstab, dotBase);
             if (!_ptrToWrapper.ContainsKey(ptr))
             {
                 DOTDamageableWrapper wrapper = new(damageable, ptr);
                 _ptrToWrapper[ptr] = wrapper;
                 _activeDots[wrapper] = new(_comparer);
-                _activeDots[wrapper].Enqueue(dot, dot);
-                wrapper.LastInstance = dot;
+                _activeDots[wrapper].Enqueue(newDot, newDot);
+                wrapper.LastInstance = newDot;
             }
             else
             {
@@ -40,20 +37,19 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 // Mainly to improve shotgun shot performance, not reliable with more than 1 DOT but doesn't need to be.
                 DOTDamageableWrapper key = _ptrToWrapper[ptr];
 
-                if (key.LastInstance?.CanAddInstance(dotBase) == true)
+                if (key.LastInstance?.CanAddInstance(newDot.DotBase) == true)
                 {
-                    dot = key.LastInstance;
-                    key.LastInstance.AddInstance(totalDamage);
+                    key.LastInstance.AddInstance(newDot);
+                    newDot = key.LastInstance;
                 }
                 else
                 {
-                    _activeDots[key].Enqueue(dot, dot);
-                    key.LastInstance = dot;
+                    _activeDots[key].Enqueue(newDot, newDot);
+                    key.LastInstance = newDot;
                 }
             }
 
             _updateRoutine ??= CoroutineManager.StartCoroutine(Update().WrapToIl2Cpp());
-            return dot;
         }
 
         private IEnumerator Update()
@@ -113,11 +109,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             _activeDots.Clear();
             _ptrToWrapper.Clear();
-            if (_updateRoutine != null)
-            {
-                CoroutineManager.StopCoroutine(_updateRoutine);
-                _updateRoutine = null;
-            }
+            Utils.CoroutineUtil.Stop(ref _updateRoutine);
         }
 
         sealed class DOTDamageableWrapper : ObjectWrapper<IDamageable>

@@ -70,7 +70,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageTypes()),
                 string charge when charge.Contains("charge") => new ChargeTrigger(name.ToDamageTypes()),
                 string damage when damage.Contains("damage") => new DamageTrigger(name.ToDamageTypes()),
-                string kill when kill.Contains("kill") => new DamageTypeTrigger<WeaponPostKillContext>(TriggerName.Kill, name.ToDamageTypes()),
+                string kill when kill.Contains("kill") => new KillTrigger(name.ToDamageTypes()),
                 _ => null
             };
         }

@@ -16,7 +16,7 @@ namespace EWC.JSON.Converters
             {
                 ITrigger? trigger = EWCJson.Deserialize<ITrigger>(ref reader);
                 if (trigger != null)
-                    coordinator.Activate.Add(trigger);
+                    coordinator.Activate.Triggers.Add(trigger);
                 else
                     return null;
                 return coordinator;
@@ -34,7 +34,7 @@ namespace EWC.JSON.Converters
 
             if (customTrigger != null)
             {
-                coordinator.Activate.Add(customTrigger);
+                coordinator.Activate.Triggers.Add(customTrigger);
                 return coordinator;
             }
 
@@ -42,7 +42,7 @@ namespace EWC.JSON.Converters
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
-                    return coordinator.Activate?.Count > 0 ? coordinator : null;
+                    return coordinator;
 
                 if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected PropertyName token");
 
@@ -57,7 +57,7 @@ namespace EWC.JSON.Converters
         // Only called for templates, so don't need logic for customized coordinators/triggers
         public override void Write(Utf8JsonWriter writer, TriggerCoordinator? value, JsonSerializerOptions options)
         {
-            writer.WriteStringValue(value?.Activate[0].Name.ToString() ?? "Invalid");
+            writer.WriteStringValue(value?.Activate.Triggers[0].Name.ToString() ?? "Invalid");
         }
     }
 }

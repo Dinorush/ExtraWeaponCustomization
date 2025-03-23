@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using System;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
@@ -11,18 +12,20 @@ namespace EWC.CustomWeapon.Properties.Traits
     {
         private bool _cachedTrigger;
 
+        public override bool ShouldRegister(Type contextType)
+        {
+            if (contextType == typeof(WeaponSetupContext) || contextType == typeof(WeaponClearContext)) return CWC.IsLocal;
+            return base.ShouldRegister(contextType);
+        }
+
         public void Invoke(WeaponSetupContext context)
         {
-            if (!CWC.IsLocal) return;
-
             _cachedTrigger = CWC.Gun!.m_archeType.m_triggerNeedsPress;
             CWC.Gun.m_archeType.m_triggerNeedsPress = false;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            if (!CWC.IsLocal) return;
-
             CWC.Gun!.m_archeType.m_triggerNeedsPress = _cachedTrigger;
         }
 

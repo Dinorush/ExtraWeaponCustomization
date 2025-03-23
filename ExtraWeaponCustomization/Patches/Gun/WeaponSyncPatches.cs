@@ -10,17 +10,6 @@ namespace EWC.Patches.Gun
     [HarmonyPatch]
     internal static class WeaponSyncPatches
     {
-        [HarmonyPatch(typeof(BulletWeaponSynced), nameof(BulletWeaponSynced.OnGearSpawnComplete))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void Post_SetupSynced(BulletWeaponSynced __instance)
-        {
-            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
-            cwc.SetToSync();
-        }
-
         [HarmonyPatch(typeof(ShotgunSynced), nameof(ShotgunSynced.Fire))]
         [HarmonyPatch(typeof(BulletWeaponSynced), nameof(BulletWeaponSynced.Fire))]
         [HarmonyWrapSafe]
@@ -46,7 +35,7 @@ namespace EWC.Patches.Gun
             cwc.UpdateStoredFireRate();
             cwc.ModifyFireRateSynced(__instance);
 
-            if (!cwc.Invoke(new WeaponCancelTracerContext()).Allow)
+            if (cwc.ShotComponent!.CancelNormalShot)
                 ShotManager.CancelTracerFX(__instance.ArchetypeData, __instance!.TryCast<ShotgunSynced>() != null);
             cwc.Invoke(StaticContext<WeaponPostFireContextSync>.Instance);
         }

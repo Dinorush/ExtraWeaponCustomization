@@ -6,8 +6,10 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
     public sealed class WeaponPostKillContext : WeaponHitDamageableContextBase
     {
         public EnemyAgent Enemy { get; }
+        public float Delay { get; }
+        public bool DidKill { get; }
 
-        public WeaponPostKillContext(WeaponHitDamageableContext hitContext) :
+        public WeaponPostKillContext(WeaponHitDamageableContext hitContext, float lastTime, bool didKill) :
             base(
                 hitContext.Damageable,
                 hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Position,
@@ -20,6 +22,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 )
         {
             Enemy = hitContext.Damageable.GetBaseAgent().Cast<EnemyAgent>();
+            Delay = Clock.Time - lastTime;
+            DidKill = didKill;
         }
     }
 }

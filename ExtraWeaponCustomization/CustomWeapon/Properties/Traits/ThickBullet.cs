@@ -1,200 +1,33 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
-using UnityEngine;
-using System.Text.Json;
-using EWC.Utils;
-using System.Collections.Generic;
 using System;
-using Gear;
-using Agents;
-using Enemies;
-using EWC.CustomWeapon.CustomShot;
+using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class ThickBullet : 
         Trait,
         IGunProperty,
-        IWeaponProperty<WeaponPostRayContext>
+        IWeaponProperty<WeaponSetupContext>,
+        IWeaponProperty<WeaponClearContext>
     {
         public float HitSize { get; private set; } = 0f;
+        public float HitSizeFriendly { get; private set; } = 0f;
 
-        private int _pierceCount = 0;
-
-        private readonly static HashSet<IntPtr> s_hitEnts = new();
-        private static Ray s_ray;
-        private static RaycastHit s_rayHit;
-        private const float SightCheckMinSize = 0.5f;
-
-        public void Invoke(WeaponPostRayContext context)
+        public override bool ShouldRegister(Type contextType)
         {
-            if (HitSize == 0) return;
+            if (!CWC.IsLocal) return false;
 
-            context.Result = false;
-            s_hitEnts.Clear();
-            s_hitEnts.Add(context.IgnoreEnt);
-
-            s_ray = Weapon.s_ray;
-            _pierceCount = CWC.Weapon.ArchetypeData.PiercingBullets ? CWC.Weapon.ArchetypeData.PiercingDamageCountLimit : 1;
-            var wallPierce = CWC.GetTrait<WallPierce>();
-            bool hitWall;
-            Vector3 wallPos; // Used to determine bounds for thick bullets and line of sight checks
-            if ((hitWall = Physics.Raycast(s_ray, out RaycastHit wallRayHit, context.Data.maxRayDist, LayerUtil.MaskWorld)) && wallPierce == null)
-                wallPos = wallRayHit.point;
-            else
-                wallPos = s_ray.origin + context.Data.fireDir * context.Data.maxRayDist;
-            float maxDist = (s_ray.origin - wallPos).magnitude;
-
-            CheckCollisionInitial(context, wallPos, wallPierce);
-
-            if (_pierceCount == 0) return;
-
-            RaycastHit[] results = Physics.SphereCastAll(s_ray, HitSize, maxDist, LayerUtil.MaskEnemyDynamic);
-            if (results.Length != 0)
-            {
-                SortUtil.SortWithWeakspotBuffer(results);
-
-                foreach (RaycastHit hit in results)
-                {
-                    if (hit.distance == 0) continue;
-
-                    IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
-                    if (damageable == null) continue;
-                    if (AlreadyHit(damageable)) continue;
-                    if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent()?.CourseNode) == false) continue;
-                    if (wallPierce == null && !CheckLineOfSight(hit.collider, hit.point + hit.normal * HitSize, wallPos, true)) continue;
-
-                    s_rayHit = hit;
-                    CheckDirectHit(ref s_rayHit);
-
-                    context.Data.RayHit = s_rayHit;
-                    if (ShotManager.BulletHit(context.Data))
-                        _pierceCount--;
-
-                    if (_pierceCount <= 0) return;
-                }
-            }
-
-            results = Physics.RaycastAll(s_ray, maxDist, LayerUtil.MaskFriendly);
-            if (results.Length != 0)
-            {
-                Array.Sort(results, SortUtil.Rayhit);
-
-                foreach (RaycastHit hit in results)
-                {
-                    IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
-                    if (damageable == null) continue;
-                    if (AlreadyHit(damageable)) continue;
-                    if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, damageable.GetBaseAgent().CourseNode) == false) continue;
-
-                    context.Data.RayHit = hit;
-                    if (ShotManager.BulletHit(context.Data))
-                        _pierceCount--;
-
-                    if (_pierceCount <= 0) return;
-                }
-            }
-
-            if (!hitWall) return;
-
-            context.Data.RayHit = wallRayHit;
-            ShotManager.BulletHit(context.Data);
+            return base.ShouldRegister(contextType);
         }
 
-        // Check for enemies within the initial sphere (if hitsize is big enough)
-        private void CheckCollisionInitial(WeaponPostRayContext context, Vector3 wallPos, WallPierce? wallPierce)
+        public void Invoke(WeaponSetupContext context)
         {
-            Vector3 origin = s_ray.origin;
-            List<(EnemyAgent enemy, RaycastHit hit)> hits = SearchUtil.GetEnemyHitsInRange(s_ray, HitSize, 180f, CWC.Weapon.Owner.CourseNode);
-            hits.Sort(SortUtil.EnemyRayhit);
-
-            foreach (var pair in hits)
-            {
-                RaycastHit hit = pair.hit;
-                if (AlreadyHit(hit.collider)) continue;
-                if (wallPierce?.IsTargetReachable(CWC.Weapon.Owner.CourseNode, pair.enemy.CourseNode) == false) continue;
-                if (wallPierce == null && !CheckLineOfSight(hit.collider, origin, wallPos)) continue;
-
-                CheckDirectHit(ref hit);
-
-                context.Data.RayHit = hit;
-                if (ShotManager.BulletHit(context.Data))
-                    _pierceCount--;
-
-                if (_pierceCount <= 0) break;
-            }
-
-            List<RaycastHit> lockHits = SearchUtil.GetLockHitsInRange(s_ray, HitSize, 180f);
-            lockHits.Sort(SortUtil.Rayhit);
-
-            foreach (var hit in lockHits)
-            {
-                if (AlreadyHit(hit.collider)) continue;
-                if (wallPierce == null && !CheckLineOfSight(hit.collider, origin, wallPos, true)) continue;
-
-                context.Data.RayHit = hit;
-                if (ShotManager.BulletHit(context.Data))
-                    _pierceCount--;
-
-                if (_pierceCount <= 0) break;
-            }
+            CWC.ShotComponent!.ThickBullet = this;
         }
 
-        // Naive LOS check to ensure that some point on the bullet line can see the enemy
-        private bool CheckLineOfSight(Collider collider, Vector3 startPos, Vector3 endPos, bool checkLock = false)
+        public void Invoke(WeaponClearContext context)
         {
-            if (HitSize < SightCheckMinSize) return true;
-
-            float remainingDist = (endPos - startPos).magnitude;
-            float increment = Math.Max(0.1f, Math.Min(HitSize, remainingDist) / 10f);
-
-            Vector3 colliderPos = collider.transform.position;
-            Vector3 origin = startPos;
-
-            float checkDistSqr = (origin - colliderPos).sqrMagnitude;
-            float maxCheckDistSqr = checkDistSqr;
-            int count = 0;
-            while (remainingDist >= 0.1f && checkDistSqr <= maxCheckDistSqr)
-            {
-                if (!Physics.Linecast(origin, collider.transform.position, out s_rayHit, LayerUtil.MaskWorld))
-                    return true;
-                else if (checkLock && collider.gameObject.Pointer == s_rayHit.collider.gameObject.Pointer)
-                    return true;
-
-                origin += s_ray.direction * increment;
-                checkDistSqr = (origin - colliderPos).sqrMagnitude;
-                remainingDist -= increment;
-                count++;
-            }
-
-            return false;
-        }
-
-        // Scans through body parts to see if the player is aiming directly at one
-        private void CheckDirectHit(ref RaycastHit hit)
-        {
-            RaycastHit bestHit = new() { distance = float.MaxValue };
-            Agent? baseAgent = DamageableUtil.GetDamageableFromCollider(hit.collider)?.GetBaseAgent();
-            if (baseAgent == null) return;
-            
-            foreach (Collider collider in baseAgent.GetComponentsInChildren<Collider>())
-            {
-                if (collider.Raycast(s_ray, out var tempHit, (collider.transform.position - s_ray.origin).magnitude + 1f) && tempHit.distance < bestHit.distance)
-                    bestHit = tempHit;
-            }
-
-            if (bestHit.distance != float.MaxValue)
-                hit = bestHit;
-        }
-
-        private static bool AlreadyHit(IDamageable? damageable)
-        {
-            if (damageable == null) return false;
-            return !s_hitEnts.Add(damageable.GetBaseDamagable().Pointer);
-        }
-
-        private static bool AlreadyHit(Collider collider)
-        {
-            return AlreadyHit(DamageableUtil.GetDamageableFromCollider(collider));
+            CWC.ShotComponent!.ThickBullet = null;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -202,6 +35,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(HitSize), HitSize);
+            writer.WriteNumber(nameof(HitSizeFriendly), HitSizeFriendly);
             writer.WriteEndObject();
         }
 
@@ -213,6 +47,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "hitsize":
                 case "size":
                     HitSize = reader.GetSingle();
+                    break;
+                case "hitsizefriendly":
+                case "sizefriendly":
+                    HitSizeFriendly = reader.GetSingle();
                     break;
                 default:
                     break;

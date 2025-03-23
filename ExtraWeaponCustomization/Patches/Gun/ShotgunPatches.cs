@@ -1,4 +1,5 @@
-﻿using Gear;
+﻿using EWC.CustomWeapon.CustomShot;
+using Gear;
 using HarmonyLib;
 
 namespace EWC.Patches.Gun
@@ -11,7 +12,7 @@ namespace EWC.Patches.Gun
         [HarmonyPrefix]
         private static void Pre_Fire(Shotgun __instance)
         {
-            WeaponRayPatches.CachedWeapon = __instance;
+            ShotManager.CachedShotgun = __instance;
         }
 
         [HarmonyPatch(typeof(Shotgun), nameof(Shotgun.Fire))]
@@ -19,7 +20,7 @@ namespace EWC.Patches.Gun
         [HarmonyPostfix]
         private static void Post_Fire(Shotgun __instance)
         {
-            WeaponRayPatches.CachedWeapon = null;
+            ShotManager.CachedShotgun = null;
         }
     }
 }

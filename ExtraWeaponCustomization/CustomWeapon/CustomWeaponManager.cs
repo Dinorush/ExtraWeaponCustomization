@@ -201,6 +201,9 @@ namespace EWC.CustomWeapon
 
         internal void ResetCWCs(bool activate = true)
         {
+            // JFS - Reset crosshair modifier. Should be cleared by other stuff but doesn't hurt
+            Dependencies.ACAPIWrapper.ResetCrosshairSpread();
+
             // Resets CWCs by removing and re-adding all custom data.
             // Not as efficient as implementing a reset function on each property,
             // but that's a pain and this isn't gonna run often.

@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.Utils;
 using Il2CppInterop.Runtime.Attributes;
 using System;
 using UnityEngine;
@@ -25,11 +26,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 #pragma warning restore CS8618
 
         [HideFromIl2Cpp]
-        public override void Init(ushort playerIndex, ushort ID, Projectile settings, bool isLocal, Vector3 position, Vector3 dir)
+        public override void Init(ushort playerIndex, ushort ID, Projectile settings, bool isLocal, Vector3 position, Vector3 dir, HitData? hitData = null)
         {
             if (enabled) return;
 
-            base.Init(playerIndex, ID, settings, isLocal, position, dir);
+            base.Init(playerIndex, ID, settings, isLocal, position, dir, hitData);
 
             _projectile.transform.SetPositionAndRotation(Position, s_tempRot);
 

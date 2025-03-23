@@ -12,12 +12,13 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostAmmoPackContext>,
         IWeaponProperty<WeaponPreAmmoUIContext>,
         IWeaponProperty<WeaponPostStartFireContext>,
-        IWeaponProperty<WeaponPostFireContext>
+        IWeaponProperty<WeaponPostFireContext>,
+        IWeaponProperty<WeaponWieldContext>
     {
         public void Invoke(WeaponPostStartFireContext context)
         {
             if (CWC.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
-            BWA_Burst archetype = CWC.Gun!.m_archeType.TryCast<BWA_Burst>()!;
+            BWA_Burst archetype = CWC.Gun!.m_archeType.Cast<BWA_Burst>();
 
             int bullets = CWC.Weapon.GetCurrentClip() + PlayerBackpackManager.GetBulletsInPack(CWC.Weapon.AmmoType, CWC.Weapon.Owner.Owner);
             archetype.m_burstCurrentCount = Math.Min(archetype.m_burstMax, bullets);
@@ -36,6 +37,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         }
 
         public void Invoke(WeaponPostFireContext context)
+        {
+            CWC.Weapon.Owner.Inventory.DoReload();
+        }
+
+        public void Invoke(WeaponWieldContext context)
         {
             CWC.Weapon.Owner.Inventory.DoReload();
         }

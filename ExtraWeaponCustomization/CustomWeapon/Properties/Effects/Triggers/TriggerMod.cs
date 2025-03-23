@@ -28,30 +28,30 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (!count.Any()) return 1f;
 
-            float mod = StackType switch
+            float result = StackType switch
             {
-                StackType.None => count.First().mod,
-                StackType.Multiply => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod *= y.mod; return x; }, x => x.mod),
-                StackType.Add => count.Aggregate(new TriggerInstance(1f, 0f), (x, y) => { x.mod += y.mod - 1f; return x; }, x => x.mod),
-                StackType.Max => Mod > 1f ? count.Max(x => x.mod) : count.Min(x => x.mod),
+                StackType.None => Mod,
+                StackType.Multiply or StackType.Add => CalculateMod(Sum(count)),
+                StackType.Max => CalculateMod(Mod > 1f ? count.Max(x => x.triggerAmt) : count.Min(x => x.triggerAmt)),
                 _ => 1f
             };
-            return clamped ? ClampToCap(mod) : mod;
+            return clamped ? ClampToCap(result) : result;
         }
 
         protected float CalculateMod(float num, bool clamped = true)
         {
-            float mod = StackType switch
+            float result = StackType switch
             {
                 StackType.None => Mod,
                 StackType.Multiply => (float)Math.Pow(Mod, num),
                 StackType.Add => 1f + (Mod - 1f) * num,
                 _ => 1f
             };
-            return clamped ? ClampToCap(mod) : mod;
+            return clamped ? ClampToCap(result) : result;
         }
 
         protected static float Sum(IEnumerable<TriggerContext> contexts) => contexts.Sum(context => context.triggerAmt);
+        protected static float Sum(IEnumerable<TriggerInstance> contexts) => contexts.Sum(context => context.triggerAmt);
 
         public override void Serialize(Utf8JsonWriter writer)
         {
@@ -107,12 +107,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         protected struct TriggerInstance
         {
-            public float mod = 1f;
+            public float triggerAmt = 1f;
             public float endTime = 0f;
 
-            public TriggerInstance(float mod, float endTime)
+            public TriggerInstance(float triggerAmt, float endTime)
             {
-                this.mod = mod;
+                this.triggerAmt = triggerAmt;
                 this.endTime = endTime;
             }
         }
@@ -121,6 +121,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             private float _currentStacks = 0f;
             private float _lastStackTime = 0f;
+            private float _lastUpdateTime = 0f;
             private readonly Queue<TriggerInstance> _expireTimes = new();
             private readonly TriggerMod _parent;
 
@@ -147,7 +148,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     _expireTimes.Clear();
 
                 float endTime = Clock.Time + _parent.Duration;
-                _expireTimes.Enqueue(new TriggerInstance(_parent.CalculateMod(num, clamped: false), endTime));
+                _expireTimes.Enqueue(new TriggerInstance(num, endTime));
             }
 
             public bool TryGetMod(out float mod)
@@ -157,6 +158,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 {
                     if (_currentStacks == 0f) return false;
                     RefreshStackMod();
+                    if (_currentStacks == 0f) return false;
                     mod = _parent.CalculateMod(_currentStacks);
                     return true;
                 }
@@ -170,7 +172,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
             private void RefreshStackMod()
             {
-                float decayDelta = Clock.Time - _lastStackTime - _parent.Duration;
+                float time = Clock.Time;
+                float decayTime = _lastStackTime + _parent.Duration;
+                if (decayTime > time)
+                    return;
+                else if (decayTime > _lastUpdateTime)
+                    _lastUpdateTime = decayTime;
+                
+                float decayDelta = time - _lastUpdateTime;
                 if (decayDelta > 0f)
                 {
                     if (_parent.CombineDecayTime <= 0f)
@@ -178,6 +187,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     else
                         _currentStacks = Math.Max(0f, _currentStacks - decayDelta / _parent.CombineDecayTime);
                 }
+                _lastUpdateTime = time;
             }
         }
     }

@@ -2,7 +2,6 @@
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
-using EWC.Utils.Log;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;

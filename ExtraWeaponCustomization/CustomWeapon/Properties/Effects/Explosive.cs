@@ -30,7 +30,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageLimb { get; private set; } = true;
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
-        public bool IgnoreDamageMods { get; private set; } = false;
+        public bool IgnoreShotMods { get; private set; } = false;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = true;
         public bool DamageLocks { get; private set; } = true;
@@ -74,7 +74,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     else
                         position += hitContext.Direction * WallHitBuffer;
 
-                    ExplosionManager.DoExplosion(position, hitContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt);
+                    ExplosionManager.DoExplosion(position, hitContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt, hitContext.ShotInfo.Orig);
                 }
                 else
                 {
@@ -100,7 +100,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageLimb), DamageLimb);
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
-            writer.WriteBoolean(nameof(IgnoreDamageMods), IgnoreDamageMods);
+            writer.WriteBoolean(nameof(IgnoreShotMods), IgnoreShotMods);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
@@ -174,7 +174,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "ignoredamagemods":
                 case "ignoredamagemod":
-                    IgnoreDamageMods = reader.GetBoolean();
+                case "ignoreshotmods":
+                case "ignoreshotmod":
+                    IgnoreShotMods = reader.GetBoolean();
                     break;
                 case "damagefriendly":
                 case "friendlyfire":

@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
-using EWC.JSON;
 using EWC.Utils;
 using GameData;
 using Gear;
@@ -27,6 +26,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float Duration { get; private set; } = 0f;
         public bool EndBurst { get; private set; } = false;
         public bool EndCharge { get; private set; } = false;
+        public bool EndFiring { get; private set; } = false;
         public bool KeepMagCost { get; private set; } = false;
 
         private TriggerCoordinator? _coordinator;
@@ -62,7 +62,13 @@ namespace EWC.CustomWeapon.Properties.Traits
             );
         }
 
-        public void Invoke(WeaponTriggerContext context) => Trigger?.Invoke(context);
+        public override bool ShouldRegister(Type contextType)
+        {
+            if (Trigger == null && contextType == typeof(WeaponTriggerContext)) return false;
+            return base.ShouldRegister(contextType);
+        }
+
+        public void Invoke(WeaponTriggerContext context) => Trigger!.Invoke(context);
 
         public void Invoke(WeaponOwnerSetContext context)
         {
@@ -104,7 +110,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (!GetData()) return;
 
-            _applyCallback.Start();
+            CWC.StartDelayedCallback(_applyCallback);
         }
 
         private bool GetData()
@@ -284,7 +290,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 }
             }
 
-            if (oldArch.m_firing && oldArch.m_archetypeData.FireMode != newArch.m_archetypeData.FireMode)
+            if (oldArch.m_firing && (EndFiring || oldArch.m_archetypeData.FireMode != newArch.m_archetypeData.FireMode))
                 oldArch.OnStopFiring();
 
             newArch.m_nextBurstTimer = oldArch.m_nextBurstTimer;
@@ -325,6 +331,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteBoolean(nameof(EndBurst), EndBurst);
             writer.WriteBoolean(nameof(EndCharge), EndCharge);
+            writer.WriteBoolean(nameof(EndFiring), EndFiring);
             writer.WriteBoolean(nameof(KeepMagCost), KeepMagCost);
             writer.WriteString(nameof(Trigger), "Invalid");
             writer.WriteEndObject();
@@ -363,6 +370,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "endcharge":
                     EndCharge = reader.GetBoolean();
                     break;
+                case "endfiring":
+                    EndFiring = reader.GetBoolean();
+                    break;
                 case "keepmagcost":
                 case "keepmag":
                 case "keepclipcost":
@@ -371,7 +381,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "triggertype":
                 case "trigger":
-                    Trigger = EWCJson.Deserialize<TriggerCoordinator>(ref reader);
+                    Trigger = TriggerCoordinator.Deserialize(ref reader);
                     break;
             }
         }

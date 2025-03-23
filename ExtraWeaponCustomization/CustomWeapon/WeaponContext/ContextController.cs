@@ -20,12 +20,18 @@ namespace EWC.CustomWeapon.WeaponContext
             _blacklist = new(contextController._blacklist);
         }
 
-        public ContextController(bool isGun)
+        public ContextController(bool isGun, bool isLocal)
         {
-            if (isGun)
-                RegisterGunContexts();
-            else
-                RegisterMeleeContexts();
+            if (isLocal)
+            {
+                if (isGun)
+                    RegisterGunContexts();
+                else
+                    RegisterMeleeContexts();
+            }
+            else if (isGun)
+                RegisterSyncContexts();
+
             _blacklist = new();
         }
 
@@ -58,7 +64,7 @@ namespace EWC.CustomWeapon.WeaponContext
 
             public bool Add(IWeaponProperty property)
             {
-                if (property is not IWeaponProperty<TContext> contextedProperty)
+                if (!property.IsProperty<TContext>(out var contextedProperty))
                     return false;
 
                 if (_entries.Contains(contextedProperty))
@@ -202,25 +208,24 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponBackstabContext>();
             RegisterContext<WeaponFireCanceledContext>();
-            RegisterContext<WeaponDamageContext>();
+            RegisterContext<WeaponStatContext>();
             RegisterContext<WeaponHitmarkerContext>();
             RegisterContext<WeaponPostAmmoInitContext>();
             RegisterContext<WeaponPreAmmoPackContext>();
             RegisterContext<WeaponPostAmmoPackContext>();
             RegisterContext<WeaponPreAmmoUIContext>();
             RegisterContext<WeaponFireRateContext>();
-            RegisterContext<WeaponPierceContext>();
             RegisterContext<WeaponFireCancelContext>();
             RegisterContext<WeaponPreStartFireContext>();
             RegisterContext<WeaponPostStartFireContext>();
             RegisterContext<WeaponPreRayContext>();
-            RegisterContext<WeaponCancelRayContext>();
             RegisterContext<WeaponPostRayContext>();
             RegisterContext<WeaponPostStopFiringContext>();
             RegisterContext<WeaponPreReloadContext>();
-            RegisterContext<WeaponCancelTracerContext>();
             RegisterContext<WeaponUnWieldContext>();
             RegisterContext<WeaponRecoilContext>();
+            RegisterContext<WeaponShotInitContext>();
+            RegisterContext<WeaponShotGroupInitContext>();
             RegisterContext<WeaponStealthUpdateContext>();
 
             // Component management contexts
@@ -253,23 +258,25 @@ namespace EWC.CustomWeapon.WeaponContext
 
             RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponBackstabContext>();
-            RegisterContext<WeaponDamageContext>();
+            RegisterContext<WeaponStatContext>();
             RegisterContext<WeaponHitmarkerContext>();
             RegisterContext<WeaponFireRateContext>();
             RegisterContext<WeaponStealthUpdateContext>();
+            RegisterContext<WeaponShotInitContext>();
+            RegisterContext<WeaponShotGroupInitContext>();
 
             RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponSetupContext>();
         }
 
-        internal void ChangeToSyncContexts()
+        private void RegisterSyncContexts()
         {
-            _allContextLists.Clear();
+            RegisterContext<WeaponClearContext>();
+            RegisterContext<WeaponSetupContext>();
             RegisterContext<WeaponStealthUpdateContext>();
             RegisterContext<WeaponFireRateContext>();
             RegisterContext<WeaponPreFireContextSync>();
             RegisterContext<WeaponPostFireContextSync>();
-            RegisterContext<WeaponCancelTracerContext>();
         }
     }
 }

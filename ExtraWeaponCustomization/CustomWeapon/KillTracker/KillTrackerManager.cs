@@ -8,12 +8,12 @@ using System.Linq;
 
 namespace EWC.CustomWeapon.KillTracker
 {
-    public static class KillTrackerManager
+    internal static class KillTrackerManager
     {
-        private static readonly Dictionary<ObjectWrapper<Agent>, (ItemEquippable Weapon, WeaponHitDamageableContext Context)> _lastHits = new();
+        private static readonly Dictionary<ObjectWrapper<Agent>, Dictionary<ObjectWrapper<CustomWeaponComponent>, (WeaponHitDamageableContext context, float time)>> _lastHits = new();
         private static readonly Dictionary<ObjectWrapper<Agent>, bool> _shownHits = new();
         private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
-
+        private static ObjectWrapper<CustomWeaponComponent> TempCWCWrapper => ObjectWrapper<CustomWeaponComponent>.SharedInstance;
         public static void ClearHit(EnemyAgent enemy)
         {
             TempWrapper.Set(enemy);
@@ -21,29 +21,37 @@ namespace EWC.CustomWeapon.KillTracker
             _shownHits.Remove(TempWrapper);
         }
 
-        public static void RegisterHit(ItemEquippable weapon, WeaponHitDamageableContext hitContext)
+        public static void RegisterHit(CustomWeaponComponent cwc, WeaponHitDamageableContext hitContext)
         {
             EnemyAgent? enemy = hitContext.Damageable.GetBaseAgent()?.TryCast<EnemyAgent>();
-            if (enemy == null || !weapon.Owner.IsLocallyOwned) return;
+            if (enemy == null || !cwc.IsLocal) return;
 
             // Tag the enemy to ensure KillIndicatorFix tracks hit correctly.
-            KillAPIWrapper.TagEnemy(enemy, weapon, hitContext.LocalPosition);
+            KillAPIWrapper.TagEnemy(enemy, cwc.Weapon, hitContext.LocalPosition);
 
-            // Still need to track weapon since KIF doesn't do that for host (only uses wielded, which may not be right for DoT)
-            if (_lastHits.ContainsKey(TempWrapper.Set(enemy)))
-                _lastHits[TempWrapper] = (weapon, hitContext);
+            if (_lastHits.TryGetValue(TempWrapper.Set(enemy), out var hitInfo))
+            {
+                TempCWCWrapper.Set(cwc);
+                if (hitInfo.ContainsKey(TempCWCWrapper))
+                    hitInfo[TempCWCWrapper] = (hitContext, Clock.Time);
+                else
+                    hitInfo[new ObjectWrapper<CustomWeaponComponent>(cwc)] = (hitContext, Clock.Time);
+            }
             else
             {
                 ObjectWrapper<Agent> wrapper = new(enemy);
-                _lastHits[wrapper] = (weapon, hitContext);
+                _lastHits[wrapper] = new()
+                {
+                    [new ObjectWrapper<CustomWeaponComponent>(cwc)] = (hitContext, Clock.Time)
+                };
                 _shownHits[wrapper] = false;
             }
         }
 
-        public static (ItemEquippable, WeaponHitDamageableContext)? GetKillHitContext(Agent? enemy)
+        public static Dictionary<ObjectWrapper<CustomWeaponComponent>, (WeaponHitDamageableContext context, float time)>? GetKillHitContexts(Agent? enemy)
         {
             _lastHits.Keys
-                .Where(wrapper => wrapper.Object == null || _lastHits[wrapper].Weapon == null)
+                .Where(wrapper => wrapper.Object == null)
                 .ToList()
                 .ForEach(wrapper =>
                 {

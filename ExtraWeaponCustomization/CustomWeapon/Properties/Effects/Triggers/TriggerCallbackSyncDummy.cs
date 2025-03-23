@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using Agents;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
@@ -6,7 +7,10 @@ using UnityEngine;
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     // Used by CWCs in the event that client has incorrect Sync properties
-    public sealed class TriggerCallbackSyncDummy : WeaponPropertyBase, ITriggerCallbackDirSync
+    public sealed class TriggerCallbackSyncDummy : WeaponPropertyBase,
+        ITriggerCallbackBasicSync,
+        ITriggerCallbackDirSync,
+        ITriggerCallbackAgentSync
     {
         public readonly static TriggerCallbackSyncDummy Instance = new();
 
@@ -25,6 +29,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public void TriggerApply(List<TriggerContext> triggerList) { }
 
         public void TriggerApplySync(Vector3 position, Vector3 dir, float mod) { }
+
+        public void TriggerApplySync(Agent target, float mod) { }
 
         public void TriggerApplySync(float mod) { }
 

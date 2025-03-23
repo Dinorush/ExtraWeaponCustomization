@@ -20,8 +20,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 Damage = Math.Min(Damage, DamageableUtil.LockHealth);
         }
 
-        public WeaponHitDamageableContext(HitData data, DamageType flag)
-            : base(data, 1f, flag)
+        public WeaponHitDamageableContext(HitData data)
+            : base(data, 1f)
         {
             Damage = data.damage * Falloff;
             var damBase = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
@@ -32,7 +32,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         }
 
         public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb, DamageType flag)
-            : base(data, backstab, flag)
+            : base(data, backstab)
         {
             Damage = data.damage * Falloff;
             Damage = limb.ApplyWeakspotAndArmorModifiers(Damage, data.precisionMulti);

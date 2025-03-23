@@ -5,16 +5,16 @@ using static Weapon;
 using UnityEngine;
 using System.Reflection;
 using System;
-using Gear;
 using EWC.Utils;
+using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.CustomShot;
 
 namespace EWC.Patches.Gun
 {
     [HarmonyPatch]
     internal static class WeaponRayPatches
     {
-        public static BulletWeapon? CachedWeapon = null;
-        private static HitData s_hitData = new();
+        private static HitData s_hitData = new(DamageType.Bullet);
 
         [HarmonyTargetMethod]
         private static MethodBase FindWeaponRayFunc(Harmony harmony)
@@ -37,27 +37,36 @@ namespace EWC.Patches.Gun
             if (altRayCastMask != -1 || _cachedData == weaponRayData.Pointer) return;
             _cachedData = weaponRayData.Pointer;
 
-            if (CachedWeapon != null)
-                _cachedCWC = CachedWeapon.GetComponent<CustomWeaponComponent>();
+            if (ShotManager.CachedShotgun != null)
+                _cachedCWC = ShotManager.CachedShotgun.GetComponent<CustomWeaponComponent>();
             else
                 _cachedCWC = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
 
             if (_cachedCWC == null) return;
 
-            s_hitData.Setup(weaponRayData);
+            s_hitData.Setup(weaponRayData, _cachedCWC);
             _cachedCWC.Invoke(new WeaponPreRayContext(s_hitData, originPos));
+            float mod = _cachedCWC.SpreadController!.Value;
+            if (mod != 1f)
+            {
+                s_hitData.randomSpread *= mod;
+                s_hitData.angOffsetX *= mod;
+                s_hitData.angOffsetY *= mod;
+            }
+
             s_hitData.Apply();
         }
 
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void PostRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask, ref bool __result)
+        private static void PostRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, ref bool __result)
         {
             if (_cachedCWC == null) return;
 
-            s_hitData.Setup(weaponRayData);
-            if (!_cachedCWC.Invoke(new WeaponCancelRayContext(s_hitData, originPos)).Result)
+            s_hitData.Setup(weaponRayData, _cachedCWC);
+            if (_cachedCWC.ShotComponent!.OverrideVanillaShot)
             {
+                _cachedCWC.ShotComponent.FireVanilla(s_hitData, originPos);
                 __result = false;
                 return;
             }

@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.CustomShot;
+﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.CustomShot;
+using EWC.CustomWeapon.Enums;
 using EWC.Utils.Extensions;
 using Gear;
 using Player;
@@ -15,6 +17,9 @@ namespace EWC.Utils
         public float precisionMulti;
         public float staggerMulti;
         public float maxRayDist;
+        public float randomSpread;
+        public float angOffsetX;
+        public float angOffsetY;
         public PlayerAgent owner;
         public Vector3 fireDir;
         public Vector3 hitPos;
@@ -30,32 +35,36 @@ namespace EWC.Utils
                 hitPos = _rayHit.point;
                 collider = _rayHit.collider;
                 damageable = DamageableUtil.GetDamageableFromRayHit(_rayHit);
+                damageType = damageable != null ? _baseDamageType.WithSubTypes(damageable) : _baseDamageType;
             }
         }
         public ShotInfo shotInfo = new();
+        private readonly DamageType _baseDamageType;
+        public DamageType damageType;
 
         private WeaponHitData? _weaponHitData;
         private MeleeWeaponFirstPerson? _meleeWeapon;
 
 #pragma warning disable CS8618
         // All used fields are set
-        public HitData(WeaponHitData hitData, float additionalDist = 0) => Setup(hitData, additionalDist);
-        public HitData(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData) => Setup(melee, hitData);
+        public HitData(WeaponHitData hitData, CustomWeaponComponent cwc, float additionalDist = 0) : this(DamageType.Bullet) => Setup(hitData, cwc, additionalDist);
+        public HitData(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData) : this(DamageType.Bullet) => Setup(melee, hitData);
         
         // Class responsible for using this should ensure fields are set!
-        public HitData() { }
+        public HitData(DamageType baseDamageType) { _baseDamageType = baseDamageType; }
 #pragma warning restore CS8618
 
-        public void Setup(WeaponHitData hitData, float additionalDist = 0)
+        public void Setup(WeaponHitData hitData, CustomWeaponComponent cwc, float additionalDist = 0)
         {
             _weaponHitData = hitData;
             _meleeWeapon = null;
 
-            shotInfo = ShotManager.GetVanillaShotInfo(hitData);
-            damage = hitData.damage;
+            shotInfo = ShotManager.GetVanillaShotInfo(hitData, cwc);
+            ResetDamage();
             damageFalloff = hitData.damageFalloff;
-            precisionMulti = hitData.precisionMulti;
-            staggerMulti = hitData.staggerMulti;
+            randomSpread = hitData.randomSpread;
+            angOffsetX = hitData.angOffsetX;
+            angOffsetY = hitData.angOffsetY;
             owner = hitData.owner;
             fireDir = hitData.fireDir;
             maxRayDist = hitData.maxRayDist;
@@ -68,9 +77,7 @@ namespace EWC.Utils
             _weaponHitData = null;
             _meleeWeapon = melee;
 
-            damage = melee.m_damageToDeal;
-            precisionMulti = melee.m_precisionMultiToDeal;
-            staggerMulti = melee.m_staggerMultiToDeal;
+            ResetDamage();
             falloff = 1f;
             fireDir = hitData.hitPos - hitData.sourcePos;
             hitPos = hitData.hitPos;
@@ -92,6 +99,9 @@ namespace EWC.Utils
             hitData.damage = damage;
             hitData.precisionMulti = precisionMulti;
             hitData.staggerMulti = staggerMulti;
+            hitData.randomSpread = randomSpread;
+            hitData.angOffsetX = angOffsetX;
+            hitData.angOffsetY = angOffsetY;
             hitData.rayHit = RayHit;
             hitData.fireDir = fireDir;
             hitData.maxRayDist = maxRayDist;
@@ -104,6 +114,14 @@ namespace EWC.Utils
             melee.m_precisionMultiToDeal = precisionMulti;
             melee.m_staggerMultiToDeal = staggerMulti;
             return melee;
+        }
+
+
+        public void ResetDamage()
+        {
+            damage = shotInfo.OrigDamage;
+            precisionMulti = shotInfo.OrigPrecision;
+            staggerMulti = shotInfo.OrigStagger;
         }
 
         public void SetFalloff(float additionalDist = 0)
@@ -119,6 +137,9 @@ namespace EWC.Utils
                 damageFalloff = damageFalloff,
                 precisionMulti = precisionMulti,
                 staggerMulti = staggerMulti,
+                randomSpread = randomSpread,
+                angOffsetX = angOffsetX,
+                angOffsetY = angOffsetY,
                 owner = owner,
                 rayHit = RayHit,
                 fireDir = fireDir,

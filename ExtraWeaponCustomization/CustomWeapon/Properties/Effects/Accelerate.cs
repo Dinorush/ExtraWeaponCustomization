@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.JSON;
 using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
@@ -17,7 +16,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         IWeaponProperty<WeaponPreFireContextSync>,
         IWeaponProperty<WeaponFireCanceledContext>,
         IWeaponProperty<WeaponFireRateContext>,
-        IWeaponProperty<WeaponDamageContext>
+        IWeaponProperty<WeaponShotInitContext>,
+        IWeaponProperty<WeaponShotGroupInitContext>
     {
         public ushort SyncID { get; set; }
 
@@ -31,8 +31,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         public StackType FireRateStackLayer { get; private set; } = StackType.Multiply;
         private float FireRateMod => EndFireRate > 0f ? EndFireRate / CWC.BaseFireRate : EndFireRateMod;
 
-        public float EndDamageMod { get; private set; } = 1f;
-        public StackType DamageStackLayer { get; private set; } = StackType.Multiply;
+        public float EndShotMod { get; private set; } = 1f;
+        public DamageType[] ModDamageType { get; private set; } = DamageTypeConst.Any;
+        public StatType ModStatType { get; private set; } = StatType.Damage;
+        public StackType ModStackLayer { get; private set; } = StackType.Multiply;
+        public bool StoreModOnGroup { get; private set; } = true;
 
         private float _accelTime = 1f;
         public float AccelTime
@@ -55,6 +58,14 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private float _resetProgress = 0f;
         private float _resetUpdateTime = 0f;
+
+        public override bool ShouldRegister(Type contextType)
+        {
+            bool modifiesShot = EndShotMod != 1f || ModStackLayer == StackType.Override;
+            if (contextType == typeof(WeaponShotInitContext)) return modifiesShot && !StoreModOnGroup;
+            if (contextType == typeof(WeaponShotGroupInitContext)) return modifiesShot && StoreModOnGroup;
+            return base.ShouldRegister(contextType);
+        }
 
         private void UpdateProgress()
         {
@@ -98,14 +109,19 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             // Apply accelerated fire rate
             if (FireRateMod != 1f && _progress > 0)
-                context.AddMod(GetFireRateMod(), FireRateStackLayer);
+                context.AddMod(GetMod(FireRateMod), FireRateStackLayer);
         }
 
-        // FireRate context is called first, so we know progress is up to date
-        public void Invoke(WeaponDamageContext context)
+        public void Invoke(WeaponShotInitContext context)
         {
-            if (EndDamageMod != 1f && _progress > 0)
-                context.Damage.AddMod(GetDamageMod(), DamageStackLayer);
+            if (_progress > 0)
+                context.Mod.Add(this, ModStatType, GetMod(EndShotMod), 0f, StackType.Override, ModStackLayer, null, ModDamageType);
+        }
+
+        public void Invoke(WeaponShotGroupInitContext context)
+        {
+            if (_progress > 0)
+                context.GroupMod.Add(this, ModStatType, GetMod(EndShotMod), 0f, StackType.Override, ModStackLayer, null, ModDamageType);
         }
 
         public void Invoke(WeaponFireCanceledContext context)
@@ -130,18 +146,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         public override void TriggerApply(List<TriggerContext> contexts) => TriggerReset();
         public void TriggerApplySync(float mod) => TriggerResetSync();
 
-        private float GetFireRateMod()
+        private float GetMod(float mod)
         {
             if (UseContinuousGrowth)
-                return (float) Math.Pow(FireRateMod, _progress);
-            return Math.Pow(_progress, AccelExponent).Lerp(1f, FireRateMod);
-        }
-
-        private float GetDamageMod()
-        {
-            if (UseContinuousGrowth)
-                return (float)Math.Pow(EndDamageMod, _progress);
-            return Math.Pow(_progress, AccelExponent).Lerp(1f, EndDamageMod);
+                return (float)Math.Pow(mod, _progress);
+            return Math.Pow(_progress, AccelExponent).Lerp(1f, mod);
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -152,8 +161,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(EndFireRate), EndFireRate);
             writer.WriteNumber(nameof(EndFireRateMod), EndFireRateMod);
             writer.WriteString(nameof(FireRateStackLayer), FireRateStackLayer.ToString());
-            writer.WriteNumber(nameof(EndDamageMod), EndDamageMod);
-            writer.WriteString(nameof(DamageStackLayer), DamageStackLayer.ToString());
+            writer.WriteNumber(nameof(EndShotMod), EndShotMod);
+            writer.WriteString(nameof(ModDamageType), ModDamageType[0].ToString());
+            writer.WriteString(nameof(ModStatType), ModStatType.ToString());
+            writer.WriteString(nameof(ModStackLayer), ModStackLayer.ToString());
+            writer.WriteBoolean(nameof(StoreModOnGroup), StoreModOnGroup);
             writer.WriteNumber(nameof(AccelTime), AccelTime);
             if (UseContinuousGrowth)
                 writer.WriteString(nameof(AccelExponent), "e");
@@ -189,11 +201,28 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "enddamagemod":
                 case "acceldamagemod":
                 case "damagemod":
-                    EndDamageMod = reader.GetSingle();
+                case "endshotmod":
+                case "accelshotmod":
+                case "shotmod":
+                    EndShotMod = reader.GetSingle();
                     break;
-                case "damagestacklayer":
-                case "damagelayer":
-                    DamageStackLayer = reader.GetString().ToEnum(StackType.Invalid);
+                case "moddamagetype":
+                case "damagetype":
+                    ModDamageType = reader.GetString().ToDamageTypes();
+                    break;
+                case "modstacklayer":
+                case "modlayer":
+                    ModStackLayer = reader.GetString().ToEnum(StackType.Invalid);
+                    break;
+                case "modstattype":
+                case "stattype":
+                case "modstat":
+                case "stat":
+                    ModStatType = reader.GetString().ToEnum(StatType.Damage);
+                    break;
+                case "storemodongroup":
+                case "storeongroup":
+                    StoreModOnGroup = reader.GetBoolean();
                     break;
                 case "acceltime":
                     AccelTime = reader.GetSingle();
@@ -219,7 +248,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "resettriggertype":
                 case "resettrigger":
-                    Trigger = EWCJson.Deserialize<TriggerCoordinator>(ref reader);
+                    Trigger = TriggerCoordinator.Deserialize(ref reader);
                     break;
                 default:
                     break;
