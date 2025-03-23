@@ -64,8 +64,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "jump" => new BasicTrigger<WeaponJumpContext>(TriggerName.Jump),
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
                 "setup" or "init" or "drop" => new BasicTrigger<WeaponInitContext>(TriggerName.Init),
-                "bulletlanded" or "landedbullet" or "meleelanded" or "landedmelee" => new BulletLandedTrigger(),
-                "chargelanded" or "landedcharge" => new ChargeLandedTrigger(),
+                string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
                 string prehit when prehit.Contains("prehit") => new DamageableTrigger<WeaponPreHitDamageableContext>(TriggerName.PreHit, name.ToDamageTypes()),
                 string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageTypes()),
                 string charge when charge.Contains("charge") => new ChargeTrigger(name.ToDamageTypes()),
@@ -73,6 +72,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 string kill when kill.Contains("kill") => new KillTrigger(name.ToDamageTypes()),
                 _ => null
             };
+        }
+
+        private static ITrigger DetermineLandedTrigger(string name)
+        {
+            DamageType type = DamageType.Bullet;
+            if (name.Contains("terrain"))
+                type |= DamageType.Terrain;
+            return name.Contains("charge") ? new ChargeLandedTrigger(type) : new BulletLandedTrigger(type);
         }
     }
 
