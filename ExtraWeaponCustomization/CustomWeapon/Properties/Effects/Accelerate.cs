@@ -210,7 +210,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "damagetype":
                     ModDamageType = reader.GetString().ToDamageTypes();
                     break;
+                case "damagestacklayer":
                 case "modstacklayer":
+                case "damagelayer":
                 case "modlayer":
                     ModStackLayer = reader.GetString().ToEnum(StackType.Invalid);
                     break;
