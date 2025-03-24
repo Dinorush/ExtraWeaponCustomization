@@ -39,7 +39,8 @@ namespace EWC.Patches
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            cwc.SpreadController!.Active = true;
+            if (cwc.SpreadController != null)
+                cwc.SpreadController.Active = true;
             cwc.Invoke(StaticContext<WeaponWieldContext>.Instance);
             cwc.RefreshSoundDelay();
         }
@@ -53,7 +54,8 @@ namespace EWC.Patches
             if (cwc == null) return;
 
             cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
-            cwc.SpreadController!.Active = false;
+            if (cwc.SpreadController != null)
+                cwc.SpreadController.Active = false;
         }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
