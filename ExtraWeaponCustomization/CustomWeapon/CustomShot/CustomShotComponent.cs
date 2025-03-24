@@ -431,7 +431,7 @@ namespace EWC.CustomWeapon.CustomShot
 
                 foreach (Collider collider in agent.GetComponentsInChildren<Collider>())
                 {
-                    if (collider.Raycast(_ray, out var tempHit, (collider.transform.position - _ray.origin).magnitude + 1f) && tempHit.distance < bestHit.distance)
+                    if (collider.GetComponent<IDamageable>() != null && collider.Raycast(_ray, out var tempHit, (collider.transform.position - _ray.origin).magnitude + 1f) && tempHit.distance < bestHit.distance)
                         bestHit = tempHit;
                 }
 
