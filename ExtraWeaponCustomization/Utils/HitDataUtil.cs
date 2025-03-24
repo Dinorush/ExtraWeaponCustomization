@@ -83,6 +83,7 @@ namespace EWC.Utils
             hitPos = hitData.hitPos;
             // Don't need to use overriden null check since we only care about when damageComp isn't set at all
             damageable = hitData.damageComp ?? hitData.damageGO.GetComponent<IDamageable>();
+            damageType = damageable != null ? _baseDamageType.WithSubTypes(damageable) : _baseDamageType;
         }
 
         public void Apply()
