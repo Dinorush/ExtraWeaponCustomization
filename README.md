@@ -7,15 +7,18 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Ammo Mod: Modifies the magazine/reserve ammo counts.
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
-- Damage Mod: Applies a damage modifier.
-- Damage Mod Per Target: Applies a damage modifier unique to each target. [Prehit, Hit, Damage, Charge]
 - Damage Over Time: Applies a damage over time effect. [Prehit, Hit, Damage, Charge]
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
 - Fire Shot: Fires shots at offsets. [Gun]
 - Foam: Applies foam where bullets land. [BulletLanded, Prehit, Hit, Damage, Charge]
 - Health Mod: Modifies the user's health.
+- Noise: Creates detectable noise where triggers occur.
 - Recoil Mod: Applies a recoil modifier. [Gun]
+- Reference Trigger: Sends Apply and Reset triggers to other properties.
+- Shot Mod: Applies a stat modifier to shots/melees.
+- Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
+- Spread Mod: Applies a spread modifier. [Gun]
 - Temp Properties: Temporarily adds another set of properties.
 
 #### Traits - Innate gun behavior modifications
