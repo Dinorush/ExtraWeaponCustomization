@@ -18,7 +18,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float CooldownThreshold { get; private set; } = 0f;
         public float Chance { get; private set; } = 1f;
         public float ResetDelay { get; private set; } = 0f;
-        public bool ConsumeOnTrigger { get; private set; } = false;
 
         private readonly TriggerCoordinator _parent;
         private readonly bool _implyTrigger;
@@ -137,10 +136,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "resetdelay":
                     ResetDelay = reader.GetSingle();
-                    break;
-                case "consumeontrigger":
-                case "decreaseontrigger":
-                    ConsumeOnTrigger = reader.GetBoolean();
                     break;
             }
         }
