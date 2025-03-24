@@ -14,7 +14,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float Exponent { get; private set; } = 3f;
         public float MinRequired { get; private set; } = 0f;
         public float MaxRequired { get; private set; } = 1f;
-        public bool TerrainOnly { get; set; } = false;
 
         public ChargeLandedTrigger(params DamageType[] damageTypes) : base(TriggerName.ChargeLanded, damageTypes) { }
 

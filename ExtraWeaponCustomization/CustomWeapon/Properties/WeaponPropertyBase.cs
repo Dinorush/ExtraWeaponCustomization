@@ -15,9 +15,6 @@ namespace EWC.CustomWeapon.Properties
         private readonly static Dictionary<string, uint> s_stringToIDDict = new();
         private static uint s_nextID = uint.MaxValue;
 
-        private static int s_debugID = 0;
-        public int DebugID { get; } = s_debugID++;
-
         public virtual bool ShouldRegister(Type contextType) => true;
 
         public virtual bool ValidProperty()
