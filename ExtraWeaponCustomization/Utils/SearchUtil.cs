@@ -81,17 +81,14 @@ namespace EWC.Utils
             return (localCenter - closest).sqrMagnitude <= reqDist * reqDist;
         }
 
-        private static bool RaycastEnsured(Collider collider, Vector3 backupOrigin, float range, out RaycastHit hit)
+        private static bool RaycastEnsured(Collider collider, float range, out RaycastHit hit)
         {
             // This should rarely ever fail
             if (collider.Raycast(s_ray, out hit, range)) return true;
 
-            // I LOVE RAYCAST TO CLOSEST POINT FAILING!!! (it's probably tangent to the collider)
-            Vector3 diff = collider.ClosestPoint(backupOrigin) - collider.bounds.center;
-            Vector3 diffNormal = diff.normalized;
-            s_ray.origin = collider.bounds.center + diff + diffNormal * Math.Min(0.1f, range / 2);
-            s_ray.direction = -diffNormal;
-            return collider.Raycast(s_ray, out hit, range);
+            // I LOVE RAYCAST TO CLOSEST POINT FAILING!!! (it's probably inside the collider)
+            s_ray.origin = s_ray.GetPoint(-5f);
+            return collider.Raycast(s_ray, out hit, 5f);
         }
 
         private static bool TryGetClosestHit(Ray ray, float range, float angle, Agent agent, out RaycastHit hit, SearchSetting settings)
@@ -142,14 +139,15 @@ namespace EWC.Utils
                     // If not caching a hit to the closest collider, can just add the enemy as soon as one is valid
                     if (!settings.HasFlag(SearchSetting.CacheHit)) break;
 
+                    s_ray.direction = diff;
+
                     // If the distance is close to 0, need different logic since raycast will break
                     if (minDist < Epsilon)
                     {
                         if (origDist > Epsilon) break; // No point in searching further but can use the actual distance
-
                         s_ray.origin -= ray.direction * Math.Min(0.1f, range / 2);
                         s_ray.direction = trgtPos - s_ray.origin;
-                        if (RaycastEnsured(collider, ray.origin, range, out hit))
+                        if (RaycastEnsured(collider, range, out hit))
                         {
                             hit.point = trgtPos;
                             hit.distance = 0;
@@ -160,14 +158,11 @@ namespace EWC.Utils
 
                         break; // Can't get lower than 0 distance
                     }
-
-                    s_ray.direction = diff;
                 }
             }
             if (minCollider == null) return false;
-            if (settings.HasFlag(SearchSetting.CacheHit) && !casted && !RaycastEnsured(minCollider, ray.origin, range, out hit))
+            if (settings.HasFlag(SearchSetting.CacheHit) && !casted && !RaycastEnsured(minCollider, range, out hit))
                 return false;
-
             return true;
         }
 
