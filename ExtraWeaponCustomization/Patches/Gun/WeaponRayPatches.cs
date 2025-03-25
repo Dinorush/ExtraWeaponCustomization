@@ -68,6 +68,7 @@ namespace EWC.Patches.Gun
             {
                 _cachedCWC.ShotComponent.FireVanilla(s_hitData, originPos);
                 __result = false;
+                _cachedCWC = null;
                 return;
             }
 
