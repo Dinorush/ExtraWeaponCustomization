@@ -68,7 +68,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             if (explosiveBase.DamageLocks)
                 hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, searchSetting));
-            
+
             if (hits.Count == 0) return;
 
             ShotInfo shotInfo;
@@ -122,6 +122,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 }
             }
 
+            if (damage <= 0) return;
+
             var preContext = eBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                 damageable,
                 position,
@@ -141,6 +143,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 precisionMult = statContext.Precision;
                 staggerMult = statContext.Stagger;
             }
+
+            if (damage <= 0) return;
 
             info.AddHit(preContext.DamageType);
 
