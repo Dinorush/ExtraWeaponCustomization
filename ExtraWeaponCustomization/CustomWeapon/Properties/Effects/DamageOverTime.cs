@@ -87,15 +87,25 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void TriggerApplySync(Agent target, float mod)
         {
-            IDamageable? damBase = target.Type switch
+            IDamageable? damBase;
+            Transform? transform;
+            switch (target.Type)
             {
-                AgentType.Player => target.Cast<PlayerAgent>().Damage.Cast<IDamageable>(),
-                AgentType.Enemy => target.Cast<EnemyAgent>().Damage.Cast<IDamageable>(),
-                _ => null
-            };
-            if (damBase == null) return;
+                case AgentType.Player:
+                    var player = target.Cast<PlayerAgent>();
+                    damBase = player.Damage.Cast<IDamageable>();
+                    transform = player.TentacleTarget;
+                    break;
+                case AgentType.Enemy:
+                    var enemy = target.Cast<EnemyAgent>();
+                    damBase = enemy.Damage.Cast<IDamageable>();
+                    transform = enemy.EasyAimTarget;
+                    break;
+                default:
+                    return;
+            }
 
-            DOTGlowPooling.TryDoEffect(this, damBase, target.transform, mod);
+            DOTGlowPooling.TryDoEffect(this, damBase, transform, mod);
         }
 
         public void TriggerResetSync()
