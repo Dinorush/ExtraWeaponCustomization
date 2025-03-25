@@ -61,6 +61,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 case StackType.Override:
                     _overrideMod = mod;
+                    _override = true;
                     break;
                 case StackType.Add:
                     _addMod += mod - 1;
