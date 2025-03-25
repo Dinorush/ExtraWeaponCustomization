@@ -58,7 +58,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 {
                     handler.gameObject.SetActive(false);
                     _pool.Enqueue(handler);
-                    _activeHandlers[data].Remove(wrapper);
+                    if (_activeHandlers.TryGetValue(data, out var damDict))
+                        damDict.Remove(wrapper);
                 };
                 handler.gameObject.SetActive(true);
                 handler.DoEffect(data, damBase, target, mod);
