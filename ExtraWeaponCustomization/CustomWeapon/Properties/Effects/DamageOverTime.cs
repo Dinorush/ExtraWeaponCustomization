@@ -70,6 +70,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 var hitContext = (WeaponHitDamageableContextBase)tContext.context;
                 AddDOT(hitContext, tContext.triggerAmt);
+                if (GlowRange == 0 || GlowIntensity == 0) continue;
+
                 Agent? agent = hitContext.Damageable.GetBaseAgent();
                 if (agent != null)
                 {
