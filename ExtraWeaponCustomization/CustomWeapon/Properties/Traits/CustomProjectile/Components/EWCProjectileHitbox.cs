@@ -118,7 +118,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _pierceCount = 1;
 
             _ricochetCount = _settings.RicochetCount;
-            _hitData = hitData!;
+            _hitData = new(hitData!);
 
             _distanceMoved = 0;
             _lastFixedTime = Time.fixedTime;
@@ -370,9 +370,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private void BulletHit(IDamageable? damageable)
         {
-            _hitData.damage = _hitData.shotInfo.OrigDamage;
-            _hitData.precisionMulti = _hitData.shotInfo.OrigPrecision;
-            _hitData.staggerMulti = _hitData.shotInfo.OrigStagger;
+            _hitData.ResetDamage();
             _hitData.fireDir = (_settings.HitFromOwnerPos ? s_rayHit.point - _weapon.Owner.FPSCamera.Position : s_ray.direction).normalized;
             _hitData.RayHit = s_rayHit;
             _hitData.SetFalloff(_distanceMoved);
