@@ -22,7 +22,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             float charge = MeleePatches.CachedCharge;
             // Want to trigger when a melee hit lands but NOT on a pre-hit context
             if (charge >= MinRequired && charge <= MaxRequired &&
-                base.Invoke(context, out amount) && context is not WeaponPreHitDamageableContext)
+                base.Invoke(context, out amount) && (context is WeaponHitContext || context is WeaponHitDamageableContext))
             {
                 charge = charge.Map(MinRequired, MaxRequired, Min, Max, Exponent);
                 amount *= charge;
