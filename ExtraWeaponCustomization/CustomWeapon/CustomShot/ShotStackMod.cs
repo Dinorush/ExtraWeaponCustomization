@@ -32,8 +32,6 @@ namespace EWC.CustomWeapon.CustomShot
         {
             if (types.Length == 0)
                 types = DamageTypeConst.Any;
-            else
-                _needType |= types.Length > 1 || types.Length == 1 && types[0] != DamageType.Any;
 
             Dictionary<WeaponPropertyBase, (float mod, StackType, DamageType[])> mods;
             if (damageable != null)
@@ -49,6 +47,7 @@ namespace EWC.CustomWeapon.CustomShot
 
             if (mods.TryGetValue(property, out var value))
             {
+                float oldMod = value.mod;
                 switch (stack)
                 {
                     case StackType.Override:
@@ -68,11 +67,13 @@ namespace EWC.CustomWeapon.CustomShot
                         break;
                 }
                 value.mod = cap > 1f ? Math.Min(value.mod, cap) : Math.Max(value.mod, cap);
+                if (oldMod == value.mod) return;
                 mods[property] = value;
             }
             else
                 mods[property] = (mod, layer, types);
 
+            _needType = _needType || types.Length > 1 || types.Length == 1 && types[0] != DamageType.Any;
             _needRecompute = true;
         }
 
