@@ -2,7 +2,6 @@
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils;
-using EWC.Utils.Log;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {

@@ -125,8 +125,7 @@ namespace EWC.Patches
                         hitData,
                         bypassCap,
                         backstab,
-                        limb!,
-                        DamageType.Bullet
+                        limb!
                     );
 
                     cc.Invoke(hitContext);
