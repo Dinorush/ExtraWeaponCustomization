@@ -282,7 +282,8 @@ namespace EWC.CustomWeapon
             }
         }
 
-        public void ModifyFireRate() {
+        public void ModifyFireRate()
+        {
             BulletWeaponArchetype bwa = Gun!.m_archeType;
             bwa.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
             if (bwa.BurstIsDone())
