@@ -92,7 +92,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             _lastTickTime += damageTicks * _tickDelay;
             _tick += damageTicks;
 
-            DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _precisionMulti, _bypassTumor, _backstabMulti, damageTicks, _shotInfo, DotBase);
+            DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _precisionMulti, _staggerMulti, _bypassTumor, _backstabMulti, damageTicks, _shotInfo, DotBase);
         }
     }
 }

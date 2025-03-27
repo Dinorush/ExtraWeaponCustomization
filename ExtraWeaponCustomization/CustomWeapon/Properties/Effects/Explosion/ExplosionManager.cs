@@ -189,7 +189,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             data.limbID = (byte) limb.m_limbID;
             data.damageLimb = eBase.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
-            data.staggerMult.Set(staggerMult, MaxStagger);
+            data.staggerMult = staggerMult;
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
@@ -201,7 +201,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             if (!statContext.BypassTumorCap && limb.DestructionType == eLimbDestructionType.Custom)
                 precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
 
-            data.damage.Set(precDamage, damBase.DamageMax);
+            data.damage = precDamage;
 
             var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
@@ -255,7 +255,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public byte limbID;
         public bool damageLimb;
         public LowResVector3 localPosition;
-        public UFloat16 damage;
-        public UFloat16 staggerMult;
+        public float damage;
+        public float staggerMult;
     }
 }

@@ -19,8 +19,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 packet.limbID,
                 packet.damageLimb,
                 packet.localPosition.Get(10f),
-                packet.damage.Get(enemy.Damage.DamageMax),
-                packet.staggerMult.Get(DOTDamageManager.MaxStagger),
+                packet.damage,
+                packet.staggerMult,
                 packet.setCooldowns
                 );
         }
