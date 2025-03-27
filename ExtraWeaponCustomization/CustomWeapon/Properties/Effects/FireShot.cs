@@ -196,7 +196,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             ArchetypeDataBlock archData = CWC.Weapon.ArchetypeData;
             HitData hitData = new(Enums.DamageType.Bullet);
             hitData.owner = CWC.Weapon.Owner;
-            hitData.damage = archData.Damage;
+            hitData.damage = archData.GetDamageWithBoosterEffect(hitData.owner, CWC.Weapon.ItemDataBlock.inventorySlot);
             hitData.damageFalloff = archData.DamageFalloff;
             hitData.staggerMulti = archData.StaggerDamageMulti;
             hitData.precisionMulti = archData.PrecisionDamageMulti;

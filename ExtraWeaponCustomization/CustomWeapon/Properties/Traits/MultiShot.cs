@@ -150,7 +150,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             ArchetypeDataBlock archData = CWC.Weapon.ArchetypeData;
             s_hitData.owner = CWC.Weapon.Owner;
-            s_hitData.damage = archData.Damage;
+            s_hitData.damage = archData.GetDamageWithBoosterEffect(s_hitData.owner, CWC.Weapon.ItemDataBlock.inventorySlot);
             s_hitData.damageFalloff = archData.DamageFalloff;
             s_hitData.staggerMulti = archData.StaggerDamageMulti;
             s_hitData.precisionMulti = archData.PrecisionDamageMulti;
