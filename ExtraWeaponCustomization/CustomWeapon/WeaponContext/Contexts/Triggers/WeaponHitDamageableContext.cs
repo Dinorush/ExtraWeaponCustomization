@@ -1,13 +1,13 @@
 ﻿using System;
 using EWC.Utils;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
-using EWC.CustomWeapon.Enums;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public sealed class WeaponHitDamageableContext : WeaponHitDamageableContextBase
     {
         public float Damage { get; }
+        public float DamageClamped { get; }
 
         public WeaponHitDamageableContext(float damage, WeaponPreHitDamageableContext context)
             : base(context)
@@ -15,9 +15,9 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             Damage = damage;
             Dam_SyncedDamageBase? baseDam = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
             if (baseDam != null)
-                Damage = Math.Min(Damage, baseDam.HealthMax);
+                DamageClamped = Math.Min(Damage, baseDam.HealthMax);
             else
-                Damage = Math.Min(Damage, DamageableUtil.LockHealth);
+                DamageClamped = Math.Min(Damage, DamageableUtil.LockHealth);
         }
 
         public WeaponHitDamageableContext(HitData data)
@@ -26,12 +26,12 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             Damage = data.damage * Falloff;
             var damBase = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
             if (damBase != null)
-                Damage = Math.Min(Damage, damBase.HealthMax);
+                DamageClamped = Math.Min(Damage, damBase.HealthMax);
             else
-                Damage = Math.Min(Damage, DamageableUtil.LockHealth);
+                DamageClamped = Math.Min(Damage, DamageableUtil.LockHealth);
         }
 
-        public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb, DamageType flag)
+        public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb)
             : base(data, backstab)
         {
             Damage = data.damage * Falloff;
@@ -39,9 +39,9 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
             // Need to set this AFTER calling the above function again since the patch will clear the cache.
             Patches.Enemy.EnemyLimbPatches.CachedBypassTumorCap = bypassTumor;
             Damage *= Backstab;
-            Damage = Math.Min(Damage, limb.m_base.HealthMax);
             if (!bypassTumor && limb.DestructionType == eLimbDestructionType.Custom)
                 Damage = Math.Min(Damage, limb.m_healthMax);
+            DamageClamped = Math.Min(Damage, limb.m_base.HealthMax);
         }
     }
 }
