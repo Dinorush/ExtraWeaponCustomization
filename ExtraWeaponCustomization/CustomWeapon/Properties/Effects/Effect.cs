@@ -96,7 +96,10 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                 if (Trigger.Activate.Triggers[i] is not IDamageTypeTrigger typeTrigger) continue;
 
-                typeTrigger.BlacklistType |= _blacklistType;
+                // If the blacklist is explicitly specified, allow it
+                if (!typeTrigger.DamageTypes.Any(type => type.HasAnyFlag(_blacklistType)))
+                    typeTrigger.BlacklistType |= _blacklistType;
+
                 // If all valid triggers are blacklisted, remove it
                 if (typeTrigger.DamageTypes.All(type => type.HasAnyFlag(typeTrigger.BlacklistType)))
                 {
