@@ -3,6 +3,7 @@ using EWC.Utils;
 using FX_EffectSystem;
 using Gear;
 using System;
+using UnityEngine;
 
 namespace EWC.CustomWeapon.CustomShot
 {
@@ -12,6 +13,7 @@ namespace EWC.CustomWeapon.CustomShot
         public static uint NextID => ++CurrentID;
         public static ShotInfoMod CurrentGroupMod { get; private set; } = new();
         public static Shotgun? CachedShotgun { get; set; }
+        public static Vector3 VanillaFireDir { get; set; }
 
         private static float s_lastShotTime = 0f;
 

@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.CustomShot;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
 using GameData;
@@ -61,7 +62,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (CWC.HasTrait<Projectile>()) return;
 
             s_ray.origin = CWC.Weapon.MuzzleAlign.position;
-            s_ray.direction = UseAimDir || CWC.IsShotgun ? CWC.Weapon.MuzzleAlign.forward : Weapon.s_weaponRayData.fireDir;
+            s_ray.direction = UseAimDir || CWC.IsShotgun ? CWC.Weapon.MuzzleAlign.forward : ShotManager.VanillaFireDir;
 
             int shotgunBullets = 1;
             int coneSize = 0;
@@ -97,7 +98,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostFireContext context)
         {
             s_ray.origin = CWC.Weapon.Owner.FPSCamera.Position;
-            s_ray.direction = UseAimDir || CWC.IsShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : Weapon.s_weaponRayData.fireDir;
+            s_ray.direction = UseAimDir || CWC.IsShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : ShotManager.VanillaFireDir;
 
             int shotgunBullets = 1;
             float coneSize = 0;

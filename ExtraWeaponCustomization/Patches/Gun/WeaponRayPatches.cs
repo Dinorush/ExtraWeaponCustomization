@@ -61,6 +61,8 @@ namespace EWC.Patches.Gun
         [HarmonyPostfix]
         private static void PostRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, ref bool __result)
         {
+            ShotManager.VanillaFireDir = weaponRayData.fireDir;
+
             if (_cachedCWC == null) return;
 
             s_hitData.Setup(weaponRayData, _cachedCWC);
@@ -72,8 +74,6 @@ namespace EWC.Patches.Gun
                 return;
             }
 
-            __result = _cachedCWC.Invoke(new WeaponPostRayContext(s_hitData, originPos, __result)).Result;
-            s_hitData.Apply();
             _cachedCWC = null;
         }
     }

@@ -5,7 +5,6 @@ using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using GameData;
-using Gear;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool UseParentShotMod { get; private set; } = true;
         public bool ForceSingleBullet { get; private set; } = false;
         public FireSetting FireFrom { get; private set; } = FireSetting.User;
+        public bool UserUseAimDir { get; private set; } = false;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = false;
         public bool HitTriggerTarget { get; private set; } = false;
@@ -78,14 +78,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (iterations == 0) return;
             }
 
-            Ray lastRay = Weapon.s_ray;
-            bool isShotgun = CWC.Gun!.TryCast<Shotgun>() != null;
-
             int shotgunBullets = 1;
             float coneSize = 0;
             float segmentSize = 0;
             var archData = CWC.Weapon.ArchetypeData;
-            if (isShotgun && !ForceSingleBullet)
+            if (CWC.IsShotgun && !ForceSingleBullet)
             {
                 shotgunBullets = archData.ShotgunBulletCount;
                 coneSize = archData.ShotgunConeSize;
@@ -95,14 +92,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             float spread = Spread;
             if (spread < 0f)
             {
-                if (isShotgun)
+                if (CWC.IsShotgun)
                     spread = archData.ShotgunBulletSpread;
                 else
                     spread = CWC.Weapon.FPItemHolder.ItemAimTrigger ? archData.AimSpread : archData.HipFireSpread;
             }
 
-            Ray ray = new(CWC.Weapon.Owner.FPSCamera.Position, CWC.Gun!.Owner.FPSCamera.CameraRayDir);
-            
+            Ray ray = new(CWC.Weapon.Owner.FPSCamera.Position, UserUseAimDir ? ShotManager.VanillaFireDir : CWC.Weapon.Owner.FPSCamera.CameraRayDir);
             if (FireFrom != FireSetting.User)
             {
                 foreach (var (pos, dir, amount, shotInfo, baseDam) in hitContexts!)
@@ -122,8 +118,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                     FirePerTrigger(ray, spread, shotgunBullets, segmentSize, coneSize, false);
             }
 
-            Weapon.s_ray = lastRay;
-
             TriggerManager.SendInstance(this, iterations);
         }
 
@@ -134,12 +128,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             // Should always be an int, so round JFS in case of network compression errors.
             int iterations = (int)Math.Round(triggerSum);
             Ray ray = new(position, direction);
-            bool isShotgun = CWC.Gun!.TryCast<ShotgunSynced>() != null;
 
             int shotgunBullets = 1;
             int coneSize = 0;
             float segmentSize = 0;
-            if (isShotgun && !ForceSingleBullet)
+            if (CWC.IsShotgun && !ForceSingleBullet)
             {
                 shotgunBullets = CWC.Weapon.ArchetypeData.ShotgunBulletCount;
                 coneSize = CWC.Weapon.ArchetypeData.ShotgunConeSize;
@@ -148,7 +141,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             float spread = Spread;
             if (spread < 0f)
-                spread = isShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
+                spread = CWC.IsShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
 
             for (int iter = 0; iter < iterations; iter++)
                 FirePerTrigger(ray, spread, shotgunBullets, segmentSize, coneSize, true);
@@ -255,6 +248,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(UseParentShotMod), UseParentShotMod);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
             writer.WriteString(nameof(FireFrom), FireFrom.ToString());
+            writer.WriteBoolean(nameof(UserUseAimDir), UserUseAimDir);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
@@ -295,6 +289,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "firefrom":
                     FireFrom = reader.GetString().ToEnum(FireSetting.User);
+                    break;
+                case "useruseaimdir":
+                case "useaimdir":
+                    UserUseAimDir = reader.GetBoolean();
                     break;
                 case "damagefriendly":
                 case "friendlyfire":
