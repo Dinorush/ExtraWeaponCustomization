@@ -84,6 +84,8 @@ namespace EWC.CustomWeapon.Enums
                 flag |= DamageType.Explosive;
             else if (name.Contains("dot"))
                 flag |= DamageType.DOT;
+            else if (name.Contains("glue"))
+                flag |= DamageType.Foam;
 
             return flag;
         }
