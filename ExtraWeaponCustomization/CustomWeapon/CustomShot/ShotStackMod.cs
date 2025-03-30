@@ -26,6 +26,19 @@ namespace EWC.CustomWeapon.CustomShot
             _modsPerTarget = null;
         }
 
+        public ShotStackMod(ShotStackMod mod) : base(mod)
+        {
+            _mods = mod._mods != null ? new(mod._mods) : null;
+            if (mod._modsPerTarget != null)
+            {
+                _modsPerTarget = new(mod._modsPerTarget);
+                foreach ((var wrapper, var dict) in mod._modsPerTarget)
+                    _modsPerTarget[wrapper] = new(dict);
+            }
+            else
+                _modsPerTarget = null;
+        }
+
         public void AddMod(TriggerMod triggerMod, float mod, IDamageable? damageable = null, params DamageType[] types) => AddMod(triggerMod, mod, triggerMod.Cap, triggerMod.StackType, triggerMod.StackLayer, damageable, types);
 
         public void AddMod(WeaponPropertyBase property, float mod, float cap, StackType stack, StackType layer, IDamageable? damageable = null, params DamageType[] types)

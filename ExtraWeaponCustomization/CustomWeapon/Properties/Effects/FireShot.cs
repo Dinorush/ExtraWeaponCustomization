@@ -26,6 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public uint Repeat { get; private set; } = 0;
         public float Spread { get; private set; } = 0;
         public bool IgnoreSpreadMod { get; private set; } = false;
+        public bool UseParentShotMod { get; private set; } = true;
         public bool ForceSingleBullet { get; private set; } = false;
         public FireSetting FireFrom { get; private set; } = FireSetting.User;
         public bool DamageFriendly { get; private set; } = true;
@@ -207,7 +208,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             hitData.shotInfo.Reset(hitData.damage, hitData.precisionMulti, hitData.staggerMulti);
             hitData.RayHit = default;
             if (orig != null)
-                hitData.shotInfo.PullMods(orig);
+                hitData.shotInfo.PullMods(orig, UseParentShotMod);
             else
                 hitData.shotInfo.NewShot(CWC);
 
@@ -251,6 +252,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Repeat), Repeat);
             writer.WriteNumber(nameof(Spread), Spread);
             writer.WriteBoolean(nameof(IgnoreSpreadMod), IgnoreSpreadMod);
+            writer.WriteBoolean(nameof(UseParentShotMod), UseParentShotMod);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
             writer.WriteString(nameof(FireFrom), FireFrom.ToString());
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
@@ -282,6 +284,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "ignorespreadmod":
                     IgnoreSpreadMod = reader.GetBoolean();
+                    break;
+                case "useparentshotmod":
+                case "parentshotmod":
+                    UseParentShotMod = reader.GetBoolean();
                     break;
                 case "forcesinglebullet":
                 case "singlebullet":

@@ -73,7 +73,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             ShotInfo shotInfo;
             if (triggerInfo != null)
-                shotInfo = new(triggerInfo, true);
+                shotInfo = new(triggerInfo, true, explosiveBase.UseParentShotMod);
             else
             {
                 shotInfo = new();

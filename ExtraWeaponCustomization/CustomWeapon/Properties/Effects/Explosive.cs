@@ -31,6 +31,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
         public bool IgnoreShotMods { get; private set; } = false;
+        public bool UseParentShotMod { get; private set; } = true;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = true;
         public bool DamageLocks { get; private set; } = true;
@@ -101,6 +102,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreShotMods), IgnoreShotMods);
+            writer.WriteBoolean(nameof(UseParentShotMod), UseParentShotMod);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
@@ -177,6 +179,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "ignoreshotmods":
                 case "ignoreshotmod":
                     IgnoreShotMods = reader.GetBoolean();
+                    break;
+                case "useparentshotmod":
+                case "parentshotmod":
+                    UseParentShotMod = reader.GetBoolean();
                     break;
                 case "damagefriendly":
                 case "friendlyfire":

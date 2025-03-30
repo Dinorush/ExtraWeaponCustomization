@@ -40,6 +40,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool IgnoreArmor { get; private set; } = false;
         public bool IgnoreBackstab { get; private set; } = false;
         public bool IgnoreShotMods { get; private set; } = false;
+        public bool UseParentShotMod { get; private set; } = true;
         public bool CalcShotModsPerTick { get; private set; } = false;
         private float _tickRate = 2f;
         public float TickRate
@@ -131,7 +132,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             damage *= EXPAPIWrapper.GetDamageMod(CWC.IsGun);
 
-            ShotInfo info = new(context.ShotInfo.Orig, true);
+            ShotInfo info = new(context.ShotInfo.Orig, true, UseParentShotMod);
             WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, DamageType.DOT.WithSubTypes(context.Damageable), context.Damageable, context.ShotInfo.Orig);
             CWC.Invoke(statContext);
             if (!CalcShotModsPerTick && !IgnoreShotMods)
@@ -214,6 +215,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(IgnoreArmor), IgnoreArmor);
             writer.WriteBoolean(nameof(IgnoreBackstab), IgnoreBackstab);
             writer.WriteBoolean(nameof(IgnoreShotMods), IgnoreShotMods);
+            writer.WriteBoolean(nameof(UseParentShotMod), UseParentShotMod);
             writer.WriteBoolean(nameof(CalcShotModsPerTick), CalcShotModsPerTick);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
             writer.WritePropertyName(nameof(GlowColor));
@@ -288,6 +290,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "ignoreshotmods":
                 case "ignoreshotmod":
                     IgnoreShotMods = reader.GetBoolean();
+                    break;
+                case "useparentshotmod":
+                case "parentshotmod":
+                    UseParentShotMod = reader.GetBoolean();
                     break;
                 case "calcshotmodspertick":
                 case "calcshotmodpertick":

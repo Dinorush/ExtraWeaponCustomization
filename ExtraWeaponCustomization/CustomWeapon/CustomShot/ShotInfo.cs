@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace EWC.CustomWeapon.CustomShot
@@ -46,10 +47,10 @@ namespace EWC.CustomWeapon.CustomShot
             _state = new(this);
         }
 
-        public ShotInfo(ShotInfo copy, bool modOnly = false)
+        public ShotInfo(ShotInfo copy, bool modOnly = false, bool useParentMod = true)
         {
-            Mod = copy.Mod;
-            GroupMod = copy.GroupMod;
+            PullMods(copy, useParentMod);
+
             if (modOnly)
             {
                 ID = ShotManager.NextID;
@@ -96,10 +97,12 @@ namespace EWC.CustomWeapon.CustomShot
                 _hits.Add(type);
         }
 
-        public void PullMods(ShotInfo info)
+        [MemberNotNull(nameof(Mod))]
+        [MemberNotNull(nameof(GroupMod))]
+        public void PullMods(ShotInfo info, bool useOriginal = true)
         {
-            Mod = info.Mod;
-            GroupMod = info.GroupMod;
+            Mod = useOriginal ? info.Mod : new(info.Mod);
+            GroupMod = useOriginal ? info.GroupMod : new(info.GroupMod);
         }
 
         // Snapshot of ShotInfo to capture its current state
