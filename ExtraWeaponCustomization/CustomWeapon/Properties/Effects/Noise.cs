@@ -62,21 +62,18 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 Vector3 position = trigger.context is WeaponHitContextBase hitContext ? hitContext.Position : CWC.Weapon.Owner.EyePosition;
                 TriggerApplySync(position, Vector3.zero, trigger.triggerAmt);
+                TriggerManager.SendInstance(this, position, Vector3.zero, trigger.triggerAmt);
+
                 if (UseNoiseSystem)
                     MakeNoise(position);
-                else
-                {
-                    if (SNet.IsMaster)
-                        TriggerSound(position, trigger.triggerAmt);
-                    else
-                        TriggerManager.SendInstance(this, position, Vector3.zero, trigger.triggerAmt);
-                }
             }
         }
 
         public void TriggerApplySync(Vector3 position, Vector3 dir, float mod)
         {
-            if (!SNet.IsMaster) return;
+            CellSound.Post(SoundID, position);
+
+            if (UseNoiseSystem || !SNet.IsMaster) return;
 
             TriggerSound(position, mod);
         }
