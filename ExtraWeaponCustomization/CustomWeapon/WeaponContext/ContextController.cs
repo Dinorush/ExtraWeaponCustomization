@@ -219,7 +219,6 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponPreStartFireContext>();
             RegisterContext<WeaponPostStartFireContext>();
             RegisterContext<WeaponPreRayContext>();
-            RegisterContext<WeaponPostRayContext>();
             RegisterContext<WeaponPostStopFiringContext>();
             RegisterContext<WeaponPreReloadContext>();
             RegisterContext<WeaponUnWieldContext>();
