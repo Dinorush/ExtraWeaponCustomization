@@ -72,18 +72,17 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private IEnumerator DelayedUpdate()
         {
-            while (_updateTimes.TryPeek(out float nextTime))
+            while (_triggerStack.TryGetMod(out float mod))
             {
-                float waitTime = nextTime - Clock.Time;
-                if (waitTime < 0)
+                CWC.SpreadController!.SetMod(this, mod);
+                float nextTime;
+                while (_updateTimes.TryPeek(out nextTime) && nextTime <= Clock.Time)
                     _updateTimes.Dequeue();
+
+                if (_updateTimes.Count > 0)
+                    yield return new WaitForSeconds(nextTime - Clock.Time);
                 else
-                {
-                    // Always true since _updateTimes is synced with stack times.
-                    _triggerStack.TryGetMod(out float mod);
-                    CWC.SpreadController!.SetMod(this, mod);
-                    yield return new WaitForSeconds(waitTime);
-                }
+                    yield return null;
             }
             CWC.SpreadController!.ClearMod(this);
             _updateRoutine = null;
