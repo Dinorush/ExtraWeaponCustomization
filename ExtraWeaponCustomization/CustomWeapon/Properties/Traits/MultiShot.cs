@@ -191,8 +191,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
-            writer.WritePropertyName(nameof(Offsets));
-            EWCJson.Serialize(writer, Offsets);
+            EWCJson.Serialize(writer, nameof(Offsets), Offsets);
             writer.WriteNumber(nameof(AimOffsetMod), AimOffsetMod);
             writer.WriteNumber(nameof(Repeat), Repeat);
             writer.WriteBoolean(nameof(UseAimDir), UseAimDir);

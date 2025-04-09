@@ -240,8 +240,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
-            writer.WritePropertyName(nameof(Offsets));
-            EWCJson.Serialize(writer, Offsets);
+            EWCJson.Serialize(writer, nameof(Offsets),Offsets);
             writer.WriteNumber(nameof(Repeat), Repeat);
             writer.WriteNumber(nameof(Spread), Spread);
             writer.WriteBoolean(nameof(IgnoreSpreadMod), IgnoreSpreadMod);

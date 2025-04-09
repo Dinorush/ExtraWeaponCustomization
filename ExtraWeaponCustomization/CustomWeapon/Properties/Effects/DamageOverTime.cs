@@ -218,8 +218,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(UseParentShotMod), UseParentShotMod);
             writer.WriteBoolean(nameof(CalcShotModsPerTick), CalcShotModsPerTick);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
-            writer.WritePropertyName(nameof(GlowColor));
-            EWCJson.Serialize(writer, GlowColor);
+            EWCJson.Serialize(writer, nameof(GlowColor), GlowColor);
             writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
             SerializeTrigger(writer);

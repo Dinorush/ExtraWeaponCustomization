@@ -108,8 +108,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             SerializeTrigger(writer);
             writer.WriteNumber(nameof(SoundID), SoundID);
-            writer.WritePropertyName(nameof(GlowColor));
-            EWCJson.Serialize(writer, GlowColor);
+            EWCJson.Serialize(writer, nameof(GlowColor), GlowColor);
             writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowDuration), GlowDuration);
             writer.WriteNumber(nameof(GlowFadeDuration), GlowFadeDuration);

@@ -110,13 +110,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(HitSizeWorld), HitSizeWorld);
             writer.WriteNumber(nameof(ModelScale), ModelScale);
             writer.WriteBoolean(nameof(EnableTrail), EnableTrail);
-            writer.WritePropertyName(nameof(TrailColor));
-            EWCJson.Serialize(writer, TrailColor);
+            EWCJson.Serialize(writer, nameof(TrailColor), TrailColor);
             writer.WriteNumber(nameof(TrailWidth), TrailWidth);
             writer.WriteNumber(nameof(TrailTime), TrailTime);
             writer.WriteBoolean(nameof(TrailCullOnDie), TrailCullOnDie);
-            writer.WritePropertyName(nameof(GlowColor));
-            EWCJson.Serialize(writer, GlowColor);
+            EWCJson.Serialize(writer, nameof(GlowColor), GlowColor);
             writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);

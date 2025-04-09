@@ -58,10 +58,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         protected void SerializeTrigger(Utf8JsonWriter writer)
         {
             if (Trigger != null)
-            {
-                writer.WritePropertyName(nameof(Trigger));
-                EWCJson.Serialize(writer, Trigger);
-            }
+                EWCJson.Serialize(writer, nameof(Trigger), Trigger);
             else
                 writer.WriteString(nameof(Trigger), "Invalid");
         }

@@ -108,8 +108,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
-            writer.WritePropertyName(nameof(Properties));
-            EWCJson.Serialize(writer, Properties);
+            EWCJson.Serialize(writer, nameof(Properties), Properties);
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteBoolean(nameof(Override), Override);
             writer.WriteBoolean(nameof(ResetTriggersOnEnd), ResetTriggersOnEnd);

@@ -54,5 +54,11 @@ namespace EWC.JSON
         {
             JsonSerializer.Serialize(writer, value, _setting);
         }
+
+        public static void Serialize<T>(Utf8JsonWriter writer, string name, T value)
+        {
+            writer.WritePropertyName(name);
+            JsonSerializer.Serialize(writer, value, _setting);
+        }
     }
 }
