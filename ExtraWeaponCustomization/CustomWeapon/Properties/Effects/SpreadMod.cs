@@ -85,6 +85,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     yield return null;
             }
             CWC.SpreadController!.ClearMod(this);
+            _updateTimes.Clear();
             _updateRoutine = null;
         }
     }
