@@ -4,6 +4,7 @@ using HarmonyLib;
 
 namespace EWC.Patches.Player
 {
+    [HarmonyPatch]
     internal static class PlayerDamagePatches
     {
         private static bool _ignoreCall = false;

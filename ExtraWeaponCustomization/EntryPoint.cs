@@ -25,7 +25,6 @@ namespace EWC;
 [BepInDependency(ERDAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(EECAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(FSFAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
-[BepInDependency(CCAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(ACAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 internal sealed class EntryPoint : BasePlugin
 {
@@ -44,8 +43,6 @@ internal sealed class EntryPoint : BasePlugin
         var harmony = new Harmony(MODNAME);
         harmony.PatchAll();
         EnemyDetectionPatches.ApplyNativePatch();
-        if (!CCAPIWrapper.HasCC)
-            harmony.PatchAll(typeof(PlayerDamagePatches));
 
         Configuration.Init();
         LevelAPI.OnLevelCleanup += LevelAPI_OnLevelCleanup;
