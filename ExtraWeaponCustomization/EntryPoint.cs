@@ -8,7 +8,6 @@ using EWC.CustomWeapon;
 using EWC.Utils.Log;
 using EWC.Utils;
 using EWC.Patches.Native;
-using EWC.Patches.Player;
 using System.Runtime.CompilerServices;
 using EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
