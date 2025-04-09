@@ -1,11 +1,10 @@
 ﻿using Agents;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Enemies;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -42,6 +41,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         public TargetingPriority TargetPriority { get; private set; } = TargetingPriority.Angle;
         public bool FavorLookPoint { get; private set; } = false;
         public bool HomingOnly { get; private set; } = false;
+        public Color LockedColor { get; private set; } = new(1.2f, 0.3f, 0.1f, 1f);
+        public Color LockingColor { get; private set; } = new(0.8f, 0.3f, 0.2f, 1f);
+        public float LockScale { get; private set; } = 1f;
 
         public CrosshairHitIndicator? _reticle;
         private FPSCamera? _camera;
@@ -61,8 +63,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         private static Ray s_ray;
         private static RaycastHit s_raycastHit;
 
-        private readonly Color _targetedColor = new(1.2f, 0.3f, 0.1f, 1f);
-        private readonly Color _passiveLocked = new(0.8f, 0.3f, 0.2f, 1f);
         private readonly Color _passiveDetection = new(0.5f, 0.5f, 0.5f, 1f);
         private readonly Vector3 _targetedAngles = new(0f, 0f, 45f);
 
@@ -216,14 +216,14 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (UseAutoAim && HasAmmo)
             {
-                _reticle!.m_hitColor = _targetedColor;
-                _reticle!.transform.localScale = Vector3.one;
+                _reticle!.m_hitColor = LockedColor;
+                _reticle!.transform.localScale = Vector3.one * LockScale;
                 _reticle.transform.localEulerAngles = _targetedAngles;
             }
             else if(LockedTarget)
             {
-                _reticle!.m_hitColor = _passiveLocked;
-                _reticle!.transform.localScale = Vector3.one;
+                _reticle!.m_hitColor = LockingColor;
+                _reticle!.transform.localScale = Vector3.one * LockScale;
                 _reticle.transform.localEulerAngles += new Vector3(0, 0, 1f);
             }
             else
@@ -236,7 +236,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     _reticle!.transform.localEulerAngles += new Vector3(0, 0, 5);
                 
                 _reticle!.m_hitColor = GetLockingColor(sqProgress);
-                _reticle.transform.localScale = Vector3.one * _progress.Lerp(0, 1f);
+                _reticle.transform.localScale = Vector3.one * _progress.Lerp(0, 1f) * LockScale;
             }
 
             bool active = AutoAimActive && HasAmmo;
@@ -247,9 +247,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         private Color GetLockingColor(float frac)
         {
             return new Color(
-                    frac.Lerp(_passiveDetection.r, _passiveLocked.r),
-                    frac.Lerp(_passiveDetection.g, _passiveLocked.g),
-                    frac.Lerp(_passiveDetection.b, _passiveLocked.b),
+                    frac.Lerp(_passiveDetection.r, LockingColor.r),
+                    frac.Lerp(_passiveDetection.g, LockingColor.g),
+                    frac.Lerp(_passiveDetection.b, LockingColor.b),
                     1f
                 );
         }
@@ -464,6 +464,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteString(nameof(TargetPriority), TargetPriority.ToString());
             writer.WriteBoolean(nameof(FavorLookPoint), FavorLookPoint);
             writer.WriteBoolean(nameof(HomingOnly), HomingOnly);
+            EWCJson.Serialize(writer, nameof(LockedColor), LockedColor);
+            EWCJson.Serialize(writer, nameof(LockingColor), LockingColor);
+            writer.WriteNumber(nameof(LockScale), LockScale);
             writer.WriteEndObject();
         }
 
@@ -529,6 +532,15 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "homingonly":
                     HomingOnly = reader.GetBoolean();
+                    break;
+                case "lockedcolor":
+                    LockedColor = EWCJson.Deserialize<Color>(ref reader);
+                    break;
+                case "lockingcolor":
+                    LockingColor = EWCJson.Deserialize<Color>(ref reader);
+                    break;
+                case "lockscale":
+                    LockScale = reader.GetSingle();
                     break;
                 default:
                     break;
