@@ -8,6 +8,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     {
         PreFire,
         Fire,
+        StartFiring,
+        EndFiring,
         Aim,
         AimEnd,
         ReloadStart,
@@ -50,6 +52,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 "prefire" or "preshot" or "preswing" => new BasicTrigger<WeaponPreFireContext>(TriggerName.PreFire),
                 "fire" or "shot" or "swing" => new BasicTrigger<WeaponPostFireContext>(TriggerName.Fire),
+                "startfiring" => new BasicTrigger<WeaponPostStartFireContext>(TriggerName.StartFiring),
+                "endfiring" or "stopfiring" => new BasicTrigger<WeaponPostStopFiringContext>(TriggerName.EndFiring),
                 "aim" or "zoomin" => new BasicTrigger<WeaponAimContext>(TriggerName.Aim),
                 "aimend" or "zoomout" => new BasicTrigger<WeaponAimEndContext>(TriggerName.AimEnd),
                 "reloadstart" or "startreload" => new BasicTrigger<WeaponReloadStartContext>(TriggerName.ReloadStart),

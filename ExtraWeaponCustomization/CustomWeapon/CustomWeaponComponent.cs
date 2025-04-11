@@ -8,6 +8,7 @@ using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Utils;
+using GameData;
 using Gear;
 using Il2CppInterop.Runtime.Attributes;
 using System;
@@ -22,6 +23,30 @@ namespace EWC.CustomWeapon
         public readonly ItemEquippable Weapon;
         public readonly BulletWeapon? Gun;
         public readonly bool IsGun;
+        private ArchetypeDataBlock _archetypeData;
+        public ArchetypeDataBlock ArchetypeData
+        {
+            get => _archetypeData;
+            set
+            {
+                _archetypeData = value;
+                Weapon.ArchetypeData = value;
+            }
+        }
+        private BulletWeaponArchetype? _gunArchetype;
+        public BulletWeaponArchetype? GunArchetype
+        {
+            get => _gunArchetype;
+            set
+            {
+                Gun!.m_archeType = value;
+                _gunArchetype = value;
+                GunFireMode = Weapon.ArchetypeData.FireMode;
+                _burstArchetype = GunFireMode == eWeaponFireMode.Burst ? value!.Cast<BWA_Burst>() : null;
+            }
+        }
+        public eWeaponFireMode GunFireMode { get; private set; }
+        private BWA_Burst? _burstArchetype;
         public readonly bool IsShotgun;
         public readonly MeleeWeaponFirstPerson? Melee;
         public readonly bool IsMelee;
@@ -88,13 +113,16 @@ namespace EWC.CustomWeapon
             IsGun = Gun != null;
             IsShotgun = false;
             IsMelee = !IsGun;
+            GunFireMode = eWeaponFireMode.Semi;
+            _archetypeData = Weapon.ArchetypeData;
 
             if (IsGun)
             {
-                BaseFireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
+                GunArchetype = Gun!.m_archeType;
+                BaseFireRate = 1f / Math.Max(GunArchetype!.ShotDelay(), CustomWeaponData.MinShotDelay);
                 _lastFireRate = BaseFireRate;
                 CurrentFireRate = BaseFireRate;
-                _burstDelay = Gun.m_archeType.BurstDelay();
+                _burstDelay = GunArchetype.BurstDelay();
                 CurrentBurstDelay = _burstDelay;
                 IsLocal = Gun.TryCast<BulletWeaponSynced>() == null;
                 IsShotgun = IsLocal ? Weapon.TryCast<Shotgun>() != null : Weapon.TryCast<ShotgunSynced>() != null;
@@ -108,10 +136,16 @@ namespace EWC.CustomWeapon
             enabled = false;
         }
 
+        public bool TryGetBurstArchetype([MaybeNullWhen(false)] out BWA_Burst burstArchetype)
+        {
+            burstArchetype = _burstArchetype;
+            return GunFireMode == eWeaponFireMode.Burst;
+        }
+
         // Only runs on local player!
         public void OwnerInit()
         {
-            IntPtr ptr = Gun!.m_archeType.m_owner.Pointer;
+            IntPtr ptr = GunArchetype!.m_owner.Pointer;
             if (ptr == IntPtr.Zero || ptr == _ownerPtr || !enabled) return;
 
             _ownerPtr = ptr;
@@ -174,7 +208,7 @@ namespace EWC.CustomWeapon
             }
 
             _propertyController.Init(this, data.Properties.Clone());
-            if (Gun?.m_archeType?.m_owner != null)
+            if (IsGun && GunArchetype!.m_owner != null)
                 OwnerInit();
         }
 
@@ -241,8 +275,8 @@ namespace EWC.CustomWeapon
                 archetype.m_nextBurstTimer = _lastBurstTimer;
                 CurrentFireRate = _lastFireRate;
                 Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
-                if (archetype.m_archetypeData.FireMode == eWeaponFireMode.Burst)
-                    archetype.TryCast<BWA_Burst>()!.m_burstCurrentCount = 0;
+                if (TryGetBurstArchetype(out var arch))
+                    arch!.m_burstCurrentCount = 0;
                 return true;
             }
             return false;
@@ -252,8 +286,8 @@ namespace EWC.CustomWeapon
         {
             if (IsGun)
             {
-                BaseFireRate = 1f / Math.Max(Gun!.m_archeType.ShotDelay(), CustomWeaponData.MinShotDelay);
-                _burstDelay = Gun.m_archeType.BurstDelay();
+                BaseFireRate = 1f / Math.Max(GunArchetype!.ShotDelay(), CustomWeaponData.MinShotDelay);
+                _burstDelay = Gun!.m_archeType.BurstDelay();
                 UpdateStoredFireRate();
             }
         }
@@ -267,10 +301,9 @@ namespace EWC.CustomWeapon
 
         public void UpdateStoredFireRate()
         {
-            BulletWeaponArchetype bwa = Gun!.m_archeType;
             _lastFireRate = CurrentFireRate;
-            _lastShotTimer = bwa.m_nextShotTimer;
-            _lastBurstTimer = bwa.m_nextBurstTimer;
+            _lastShotTimer = GunArchetype!.m_nextShotTimer;
+            _lastBurstTimer = GunArchetype!.m_nextBurstTimer;
 
             float newFireRate = Invoke(new WeaponFireRateContext(BaseFireRate)).Value;
 
@@ -284,15 +317,14 @@ namespace EWC.CustomWeapon
 
         public void ModifyFireRate()
         {
-            BulletWeaponArchetype bwa = Gun!.m_archeType;
-            bwa.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
-            if (bwa.BurstIsDone())
-                bwa.m_nextBurstTimer = Math.Max(_lastFireTime + CurrentBurstDelay, bwa.m_nextShotTimer);
+            GunArchetype!.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
+            if (GunArchetype.BurstIsDone())
+                GunArchetype.m_nextBurstTimer = Math.Max(_lastFireTime + CurrentBurstDelay, GunArchetype.m_nextShotTimer);
         }
 
         public void ModifyFireRateSynced(BulletWeaponSynced synced)
         {
-            synced.m_lastFireTime = _lastFireTime + 1f / CurrentFireRate - Weapon.ArchetypeData.ShotDelay;
+            synced.m_lastFireTime = _lastFireTime + 1f / CurrentFireRate - ArchetypeData.ShotDelay;
         }
     }
 }

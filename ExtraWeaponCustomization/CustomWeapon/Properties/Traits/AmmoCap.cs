@@ -47,7 +47,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (CostOfBullet > 0)
             {
-                AmmoCapRel = CWC.Weapon.ArchetypeData.CostOfBullet / CostOfBullet;
+                AmmoCapRel = CWC.ArchetypeData.CostOfBullet / CostOfBullet;
                 CostOfBullet = 0;
             }
         }

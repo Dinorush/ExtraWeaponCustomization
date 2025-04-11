@@ -80,7 +80,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public void Invoke(WeaponFireCancelContext context)
         {
             // We don't want to stop burst weapons from firing mid-burst, but we do want to stop fully automatic weapons.
-            if (CWC.Gun!.ArchetypeData.FireMode == eWeaponFireMode.Burst && !CWC.Gun!.m_archeType.BurstIsDone())
+            if (CWC.GunFireMode == eWeaponFireMode.Burst && !CWC.GunArchetype!.BurstIsDone())
                 return;
 
             context.Allow &= UseAutoAim;

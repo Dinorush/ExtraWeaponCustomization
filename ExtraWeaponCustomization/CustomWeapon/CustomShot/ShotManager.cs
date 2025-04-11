@@ -47,11 +47,11 @@ namespace EWC.CustomWeapon.CustomShot
             return BulletWeapon.BulletHit(hitData, true);
         }
 
-        public static void CancelTracerFX(GameData.ArchetypeDataBlock archData, bool isShotgun)
+        public static void CancelTracerFX(CustomWeaponComponent cwc)
         {
             int shots = 1;
-            if (isShotgun)
-                shots = archData.ShotgunBulletCount;
+            if (cwc.IsShotgun)
+                shots = cwc.ArchetypeData.ShotgunBulletCount;
 
             for (int i = 0; i < shots; i++)
             {

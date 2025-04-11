@@ -53,6 +53,7 @@ namespace EWC.Patches.Gun
             CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
 
             if (cwc == null) return;
+
             if (cwc.ResetShotIfCancel(__instance))
             {
                 cwc.CancelShot = false;
@@ -74,17 +75,17 @@ namespace EWC.Patches.Gun
             if (cwc == null) return true;
             if (cwc.CancelShot) return false;
 
-            WeaponFireCancelContext context = new();
-            cwc.Invoke(context);
-            if (!context.Allow)
+            if (!cwc.Invoke(new WeaponFireCancelContext()).Allow)
+            {
                 cwc.StoreCancelShot();
+                return false;
+            }
             else
             {
                 cwc.Invoke(StaticContext<WeaponPreFireContext>.Instance);
                 ShotManager.AdvanceGroupMod(cwc);
+                return true;
             }
-
-            return context.Allow;
         }
 
         [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnFireShot))]
@@ -99,7 +100,7 @@ namespace EWC.Patches.Gun
 
             cwc.NotifyShotFired();
             if (cwc.ShotComponent!.OverrideVanillaShot)
-                ShotManager.CancelTracerFX(__instance.m_archetypeData, cwc.IsShotgun);
+                ShotManager.CancelTracerFX(cwc);
 
             cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
         }

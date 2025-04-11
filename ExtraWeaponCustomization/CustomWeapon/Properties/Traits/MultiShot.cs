@@ -69,14 +69,14 @@ namespace EWC.CustomWeapon.Properties.Traits
             float segmentSize = 0;
             if (CWC.IsShotgun && !ForceSingleBullet)
             {
-                shotgunBullets = CWC.Weapon.ArchetypeData.ShotgunBulletCount;
-                coneSize = CWC.Weapon.ArchetypeData.ShotgunConeSize;
+                shotgunBullets = CWC.ArchetypeData.ShotgunBulletCount;
+                coneSize = CWC.ArchetypeData.ShotgunConeSize;
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
             float spread = Spread;
             if (spread < 0f)
-                spread = CWC.IsShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
+                spread = CWC.IsShotgun ? CWC.ArchetypeData.ShotgunBulletSpread : 0f;
 
             for (uint mod = 1; mod <= Repeat + 1; mod++)
             {
@@ -149,7 +149,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private void Fire(float x, float y, float spread)
         {
-            ArchetypeDataBlock archData = CWC.Weapon.ArchetypeData;
+            ArchetypeDataBlock archData = CWC.ArchetypeData;
             s_hitData.owner = CWC.Weapon.Owner;
             s_hitData.damage = archData.GetDamageWithBoosterEffect(s_hitData.owner, CWC.Weapon.ItemDataBlock.inventorySlot);
             s_hitData.damageFalloff = archData.DamageFalloff;
@@ -173,7 +173,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private void FireVisual(float x, float y, float spread)
         {
             s_hitData.owner = CWC.Weapon.Owner;
-            s_hitData.damage = CWC.Weapon.ArchetypeData.Damage;
+            s_hitData.damage = CWC.ArchetypeData.Damage;
             s_hitData.angOffsetX = x;
             s_hitData.angOffsetY = y;
             s_hitData.randomSpread = spread;

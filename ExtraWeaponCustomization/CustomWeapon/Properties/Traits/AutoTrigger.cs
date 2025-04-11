@@ -20,13 +20,13 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponSetupContext context)
         {
-            _cachedTrigger = CWC.Gun!.m_archeType.m_triggerNeedsPress;
-            CWC.Gun.m_archeType.m_triggerNeedsPress = false;
+            _cachedTrigger = CWC.GunArchetype!.m_triggerNeedsPress;
+            CWC.GunArchetype.m_triggerNeedsPress = false;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CWC.Gun!.m_archeType.m_triggerNeedsPress = _cachedTrigger;
+            CWC.GunArchetype!.m_triggerNeedsPress = _cachedTrigger;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

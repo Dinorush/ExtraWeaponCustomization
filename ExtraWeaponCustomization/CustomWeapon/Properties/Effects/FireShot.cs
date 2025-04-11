@@ -81,7 +81,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             int shotgunBullets = 1;
             float coneSize = 0;
             float segmentSize = 0;
-            var archData = CWC.Weapon.ArchetypeData;
+            var archData = CWC.ArchetypeData;
             if (CWC.IsShotgun && !ForceSingleBullet)
             {
                 shotgunBullets = archData.ShotgunBulletCount;
@@ -134,14 +134,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             float segmentSize = 0;
             if (CWC.IsShotgun && !ForceSingleBullet)
             {
-                shotgunBullets = CWC.Weapon.ArchetypeData.ShotgunBulletCount;
-                coneSize = CWC.Weapon.ArchetypeData.ShotgunConeSize;
+                shotgunBullets = CWC.ArchetypeData.ShotgunBulletCount;
+                coneSize = CWC.ArchetypeData.ShotgunConeSize;
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
             float spread = Spread;
             if (spread < 0f)
-                spread = CWC.IsShotgun ? CWC.Weapon.ArchetypeData.ShotgunBulletSpread : 0f;
+                spread = CWC.IsShotgun ? CWC.ArchetypeData.ShotgunBulletSpread : 0f;
 
             for (int iter = 0; iter < iterations; iter++)
                 FirePerTrigger(ray, spread, shotgunBullets, segmentSize, coneSize, true);
@@ -187,7 +187,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void Fire(Ray ray, float x, float y, float spread, ShotInfo? orig, IntPtr ignoreEnt)
         {
-            ArchetypeDataBlock archData = CWC.Weapon.ArchetypeData;
+            ArchetypeDataBlock archData = CWC.ArchetypeData;
             HitData hitData = new(Enums.DamageType.Bullet);
             hitData.owner = CWC.Weapon.Owner;
             hitData.damage = archData.GetDamageWithBoosterEffect(hitData.owner, CWC.Weapon.ItemDataBlock.inventorySlot);
@@ -222,7 +222,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             HitData hitData = new(Enums.DamageType.Bullet);
             hitData.owner = CWC.Weapon.Owner;
-            hitData.damage = CWC.Weapon.ArchetypeData.Damage;
+            hitData.damage = CWC.ArchetypeData.Damage;
             hitData.angOffsetX = x;
             hitData.angOffsetY = y;
             hitData.randomSpread = spread;

@@ -17,11 +17,10 @@ namespace EWC.CustomWeapon.Properties.Traits
     {
         public void Invoke(WeaponPostStartFireContext context)
         {
-            if (CWC.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
-            BWA_Burst archetype = CWC.Gun!.m_archeType.Cast<BWA_Burst>();
+            if (!CWC.TryGetBurstArchetype(out var arch)) return;
 
             int bullets = CWC.Weapon.GetCurrentClip() + PlayerBackpackManager.GetBulletsInPack(CWC.Weapon.AmmoType, CWC.Weapon.Owner.Owner);
-            archetype.m_burstCurrentCount = Math.Min(archetype.m_burstMax, bullets);
+            arch.m_burstCurrentCount = Math.Min(arch.m_burstMax, bullets);
         }
 
         public void Invoke(WeaponPostAmmoPackContext context)

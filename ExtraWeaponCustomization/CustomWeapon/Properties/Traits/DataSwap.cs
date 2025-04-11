@@ -137,7 +137,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 _archetype!.Setup(CWC.Gun!);
                 if (_archBlock.FireMode == eWeaponFireMode.Burst)
                 {
-                    var burst = _archetype.TryCast<BWA_Burst>()!;
+                    var burst = _archetype.Cast<BWA_Burst>();
                     burst.m_burstMax = _archBlock.BurstShotCount;
                 }
 
@@ -161,11 +161,11 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (_audioBlock != null)
             {
-                SetLoopingAudio(CWC.Gun!, false);
+                SetLoopingAudio(false);
                 _cachedAudioBlock = CWC.Gun!.AudioData;
                 CWC.Gun.AudioData = _audioBlock;
                 CWC.Gun.SetupAudioEvents();
-                SetLoopingAudio(CWC.Gun!, true);
+                SetLoopingAudio(true);
             }
         }
 
@@ -176,10 +176,10 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (_cachedAudioBlock != null)
             {
-                SetLoopingAudio(CWC.Gun!, false);
+                SetLoopingAudio(false);
                 CWC.Gun!.AudioData = _cachedAudioBlock;
                 CWC.Gun.SetupAudioEvents();
-                SetLoopingAudio(CWC.Gun!, true);
+                SetLoopingAudio(true);
                 _cachedAudioBlock = null;
             }
         }
@@ -201,8 +201,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 newBlock = _archBlock!;
                 newArch = _archetype!;
-                _cachedArchBlock = CWC.Gun!.ArchetypeData;
-                _cachedArchetype = CWC.Gun.m_archeType;
+                _cachedArchBlock = CWC.ArchetypeData;
+                _cachedArchetype = CWC.GunArchetype;
                 oldArch = _cachedArchetype!;
             }
 
@@ -213,9 +213,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             float clipCost = CWC.Gun!.GetCurrentClip() * slotAmmo.CostOfBullet;
             int clipSize = CWC.Gun!.ClipSize;
 
-            CWC.Gun.ArchetypeData = newBlock;
+            CWC.ArchetypeData = newBlock;
             CopyArchetypeVars(newArch, oldArch);
-            CWC.Gun.m_archeType = newArch;
+            CWC.GunArchetype = newArch;
             CWC.RefreshArchetypeCache();
             ResetERDComponent();
 
@@ -276,7 +276,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (oldArch.m_archetypeData.FireMode == eWeaponFireMode.Burst && !oldArch.BurstIsDone())
             {
-                var sendBurst = oldArch.TryCast<BWA_Burst>()!;
+                var sendBurst = oldArch.Cast<BWA_Burst>();
                 if (EndBurst)
                 {
                     sendBurst.m_burstCurrentCount = 0;
@@ -284,7 +284,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 }
                 else if (newArch.m_archetypeData.FireMode == eWeaponFireMode.Burst)
                 {
-                    var recvBurst = newArch.TryCast<BWA_Burst>()!;
+                    var recvBurst = newArch.Cast<BWA_Burst>();
                     recvBurst.m_burstCurrentCount = Math.Min(sendBurst.m_burstCurrentCount, recvBurst.m_burstMax);
                     sendBurst.m_burstCurrentCount = 0;
                 }
@@ -301,22 +301,22 @@ namespace EWC.CustomWeapon.Properties.Traits
             newArch.m_readyToFire = oldArch.m_readyToFire;
         }
 
-        private void SetLoopingAudio(BulletWeapon gun, bool start)
+        private void SetLoopingAudio(bool start)
         {
-            if (!gun.m_archeType.m_firing) return;
+            if (!CWC.GunArchetype!.m_firing) return;
 
-            if (gun.ArchetypeData.FireMode == eWeaponFireMode.Auto && !gun.AudioData.TriggerAutoAudioForEachShot)
+            if (CWC.GunFireMode == eWeaponFireMode.Auto && !CWC.Gun!.AudioData.TriggerAutoAudioForEachShot)
             {
                 if (start)
-                    gun.TriggerAutoFireStartAudio();
+                    CWC.Gun!.TriggerAutoFireStartAudio();
                 else
-                    gun.TriggerAutoFireEndAudio();
+                    CWC.Gun!.TriggerAutoFireEndAudio();
             }
 
-            if (gun.ArchetypeData.FireMode == eWeaponFireMode.Burst && !gun.AudioData.TriggerBurstAudioForEachShot)
+            if (CWC.GunFireMode == eWeaponFireMode.Burst && !CWC.Gun!.AudioData.TriggerBurstAudioForEachShot)
             {
                 if (start)
-                    gun.TriggerBurstFireAudio();
+                    CWC.Gun.TriggerBurstFireAudio();
             }
         }
 

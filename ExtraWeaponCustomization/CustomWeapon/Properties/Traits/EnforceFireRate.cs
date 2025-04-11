@@ -30,6 +30,19 @@ namespace EWC.CustomWeapon.Properties.Traits
         public void Invoke(WeaponPostStartFireContext context)
         {
             _shotBuffer = 0;
+
+            // If semi-auto or burst, calculate if they've continuously fired
+            // based on whether this is the first frame since they could fire
+            if (CWC.GunFireMode != eWeaponFireMode.Auto)
+            {
+                float intendedShotTime = CWC.GunArchetype!.m_nextBurstTimer;
+                float maxContinueTime = intendedShotTime + Clock.Delta;
+                if (Clock.Time <= maxContinueTime)
+                {
+                    _lastShotTime = intendedShotTime;
+                    return;
+                }
+            }
             _lastShotTime = Clock.Time;
         }
 
@@ -44,8 +57,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 return;
             }
 
-            float shotDelay = 1f / CWC.CurrentFireRate;
-            _shotBuffer += (Clock.Time - _lastShotTime) / shotDelay - 1f;
+            _shotBuffer += Math.Max(0, (Clock.Time - _lastShotTime) * CWC.CurrentFireRate - 1f);
             int extraShots = (int)_shotBuffer;
             weapon.m_shotsToFire = Math.Max(0, weapon.m_shotsToFire - extraShots);
             _lastSyncShotCount = weapon.m_shotsToFire;
@@ -58,10 +70,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             // Acts as a lock against recursive calls and first shot
             if (_lastShotTime == Clock.Time) return;
 
-            BulletWeaponArchetype archetype = CWC.Gun!.m_archeType;
-            float shotDelay = 1f / CWC.CurrentFireRate;
-
-            _shotBuffer += (Clock.Time - _lastShotTime) / shotDelay - 1f;
+            _shotBuffer += Math.Max(0, (Clock.Time - _lastShotTime) * CWC.CurrentFireRate - 1f);
             int extraShots = GetShotsInBuffer(CWC.Gun!);
             _lastShotTime = Clock.Time;
 
@@ -72,6 +81,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             FPS_RecoilSystem system = camera.m_recoilSystem;
 
             float delta = Clock.Delta;
+            float shotDelay = 1f / CWC.CurrentFireRate;
             shotDelay = Math.Min(shotDelay, delta);
             // Modify delta time so FPS_Update() moves the correct amount
             Clock.Delta = shotDelay;
@@ -87,7 +97,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     camera.UpdateCameraRay();
                     _fixedTime -= FixedDelta;
                 }
-                archetype.OnFireShot();
+                CWC.GunArchetype!.OnFireShot();
             }
             CWC.ShotComponent!.CancelAllFX = false;
 
@@ -99,7 +109,10 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             int cap = weapon.GetCurrentClip();
             if (CWC.HasTrait<ReserveClip>())
-                cap = PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetBulletsInPack(weapon.AmmoType);
+                cap += PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetBulletsInPack(weapon.AmmoType);
+
+            if (CWC.TryGetBurstArchetype(out var arch))
+                cap = Math.Min(cap, arch.m_burstCurrentCount);
           
             return Math.Min(cap, (int)_shotBuffer);
         }

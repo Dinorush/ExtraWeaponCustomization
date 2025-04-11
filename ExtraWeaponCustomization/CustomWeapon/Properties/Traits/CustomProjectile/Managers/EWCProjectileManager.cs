@@ -39,7 +39,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             if (!PlayerProjectiles.TryGetValue(playerIndex, out var list) || list.Count == 0)
                 return 0;
 
-            return (ushort)(PlayerProjectiles[playerIndex].Last!.Value.id + 1);
+            return (ushort)(list.Last!.Value.id + 1);
         }
 
         internal static bool TryGetNode(ushort playerIndex, ushort id, [MaybeNullWhen(false)] out LinkedListNode<(ushort id, EWCProjectileComponentBase comp)> node)
@@ -69,9 +69,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         internal static void AddProjectile(ushort playerIndex, ushort id, EWCProjectileComponentBase comp)
         {
-            if (!PlayerProjectiles.ContainsKey(playerIndex))
-                PlayerProjectiles[playerIndex] = new();
-            PlayerProjectiles[playerIndex].AddLast((id, comp));
+            if (!PlayerProjectiles.TryGetValue(playerIndex, out var list))
+                PlayerProjectiles[playerIndex] = list = new();
+            list.AddLast((id, comp));
         }
 
         public static void DoProjectileDestroy(ushort playerIndex, ushort id, bool isLocal)

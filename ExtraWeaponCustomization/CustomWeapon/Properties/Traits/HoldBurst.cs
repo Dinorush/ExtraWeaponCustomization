@@ -16,20 +16,18 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostStartFireContext context)
         {
-            if (CWC.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
-            BWA_Burst archetype = CWC.Gun!.m_archeType.TryCast<BWA_Burst>()!;
+            if (!CWC.TryGetBurstArchetype(out var arch)) return;
             // Can't use archetype.m_burstMax in case clip < max burst count
-            _burstMaxCount = archetype.m_burstCurrentCount;
+            _burstMaxCount = arch.m_burstCurrentCount;
         }
 
         public void Invoke(WeaponFireCancelContext context)
         {
-            if (CWC.Weapon.ArchetypeData.FireMode != eWeaponFireMode.Burst) return;
-            BWA_Burst archetype = CWC.Gun!.m_archeType.TryCast<BWA_Burst>()!;
+            if (!CWC.TryGetBurstArchetype(out var arch)) return;
 
-            if (_burstMaxCount - archetype.m_burstCurrentCount >= ShotsUntilCancel && !archetype.m_fireHeld)
+            if (_burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel && !arch.m_fireHeld)
             {
-                archetype.m_burstCurrentCount = 0;
+                arch.m_burstCurrentCount = 0;
                 context.Allow = false;
             }
         }

@@ -36,7 +36,7 @@ namespace EWC.Patches.Gun
             cwc.ModifyFireRateSynced(__instance);
 
             if (cwc.ShotComponent!.OverrideVanillaShot)
-                ShotManager.CancelTracerFX(__instance.ArchetypeData, cwc.IsShotgun);
+                ShotManager.CancelTracerFX(cwc);
             cwc.Invoke(StaticContext<WeaponPostFireContextSync>.Instance);
         }
     }
