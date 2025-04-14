@@ -16,7 +16,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponHitDamageableContext context)
         {
-            context.ShotInfo.Orig.Mod.Add(this, StatType.Damage, PierceDamageMulti, 0f, StackType.Multiply, StackType.Multiply);
+            if (context.DamageType.HasFlag(DamageType.Bullet))
+                context.ShotInfo.Orig.Mod.Add(this, StatType.Damage, PierceDamageMulti, 0f, StackType.Multiply, StackType.Multiply, null, ModDamageType);
         }
 
         public override void Serialize(Utf8JsonWriter writer)
