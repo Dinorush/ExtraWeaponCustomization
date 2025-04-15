@@ -1,9 +1,7 @@
 ﻿using BepInEx.Unity.IL2CPP;
 using Enemies;
-using EWC.CustomWeapon;
-using EWC.CustomWeapon.KillTracker;
-using EWC.CustomWeapon.WeaponContext.Contexts;
 using KillIndicatorFix;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace EWC.Dependencies
@@ -18,6 +16,13 @@ namespace EWC.Dependencies
             HasKIF = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
         }
 
-        public static void TagEnemy(EnemyAgent enemy, ItemEquippable? item = null, Vector3? localHitPosition = null) => Kill.TagEnemy(enemy, item, localHitPosition);
+        public static void TagEnemy(EnemyAgent enemy, ItemEquippable? item = null, Vector3? localHitPosition = null)
+        {
+            if (HasKIF)
+                TagEnemy_Internal(enemy, item, localHitPosition);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void TagEnemy_Internal(EnemyAgent enemy, ItemEquippable? item, Vector3? localHitPosition) => Kill.TagEnemy(enemy, item, localHitPosition);
     }
 }
