@@ -50,22 +50,21 @@ namespace EWC.Utils
                 );
         }
 
-        private static bool PortalInRange(Ray ray, float range, float angle, AIG_CoursePortal portal)
+        private static bool BoundsInRange(Ray ray, float range, float angle, Bounds bounds)
         {
-            Bounds bounds = portal.m_cullPortal.m_portalBounds;
             Vector3 closest = ClosestPointOnBounds(bounds, ray.origin);
             if ((ray.origin - closest).sqrMagnitude > range * range) return false;
 
             if (angle >= 180f || bounds.Contains(ray.origin)) return true;
 
-            Vector3 localCenter = portal.m_cullPortal.m_center - ray.origin;
+            Vector3 localCenter = bounds.center - ray.origin;
             float dot = Vector3.Dot(localCenter, ray.direction);
             if (angle == 90f) return dot >= 0; // Can't use Tan on 90 angle
 
             // Angle detection: Project to get the closest (perpendicular) point to center,
             //   then check if it is within the valid distance at that point on the viewing cone.
             closest = Vector3.Project(localCenter, ray.direction);
-            float diagonal = portal.m_cullPortal.m_portalBounds.extents.magnitude;
+            float diagonal = bounds.extents.magnitude;
             float reqDist = closest.magnitude * (float)Math.Tan(angle * Mathf.Deg2Rad);
             if (reqDist < 0) // If angle > 90, need to account for backwards angles
             {
@@ -91,6 +90,28 @@ namespace EWC.Utils
             return collider.Raycast(s_ray, out hit, 5f);
         }
 
+        private static List<Collider> GetValidColliders(Ray ray, float range, float angle, Agent agent)
+        {
+            var collidersIL = agent.GetComponentsInChildren<Collider>();
+            List<Collider> colliders = new(collidersIL.Length);
+            AgentType type = agent.Type;
+            foreach (var collider in collidersIL)
+            {
+                if (type == AgentType.Enemy)
+                {
+                    Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
+                    if (limb == null || limb.IsDestroyed) continue;
+                }
+                else if (type == AgentType.Player && collider.GetComponent<IDamageable>() == null)
+                    continue;
+
+                if (BoundsInRange(ray, range, angle, collider.bounds))
+                    colliders.Add(collider);
+            }
+
+            return colliders;
+        }
+
         private static bool TryGetClosestHit(Ray ray, float range, float angle, Agent agent, out RaycastHit hit, SearchSetting settings)
         {
             hit = default;
@@ -104,27 +125,23 @@ namespace EWC.Utils
                     return false;
             }
 
+            var colliders = GetValidColliders(ray, range, angle, agent);
+            if (colliders.Count == 0) return false;
+
             s_ray.origin = ray.origin;
             float sqrRange = range * range;
             float minDist = sqrRange;
             Collider? minCollider = null;
             bool casted = false;
-            foreach (var collider in agent.GetComponentsInChildren<Collider>())
-            {
-                Dam_EnemyDamageLimb? limb = null;
-                if (agent.Type == AgentType.Enemy)
-                {
-                    limb = collider.GetComponent<Dam_EnemyDamageLimb>();
-                    if (limb == null || limb.IsDestroyed) continue;
-                }
-                else if (agent.Type == AgentType.Player && collider.GetComponent<IDamageable>() == null)
-                    continue;
+            AgentType type = agent.Type;
 
+            foreach (var collider in colliders)
+            {
                 Vector3 trgtPos = collider.ClosestPoint(ray.origin);
                 Vector3 diff = trgtPos - ray.origin;
                 float sqrDist = diff.sqrMagnitude;
                 float origDist = sqrDist;
-                if (limb?.m_type == eLimbDamageType.Weakspot && sqrDist < sqrRange)
+                if (type == AgentType.Enemy && sqrDist < sqrRange && collider.GetComponent<Dam_EnemyDamageLimb>().m_type == eLimbDamageType.Weakspot)
                 {
                     float newDist = Math.Max(diff.magnitude - WeakspotBufferDist, 0);
                     sqrDist = newDist * newDist;
@@ -183,7 +200,7 @@ namespace EWC.Utils
                     if (settings.HasFlag(SearchSetting.CheckDoors) && !portal.IsTraversable)
                         continue;
 
-                    if (oppositeNode.m_searchID != searchID && PortalInRange(ray, range, angle, portal))
+                    if (oppositeNode.m_searchID != searchID && BoundsInRange(ray, range, angle, portal.m_cullPortal.m_portalBounds))
                     {
                         oppositeNode.m_searchID = searchID;
                         s_nodeQueue.Enqueue(oppositeNode);
@@ -268,7 +285,6 @@ namespace EWC.Utils
             if (range == 0 || angle == 0)
                 return settings.HasFlag(SearchSetting.Alloc) ? new List<(PlayerAgent, RaycastHit)>() : s_combinedCachePlayer;
 
-            // Players have one collider; checking LoS can easily put the floor as the closest point, so this uses a custom position
             float sqrRange = range * range;
             foreach (PlayerAgent player in PlayerManager.PlayerAgentsInLevel)
             {
@@ -276,6 +292,7 @@ namespace EWC.Utils
                 if ((ClosestPointOnBounds(player.m_movingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange) continue;
                 if (player.IsLocallyOwned)
                 {
+                    // Local players have one collider; checking LoS can easily put the floor as the closest point, so this uses a custom position
                     if (!settings.HasFlag(SearchSetting.CheckOwner)) continue;
                     s_ray.origin = ray.origin;
                     s_ray.direction = player.Damage.DamageTargetPos - ray.origin;
