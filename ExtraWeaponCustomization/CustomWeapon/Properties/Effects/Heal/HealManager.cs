@@ -9,6 +9,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
     {
         internal static HealSync Sync { get; private set; } = new();
         private const float SingleVal = 1f / 65535f; // For fixing rounding errors
+        private const float FLASH_CONVERSION = 6f;
 
         internal static void Init()
         {
@@ -26,6 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
             data.heal.Set(heal, player.Damage.HealthMax);
             data.cap.Set(cap, player.Damage.HealthMax);
             Sync.Send(data, SNet_ChannelType.GameNonCritical);
+            ReceiveHealLocal(player, heal, cap);
         }
 
         internal static void Internal_ReceiveHeal(PlayerAgent player, float heal, float cap, bool cancelRegen)
@@ -50,6 +52,17 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
                 player.Damage.OnIncomingDamage(heal, heal, player);
                 dam.m_nextRegen = cancelRegen ? Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage : origRegen;
             }
+        }
+
+        private static void ReceiveHealLocal(PlayerAgent player, float heal, float cap)
+        {
+            if (heal >= 0f) return;
+
+            var damBase = player.Damage;
+            heal = Math.Min(-heal, damBase.Health - (cap - SingleVal));
+            if (heal <= 0) return;
+
+            player.FPSCamera.AddHitReact(heal / damBase.HealthMax * FLASH_CONVERSION, UnityEngine.Vector3.up, 0f);
         }
     }
 
