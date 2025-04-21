@@ -9,7 +9,7 @@ namespace EWC.Patches.Player
         [HarmonyPatch(typeof(PUI_LocalPlayerStatus), nameof(PUI_LocalPlayerStatus.UpdateHealth))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void UpdateHealth(PUI_LocalPlayerStatus __instance, float health, bool meleeBuffActive)
+        private static void UpdateHealth(PUI_LocalPlayerStatus __instance, float health)
         {
             if (__instance.m_lastHealthVal <= 0.14f && health > 0.14f && __instance.m_warningRoutine != null)
                 __instance.m_healthWarningLooping = true;
