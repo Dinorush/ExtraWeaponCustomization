@@ -99,9 +99,11 @@ namespace EWC.CustomWeapon
         private bool _destroyed = false;
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
+        public float CurrentCooldownDelay { get; private set; }
         public float BaseFireRate { get; private set; }
 
         private float _burstDelay;
+        private float _cooldownDelay;
 
         public CustomWeaponComponent(IntPtr value) : base(value) {
             ItemEquippable? item = GetComponent<ItemEquippable>();
@@ -119,11 +121,9 @@ namespace EWC.CustomWeapon
             if (IsGun)
             {
                 GunArchetype = Gun!.m_archeType;
-                BaseFireRate = 1f / Math.Max(GunArchetype!.ShotDelay(), CustomWeaponData.MinShotDelay);
-                _lastFireRate = BaseFireRate;
-                CurrentFireRate = BaseFireRate;
-                _burstDelay = GunArchetype.BurstDelay();
-                CurrentBurstDelay = _burstDelay;
+                CurrentFireRate = _lastFireRate = BaseFireRate = 1f / Math.Max(GunArchetype!.ShotDelay(), CustomWeaponData.MinShotDelay);
+                CurrentBurstDelay = _burstDelay = GunArchetype.BurstDelay();
+                CurrentCooldownDelay = _cooldownDelay = GunArchetype.CooldownDelay();
                 IsLocal = Gun.TryCast<BulletWeaponSynced>() == null;
                 IsShotgun = IsLocal ? Weapon.TryCast<Shotgun>() != null : Weapon.TryCast<ShotgunSynced>() != null;
                 ShotComponent = new(this);
@@ -221,6 +221,7 @@ namespace EWC.CustomWeapon
             enabled = false;
             CurrentFireRate = BaseFireRate;
             CurrentBurstDelay = _burstDelay;
+            CurrentCooldownDelay = _cooldownDelay;
             if (!_destroyed)
                 Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
@@ -287,7 +288,8 @@ namespace EWC.CustomWeapon
             if (IsGun)
             {
                 BaseFireRate = 1f / Math.Max(GunArchetype!.ShotDelay(), CustomWeaponData.MinShotDelay);
-                _burstDelay = Gun!.m_archeType.BurstDelay();
+                _burstDelay = GunArchetype!.BurstDelay();
+                _cooldownDelay = GunArchetype!.CooldownDelay();
                 UpdateStoredFireRate();
             }
         }
@@ -311,6 +313,7 @@ namespace EWC.CustomWeapon
             {
                 CurrentFireRate = Math.Clamp(newFireRate, 0.001f, CustomWeaponData.MaxFireRate);
                 CurrentBurstDelay = _burstDelay * BaseFireRate / CurrentFireRate;
+                CurrentCooldownDelay = _cooldownDelay * BaseFireRate / CurrentFireRate;
                 RefreshSoundDelay();
             }
         }
@@ -319,7 +322,7 @@ namespace EWC.CustomWeapon
         {
             GunArchetype!.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
             if (GunArchetype.BurstIsDone())
-                GunArchetype.m_nextBurstTimer = Math.Max(_lastFireTime + CurrentBurstDelay, GunArchetype.m_nextShotTimer);
+                GunArchetype.m_nextBurstTimer = GunArchetype.HasCooldown ? _lastFireTime + CurrentCooldownDelay : Math.Max(_lastFireTime + CurrentBurstDelay, GunArchetype.m_nextShotTimer);
         }
 
         public void ModifyFireRateSynced(BulletWeaponSynced synced)
