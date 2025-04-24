@@ -28,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponPreFireContext context)
         {
-            _bonusRound = true;
+            _bonusRound = SlotMatchesWeapon();
         }
 
         public void Invoke(WeaponPostFireContext context)
@@ -51,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             PlayerBackpack backpack = PlayerBackpackManager.GetBackpack(CWC.Weapon.Owner.Owner);
             ItemEquippable? weapon = CWC.Gun;
-            if (ReceiverSlot != InventorySlot.None && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem) && bpItem.Instance != null)
+            if (!SlotMatchesWeapon() && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem) && bpItem.Instance != null)
                 weapon = bpItem.Instance.Cast<ItemEquippable>();
 
             if (weapon == null) return;
@@ -167,6 +167,17 @@ namespace EWC.CustomWeapon.Properties.Effects
                 "special" or "secondary" => InventorySlot.GearSpecial,
                 "tool" or "class" => InventorySlot.GearClass,
                 _ => InventorySlot.None
+            };
+        }
+
+        private bool SlotMatchesWeapon()
+        {
+            return ReceiverSlot switch
+            {
+                InventorySlot.GearStandard => CWC.Weapon.AmmoType == AmmoType.Standard,
+                InventorySlot.GearSpecial => CWC.Weapon.AmmoType == AmmoType.Special,
+                InventorySlot.None => true,
+                _ => false,
             };
         }
 
