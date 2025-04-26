@@ -43,6 +43,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt, ShotInfo? triggerInfo)
         {
+            if (explosiveBase.Radius == 0 || (explosiveBase.MaxDamage == 0 && explosiveBase.MinDamage == 0)) return;
+
             AIG_CourseNode? node = SearchUtil.GetCourseNode(position, source);
             if (node == null)
             {
@@ -80,8 +82,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 shotInfo.NewShot(explosiveBase.CWC);
             }
 
+            DebugDraw3D.DrawCube(position, 0.2f, Color.cyan, 0.3f);
             foreach (RaycastHit hit in hits)
             {
+                DebugDraw3D.DrawSphere(hit.point, 0.1f, Color.red, 0.3f);
                 SendExplosionDamage(
                     hit.collider.GetComponent<IDamageable>(),
                     hit.point,

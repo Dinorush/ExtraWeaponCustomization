@@ -1,12 +1,14 @@
 ﻿using Agents;
 using AIGraph;
 using Enemies;
+using EWC.Utils.Structs;
 using LevelGeneration;
 using Player;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
+using SVector3 = System.Numerics.Vector3;
 
 namespace EWC.Utils
 {
@@ -50,34 +52,89 @@ namespace EWC.Utils
                 );
         }
 
-        private static bool BoundsInRange(Ray ray, float range, float angle, Bounds bounds)
+        private static int GetMaxSteps(float dist) => dist <= 0.5f ? 1 : (int)Math.Ceiling(Math.Max(3d, 2d * Math.Log2(dist)));
+        private static float GetStepDist(float dist, int step, int maxSteps) => maxSteps == 1 ? dist / 2f : dist * step / (maxSteps - 1);
+
+        private static bool BoundsInRange(Ray il2Ray, float range, float angle, Bounds il2Bounds)
         {
-            Vector3 closest = ClosestPointOnBounds(bounds, ray.origin);
-            if ((ray.origin - closest).sqrMagnitude > range * range) return false;
+            // Early exit: Box is not in range.
+            // Caching il2cpp structs to system structs for efficiency (hopefully).
+            float sqrRange = range * range;
+            SVector3 origin = new(il2Ray.origin.x, il2Ray.origin.y, il2Ray.origin.z);
+            SVector3 dir = new(il2Ray.direction.x, il2Ray.direction.y, il2Ray.direction.z);
+            SBounds bounds = il2Bounds;
+            SVector3 diff = bounds.ClosestPoint(origin) - origin;
+            if (diff.LengthSquared() >= sqrRange) { return false; }
 
-            if (angle >= 180f || bounds.Contains(ray.origin)) return true;
+            // Early pass: No angle check is necessary or the cone is inside the box.
+            if (angle >= 180f || bounds.Contains(origin)) return true;
 
-            Vector3 localCenter = bounds.center - ray.origin;
-            float dot = Vector3.Dot(localCenter, ray.direction);
-            if (angle == 90f) return dot >= 0; // Can't use Tan on 90 angle
-
-            // Angle detection: Project to get the closest (perpendicular) point to center,
-            //   then check if it is within the valid distance at that point on the viewing cone.
-            closest = Vector3.Project(localCenter, ray.direction);
-            float diagonal = bounds.extents.magnitude;
-            float reqDist = closest.magnitude * (float)Math.Tan(angle * Mathf.Deg2Rad);
-            if (reqDist < 0) // If angle > 90, need to account for backwards angles
+            // Early exit: Box is behind the cone with angle <= 90.
+            if (angle <= 90f)
             {
-                // If in front or perpendicular, valid
-                if (dot >= 0) return true;
-                // Otherwise, it must be outside the circle instead
-                reqDist = Math.Max(0f, reqDist + diagonal);
-                return (localCenter - closest).sqrMagnitude >= reqDist * reqDist;
+                diff = bounds.center - origin;
+                float distToBox = SVector3.Dot(dir, diff);
+                if (distToBox < 0)
+                {
+                    float lenInDir = bounds.extents.X * Math.Abs(dir.X) + bounds.extents.Y * Math.Abs(dir.Y) + bounds.extents.Z * Math.Abs(dir.Z);
+                    if (distToBox + lenInDir < 0) return false;
+                }
             }
-            
-            if (dot <= 0) return false; // Angle < 90, ignore angles behind us
-            reqDist += diagonal;
-            return (localCenter - closest).sqrMagnitude <= reqDist * reqDist;
+
+            // Early pass: Cone ray directly hits the box.
+            if (il2Bounds.IntersectRay(il2Ray, out float dist) && dist < range) return true;
+
+            // Final computation: Iterate over points along the box's edges and compare angle/dist.
+            float minDot = (float)Math.Cos(angle * Math.PI / 180f);
+
+            Span<float> mins = stackalloc[] { bounds.min.X, bounds.min.Y, bounds.min.Z };
+            Span<float> sizes = stackalloc[] { bounds.size.X, bounds.size.Y, bounds.size.Z };
+            Span<int> steps = stackalloc[] { GetMaxSteps(sizes[0]), GetMaxSteps(sizes[1]), GetMaxSteps(sizes[2]) };
+            Span<int> minSteps = stackalloc[] { Math.Min(steps[0], 2), Math.Min(steps[1], 2), Math.Min(steps[2], 2) };
+            Span<float> point = stackalloc float[3];
+            // Corners
+            for (int i = 0; i < minSteps[0]; i++)
+            {
+                point[0] = mins[0] + GetStepDist(sizes[0], i, minSteps[0]);
+                for (int j = 0; j < minSteps[1]; j++)
+                {
+                    point[1] = mins[1] + GetStepDist(sizes[1], j, minSteps[1]);
+                    for (int k = 0; k < minSteps[2]; k++)
+                    {
+                        point[2] = mins[2] + GetStepDist(sizes[2], k, minSteps[2]);
+                        diff.X = point[0] - origin.X;
+                        diff.Y = point[1] - origin.Y;
+                        diff.Z = point[2] - origin.Z;
+                        if (diff.LengthSquared() < sqrRange && SVector3.Dot(dir, SVector3.Normalize(diff)) >= minDot)
+                            return true;
+                    }
+                }
+            }
+
+            // Edges - Fix two axes, then iterate over the remaining axis.
+            for (int axis = 0; axis < 3; axis++)
+            {
+                int fixedAxis1 = (axis + 1) % 3, fixedAxis2 = (axis + 2) % 3;
+                for (int i = 1; i < steps[axis] - 1; i++)
+                {
+                    point[axis] = mins[axis] + GetStepDist(sizes[axis], i, steps[axis]);
+                    for (int j = 0; j < minSteps[fixedAxis1]; j++)
+                    {
+                        point[fixedAxis1] = mins[fixedAxis1] + GetStepDist(sizes[fixedAxis1], j, minSteps[fixedAxis1]);
+                        for (int k = 0; k < minSteps[fixedAxis2]; k++)
+                        {
+                            point[fixedAxis2] = mins[fixedAxis2] + GetStepDist(sizes[fixedAxis2], k, minSteps[fixedAxis2]);
+                            diff.X = point[0] - origin.X;
+                            diff.Y = point[1] - origin.Y;
+                            diff.Z = point[2] - origin.Z;
+                            if (diff.LengthSquared() < sqrRange && SVector3.Dot(dir, SVector3.Normalize(diff)) >= minDot)
+                                return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static bool RaycastEnsured(Collider collider, float range, out RaycastHit hit)
@@ -85,9 +142,18 @@ namespace EWC.Utils
             // This should rarely ever fail
             if (collider.Raycast(s_ray, out hit, range)) return true;
 
-            // I LOVE RAYCAST TO CLOSEST POINT FAILING!!! (it's probably inside the collider)
+            // It's probably inside the collider but I don't really know.
             s_ray.origin = s_ray.GetPoint(-5f);
-            return collider.Raycast(s_ray, out hit, 5f);
+            if (collider.Raycast(s_ray, out hit, 5f)) return true;
+
+            // Shouldn't be here ever, give up hope on the original direction.
+            Vector3 oldDir = s_ray.direction;
+            s_ray.direction = collider.bounds.center - s_ray.origin;
+            if (collider.Raycast(s_ray, out hit, 10f)) return true;
+
+            // All hope is lost.
+            Log.EWCLogger.Warning($"Attempted to get a raycast to {collider.name} but failed! Pos: {s_ray.origin}, Dir: {oldDir.ToDetailedString()}, Collider center: {collider.bounds.center}, Diff to collider center: {s_ray.direction.ToDetailedString()}");
+            return false;
         }
 
         private static List<Collider> GetValidColliders(Ray ray, float range, float angle, Agent agent)
@@ -147,7 +213,7 @@ namespace EWC.Utils
                     sqrDist = newDist * newDist;
                 }
 
-                if (sqrDist < minDist && Vector3.Angle(ray.direction, trgtPos - ray.origin) <= angle)
+                if (sqrDist < minDist) // Skipping angle check - bounds does it well enough
                 {
                     if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, trgtPos, SightBlockLayer)) continue;
 
@@ -161,7 +227,7 @@ namespace EWC.Utils
                     // If the distance is close to 0, need different logic since raycast will break
                     if (minDist < Epsilon)
                     {
-                        if (origDist > Epsilon) break; // No point in searching further but can use the actual distance
+                        if (origDist > Epsilon) break; // Raycast won't break, but we can stop searching for the closest collider
                         s_ray.origin -= ray.direction * Math.Min(0.1f, range / 2);
                         s_ray.direction = trgtPos - s_ray.origin;
                         if (RaycastEnsured(collider, range, out hit))
