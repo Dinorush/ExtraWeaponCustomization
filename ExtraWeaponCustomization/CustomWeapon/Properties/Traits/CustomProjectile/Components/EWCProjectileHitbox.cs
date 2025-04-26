@@ -31,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private int _ricochetCount = 0;
         private float _distanceMoved;
         private float _lastFixedTime;
-        private SearchSetting _searchSettings = SearchSetting.CacheHit;
+        private SearchSetting _searchSettings = SearchSetting.CacheHit | SearchSetting.IgnoreDupes;
         public readonly HashSet<IntPtr> HitEnts = new();
         private readonly Queue<(IntPtr, float)> _hitEntCooldowns = new();
         private float _ignoreWallsTime = 0f;
@@ -89,7 +89,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
 
             _friendlyLayer = 0;
-            _searchSettings = SearchSetting.CacheHit;
+            _searchSettings = SearchSetting.CacheHit | SearchSetting.IgnoreDupes;
             IntPtr ownerPtr = _weapon.Owner.Pointer;
             if (projBase.DamageOwner)
             {
@@ -190,9 +190,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
                 SearchUtil.DupeCheckSet = HitEnts;
-                foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), _searchSettings | SearchSetting.IgnoreDupes))
+                foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), _searchSettings))
                     s_hits.Add(hit);
-                s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f));
+                s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f, _searchSettings));
 
                 // Get all enemies/locks ahead of the projectile
                 RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, LayerUtil.MaskEnemyDynamic);
