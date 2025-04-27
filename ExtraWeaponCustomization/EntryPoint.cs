@@ -15,7 +15,7 @@ using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.2.6")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.2.7")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
