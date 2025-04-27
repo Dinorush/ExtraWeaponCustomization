@@ -27,7 +27,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private int _friendlyLayer;
         private WallPierce? _wallPierce;
         private bool _runHitTriggers = true;
-        private bool _runMissTriggers = true;
         private bool _enabled = false;
 
         // Variables
@@ -72,7 +71,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _settings = projBase;
             _weapon = cwc.Gun!;
             _runHitTriggers = true;
-            _runMissTriggers = true;
 
             if (cwc.HasTempProperties())
             {
@@ -88,7 +86,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 _contextController = cwc.GetContextController();
                 _runHitTriggers = cwc.RunHitTriggers;
-                _runMissTriggers = cwc.RunMissTriggers;
             }
 
             Vector3 pos = _weapon.Owner.FPSCamera.Position;
@@ -399,8 +396,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             if (!_runHitTriggers)
                 _settings.CWC.RunHitTriggers = enable;
-            if (!_runMissTriggers)
-                _settings.CWC.RunMissTriggers = enable;
         }
     }
 }

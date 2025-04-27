@@ -28,7 +28,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool CancelShot { get; private set; } = false;
         public bool ForceSingleBullet { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
-        public bool RunMissTriggers { get; private set; } = true;
 
         private static Ray s_ray;
         private readonly static HitData s_hitData = new(Enums.DamageType.Bullet);
@@ -173,8 +172,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (!RunHitTriggers)
                 CWC.RunHitTriggers = enable;
-            if (!RunMissTriggers)
-                CWC.RunMissTriggers = enable;
         }
 
         private void FireVisual(float x, float y, float spread)
@@ -207,7 +204,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(CancelShot), CancelShot);
             writer.WriteBoolean(nameof(ForceSingleBullet), ForceSingleBullet);
             writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
-            writer.WriteBoolean(nameof(RunMissTriggers), RunMissTriggers);
             writer.WriteEndObject();
         }
 
@@ -252,10 +248,6 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "runhittriggers":
                 case "hittriggers":
                     RunHitTriggers = reader.GetBoolean();
-                    break;
-                case "runmisstriggers":
-                case "misstriggers":
-                    RunMissTriggers = reader.GetBoolean();
                     break;
                 default:
                     break;

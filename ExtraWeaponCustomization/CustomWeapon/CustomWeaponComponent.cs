@@ -82,32 +82,18 @@ namespace EWC.CustomWeapon
                 if (!value)
                 {
                     if (_ignoreHitStack++ == 0)
+                    {
                         GetContextController().BlacklistContext<WeaponHitContextBase>();
+                        GetContextController().BlacklistContext<WeaponShotEndContext>();
+                    }
                 }
                 else if (value && _ignoreHitStack > 0)
                 {
                     if (--_ignoreHitStack == 0)
+                    {
                         GetContextController().WhitelistContext<WeaponHitContextBase>();
-                }
-            }
-        }
-
-        // Used to prevent miss callbacks from firing. For some effects to prevent infinite recursion.
-        private int _ignoreMissStack = 0;
-        public bool RunMissTriggers
-        {
-            get { return _ignoreMissStack == 0; }
-            set
-            {
-                if (!value)
-                {
-                    if (_ignoreMissStack++ == 0)
-                        GetContextController().BlacklistContext<WeaponHitContextBase>();
-                }
-                else if (value && _ignoreMissStack > 0)
-                {
-                    if (--_ignoreMissStack == 0)
-                        GetContextController().WhitelistContext<WeaponHitContextBase>();
+                        GetContextController().BlacklistContext<WeaponShotEndContext>();
+                    }
                 }
             }
         }
