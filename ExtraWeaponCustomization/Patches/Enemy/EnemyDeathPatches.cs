@@ -18,7 +18,22 @@ namespace EWC.Patches.Enemy
         {
             if (__instance.m_currentStateName == state || state != EB_States.Dead) return;
 
-            var killInfo = KillTrackerManager.GetKillHitContexts(__instance.m_ai.m_enemyAgent);
+            RunKillContext(__instance.m_ai.m_enemyAgent);
+        }
+
+        [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.ShowHitIndicator))]
+        [HarmonyWrapSafe]
+        [HarmonyPrefix]
+        private static void Pre_DeathHitmarker(Dam_EnemyDamageLimb __instance, bool willDie)
+        {
+            if (!willDie) return;
+
+            RunKillContext(__instance.m_base.Owner);
+        }
+
+        private static void RunKillContext(EnemyAgent enemy)
+        {
+            var killInfo = KillTrackerManager.GetKillHitContexts(enemy);
             if (killInfo == null) return;
 
             float maxTime = 0f;
