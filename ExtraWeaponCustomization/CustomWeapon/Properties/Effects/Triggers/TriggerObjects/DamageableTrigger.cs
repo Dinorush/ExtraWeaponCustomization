@@ -19,7 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public DamageableTrigger(TriggerName name, DamageType[] types) : base(name, types)
         {
-            BlacklistType |= DamageType.Terrain;
+            BlacklistType |= DamageType.Dead;
         }
 
         public override bool Invoke(WeaponTriggerContext context, out float amount)

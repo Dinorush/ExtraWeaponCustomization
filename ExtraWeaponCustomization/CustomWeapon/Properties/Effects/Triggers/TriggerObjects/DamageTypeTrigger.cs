@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public DamageTypeTrigger(TriggerName name, params DamageType[] types)
         {
             Name = name;
-            DamageTypes = types.Length == 0 ? new[]{ DamageType.Any } : types;
+            DamageTypes = types.Length == 0 ? DamageTypeConst.Any : types;
         }
 
         public virtual bool Invoke(WeaponTriggerContext context, out float amount)

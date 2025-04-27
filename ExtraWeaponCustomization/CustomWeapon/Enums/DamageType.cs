@@ -21,7 +21,8 @@ namespace EWC.CustomWeapon.Enums
         Enemy = 1<<10,
         Player = 1<<11,
         Lock = 1<<12,
-        Terrain = 1<<13
+        Dead = 1<<13,
+        Terrain = 1<<14 | Dead
     }
 
     public static class DamageTypeConst
@@ -99,6 +100,15 @@ namespace EWC.CustomWeapon.Enums
             return false;
         }
 
+        public static DamageType GetBaseType(this DamageType type) => type & (DamageType.Bullet | DamageType.Explosive | DamageType.DOT);
+        public static DamageType GetBaseType(this DamageType[] types)
+        {
+            DamageType result = (DamageType)~0;
+            foreach (var type in types)
+                result &= GetBaseType(type);
+            return result;
+        }
+
         public static DamageType GetSubTypes(Dam_EnemyDamageLimb limb) => DamageType.Enemy | GetSubTypes(!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot, limb.m_armorDamageMulti, limb.m_base.IsStuckInGlue);
 
         public static DamageType GetSubTypes(IDamageable damageable)
@@ -109,12 +119,12 @@ namespace EWC.CustomWeapon.Enums
                 if (damageable.TryCast<LevelGeneration.LG_WeakLockDamage>() != null)
                     return DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Lock;
                 else
-                    return DamageType.Any;
+                    return DamageType.Terrain;
             }
 
             return agent.Type switch
             {
-                AgentType.Enemy => GetSubTypes(damageable.Cast<Dam_EnemyDamageLimb>()),
+                AgentType.Enemy => damageable!.GetBaseDamagable().GetHealthRel() > 0 ? GetSubTypes(damageable.Cast<Dam_EnemyDamageLimb>()) : DamageType.Dead,
                 AgentType.Player => DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Player,
                 _ => DamageType.Any
             };

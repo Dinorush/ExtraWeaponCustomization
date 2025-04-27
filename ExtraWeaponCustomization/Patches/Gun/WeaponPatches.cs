@@ -93,9 +93,7 @@ namespace EWC.Patches
             Enemy.EnemyLimbPatches.CachedCC = cc;
 
             IDamageable? damageable = hitData.damageable;
-            bool isValid = damageable.IsValid();
-            bool alive = isValid && damageable!.GetBaseDamagable().GetHealthRel() > 0;
-            if (alive)
+            if (!hitData.damageType.HasFlag(DamageType.Dead))
             {
                 float backstab = 1f;
                 float origBackstab = 1f;
@@ -141,7 +139,7 @@ namespace EWC.Patches
                     cc.Invoke(new WeaponHitDamageableContext(hitData));
             }
             else
-                cc.Invoke(new WeaponHitContext(hitData, isValid && !alive));
+                cc.Invoke(new WeaponHitContext(hitData));
 
             hitData.shotInfo.AddHit(hitData.damageType);
             hitData.Apply();

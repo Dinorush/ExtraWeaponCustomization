@@ -35,7 +35,11 @@ namespace EWC.Utils
                 hitPos = _rayHit.point;
                 collider = _rayHit.collider;
                 damageable = DamageableUtil.GetDamageableFromRayHit(_rayHit);
-                damageType = damageable != null ? _baseDamageType.WithSubTypes(damageable) : _baseDamageType;
+                damageType = _baseDamageType;
+                if (collider != null)
+                    damageType = damageable != null ? _baseDamageType.WithSubTypes(damageable) : _baseDamageType | DamageType.Terrain;
+                else
+                    damageType = _baseDamageType | DamageType.Dead;
             }
         }
         public ShotInfo shotInfo;
