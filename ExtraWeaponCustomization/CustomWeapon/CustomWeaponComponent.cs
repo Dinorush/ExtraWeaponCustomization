@@ -73,21 +73,41 @@ namespace EWC.CustomWeapon
         private float _lastFireTime = 0f;
 
         // Used to prevent hit callbacks from firing. For some effects to prevent infinite recursion.
-        private int _ignoreStack = 0;
+        private int _ignoreHitStack = 0;
         public bool RunHitTriggers
         {
-            get { return _ignoreStack == 0; }
+            get { return _ignoreHitStack == 0; }
             set 
             {
                 if (!value)
                 {
-                    if (_ignoreStack++ == 0)
-                        _propertyController.GetContextController().BlacklistContext<WeaponHitContextBase>();
+                    if (_ignoreHitStack++ == 0)
+                        GetContextController().BlacklistContext<WeaponHitContextBase>();
                 }
-                else if (value && _ignoreStack > 0)
+                else if (value && _ignoreHitStack > 0)
                 {
-                    if (--_ignoreStack == 0)
-                        _propertyController.GetContextController().WhitelistContext<WeaponHitContextBase>();
+                    if (--_ignoreHitStack == 0)
+                        GetContextController().WhitelistContext<WeaponHitContextBase>();
+                }
+            }
+        }
+
+        // Used to prevent miss callbacks from firing. For some effects to prevent infinite recursion.
+        private int _ignoreMissStack = 0;
+        public bool RunMissTriggers
+        {
+            get { return _ignoreMissStack == 0; }
+            set
+            {
+                if (!value)
+                {
+                    if (_ignoreMissStack++ == 0)
+                        GetContextController().BlacklistContext<WeaponHitContextBase>();
+                }
+                else if (value && _ignoreMissStack > 0)
+                {
+                    if (--_ignoreMissStack == 0)
+                        GetContextController().WhitelistContext<WeaponHitContextBase>();
                 }
             }
         }

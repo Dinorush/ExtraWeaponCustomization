@@ -71,8 +71,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             if (explosiveBase.DamageLocks)
                 hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, searchSetting));
 
-            if (hits.Count == 0) return;
-
             ShotInfo shotInfo;
             if (triggerInfo != null)
                 shotInfo = new(triggerInfo, true, explosiveBase.UseParentShotMod);
@@ -82,6 +80,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 shotInfo.NewShot(explosiveBase.CWC);
             }
 
+            var oldInfo = shotInfo.State;
             foreach (RaycastHit hit in hits)
             {
                 SendExplosionDamage(
@@ -96,6 +95,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     explosiveBase,
                     triggerAmt);
             }
+            explosiveBase.CWC.Invoke(new WeaponShotEndContext(DamageType.Explosive, shotInfo.State, oldInfo));
         }
 
         internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float distance, PlayerAgent source, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)

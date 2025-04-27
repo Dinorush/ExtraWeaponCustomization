@@ -54,6 +54,7 @@ namespace EWC.Patches.Melee
             CustomWeaponComponent? cwc = __instance.m_weapon.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
+            cwc.Invoke(new WeaponShotEndContext(CustomWeapon.Enums.DamageType.Bullet, MeleePatches.HitData.shotInfo, null));
             cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
         }
     }

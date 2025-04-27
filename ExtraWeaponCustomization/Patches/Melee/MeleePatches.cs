@@ -51,7 +51,7 @@ namespace EWC.Patches.Melee
             cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
         }
 
-        private readonly static HitData s_hitData = new(CustomWeapon.Enums.DamageType.Bullet);
+        public readonly static HitData HitData = new(CustomWeapon.Enums.DamageType.Bullet);
         private static CustomWeaponComponent? _cachedCWC = null;
         public static float CachedCharge { get; private set; } = 0f;
 
@@ -64,8 +64,8 @@ namespace EWC.Patches.Melee
             if (_cachedCWC == null) return;
             ShotManager.AdvanceGroupMod(_cachedCWC);
 
-            s_hitData.shotInfo.Reset(__instance.m_damageToDeal, __instance.m_precisionMultiToDeal, __instance.m_staggerMultiToDeal);
-            s_hitData.shotInfo.NewShot(_cachedCWC);
+            HitData.shotInfo.Reset(__instance.m_damageToDeal, __instance.m_precisionMultiToDeal, __instance.m_staggerMultiToDeal);
+            HitData.shotInfo.NewShot(_cachedCWC);
             CachedCharge = dam == eMeleeWeaponDamage.Heavy ? (float)Math.Cbrt(scale) : 0f;
         }
 
@@ -76,15 +76,15 @@ namespace EWC.Patches.Melee
         {
             if (isPush || _cachedCWC == null) return;
 
-            s_hitData.Setup(__instance, data);
-            IDamageable? damageable = s_hitData.damageable;
+            HitData.Setup(__instance, data);
+            IDamageable? damageable = HitData.damageable;
             IDamageable? baseDamageable = damageable?.GetBaseDamagable();
             if (baseDamageable != null && baseDamageable.GetHealthRel() <= 0) return;
 
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;
 
-            WeaponPatches.ApplyEWCHit(cwc, s_hitData, out _);
+            WeaponPatches.ApplyEWCHit(cwc, HitData, out _);
         }
     }
 }

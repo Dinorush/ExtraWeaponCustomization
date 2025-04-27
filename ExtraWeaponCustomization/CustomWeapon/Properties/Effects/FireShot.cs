@@ -33,6 +33,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageOwner { get; private set; } = false;
         public bool HitTriggerTarget { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
+        public bool RunMissTriggers { get; private set; } = true;
 
         private const float WallHitBuffer = -0.03f;
 
@@ -211,11 +212,17 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (DamageFriendly)
                 friendlyMask |= LayerUtil.MaskFriendly;
 
-            if (!RunHitTriggers)
-                CWC.RunHitTriggers = false;
+            ToggleRunTriggers(false);
             CWC.ShotComponent!.FireSpread(ray, hitData, friendlyMask, ignoreEnt);
+            ToggleRunTriggers(true);
+        }
+
+        private void ToggleRunTriggers(bool enable)
+        {
             if (!RunHitTriggers)
-                CWC.RunHitTriggers = true;
+                CWC.RunHitTriggers = enable;
+            if (!RunMissTriggers)
+                CWC.RunMissTriggers = enable;
         }
 
         private void FireVisual(Ray ray, float x, float y, float spread)
@@ -252,6 +259,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
             writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
+            writer.WriteBoolean(nameof(RunMissTriggers), RunMissTriggers);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -307,6 +315,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "runhittriggers":
                 case "hittriggers":
                     RunHitTriggers = reader.GetBoolean();
+                    break;
+                case "runmisstriggers":
+                case "misstriggers":
+                    RunMissTriggers = reader.GetBoolean();
                     break;
             }
         }

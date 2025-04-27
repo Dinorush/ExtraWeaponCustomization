@@ -102,6 +102,7 @@ namespace EWC.Patches.Gun
             if (cwc.ShotComponent!.OverrideVanillaShot)
                 ShotManager.CancelTracerFX(cwc);
 
+            ShotManager.RunVanillaShotEnd(cwc);
             cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
         }
 

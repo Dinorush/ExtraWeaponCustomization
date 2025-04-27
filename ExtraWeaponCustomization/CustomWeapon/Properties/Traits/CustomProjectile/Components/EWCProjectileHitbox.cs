@@ -1,5 +1,7 @@
 ﻿using Agents;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.WeaponContext;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Patches;
 using EWC.Utils;
 using FX_EffectSystem;
@@ -21,9 +23,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private ContextController _contextController;
         private readonly HashSet<IntPtr> _initialPlayers = new();
         private HitData _hitData = new(Enums.DamageType.Bullet);
+        private ShotInfo.Const _origInfo;
         private int _friendlyLayer;
         private WallPierce? _wallPierce;
         private bool _runHitTriggers = true;
+        private bool _runMissTriggers = true;
         private bool _enabled = false;
 
         // Variables
@@ -68,6 +72,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _settings = projBase;
             _weapon = cwc.Gun!;
             _runHitTriggers = true;
+            _runMissTriggers = true;
 
             if (cwc.HasTempProperties())
             {
@@ -83,6 +88,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 _contextController = cwc.GetContextController();
                 _runHitTriggers = cwc.RunHitTriggers;
+                _runMissTriggers = cwc.RunMissTriggers;
             }
 
             Vector3 pos = _weapon.Owner.FPSCamera.Position;
@@ -119,6 +125,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _ricochetCount = _settings.RicochetCount;
             _hitData = new(hitData!);
+            _origInfo = _hitData.shotInfo.State;
 
             _distanceMoved = 0;
             _lastFixedTime = Time.fixedTime;
@@ -130,6 +137,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         public void Die()
         {
+            _settings.CWC.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, _hitData.shotInfo, _origInfo));
             _enabled = false;
             _initialPlayers.Clear();
             HitEnts.Clear();
@@ -155,7 +163,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 CheckCollisionWorld(ref ricochet);
 
             if (ricochet != null && _ricochetCount-- <= 0)
-               _base.Die();
+                _base.Die();
 
             if (!_enabled) return false; // Die on wall hit
 
@@ -379,14 +387,20 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             API.ProjectileAPI.FireProjectileHitCallback(_base, damageable);
 
-            if (!_runHitTriggers)
-                _settings.CWC.RunHitTriggers = false;
+            ToggleRunTriggers(false);
             WeaponPatches.ApplyEWCHit(_settings.CWC, _contextController, _hitData, out bool backstab);
-            if (!_runHitTriggers)
-                _settings.CWC.RunHitTriggers = true;
+            ToggleRunTriggers(true);
 
             float damage = _hitData.damage * _hitData.falloff;
             damageable?.BulletDamage(damage, _hitData.owner, _hitData.hitPos, _hitData.fireDir, _hitData.RayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
+        }
+
+        private void ToggleRunTriggers(bool enable)
+        {
+            if (!_runHitTriggers)
+                _settings.CWC.RunHitTriggers = enable;
+            if (!_runMissTriggers)
+                _settings.CWC.RunMissTriggers = enable;
         }
     }
 }

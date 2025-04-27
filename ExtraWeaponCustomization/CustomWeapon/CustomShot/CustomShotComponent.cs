@@ -1,6 +1,7 @@
 ﻿using Agents;
 using EWC.API;
 using EWC.CustomWeapon.Properties.Traits;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
 using FX_EffectSystem;
 using Gear;
@@ -80,6 +81,7 @@ namespace EWC.CustomWeapon.CustomShot
 
         public void FireVanilla(HitData hitData, Vector3 origin)
         {
+            ShotManager.CancelHandleShotEnd();
             if (!CancelNormalShot)
                 Fire(new Ray(origin, hitData.fireDir), hitData, LayerUtil.MaskFriendly);
         }
@@ -159,6 +161,7 @@ namespace EWC.CustomWeapon.CustomShot
             private readonly PlayerAgent _owner;
             private readonly HashSet<IntPtr>? _hitEnts;
             private readonly HitData _hitData;
+            private readonly ShotInfo.Const _origInfo;
             private readonly Ray _ray;
             private readonly WallPierce? _wallPierce;
             private readonly float _hitSize;
@@ -179,6 +182,7 @@ namespace EWC.CustomWeapon.CustomShot
 
                 _ray = fireRay;
                 _hitData = hitData;
+                _origInfo = _hitData.shotInfo.State;
 
                 _pierceCount = 1;
                 if (_gun.ArchetypeData.PiercingBullets)
@@ -229,6 +233,7 @@ namespace EWC.CustomWeapon.CustomShot
                     FX_Manager.PlayLocalVersion = false;
                     BulletWeapon.s_tracerPool.AquireEffect().Play(null, _gun.MuzzleAlign.position, Quaternion.LookRotation(_ray.direction));
                 }
+                _parent._cwc.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, _hitData.shotInfo, _origInfo));
             }
 
             public void Fire_Internal(ref Vector3 fxPos, bool hitWall, RaycastHit wallRayHit)

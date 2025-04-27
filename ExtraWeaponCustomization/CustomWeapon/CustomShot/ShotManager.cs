@@ -18,10 +18,14 @@ namespace EWC.CustomWeapon.CustomShot
         private static float s_lastShotTime = 0f;
 
         private static (IntPtr ptr, ShotInfo info) s_vanillaShotInfo = (IntPtr.Zero, new ShotInfo());
+        private static bool s_hasRanShotEnd = true;
         public static ShotInfo GetVanillaShotInfo(Weapon.WeaponHitData vanillaData, CustomWeaponComponent cwc)
         {
             if (vanillaData.Pointer != s_vanillaShotInfo.ptr)
             {
+                RunVanillaShotEnd(cwc);
+                s_hasRanShotEnd = false;
+
                 // Shotguns only assign these AFTER CastWeaponRay runs, which breaks a lot of logic that rely on them being set.
                 if (CachedShotgun != null)
                 {
@@ -38,6 +42,15 @@ namespace EWC.CustomWeapon.CustomShot
                 cwc.Invoke(new WeaponShotInitContext(s_vanillaShotInfo.info.Mod));
             }
             return s_vanillaShotInfo.info;
+        }
+
+        public static void CancelHandleShotEnd() => s_hasRanShotEnd = true;
+        public static void RunVanillaShotEnd(CustomWeaponComponent cwc)
+        {
+            if (s_hasRanShotEnd) return;
+
+            s_hasRanShotEnd = true;
+            cwc.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, s_vanillaShotInfo.info, null));
         }
 
         public static bool BulletHit(HitData data)
