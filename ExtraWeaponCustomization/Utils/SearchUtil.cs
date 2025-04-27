@@ -57,14 +57,15 @@ namespace EWC.Utils
 
         private static bool BoundsInRange(Ray il2Ray, float range, float angle, Bounds il2Bounds)
         {
-            // Early exit: Box is not in range.
             // Caching il2cpp structs to system structs for efficiency (hopefully).
             float sqrRange = range * range;
             SVector3 origin = new(il2Ray.origin.x, il2Ray.origin.y, il2Ray.origin.z);
             SVector3 dir = new(il2Ray.direction.x, il2Ray.direction.y, il2Ray.direction.z);
             SBounds bounds = il2Bounds;
+
+            // Early exit: Box is not in range.
             SVector3 diff = bounds.ClosestPoint(origin) - origin;
-            if (diff.LengthSquared() >= sqrRange) { return false; }
+            if (diff.LengthSquared() >= sqrRange) return false;
 
             // Early pass: No angle check is necessary or the cone is inside the box.
             if (angle >= 180f || bounds.Contains(origin)) return true;
