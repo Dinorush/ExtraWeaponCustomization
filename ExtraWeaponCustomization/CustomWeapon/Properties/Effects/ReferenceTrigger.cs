@@ -15,14 +15,20 @@ namespace EWC.CustomWeapon.Properties.Effects
         IReferenceHolder
     {
         public PropertyList Properties { get; private set; } = new();
+        public bool ResetOnTrigger { get; private set; } = false;
         private List<ITriggerCallback>? _callbackProperties;
 
-        protected override bool IsTriggerValid => Trigger?.Activate.Triggers.Any() == true || Trigger?.Apply != null || Trigger?.Reset != null;
+        protected override bool IsTriggerValid => Trigger?.Activate.Triggers.Any() == true || Trigger?.Reset != null;
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
             foreach (var callback in _callbackProperties.OrEmptyIfNull())
-                callback.TriggerApply(contexts);
+            {
+                if (!ResetOnTrigger)
+                    callback.TriggerApply(contexts);
+                else
+                    callback.RemoteReset();
+            }
         }
 
         public override void TriggerReset()
@@ -57,6 +63,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             EWCJson.Serialize(writer, nameof(Properties), Properties);
+            writer.WriteBoolean(nameof(ResetOnTrigger), ResetOnTrigger);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -78,6 +85,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                             list.RemoveAt(i);
                         }
                     }
+                    break;
+                case "resetontrigger":
+                    ResetOnTrigger = reader.GetBoolean();
                     break;
             }
         }
