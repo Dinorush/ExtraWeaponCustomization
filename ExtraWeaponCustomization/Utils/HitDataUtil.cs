@@ -24,7 +24,7 @@ namespace EWC.Utils
         public Vector3 fireDir;
         public Vector3 hitPos;
         public IDamageable? damageable;
-        public Collider collider;
+        public GameObject? gameObject;
         private RaycastHit _rayHit;
         public RaycastHit RayHit
         { 
@@ -33,13 +33,9 @@ namespace EWC.Utils
             { 
                 _rayHit = value;
                 hitPos = _rayHit.point;
-                collider = _rayHit.collider;
+                gameObject = _rayHit.collider != null ? _rayHit.collider.gameObject : null;
                 damageable = DamageableUtil.GetDamageableFromRayHit(_rayHit);
-                damageType = _baseDamageType;
-                if (collider != null)
-                    damageType = damageable != null ? _baseDamageType.WithSubTypes(damageable) : _baseDamageType | DamageType.Terrain;
-                else
-                    damageType = _baseDamageType | DamageType.Dead;
+                UpdateDamageType();
             }
         }
         public ShotInfo shotInfo;
@@ -72,7 +68,7 @@ namespace EWC.Utils
             _rayHit = data._rayHit;
             hitPos = data.hitPos;
             damageable = data.damageable;
-            collider = data.collider;
+            gameObject = data.gameObject;
             damageType = data.damageType;
             _baseDamageType = data._baseDamageType;
         }
@@ -113,7 +109,8 @@ namespace EWC.Utils
             hitPos = hitData.hitPos;
             // Don't need to use overriden null check since we only care about when damageComp isn't set at all
             damageable = hitData.damageComp ?? hitData.damageGO.GetComponent<IDamageable>();
-            damageType = damageable != null ? _baseDamageType.WithSubTypes(damageable) : _baseDamageType;
+            gameObject = hitData.damageGO;
+            UpdateDamageType();
         }
 
         public void Apply()
@@ -147,7 +144,6 @@ namespace EWC.Utils
             return melee;
         }
 
-
         public void ResetDamage()
         {
             damage = shotInfo.OrigDamage;
@@ -158,6 +154,14 @@ namespace EWC.Utils
         public void SetFalloff(float additionalDist = 0)
         {
             falloff = (RayHit.distance + additionalDist).Map(damageFalloff.x, damageFalloff.y, 1f, BulletWeapon.s_falloffMin);
+        }
+
+        private void UpdateDamageType()
+        {
+            if (gameObject != null)
+                damageType = damageable != null ? _baseDamageType.WithSubTypes(damageable) : _baseDamageType | DamageType.Terrain;
+            else
+                damageType = _baseDamageType | DamageType.Dead;
         }
 
         public WeaponHitData ToWeaponHitData()

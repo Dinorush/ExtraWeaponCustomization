@@ -19,6 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class Noise :
         Effect,
         IGunProperty,
+        IMeleeProperty,
         IWeaponProperty<WeaponStealthUpdateContext>,
         ITriggerCallbackDirSync
     {

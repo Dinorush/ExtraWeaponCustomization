@@ -12,14 +12,14 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
         public Vector3 Direction { get; }
         public Vector3 Normal { get; }
         public float Falloff { get; }
-        private Collider? _collider;
-        public Collider Collider { get => _collider ??= SetCollider(); }
-        protected virtual Collider SetCollider() => throw new NotImplementedException();
+        private GameObject? _gameObject;
+        public GameObject GameObject { get => _gameObject ??= SetGameObject(); }
+        protected virtual GameObject SetGameObject() => throw new NotImplementedException();
 
-        public WeaponHitContextBase(Collider collider, Vector3 position, Vector3 direction, Vector3 normal, float falloff, ShotInfo.Const info, DamageType flag) :
+        public WeaponHitContextBase(GameObject gameObject, Vector3 position, Vector3 direction, Vector3 normal, float falloff, ShotInfo.Const info, DamageType flag) :
             base(flag, info)
         {
-            _collider = collider;
+            _gameObject = gameObject;
             Position = position;
             Direction = direction.normalized;
             Normal = normal.normalized;
@@ -41,7 +41,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
         public Vector3 LocalPosition { get; }
         public IDamageable Damageable { get; }
         public float Backstab { get; }
-        protected override Collider SetCollider() => Damageable.Cast<MonoBehaviour>().GetComponent<Collider>();
+        protected override GameObject SetGameObject() => Damageable.Cast<MonoBehaviour>().gameObject;
 
         public WeaponHitDamageableContextBase(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float backstab, float falloff, ShotInfo.Const info, DamageType flag) :
             base(position, direction, normal, falloff, info, flag.WithSubTypes(damageable))

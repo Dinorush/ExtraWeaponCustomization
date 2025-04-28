@@ -256,6 +256,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponSprintEndContext>(triggerList);
             RegisterContext<WeaponJumpContext>(triggerList);
             RegisterContext<WeaponJumpEndContext>(triggerList);
+            RegisterContext<WeaponInitContext>(triggerList);
 
             RegisterContext<WeaponArmorContext>();
             RegisterContext<WeaponBackstabContext>();

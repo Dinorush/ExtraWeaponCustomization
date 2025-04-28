@@ -110,7 +110,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 // Didn't hit enemy/player/lock, must be an environment hit
                 else if (!baseContext.DamageType.HasFlag(DamageType.Enemy))
                 {
-                    go = baseContext.Collider.gameObject;
+                    go = baseContext.GameObject;
                     // Door check
                     if (go != null && go.layer == LayerDynamic)
                     {
