@@ -23,15 +23,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public bool Invoke(WeaponTriggerContext context, out float amount)
         {
-            if (context is WeaponShotEndContext text)
-                EWCLogger.Log($"Miss trigger received ShotEnd context! Miss trigger: {BaseType} base type, [{string.Join(",", DamageTypes)}] types, {BlacklistType} blacklist. ShotEnd: {text.DamageType} type, {text.ShotInfo.Hits} hits, {text.OldInfo?.Hits ?? 0} oldHits, {text.DiffHits()} diffHits, {text.ShotInfo.TypeHits(DamageTypes, BlacklistType)} typeHits, {text.OldInfo?.TypeHits(DamageTypes, BlacklistType) ?? 0} oldTypeHits, {text.DiffTypeHits(DamageTypes, BlacklistType)} diffTypeHits");
             amount = 0f;
             if (context is WeaponShotEndContext shotEnd
                 && !shotEnd.DamageType.HasAnyFlag(BlacklistType)
                 && shotEnd.DamageType.HasFlag(BaseType)
                 && shotEnd.DiffTypeHits(DamageTypes, BlacklistType) < RequiredHits)
             {
-                EWCLogger.Log("Passed!");
                 amount = Amount;
                 return true;
             }
