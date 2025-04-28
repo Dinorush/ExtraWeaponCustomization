@@ -61,16 +61,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "triggers":
                 case "trigger":
                     Activate.DeserializeTriggerList(ref reader);
-                    return;
+                    break;
                
                 case "resetpreviousonly":
                 case "resetprevious":
                     ResetPreviousOnly = reader.GetBoolean();
-                    return;
-            }
+                    break;
 
-            switch (property)
-            {
                 case string name when name.StartsWith("reset"):
                     Reset ??= new(this);
                     if (property == "reset")
@@ -78,6 +75,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     else
                         Reset.DeserializeProperty(property["reset".Length..], ref reader);
                     break;
+
                 default:
                     // Activate is the default and doesn't require a prefix for its fields
                     if (property.StartsWith("activate"))
