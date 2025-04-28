@@ -219,7 +219,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             CWC.RefreshArchetypeCache();
             ResetERDComponent();
 
-            slotAmmo.Setup(newBlock.CostOfBullet * EXPAPIWrapper.GetAmmoMod(), CWC.Gun.ClipSize);
+            slotAmmo.Setup(newBlock.CostOfBullet / EXPAPIWrapper.GetAmmoMod(), CWC.Gun.ClipSize);
             int newClipSize = CWC.Gun.ClipSize;
 
             if (KeepMagCost)
