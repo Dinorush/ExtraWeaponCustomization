@@ -17,7 +17,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float Cooldown { get; private set; } = 0f;
         public float CooldownThreshold { get; private set; } = 0f;
         public float Chance { get; private set; } = 1f;
-        public float ApplyDelay { get; private set; } = 0f;
         public float ResetDelay { get; private set; } = 0f;
         public bool ConsumeThreshold { get; private set; } = false;
 
@@ -34,8 +33,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         protected float _triggerCount = 0f;
         protected float _nextTriggerTime = 0f;
 
-        protected Queue<DelayedCallback>? _delayedApplies;
-
         public TriggerHolder(TriggerCoordinator parent, params ITrigger[] triggers)
         {
             Parent = parent;
@@ -46,13 +43,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 );
         }
 
-        public TriggerHolder Clone(TriggerCoordinator parent)
+        public virtual TriggerHolder Clone(TriggerCoordinator parent)
         {
             TriggerHolder copy = CopyUtil<TriggerHolder>.Clone(this, parent);
             copy.Triggers = Triggers.ConvertAll(trigger => trigger.Clone());
             copy.Apply = Apply?.ConvertAll(trigger => trigger.Clone());
             copy.Cancel = Cancel?.ConvertAll(trigger => trigger.Clone());
-            copy._delayedApplies = _delayedApplies != null ? new() : null;
             return copy;
         }
 
@@ -134,12 +130,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             Triggers.ForEach(trigger => trigger.Reset());
             Apply?.ForEach(trigger => trigger.Reset());
             Cancel?.ForEach(trigger => trigger.Reset());
-
-            if (ApplyDelay > 0)
-            {
-                while (_delayedApplies!.TryDequeue(out var callback))
-                    callback.Cancel();
-            }
         }
 
         protected virtual void DelayedReset()
@@ -196,12 +186,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "apply":
                     Apply = DeserializeTriggers(ref reader);
-                    break;
-                case "applydelay":
-                case "delay":
-                    ApplyDelay = reader.GetSingle();
-                    if (ApplyDelay > 0f)
-                        _delayedApplies = new();
                     break;
                 case "cancel":
                     Cancel = DeserializeTriggers(ref reader);

@@ -8,6 +8,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public sealed class ActivateHolder : TriggerHolder
     {
+        public float ApplyDelay { get; private set; } = 0f;
         public float CooldownOnApply { get; private set; } = 0f;
         public uint CooldownOnApplyThreshold { get; private set; } = 1;
         public bool ApplyAboveThreshold { get; private set; } = false;
@@ -15,8 +16,16 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private readonly List<TriggerContext> _accumulatedTriggers = new();
         private uint _applyCount = 0;
+        private Queue<DelayedCallback>? _delayedApplies;
 
         public ActivateHolder(TriggerCoordinator parent, params ITrigger[] triggers) : base(parent, triggers) { }
+
+        public override TriggerHolder Clone(TriggerCoordinator parent)
+        {
+            var copy = (ActivateHolder) base.Clone(parent);
+            copy._delayedApplies = _delayedApplies != null ? new() : null;
+            return copy;
+        }
 
         public void ApplyTriggers()
         {
@@ -87,6 +96,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _accumulatedTriggers.Clear();
                 _applyCount = 0;
             }
+
+            if (ApplyDelay > 0)
+            {
+                while (_delayedApplies!.TryDequeue(out var callback))
+                    callback.Cancel();
+            }
+
             base.Reset(resetAccumulated);
         }
 
@@ -120,6 +136,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             base.DeserializeProperty(property, ref reader);
             switch (property)
             {
+                case "applydelay":
+                case "delay":
+                    ApplyDelay = reader.GetSingle();
+                    if (ApplyDelay > 0f)
+                        _delayedApplies = new();
+                    break;
                 case "cooldownonapply":
                     CooldownOnApply = reader.GetSingle();
                     return;
