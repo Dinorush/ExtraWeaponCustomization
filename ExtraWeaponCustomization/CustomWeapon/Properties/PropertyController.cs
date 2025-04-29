@@ -37,7 +37,6 @@ namespace EWC.CustomWeapon.Properties
             RegisterPropertyIDs();
             Activate(_root);
             RegisterSyncProperties(_root);
-            Invoke(StaticContext<WeaponInitContext>.Instance);
         }
 
         private PropertyNode CreateTree(CustomWeaponComponent cwc, PropertyList list, PropertyNode? parent = null)

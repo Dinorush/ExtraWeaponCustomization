@@ -214,6 +214,7 @@ namespace EWC.CustomWeapon
             }
 
             _propertyController.Init(this, data.Properties.Clone());
+            Invoke(StaticContext<WeaponInitContext>.Instance);
             if (IsGun && GunArchetype!.m_owner != null)
                 OwnerInit();
         }
