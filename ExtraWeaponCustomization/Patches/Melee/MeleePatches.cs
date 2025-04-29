@@ -64,7 +64,7 @@ namespace EWC.Patches.Melee
             if (_cachedCWC == null) return;
             ShotManager.AdvanceGroupMod(_cachedCWC);
 
-            HitData.shotInfo.Reset(__instance.m_damageToDeal, __instance.m_precisionMultiToDeal, __instance.m_staggerMultiToDeal);
+            HitData.shotInfo.Reset(__instance.m_damageToDeal, __instance.m_precisionMultiToDeal, __instance.m_staggerMultiToDeal, false);
             HitData.shotInfo.NewShot(_cachedCWC);
             CachedCharge = dam == eMeleeWeaponDamage.Heavy ? (float)Math.Cbrt(scale) : 0f;
         }

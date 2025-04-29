@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace EWC.CustomWeapon.CustomShot
         public float OrigDamage { get; private set; }
         public float OrigPrecision { get; private set; }
         public float OrigStagger { get; private set; }
+        public float XpMod { get; private set; }
 
         public ShotInfoMod Mod { get; set; }
         public ShotInfoMod GroupMod { get; set; }
@@ -33,8 +35,8 @@ namespace EWC.CustomWeapon.CustomShot
             }
         }
 
-        public ShotInfo() : this(0, 0, 0) { }
-        public ShotInfo(float origDamage, float origPrecision, float origStagger)
+        public ShotInfo() : this(0, 0, 0, true) { }
+        public ShotInfo(float origDamage, float origPrecision, float origStagger, bool isGun)
         {
             ID = ShotManager.NextID;
             _hits = new(5);
@@ -44,6 +46,7 @@ namespace EWC.CustomWeapon.CustomShot
             OrigDamage = origDamage;
             OrigPrecision = origPrecision;
             OrigStagger = origStagger;
+            XpMod = EXPAPIWrapper.GetDamageMod(isGun);
             _state = new(this);
         }
 
@@ -58,6 +61,7 @@ namespace EWC.CustomWeapon.CustomShot
                 OrigDamage = 0;
                 OrigPrecision = 0;
                 OrigStagger = 0;
+                XpMod = copy.XpMod;
                 _state = new(this);
             }
             else
@@ -67,15 +71,17 @@ namespace EWC.CustomWeapon.CustomShot
                 OrigDamage = copy.OrigDamage;
                 OrigPrecision = copy.OrigPrecision;
                 OrigStagger = copy.OrigStagger;
+                XpMod = copy.XpMod;
                 _state = new(this);
             }
         }
 
-        public void Reset(float origDamage, float origPrecision, float origStagger)
+        public void Reset(float origDamage, float origPrecision, float origStagger, bool isGun)
         {
             OrigDamage = origDamage;
             OrigPrecision = origPrecision;
             OrigStagger = origStagger;
+            XpMod = EXPAPIWrapper.GetDamageMod(isGun);
 
             GroupMod = ShotManager.CurrentGroupMod;
             ID = ShotManager.NextID;
@@ -85,6 +91,7 @@ namespace EWC.CustomWeapon.CustomShot
         public void NewShot(CustomWeaponComponent cwc)
         {
             Mod = new();
+            XpMod = EXPAPIWrapper.GetDamageMod(cwc.IsGun);
             cwc.Invoke(new WeaponShotInitContext(Mod));
             ShotManager.AdvanceGroupModIfOld(cwc);
             GroupMod = ShotManager.CurrentGroupMod;
@@ -110,6 +117,7 @@ namespace EWC.CustomWeapon.CustomShot
         public class Const
         {
             public readonly ShotInfo Orig;
+            public readonly float XpMod;
             public readonly uint ID;
             private readonly DamageType[] _hits;
             public readonly uint Hits;
@@ -120,6 +128,7 @@ namespace EWC.CustomWeapon.CustomShot
             public Const(ShotInfo info)
             {
                 Orig = info;
+                XpMod = info.XpMod;
                 ID = info.ID;
                 _hits = info._hits.ToArray();
                 Hits = (uint)_hits.Length;

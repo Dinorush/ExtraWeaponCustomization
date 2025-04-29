@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
 using EWC.Utils;
 using FX_EffectSystem;
 using Gear;
@@ -37,7 +38,7 @@ namespace EWC.CustomWeapon.CustomShot
                     vanillaData.damageFalloff = archData.DamageFalloff;
                 }
 
-                s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(vanillaData.damage, vanillaData.precisionMulti, vanillaData.staggerMulti));
+                s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(vanillaData.damage, vanillaData.precisionMulti, vanillaData.staggerMulti, cwc.IsGun));
                 s_vanillaShotInfo.info.GroupMod = CurrentGroupMod;
                 cwc.Invoke(new WeaponShotInitContext(s_vanillaShotInfo.info.Mod));
             }

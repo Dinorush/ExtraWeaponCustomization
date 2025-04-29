@@ -152,7 +152,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             // 0.001f to account for rounding error
             damage = falloffMod * damage + 0.001f;
-            damage *= EXPAPIWrapper.GetDamageMod(eBase.CWC.IsGun);
+            damage *= info.XpMod;
 
             Agent? agent = damageable.GetBaseAgent();
             if (agent?.Type == AgentType.Player)

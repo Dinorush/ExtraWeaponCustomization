@@ -198,7 +198,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             hitData.angOffsetX = x;
             hitData.angOffsetY = y;
             hitData.randomSpread = spread;
-            hitData.shotInfo.Reset(hitData.damage, hitData.precisionMulti, hitData.staggerMulti);
+            hitData.shotInfo.Reset(hitData.damage, hitData.precisionMulti, hitData.staggerMulti, true);
             hitData.RayHit = default;
             if (orig != null)
                 hitData.shotInfo.PullMods(orig, UseParentShotMod);

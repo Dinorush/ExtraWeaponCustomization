@@ -26,6 +26,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static void SendInstance(ITriggerCallbackBasicSync caller, float mod = 1f)
         {
+            if (caller.CWC.Weapon.Owner == null) return;
+
             _triggerSync.Send(PackInstance(caller, mod));
         }
 
@@ -47,6 +49,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static void SendInstance(ITriggerCallbackDirSync caller, Vector3 position, Vector3 dir, float mod = 1f)
         {
+            if (caller.CWC.Weapon.Owner == null) return;
+
             TriggerDirInstanceData data = default;
             data.position = position;
             data.dir.Value = dir;
@@ -62,6 +66,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static void SendInstance(ITriggerCallbackAgentSync caller, Agent target, float mod = 1f)
         {
+            if (caller.CWC.Weapon.Owner == null) return;
+
             TriggerAgentInstanceData data = default;
             data.target.Set(target);
             data.instance = PackInstance(caller, mod);
@@ -76,6 +82,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static void SendReset(ITriggerCallbackSync caller)
         {
+            if (caller.CWC.Weapon.Owner == null) return;
+
             TriggerResetData data = default;
             data.source.SetPlayer(caller.CWC.Weapon.Owner.Owner);
             data.slot = PlayerAmmoStorage.GetSlotFromAmmoType(caller.CWC.Weapon.AmmoType);

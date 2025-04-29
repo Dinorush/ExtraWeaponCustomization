@@ -5,6 +5,7 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Utils.Extensions;
+using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Linq;

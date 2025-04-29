@@ -159,7 +159,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_hitData.angOffsetX = x;
             s_hitData.angOffsetY = y;
             s_hitData.randomSpread = spread;
-            s_hitData.shotInfo.Reset(s_hitData.damage, s_hitData.precisionMulti, s_hitData.staggerMulti);
+            s_hitData.shotInfo.Reset(s_hitData.damage, s_hitData.precisionMulti, s_hitData.staggerMulti, true);
             s_hitData.RayHit = default;
             s_hitData.shotInfo.NewShot(CWC);
 

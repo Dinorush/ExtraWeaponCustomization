@@ -32,7 +32,7 @@ namespace EWC.Dependencies
 
         public static float GetExplosionResistanceMod(PlayerAgent player) => HasEXP ? EXPGetExplosionResistanceMod(player) : 1f;
 
-        public static float GetDamageMod(bool isGun) => HasEXP ? EXPGetDamageMod(isGun) : 1f;
+        public static float GetDamageMod(bool isGun) => HasEXP && PlayerManager.HasLocalPlayerAgent() ? EXPGetDamageMod(isGun) : 1f;
 
         public static void RegisterDamage(EnemyAgent enemy, PlayerAgent? source, float damage, bool willKill)
         {
