@@ -82,7 +82,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 visualDist = s_rayHit.distance;
 
             Vector3 position = ray.origin + ray.direction * Math.Min(visualDist, 0.1f);
-            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, hitData);
+            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, hitData, ignoreEnt);
             if (comp == null)
             {
                 EWCLogger.Error("Unable to create shooter projectile!");
@@ -91,7 +91,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (VisualLerpDist > 0)
                 comp.SetVisualPosition(CWC.Gun!.MuzzleAlign.position, visualDist);
-            comp.Hitbox.HitEnts.Add(ignoreEnt);
         }
 
         public override void Serialize(Utf8JsonWriter writer)

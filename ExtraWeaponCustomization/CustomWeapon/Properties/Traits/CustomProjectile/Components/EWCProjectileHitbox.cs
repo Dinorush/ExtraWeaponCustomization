@@ -61,7 +61,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 #pragma warning restore CS8618
 
-        public void Init(Projectile projBase, HitData? hitData, out RaycastHit? bounceHit)
+        public void Init(Projectile projBase, HitData? hitData, IntPtr ignoreEnt, out RaycastHit? bounceHit)
         {
             bounceHit = null;
             if (_enabled || !_base.IsLocal) return;
@@ -123,6 +123,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _ricochetCount = _settings.RicochetCount;
             _hitData = new(hitData!);
             _origInfo = _hitData.shotInfo.State;
+            if (ignoreEnt != IntPtr.Zero)
+                HitEnts.Add(ignoreEnt);
 
             _distanceMoved = 0;
             _lastFixedTime = Time.fixedTime;

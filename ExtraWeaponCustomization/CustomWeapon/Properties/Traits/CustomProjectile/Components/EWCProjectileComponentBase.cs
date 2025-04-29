@@ -83,7 +83,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 
         [HideFromIl2Cpp]
-        public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isLocal, Vector3 position, Vector3 dir, HitData? hitData = null)
+        public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isLocal, Vector3 position, Vector3 dir, HitData? hitData = null, IntPtr ignoreEnt = default)
         {
             if (enabled) return;
 
@@ -108,11 +108,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             BaseDir = dir;
             IsLocal = isLocal;
 
-            Homing.Init(projBase, position, dir);
             ProjectileAPI.FireProjectileSpawnedCallback(this);
-            Hitbox.Init(projBase, hitData, out var bounceHit);
+            Hitbox.Init(projBase, hitData, ignoreEnt, out var bounceHit);
             if (bounceHit != null)
                 BaseDir = Vector3.Reflect(BaseDir, bounceHit.Value.normal);
+
+            Homing.Init(projBase, position, BaseDir);
         }
 
         public virtual void SetVisualPosition(Vector3 positionVisual, float lerpDist)

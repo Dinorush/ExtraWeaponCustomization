@@ -26,11 +26,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 #pragma warning restore CS8618
 
         [HideFromIl2Cpp]
-        public override void Init(ushort playerIndex, ushort ID, Projectile settings, bool isLocal, Vector3 position, Vector3 dir, HitData? hitData = null)
+        public override void Init(ushort playerIndex, ushort ID, Projectile settings, bool isLocal, Vector3 position, Vector3 dir, HitData? hitData = null, IntPtr ignoreEnt = default)
         {
             if (enabled) return;
 
-            base.Init(playerIndex, ID, settings, isLocal, position, dir, hitData);
+            base.Init(playerIndex, ID, settings, isLocal, position, dir, hitData, ignoreEnt);
 
             _projectile.transform.SetPositionAndRotation(Position, s_tempRot);
 
