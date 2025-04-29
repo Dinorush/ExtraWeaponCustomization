@@ -58,7 +58,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         private readonly Dictionary<BaseDamageableWrapper, Queue<DOTInstance>> _lastDOTs = new();
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
-        public DamageOverTime()
+        public DamageOverTime() : base()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
             SetValidTriggers(DamageType.DOT, TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);

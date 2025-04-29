@@ -18,8 +18,9 @@ namespace EWC.CustomWeapon.Properties
             ReferenceID = StringIDToInt(id);
         }
 
-        public PropertyRef? Reference { get; set; }
         public uint ReferenceID { get; private set; } = 0;
+
+        public void SetReference(PropertyRef propertyRef) => Reference = propertyRef;
 
         public override void Serialize(Utf8JsonWriter writer)
         {
@@ -42,13 +43,5 @@ namespace EWC.CustomWeapon.Properties
                     break;
             }
         }
-    }
-
-    public sealed class PropertyRef
-    {
-        public WeaponPropertyBase property;
-        public uint refCount = 0;
-
-        public PropertyRef(WeaponPropertyBase prop) => property = prop;
     }
 }

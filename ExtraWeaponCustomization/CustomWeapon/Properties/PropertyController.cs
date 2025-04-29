@@ -8,23 +8,40 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils.Log;
 using System.Diagnostics.CodeAnalysis;
 using EWC.Utils.Extensions;
+using System.Linq;
 
 namespace EWC.CustomWeapon.Properties
 {
     internal sealed class PropertyController
     {
-        private PropertyNode? _root;
+        private PropertyNode _root = null!;
         private readonly ContextController _contextController;
         private readonly LinkedList<PropertyNode> _overrideStack = new();
         private readonly Dictionary<Type, Trait> _activeTraits = new();
         private readonly Dictionary<uint, PropertyRef> _idToProperty = new();
-        private static readonly HashSet<WeaponPropertyBase> s_ignoreRefs = new();
         private readonly List<ITriggerCallbackSync> _syncList = new(1);
+
+        // Used when moving to an override root
+        private static readonly List<WeaponPropertyBase> s_subtreePropCache = new();
+        private static readonly HashSet<WeaponPropertyBase> s_subtreeKeepCache = new();
 
         public PropertyController(bool isGun, bool isLocal)
         {
             _contextController = new(isGun, isLocal);
         }
+
+        // Plan of action on override activate:
+        // 1. Clear controller
+        // 2. Iterate over property tree (node, newRoot, enabled = false)
+        //  a. Store the reference and value of refCount of each property to dict if not stored
+        //  b. If (node == newRoot), enabled = true. Set node.Enabled = enabled.
+        //  b. If Active, add (Enabled ? 1 : -1) to refCount
+        //  c. If Active and Enabled, add to trait dict and register to controller (register is safe-guarded against double-registers)
+        // 3. Iterate over reference dict
+        //  a. Store (origRefCount == 0, refCount > 0) to setup list
+        //  b. Store (origRefCount > 0, refCount == 0) to clear list
+        // 4. Run clear context on clear list
+        // 5. Run setup context on setup list
 
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
 
@@ -107,7 +124,7 @@ namespace EWC.CustomWeapon.Properties
             {
                 if (property.ID != 0)
                 {
-                    if (!_idToProperty.TryAdd(property.ID, new PropertyRef(property)))
+                    if (!_idToProperty.TryAdd(property.ID, property.Reference))
                         EWCLogger.Warning("Duplicate property ID detected: " + property.ID);
                 }
             }
@@ -124,8 +141,8 @@ namespace EWC.CustomWeapon.Properties
                 {
                     if (_idToProperty.TryGetValue(property.ReferenceID, out var refProperty))
                     {
-                        property.Reference = refProperty;
-                        refHolder.OnReferenceSet(refProperty.property);
+                        property.SetReference(refProperty);
+                        refHolder.OnReferenceSet(refProperty.Property);
                     }
                     else if (property.ReferenceID != 0)
                         EWCLogger.Error($"Unable to find property with ID {property.ReferenceID}!");
@@ -146,7 +163,7 @@ namespace EWC.CustomWeapon.Properties
         }
 
         public ContextController GetContextController() => _contextController;
-        public bool HasTempProperties() => _root!.Children.Count > 0;
+        public bool HasTempProperties() => _root.Children.Count > 0;
         public bool HasTrait<T>() where T : Trait => _activeTraits.ContainsKey(typeof(T));
         public T? GetTrait<T>() where T : Trait => _activeTraits.TryGetValueAs<Type, Trait, T>(typeof(T), out T? trait) ? trait : null;
         public bool TryGetTrait<T>([MaybeNullWhen(false)] out T trait) where T : Trait => _activeTraits.TryGetValueAs(typeof(T), out trait);
@@ -164,19 +181,10 @@ namespace EWC.CustomWeapon.Properties
 
         public void SetActive(PropertyNode node, bool active)
         {
-            if (node.List.Override)
-            {
-                PropertyNode newRoot = active ? node : (_overrideStack.Count > 1 ? _overrideStack.Last!.Previous!.Value : _root!);
-                CacheIgnoreRefs(newRoot, active);
-            }
-
             if (active)
                 Activate(node);
             else
                 Deactivate(node);
-
-            if (node.List.Override)
-                s_ignoreRefs.Clear();
         }
 
         private void Activate(PropertyNode node)
@@ -187,35 +195,19 @@ namespace EWC.CustomWeapon.Properties
             if (node.List.Override)
             {
                 if (node.Enabled)
-                {
-                    // UpdateRoot will register/add traits, so just need to invoke setups
                     UpdateRoot(node);
-
-                    foreach (var property in node.List.SetupCallbacks.OrEmptyIfNull())
-                    {
-                        if (s_ignoreRefs.Contains((WeaponPropertyBase) property)) continue;
-
-                        property.Invoke(StaticContext<WeaponSetupContext>.Instance);
-                    }
-                }
                 else
                     _overrideStack.AddBefore(_overrideStack.Last!, node);
+                return;
             }
 
             if (!node.Enabled) return;
 
             foreach (var curr in node.List.Properties)
             {
-                var property = curr;
-                // Swap ReferenceProperties with their target, or skip it if it's referenced elsewhere
-                if (property is ReferenceProperty refProp)
-                {
-                    if (refProp.Reference == null || refProp.Reference.refCount++ != 0) continue;
-                    property = refProp.Reference.property;
-                }
-                else if (property.ID != 0 && _idToProperty[property.ID].refCount++ != 0) continue;
-
-                if (s_ignoreRefs.Contains(property)) continue; // Ignore properties that will remain active
+                // Convert ReferenceProperty to property
+                var property = curr.Reference.Property;
+                if (property.Reference.RefCount++ != 0) continue;
 
                 if (property is Trait trait && !_activeTraits.TryAdd(property.GetType(), trait)) continue;
                 
@@ -232,22 +224,20 @@ namespace EWC.CustomWeapon.Properties
             node.Active = false;
 
             if (node.List.Override)
+            {
                 _overrideStack.Remove(node);
+                if (node.Enabled)
+                    UpdateRoot();
+                return;
+            }
 
             if (!node.Enabled) return;
 
             foreach (var curr in node.List.Properties)
             {
-                var property = curr;
-                // Swap ReferenceProperties with their target, or skip it if it's referenced elsewhere
-                if (property is ReferenceProperty refProp)
-                {
-                    if (refProp.Reference == null || --refProp.Reference.refCount != 0) continue;
-                    property = refProp.Reference.property;
-                }
-                else if (property.ID != 0 && --_idToProperty[property.ID].refCount != 0) continue;
-
-                if (s_ignoreRefs.Contains(property)) continue; // Ignore properties that will remain active
+                // Convert ReferenceProperty to property
+                var property = curr.Reference.Property;
+                if (--property.Reference.RefCount != 0) continue;
 
                 Type type = property.GetType();
                 if (property is Trait trait && (!_activeTraits.TryGetValue(type, out var active) || active != trait))
@@ -260,9 +250,6 @@ namespace EWC.CustomWeapon.Properties
 
                 _contextController.Unregister(property);
             }
-
-            if (node.List.Override)
-                UpdateRoot();
         }
 
         private void UpdateRoot(PropertyNode? node = null)
@@ -272,99 +259,61 @@ namespace EWC.CustomWeapon.Properties
             else
                 node = _overrideStack.Last?.Value;
 
-            _contextController.Clear();
-            // Register properties that will remain active (they will not be added by other functions)
-            foreach (var property in s_ignoreRefs)
-                _contextController.Register(property);
+            foreach (var property in _contextController.Properties)
+                property.Reference.RefCount = 0;
 
-            if (node != null)
+            node ??= _root;
+
+            void SetSubtree(PropertyNode curr, bool enabled = false)
             {
-                PropagateDisable(_root);
-                _activeTraits.Clear();
-                foreach (var property in s_ignoreRefs)
-                    if (property is Trait trait)
-                        _activeTraits.TryAdd(property.GetType(), trait);
-                if (node.List.Owner != null)
-                    _contextController.Register(node.List.Owner);
-                PropagateEnable(node);
-            }
-            else
-            {
-                _activeTraits.Clear();
-                PropagateEnable(_root);
-            }
-        }
-
-        private void CacheIgnoreRefs(PropertyNode? node, bool allowFirst = true)
-        {
-            if (node == null || (!node.Active && !allowFirst)) return;
-
-            foreach (var refProp in node.List.ReferenceProperties.OrEmptyIfNull())
-                if (refProp.Reference != null)
-                    s_ignoreRefs.Add(refProp.Reference.property);
-
-            foreach (var child in node.Children)
-                CacheIgnoreRefs(child, false);
-        }
-
-        private void PropagateDisable(PropertyNode? node)
-        {
-            if (node == null || !node.Enabled || node == _overrideStack.Last!.Value) return;
-            node.Enabled = false;
-
-            if (node.Active && node.List.ClearCallbacks != null)
-            {
-                foreach (var property in node.List.ClearCallbacks)
+                if (curr == node)
                 {
-                    if (s_ignoreRefs.Contains((WeaponPropertyBase)property)) continue; // Ignore properties that will remain active
-
-                    if (property is Trait trait && (!_activeTraits.TryGetValue(property.GetType(), out var active) || trait != active)) continue;
-
-                    property.Invoke(StaticContext<WeaponClearContext>.Instance);
+                    // Keep the TempProperties that had the override in the subtree
+                    if (curr.List.Owner != null && curr.List.Owner.Reference.RefCount++ == 0)
+                        s_subtreePropCache.Add(curr.List.Owner);
+                    enabled = true;
                 }
-            }
+                curr.Enabled = enabled;
 
-            foreach (var child in node.Children)
-                PropagateDisable(child);
-        }
-
-        private void PropagateEnable(PropertyNode? node)
-        {
-            if (node == null) return;
-
-            if (node.Enabled)
-            {
-                // Re-register properties since data was cleared, but no need to call setup context
-                if (node.Active)
+                // Add all properties from active nodes
+                if (enabled && curr.Active)
                 {
-                    foreach (var curr in node.List.Properties)
+                    foreach (var property in curr.List.Properties)
                     {
-                        var property = curr;
-                        if (property is ReferenceProperty refProp)
-                        {
-                            if (refProp.Reference == null) continue;
-                            property = refProp.Reference.property;
-                        }
-                        if (s_ignoreRefs.Contains(property)) continue; // Ignore properties that will remain active
-
-                        if (property is Trait trait && !_activeTraits.TryAdd(property.GetType(), trait)) continue;
-
-                        _contextController.Register(property);
+                        if (property.Reference.RefCount++ == 0) // Only add a single property once
+                            s_subtreePropCache.Add(property.Reference.Property);
                     }
                 }
-                return;
+
+                foreach (var child in curr.Children)
+                    SetSubtree(child, enabled);
             }
 
-            node.Enabled = true;
+            SetSubtree(_root);
 
-            if (node.Active)
+            // Clear any properties that were not preserved
+            foreach (var property in _contextController.Properties)
             {
-                node.Active = false;
-                Activate(node);
+                if (property.Reference.RefCount == 0 && property is IWeaponProperty<WeaponClearContext> clearProp)
+                    clearProp.Invoke(StaticContext<WeaponClearContext>.Instance);
+                else
+                    s_subtreeKeepCache.Add(property);
             }
 
-            foreach (var child in node.Children)
-                PropagateEnable(child);
+            _contextController.Clear();
+            _activeTraits.Clear();
+            // Add the properties back in from the cache
+            foreach (var property in s_subtreePropCache)
+            {
+                if (!s_subtreeKeepCache.Contains(property) && property is IWeaponProperty<WeaponSetupContext> setupProp)
+                    setupProp.Invoke(StaticContext<WeaponSetupContext>.Instance);
+                if (property is Trait trait)
+                    _activeTraits.TryAdd(property.GetType(), trait);
+                _contextController.Register(property);
+            }
+
+            s_subtreePropCache.Clear();
+            s_subtreeKeepCache.Clear();
         }
     }
 }

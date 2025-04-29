@@ -254,14 +254,6 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "crossdoormode":
                 case "crossdoors":
                 case "crossdoor":
-                    if (reader.TokenType == JsonTokenType.False || reader.TokenType == JsonTokenType.True)
-                    {
-                        Utils.Log.EWCLogger.Warning("CrossDoors using true/false is deprecated. Use \"Normal\", \"None\", or \"NoPenalty\" instead.");
-                        if (reader.GetBoolean())
-                            CrossDoorMode = CrossDoorMode.Normal;
-                        else
-                            CrossDoorMode = CrossDoorMode.None;
-                    }
                     CrossDoorMode = reader.GetString().ToEnum(CrossDoorMode.Normal);
                     break;
                 default:

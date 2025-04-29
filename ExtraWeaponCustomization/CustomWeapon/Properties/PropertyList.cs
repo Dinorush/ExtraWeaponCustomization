@@ -1,6 +1,5 @@
 ﻿using EWC.CustomWeapon.Properties.Effects;
 using EWC.CustomWeapon.Properties.Traits;
-using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Collections.Generic;
 
@@ -10,8 +9,6 @@ namespace EWC.CustomWeapon.Properties
     {
         public readonly List<WeaponPropertyBase> Properties;
         public Dictionary<Type, Trait>? Traits { get; private set; }
-        public List<IWeaponProperty<WeaponSetupContext>>? SetupCallbacks { get; private set; }
-        public List<IWeaponProperty<WeaponClearContext>>? ClearCallbacks { get; private set; }
         public List<ReferenceProperty>? ReferenceProperties { get; private set; }
         public List<IReferenceHolder>? ReferenceHolders { get; private set; }
 
@@ -49,18 +46,6 @@ namespace EWC.CustomWeapon.Properties
                     if (!Traits.TryAdd(baseProperty.GetType(), trait)) continue;
                 }
 
-                if (baseProperty.IsProperty<WeaponSetupContext>(out var weaponSetupContext))
-                {
-                    SetupCallbacks ??= new();
-                    SetupCallbacks.Add(weaponSetupContext);
-                }
-
-                if (baseProperty.IsProperty<WeaponClearContext>(out var weaponClearContext))
-                {
-                    ClearCallbacks ??= new();
-                    ClearCallbacks.Add(weaponClearContext);
-                }
-
                 if (baseProperty is ReferenceProperty refProp)
                 {
                     ReferenceProperties ??= new();
@@ -79,11 +64,5 @@ namespace EWC.CustomWeapon.Properties
         {
             return new PropertyList(Properties.ConvertAll(property => property.Clone()));
         }
-    }
-
-    public interface IReferenceHolder : IWeaponProperty
-    {
-        public PropertyList Properties { get; }
-        public void OnReferenceSet(WeaponPropertyBase property);
     }
 }

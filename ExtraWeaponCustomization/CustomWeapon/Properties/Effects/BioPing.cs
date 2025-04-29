@@ -19,7 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         private readonly Dictionary<ObjectWrapper<EnemyAgent>, float> _cooldownTimes = new();
         private static ObjectWrapper<EnemyAgent> TempWrapper => ObjectWrapper<EnemyAgent>.SharedInstance;
 
-        public BioPing()
+        public BioPing() : base()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
             SetValidTriggers(DamageType.Player | DamageType.Lock, TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);

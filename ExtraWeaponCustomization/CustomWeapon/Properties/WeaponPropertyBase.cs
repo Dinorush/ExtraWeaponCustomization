@@ -7,13 +7,14 @@ namespace EWC.CustomWeapon.Properties
 {
     public abstract class WeaponPropertyBase : IWeaponProperty
     {
-#pragma warning disable CS8618 // Set when registered to a CWC
-        public CustomWeaponComponent CWC { get; set; }
-#pragma warning restore CS8618
+        public CustomWeaponComponent CWC { get; set; } = null!; // Set when added to CWC
 
         public uint ID { get; private set; } = 0;
+        public PropertyRef Reference { get; protected set; }
         private readonly static Dictionary<string, uint> s_stringToIDDict = new();
         private static uint s_nextID = uint.MaxValue;
+
+        public WeaponPropertyBase() => Reference = new(this);
 
         public virtual bool ShouldRegister(Type contextType) => true;
 
@@ -25,8 +26,11 @@ namespace EWC.CustomWeapon.Properties
 
         public virtual WeaponPropertyBase Clone()
         {
-            return CopyUtil<WeaponPropertyBase>.Clone(this);
+            var copy = CopyUtil<WeaponPropertyBase>.Clone(this);
+            copy.Reference = new(copy);
+            return copy;
         }
+
         public abstract void Serialize(Utf8JsonWriter writer);
 
         public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)

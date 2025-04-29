@@ -12,12 +12,14 @@ namespace EWC.CustomWeapon.WeaponContext
     {
         private readonly Dictionary<Type, IContextList> _allContextLists = new();
         private readonly List<Type> _blacklist;
+        private readonly HashSet<WeaponPropertyBase> _properties;
 
         public ContextController(ContextController contextController)
         {
             foreach (IContextList list in contextController._allContextLists.Values)
                 list.CopyTo(this);
             _blacklist = new(contextController._blacklist);
+            _properties = new(contextController._properties);
         }
 
         public ContextController(bool isGun, bool isLocal)
@@ -33,6 +35,7 @@ namespace EWC.CustomWeapon.WeaponContext
                 RegisterSyncContexts();
 
             _blacklist = new();
+            _properties = new();
         }
 
         private interface IContextList
@@ -67,9 +70,6 @@ namespace EWC.CustomWeapon.WeaponContext
                 if (!property.IsProperty<TContext>(out var contextedProperty))
                     return false;
 
-                if (_entries.Contains(contextedProperty))
-                    return false;
-
                 if (property is Trait && _entries.Any(containedProperty => containedProperty.GetType() == contextedProperty.GetType()))
                     return false;
 
@@ -82,10 +82,7 @@ namespace EWC.CustomWeapon.WeaponContext
                 return property is IWeaponProperty<TContext> contextedProperty && _entries.Remove(contextedProperty);
             }
 
-            public void Clear()
-            {
-                _entries.Clear();
-            }
+            public void Clear() => _entries.Clear();
 
             public IContextList? CopyTo(ContextController manager)
             {
@@ -127,10 +124,12 @@ namespace EWC.CustomWeapon.WeaponContext
             }
         }
 
-        public void Register(IWeaponProperty property)
+        public void Register(WeaponPropertyBase property)
         {
             if (property == null)
                 throw new ArgumentNullException(nameof(property));
+
+            if (!_properties.Add(property)) return;
 
             foreach (IContextList contextList in _allContextLists.Values)
             {
@@ -138,16 +137,21 @@ namespace EWC.CustomWeapon.WeaponContext
             }
         }
 
-        public void Unregister(IWeaponProperty property)
+        public void Unregister(WeaponPropertyBase property)
         {
+            if (!_properties.Remove(property)) return;
+
             foreach (IContextList contextList in _allContextLists.Values)
             {
                 contextList.Remove(property);
             }
         }
 
+        public IReadOnlySet<WeaponPropertyBase> Properties => _properties;
+
         public void Clear()
         {
+            _properties.Clear();
             foreach (IContextList contextList in _allContextLists.Values)
             {
                 contextList.Clear();
