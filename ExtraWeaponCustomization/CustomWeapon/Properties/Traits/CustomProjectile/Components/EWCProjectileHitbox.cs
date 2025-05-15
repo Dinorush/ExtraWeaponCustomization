@@ -136,12 +136,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         public void Die()
         {
-            _settings.CWC.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, _hitData.shotInfo, _origInfo));
+            if (_base.IsLocal)
+            {
+                _settings.CWC.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, _hitData.shotInfo, _origInfo));
+                _initialPlayers.Clear();
+                HitEnts.Clear();
+                _hitEntCooldowns.Clear();
+                _ignoreWallsTime = 0;
+            }
             _enabled = false;
-            _initialPlayers.Clear();
-            HitEnts.Clear();
-            _hitEntCooldowns.Clear();
-            _ignoreWallsTime = 0;
         }
 
         public bool Update(Vector3 position, Vector3 velocityDelta, out RaycastHit bounceHit)
