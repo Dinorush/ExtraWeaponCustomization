@@ -155,7 +155,7 @@ namespace EWC.CustomWeapon
             if (ptr == IntPtr.Zero || ptr == _ownerPtr || !enabled) return;
 
             _ownerPtr = ptr;
-            Invoke(StaticContext<WeaponOwnerSetContext>.Instance);
+            InvokeAll(StaticContext<WeaponOwnerSetContext>.Instance);
         }
 
         private void Update()
@@ -200,6 +200,9 @@ namespace EWC.CustomWeapon
 
             return _propertyController.Invoke(context);
         }
+
+        [HideFromIl2Cpp]
+        private TContext InvokeAll<TContext>(TContext context) where TContext : IWeaponContext => _propertyController.InvokeAll(context);
 
         [HideFromIl2Cpp]
         public void Register(CustomWeaponData? data = null)

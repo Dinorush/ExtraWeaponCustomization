@@ -8,7 +8,6 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils.Log;
 using System.Diagnostics.CodeAnalysis;
 using EWC.Utils.Extensions;
-using System.Linq;
 
 namespace EWC.CustomWeapon.Properties
 {
@@ -16,6 +15,7 @@ namespace EWC.CustomWeapon.Properties
     {
         private PropertyNode _root = null!;
         private readonly ContextController _contextController;
+        private readonly List<WeaponPropertyBase> _properties = new();
         private readonly LinkedList<PropertyNode> _overrideStack = new();
         private readonly Dictionary<Type, Trait> _activeTraits = new();
         private readonly Dictionary<uint, PropertyRef> _idToProperty = new();
@@ -45,6 +45,18 @@ namespace EWC.CustomWeapon.Properties
 
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
 
+        // Does not go through the standard invoke checks/pipeline like context controller.
+        // Should ONLY use for contexts ran once as a part of initialization, e.g. when the weapon owner is set.
+        public TContext InvokeAll<TContext>(TContext context) where TContext : IWeaponContext
+        {
+            foreach (var property in _properties)
+            {
+                if (property.IsProperty<TContext>(out var tProperty))
+                    tProperty.Invoke(context);
+            }
+            return context;
+        }
+
         public void Init(CustomWeaponComponent cwc, PropertyList? baseList)
         {
             if (baseList == null) return;
@@ -53,7 +65,7 @@ namespace EWC.CustomWeapon.Properties
             RemoveInvalidProperties(_root, cwc.IsGun);
             RegisterPropertyIDs();
             Activate(_root);
-            RegisterSyncProperties(_root);
+            RegisterSyncProperties();
         }
 
         private PropertyNode CreateTree(CustomWeaponComponent cwc, PropertyList list, PropertyNode? parent = null)
@@ -62,6 +74,8 @@ namespace EWC.CustomWeapon.Properties
             list.SetCWC(cwc);
             foreach (WeaponPropertyBase property in list.Properties)
             {
+                _properties.Add(property);
+
                 if (property is TempProperties tempProperties)
                 {
                     if (!tempProperties.Properties.Empty)
@@ -95,9 +109,9 @@ namespace EWC.CustomWeapon.Properties
                 RemoveInvalidProperties(child, isGun);
         }
 
-        private void RegisterSyncProperties(PropertyNode node)
+        private void RegisterSyncProperties()
         {
-            foreach (var property in node.List.Properties)
+            foreach (var property in _properties)
             {
                 if (property is ITriggerCallbackSync syncProperty)
                 {
@@ -105,22 +119,19 @@ namespace EWC.CustomWeapon.Properties
                     _syncList.Add(syncProperty);
                 }
             }
-
-            foreach (var child in node.Children)
-                RegisterSyncProperties(child);
         }
 
         private void RegisterPropertyIDs()
         {
             if (_root == null) return;
 
-            CachePropertyIDs(_root);
+            CachePropertyIDs();
             SetReferenceProperties(_root);
         }
 
-        private void CachePropertyIDs(PropertyNode node)
+        private void CachePropertyIDs()
         {
-            foreach (var property in node.List.Properties)
+            foreach (var property in _properties)
             {
                 if (property.ID != 0)
                 {
@@ -128,9 +139,6 @@ namespace EWC.CustomWeapon.Properties
                         EWCLogger.Warning("Duplicate property ID detected: " + property.ID);
                 }
             }
-
-            foreach (var child in node.Children)
-                CachePropertyIDs(child);
         }
 
         private void SetReferenceProperties(PropertyNode node)
@@ -155,6 +163,7 @@ namespace EWC.CustomWeapon.Properties
 
         public void Clear()
         {
+            _properties.Clear();
             _contextController.Clear();
             _overrideStack.Clear();
             _activeTraits.Clear();

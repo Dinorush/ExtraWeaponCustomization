@@ -15,7 +15,6 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class AutoAim : 
         Trait,
         IGunProperty,
-        IWeaponProperty<WeaponOwnerSetContext>,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponEnableContext>,
         IWeaponProperty<WeaponDisableContext>,
@@ -68,6 +67,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public override bool ShouldRegister(Type contextType)
         {
+            if (!CWC.IsLocal) return false;
             if (!RequireLock && (contextType == typeof(WeaponPreStartFireContext) || contextType == typeof(WeaponFireCancelContext))) return false;
             return base.ShouldRegister(contextType);
         }
@@ -119,7 +119,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             OnEnable();
         }
 
-        public void Invoke(WeaponOwnerSetContext _) => OnEnable();
         public void Invoke(WeaponEnableContext _) => OnEnable();
 
         public void Invoke(WeaponDisableContext _) => OnDisable();
