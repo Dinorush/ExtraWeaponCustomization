@@ -47,6 +47,8 @@ namespace EWC
 
             section = "Tools";
             ForceCreateTemplate = configFile.Bind(section, "Force Create Template", false, "Creates the template file again.");
+
+            CheckAndRefreshTemplate();
         }
 
         internal static void Init()

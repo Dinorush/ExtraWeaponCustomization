@@ -90,8 +90,7 @@ namespace EWC.CustomWeapon.CustomShot
             float time = Clock.Time;
             if (time == s_lastShotTime) return;
 
-            CurrentGroupMod = new();
-            cwc.Invoke(new WeaponShotGroupInitContext(CurrentGroupMod));
+            AdvanceGroupMod(cwc);
             s_lastShotTime = time;
         }
     }

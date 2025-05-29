@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
@@ -12,6 +13,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         IWeaponProperty<WeaponFireRateContext>
     {
         public ushort SyncID { get; set; }
+
+        public bool ForceUpdate { get; private set; } = false;
 
         private readonly TriggerStack _triggerStack;
 
@@ -26,9 +29,10 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
-           _triggerStack.Add(contexts);
+            var num = Sum(contexts);
+            TriggerApplySync(num);
 
-            TriggerManager.SendInstance(this, Sum(contexts));
+            TriggerManager.SendInstance(this, num);
         }
 
         public void TriggerResetSync()
@@ -39,12 +43,45 @@ namespace EWC.CustomWeapon.Properties.Effects
         public void TriggerApplySync(float num)
         {
             _triggerStack.Add(num);
+
+            if (ForceUpdate)
+            {
+                CWC.UpdateStoredFireRate();
+                CWC.ModifyFireRate();
+            }
         }
 
         public void Invoke(WeaponFireRateContext context)
         {
             if (_triggerStack.TryGetMod(out float mod))
                 context.AddMod(mod, StackLayer);
+        }
+
+        public override void Serialize(Utf8JsonWriter writer)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("Name", GetType().Name);
+            writer.WriteNumber(nameof(Mod), Mod);
+            writer.WriteNumber(nameof(Cap), Cap);
+            writer.WriteNumber(nameof(Duration), Duration);
+            writer.WriteBoolean(nameof(CombineModifiers), CombineModifiers);
+            writer.WriteNumber(nameof(CombineDecayTime), CombineDecayTime);
+            writer.WriteString(nameof(StackType), StackType.ToString());
+            writer.WriteString(nameof(StackLayer), StackLayer.ToString());
+            writer.WriteBoolean(nameof(ForceUpdate), ForceUpdate);
+            SerializeTrigger(writer);
+            writer.WriteEndObject();
+        }
+
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        {
+            base.DeserializeProperty(property, ref reader);
+            switch (property)
+            {
+                case "forceupdate":
+                    ForceUpdate = reader.GetBoolean();
+                    break;
+            }
         }
     }
 }

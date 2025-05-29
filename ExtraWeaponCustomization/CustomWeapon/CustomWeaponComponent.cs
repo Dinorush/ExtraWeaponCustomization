@@ -330,14 +330,16 @@ namespace EWC.CustomWeapon
 
         public void ModifyFireRate()
         {
-            GunArchetype!.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
-            if (GunArchetype.BurstIsDone())
-                GunArchetype.m_nextBurstTimer = GunArchetype.HasCooldown ? _lastFireTime + CurrentCooldownDelay : Math.Max(_lastFireTime + CurrentBurstDelay, GunArchetype.m_nextShotTimer);
-        }
-
-        public void ModifyFireRateSynced(BulletWeaponSynced synced)
-        {
-            synced.m_lastFireTime = _lastFireTime + 1f / CurrentFireRate - ArchetypeData.ShotDelay;
+            if (IsLocal)
+            {
+                GunArchetype!.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
+                if (GunArchetype.BurstIsDone())
+                    GunArchetype.m_nextBurstTimer = GunArchetype.HasCooldown ? _lastFireTime + CurrentCooldownDelay : Math.Max(_lastFireTime + CurrentBurstDelay, GunArchetype.m_nextShotTimer);
+            }
+            else
+            {
+                Gun!.m_lastFireTime = _lastFireTime + 1f / CurrentFireRate - ArchetypeData.ShotDelay;
+            }
         }
     }
 }

@@ -42,8 +42,6 @@ namespace EWC.CustomWeapon.CustomShot
             set => _fxCancel += value ? 1 : -1;
         }
 
-        public bool OverrideVanillaShot => CancelNormalShot || OverrideNormalShot;
-
         private Properties.Traits.Projectile? _projectile;
         public Properties.Traits.Projectile? Projectile
         {

@@ -112,11 +112,18 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
         }
 
-        public void Update(Vector3 position, ref Vector3 dir)
+        public void Update(Vector3 position, float deltaTime, ref Vector3 dir)
         {
             s_position = position;
             s_dir = dir;
             if (!_homingEnabled || Time.time < _homingStartTime || !UpdateHomingAgent()) return;
+
+            UpdateDir(position, deltaTime, ref dir);          
+        }
+
+        public void UpdateDir(Vector3 position, float deltaTime, ref Vector3 dir)
+        {
+            if (!_homingEnabled || Time.time < _homingStartTime || HomingAgent == null) return;
 
             float strength = _settings.InitialHomingStrength;
             Vector3 diff = _homingTarget!.position - position;
@@ -126,7 +133,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 strength = (float)(_settings.HomingStrength * Math.Pow(distMod, _settings.HomingDistExponent));
             }
 
-            dir = Vector3.Slerp(dir, diff.normalized, Math.Min(strength * Time.deltaTime, 1f));                
+            dir = Vector3.Slerp(dir, diff.normalized, Math.Min(strength * deltaTime, 1f));
         }
 
         public void Die()

@@ -26,27 +26,27 @@ namespace EWC.Patches.Gun
                 );
         }
 
-        private static CustomWeaponComponent? _cachedCWC = null;
         private static IntPtr _cachedData = IntPtr.Zero;
 
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void PreRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask)
+        private static bool PreRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask, ref bool __result)
         {
             // Sentry filter
-            if (altRayCastMask != -1 || _cachedData == weaponRayData.Pointer) return;
+            if (altRayCastMask != -1 || _cachedData == weaponRayData.Pointer) return true;
             _cachedData = weaponRayData.Pointer;
 
+            CustomWeaponComponent? cwc;
             if (ShotManager.CachedShotgun != null)
-                _cachedCWC = ShotManager.CachedShotgun.GetComponent<CustomWeaponComponent>();
+                cwc = ShotManager.CachedShotgun.GetComponent<CustomWeaponComponent>();
             else
-                _cachedCWC = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
+                cwc = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
 
-            if (_cachedCWC == null) return;
+            if (cwc == null) return true;
 
-            s_hitData.Setup(weaponRayData, _cachedCWC);
-            _cachedCWC.Invoke(new WeaponPreRayContext(s_hitData, originPos));
-            float mod = _cachedCWC.SpreadController!.Value;
+            s_hitData.Setup(weaponRayData, cwc);
+            cwc.Invoke(new WeaponPreRayContext(s_hitData, originPos));
+            float mod = cwc.SpreadController!.Value;
             if (mod != 1f)
             {
                 s_hitData.randomSpread *= mod;
@@ -54,27 +54,11 @@ namespace EWC.Patches.Gun
                 s_hitData.angOffsetY *= mod;
             }
 
-            s_hitData.Apply();
-        }
-
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void PostRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, ref bool __result)
-        {
             ShotManager.VanillaFireDir = weaponRayData.fireDir;
-
-            if (_cachedCWC == null) return;
-
-            s_hitData.Setup(weaponRayData, _cachedCWC);
-            if (_cachedCWC.ShotComponent!.OverrideVanillaShot)
-            {
-                _cachedCWC.ShotComponent.FireVanilla(s_hitData, originPos);
-                __result = false;
-                _cachedCWC = null;
-                return;
-            }
-
-            _cachedCWC = null;
+            cwc.ShotComponent!.FireVanilla(s_hitData, originPos);
+            s_hitData.Apply();
+            __result = false;
+            return false;
         }
     }
 }
