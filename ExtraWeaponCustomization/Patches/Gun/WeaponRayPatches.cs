@@ -54,7 +54,6 @@ namespace EWC.Patches.Gun
                 s_hitData.angOffsetY *= mod;
             }
 
-            ShotManager.VanillaFireDir = weaponRayData.fireDir;
             cwc.ShotComponent!.FireVanilla(s_hitData, originPos);
             s_hitData.Apply();
             __result = false;

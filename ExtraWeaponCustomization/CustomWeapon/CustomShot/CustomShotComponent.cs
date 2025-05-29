@@ -80,8 +80,11 @@ namespace EWC.CustomWeapon.CustomShot
         public void FireVanilla(HitData hitData, Vector3 origin)
         {
             ShotManager.CancelHandleShotEnd();
+            Ray ray = new(origin, CalcRayDir(hitData.fireDir, hitData.angOffsetX, hitData.angOffsetY, hitData.randomSpread));
+            Weapon.s_ray = ray;
+            ShotManager.VanillaFireDir = ray.direction;
             if (!CancelNormalShot)
-                Fire(new Ray(origin, hitData.fireDir), hitData, LayerUtil.MaskFriendly);
+                Fire(ray, hitData, LayerUtil.MaskFriendly);
         }
 
         public void FireSpread(Ray fireRay, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default)
