@@ -84,6 +84,7 @@ namespace EWC.CustomWeapon.CustomShot
             ShotManager.CancelHandleShotEnd();
             Ray ray = new(origin, CalcRayDir(hitData.fireDir, hitData.angOffsetX, hitData.angOffsetY, hitData.randomSpread));
             Weapon.s_ray = ray;
+            hitData.fireDir = ray.direction;
             ShotManager.VanillaFireDir = ray.direction;
             if (!CancelNormalShot)
                 Fire(ray, hitData, LayerUtil.MaskFriendly);
