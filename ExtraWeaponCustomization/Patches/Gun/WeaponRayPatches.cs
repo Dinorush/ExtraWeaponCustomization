@@ -36,12 +36,10 @@ namespace EWC.Patches.Gun
             if (altRayCastMask != -1 || _cachedData == weaponRayData.Pointer) return true;
             _cachedData = weaponRayData.Pointer;
 
-            CustomWeaponComponent? cwc;
-            if (ShotManager.CachedShotgun != null)
-                cwc = ShotManager.CachedShotgun.GetComponent<CustomWeaponComponent>();
-            else
-                cwc = weaponRayData.owner?.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
+            if (ShotManager.FiringWeapon == null) return true;
 
+
+            var cwc = ShotManager.FiringWeapon.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return true;
 
             s_hitData.Setup(weaponRayData, cwc);

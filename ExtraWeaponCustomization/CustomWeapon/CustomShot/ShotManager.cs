@@ -13,7 +13,7 @@ namespace EWC.CustomWeapon.CustomShot
         public static uint CurrentID { get; private set; } = 0;
         public static uint NextID => ++CurrentID;
         public static ShotInfoMod CurrentGroupMod { get; private set; } = new();
-        public static Shotgun? CachedShotgun { get; set; }
+        public static BulletWeapon? FiringWeapon { get; set; }
         public static Vector3 VanillaFireDir { get; set; }
 
         private static float s_lastShotTime = 0f;
@@ -28,11 +28,11 @@ namespace EWC.CustomWeapon.CustomShot
                 s_hasRanShotEnd = false;
 
                 // Shotguns only assign these AFTER CastWeaponRay runs, which breaks a lot of logic that rely on them being set.
-                if (CachedShotgun != null)
+                if (FiringWeapon != null && vanillaData.owner == null)
                 {
-                    var archData = CachedShotgun.ArchetypeData;
-                    vanillaData.owner = CachedShotgun.Owner;
-                    vanillaData.damage = archData.GetDamageWithBoosterEffect(CachedShotgun.Owner, CachedShotgun.ItemDataBlock.inventorySlot);
+                    var archData = FiringWeapon.ArchetypeData;
+                    vanillaData.owner = FiringWeapon.Owner;
+                    vanillaData.damage = archData.GetDamageWithBoosterEffect(FiringWeapon.Owner, FiringWeapon.ItemDataBlock.inventorySlot);
                     vanillaData.staggerMulti = archData.StaggerDamageMulti;
                     vanillaData.precisionMulti = archData.PrecisionDamageMulti;
                     vanillaData.damageFalloff = archData.DamageFalloff;
