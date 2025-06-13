@@ -1,5 +1,6 @@
 ﻿using Agents;
 using EWC.Attributes;
+using EWC.Dependencies;
 using Player;
 using SNetwork;
 using System;
@@ -43,7 +44,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
                 dam.Health = Math.Min(dam.Health + heal, player.Damage.HealthMax);
                 dam.SendSetHealth(dam.Health);
                 if (cancelRegen)
-                    dam.m_nextRegen = Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage;
+                    dam.m_nextRegen = Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage * EXPAPIWrapper.GetHealthRegenMod(player);
             }
             else
             {
@@ -52,7 +53,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
 
                 float origRegen = dam.m_nextRegen;
                 player.Damage.OnIncomingDamage(heal, heal, player);
-                dam.m_nextRegen = cancelRegen ? Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage : origRegen;
+                dam.m_nextRegen = cancelRegen ? Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage * EXPAPIWrapper.GetHealthRegenMod(player) : origRegen;
             }
         }
 

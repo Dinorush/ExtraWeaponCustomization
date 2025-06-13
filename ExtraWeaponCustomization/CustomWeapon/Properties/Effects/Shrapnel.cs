@@ -54,7 +54,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool HitTriggerTarget { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
 
-        private const float WallHitBuffer = -0.03f;
+        private const float WallHitBuffer = 0.03f;
 
         private CustomShotSettings _shotSettings;
         private int _friendlyMask = 0;
@@ -119,7 +119,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     }
                     else
                     {
-                        position += hitContext.Direction * WallHitBuffer;
+                        position += hitContext.Normal * WallHitBuffer;
                         normal = hitContext.Normal;
                     }
                 }
@@ -175,7 +175,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 HitData hitData = new(DamageType.Shrapnel);
                 hitData.owner = CWC.Weapon.Owner;
-                hitData.falloff = falloff;
+                hitData.falloff = IgnoreFalloff ? 1f : falloff;
                 hitData.damage = AgentModifierManager.ApplyModifier(CWC.Weapon.Owner, inventorySlot == Player.InventorySlot.GearStandard ? AgentModifier.StandardWeaponDamage : AgentModifier.SpecialWeaponDamage, Damage) * hitData.shotInfo.XpMod;
                 hitData.damageFalloff = DamageFalloff;
                 hitData.staggerMulti = StaggerDamageMulti;
@@ -288,8 +288,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             SerializeFalloff(writer);
             writer.WriteNumber(nameof(PrecisionDamageMulti), PrecisionDamageMulti);
             writer.WriteNumber(nameof(StaggerDamageMulti), StaggerDamageMulti);
-            writer.WriteNumber(nameof(PierceLimit), PierceLimit);
             writer.WriteNumber(nameof(FriendlyDamageMulti), FriendlyDamageMulti);
+            writer.WriteNumber(nameof(PierceLimit), PierceLimit);
             writer.WriteString(nameof(WallHandling), WallHandling.ToString());
             writer.WriteNumber(nameof(WallHandlingDist), WallHandlingDist);
             writer.WriteBoolean(nameof(IgnoreFalloff), IgnoreFalloff);
@@ -357,6 +357,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "friendlymulti":
                 case "friendlymult":
                     FriendlyDamageMulti = reader.GetSingle();
+                    break;
+                case "piercelimit":
+                case "piercingdamagecountlimit":
+                case "pierce":
+                    PierceLimit = reader.GetInt32();
                     break;
                 case "wallhandling":
                     WallHandling = reader.GetString().ToEnum(ShrapnelFallback.None);

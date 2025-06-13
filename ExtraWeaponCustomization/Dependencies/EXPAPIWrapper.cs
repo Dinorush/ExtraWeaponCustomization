@@ -34,6 +34,8 @@ namespace EWC.Dependencies
 
         public static float GetDamageMod(bool isGun) => HasEXP && PlayerManager.HasLocalPlayerAgent() ? EXPGetDamageMod(isGun) : 1f;
 
+        public static float GetHealthRegenMod(PlayerAgent player) => HasEXP ? EXPGetHealthRegenMod(player) : 1f;
+
         public static void RegisterDamage(EnemyAgent enemy, PlayerAgent? source, float damage, bool willKill)
         {
             if (HasEXP)
@@ -57,6 +59,19 @@ namespace EWC.Dependencies
 
             CustomScalingBuff? buff = level.CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.ExplosionResistance);
             return buff != null ? 2f - buff.Value : 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static float EXPGetHealthRegenMod(PlayerAgent player)
+        {
+            Level level;
+            if (player.IsLocallyOwned)
+                level = CacheApiWrapper.GetActiveLevel();
+            else if (!CacheApiWrapper.GetPlayerToLevelMapping().TryGetValue(player.PlayerSlotIndex, out level!))
+                return 1f;
+
+            CustomScalingBuff? buff = level.CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.RegenStartDelayMultiplier);
+            return buff != null ? buff.Value : 1f;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

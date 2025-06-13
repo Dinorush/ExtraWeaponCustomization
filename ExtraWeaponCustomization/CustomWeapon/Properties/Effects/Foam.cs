@@ -38,7 +38,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool IgnoreFalloff { get; private set; } = false;
         public bool IgnoreBooster { get; private set; } = true;
 
-        private const float WallHitBuffer = -0.03f;
+        private const float WallHitBuffer = 0.03f;
         private int _layerDynamic;
         private int LayerDynamic { get => _layerDynamic != 0 ? _layerDynamic : _layerDynamic = LayerManager.LAYER_DYNAMIC; }
 
@@ -96,7 +96,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     FoamActionManager.FoamDirect(limb.m_base.Owner, Amount * strengthMod * sizeMod * damageMod, this);
                 }
                 else
-                    position += baseContext.Direction * WallHitBuffer;
+                    position += baseContext.Normal * WallHitBuffer;
 
                 if (BubbleAmount <= 0) return;
 

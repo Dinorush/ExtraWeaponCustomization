@@ -34,7 +34,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool HitTriggerTarget { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
 
-        private const float WallHitBuffer = -0.03f;
+        private const float WallHitBuffer = 0.03f;
 
         public override void TriggerReset() {}
         public void TriggerResetSync() {}
@@ -60,7 +60,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                             position = damContext.LocalPosition + agent.Position;
                     }
                     else
-                        position += hitContext.Direction * WallHitBuffer;
+                        position += hitContext.Normal * WallHitBuffer;
                     Vector3 direction = FireFrom switch
                     {
                         FireSetting.HitNormal => hitContext.Normal,

@@ -82,7 +82,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private static ITrigger DetermineLandedTrigger(string name)
         {
-            DamageType type = DamageType.Bullet;
+            DamageType type = name.Contains("shrapnel") ? DamageType.Shrapnel : DamageType.Bullet;
             if (name.Contains("terrain"))
                 type |= DamageType.Terrain;
             return name.Contains("charge") ? new ChargeLandedTrigger(type) : new BulletLandedTrigger(type);

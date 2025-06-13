@@ -20,7 +20,6 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
     public static class ShrapnelHitManager
     {
         private readonly static ShrapnelHitSync _sync = new();
-        public const float MaxStagger = 16384; // 2 ^ 14
 
         [InvokeOnAssetLoad]
         private static void Init()
@@ -30,18 +29,20 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
         public static bool DoHit(Shrapnel shrapnel, HitData hitData, ContextController cc, bool calcFalloff = true)
         {
-            if (hitData.damage <= 0 || hitData.damageable == null) return true;
+            if (hitData.damage <= 0) return true;
+
+            if (hitData.damageable == null || hitData.damageType.HasFlag(DamageType.Dead))
+            {
+                cc.Invoke(new WeaponHitContext(hitData));
+                return true;
+            }
 
             float damage = hitData.damage; // Account for rounding errors
             float precisionMult = hitData.precisionMulti;
             float staggerMult = hitData.staggerMulti;
-            float falloff = 1f;
-            if (!shrapnel.IgnoreFalloff)
-            {
-                falloff = hitData.falloff;
-                if (calcFalloff)
-                    falloff *= hitData.CalcFalloff();
-            }
+            float falloff = hitData.falloff;
+            if (calcFalloff)
+                falloff *= hitData.CalcFalloff();
 
             var damageable = hitData.damageable;
             float backstabMulti = 1f;

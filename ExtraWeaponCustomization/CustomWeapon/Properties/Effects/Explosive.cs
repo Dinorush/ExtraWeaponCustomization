@@ -48,7 +48,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public float CacheBackstab { get; private set; } = 0f;
 
-        private const float WallHitBuffer = -0.05f;
+        private const float WallHitBuffer = 0.03f;
 
         public Explosive()
         {
@@ -73,7 +73,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                             position = damContext.LocalPosition + agent.Position;
                     }
                     else
-                        position += hitContext.Direction * WallHitBuffer;
+                        position += hitContext.Normal * WallHitBuffer;
 
                     ExplosionManager.DoExplosion(position, hitContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt, hitContext.ShotInfo.Orig);
                 }
