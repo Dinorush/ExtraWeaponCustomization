@@ -256,6 +256,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                 {
                     DamBase.m_attachedGlueVolume = UnfoamAmount;
                     FixFoamVisual();
+                    _lastUpdateTime = Time.time;
                 }
                 else
                     DamBase.m_attachedGlueVolume = amountRel * _tolerance;
@@ -267,9 +268,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                 bool shouldAddHandler = !_unfoam;
                 _unfoam = true;
                 DamBase.m_attachedGlueVolume = UnfoamAmount;
-                if (!DamBase.IsStuckInGlue || DamBase.Owner.Locomotion.CurrentStateEnum != Enemies.ES_StateEnum.StuckInGlue)
+                if (!DamBase.IsStuckInGlue || DamBase.Owner.Locomotion.CurrentStateEnum != ES_StateEnum.StuckInGlue)
                     _stuckInGlue.DoStartStuckInGlue(animIndex, fromHibernate);
                 FixFoamVisual();
+                _lastUpdateTime = Time.time;
                 return shouldAddHandler;
             }
 

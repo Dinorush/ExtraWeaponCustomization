@@ -23,8 +23,6 @@ namespace EWC.JSON
 
             List<WeaponPropertyBase> examples = new() { new ReferenceProperty() };
 
-            Utils.Log.EWCLogger.Log($"Effects: [{string.Join(", ", effectTypes.Select(t => t.Name))}], Traits: [{string.Join(", ", traitTypes.Select(t => t.Name))}]");
-
             foreach (var type in effectTypes)
                 examples.Add((WeaponPropertyBase)Activator.CreateInstance(type)!);
 
