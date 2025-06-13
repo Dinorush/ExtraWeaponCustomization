@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils.Extensions;
 using Gear;
 using HarmonyLib;
 using Player;
@@ -36,23 +37,12 @@ namespace EWC.Patches.Player
             item.ShowAmmoInfinite = context.ShowInfinite;
         }
 
-        private static InventorySlot AmmoToSlot(AmmoType ammo)
-        {
-            return ammo switch
-            {
-                AmmoType.Standard => InventorySlot.GearStandard,
-                AmmoType.Special => InventorySlot.GearSpecial,
-                AmmoType.Class => InventorySlot.GearClass,
-                _ => InventorySlot.None
-            };
-        }
-
         [HarmonyPatch(typeof(PlayerAmmoStorage), nameof(PlayerAmmoStorage.PickupAmmo))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
         private static void AmmoPackCallback(PlayerAmmoStorage __instance, AmmoType ammoType, ref float ammoAmount)
         {
-            if (__instance.m_playerBackpack.TryGetBackpackItem(AmmoToSlot(ammoType), out BackpackItem item))
+            if (__instance.m_playerBackpack.TryGetBackpackItem(ammoType.ToInventorySlot(), out BackpackItem item))
             {
                 CustomWeaponComponent? cwc = item.Instance?.GetComponent<CustomWeaponComponent>();
                 if (cwc != null)
@@ -65,7 +55,7 @@ namespace EWC.Patches.Player
         [HarmonyPostfix]
         private static void PostAmmoPackCallback(PlayerAmmoStorage __instance, AmmoType ammoType)
         {
-            if (__instance.m_playerBackpack.TryGetBackpackItem(AmmoToSlot(ammoType), out BackpackItem item))
+            if (__instance.m_playerBackpack.TryGetBackpackItem(ammoType.ToInventorySlot(), out BackpackItem item))
             {
                 CustomWeaponComponent? cwc = item.Instance?.GetComponent<CustomWeaponComponent>();
                 cwc?.Invoke(new WeaponPostAmmoPackContext(__instance));

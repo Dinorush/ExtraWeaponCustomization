@@ -109,22 +109,23 @@ namespace EWC.CustomWeapon.Properties.Effects
                     if (!HitTriggerTarget && baseDam != null)
                         ignoreEnt = baseDam.Pointer;
                     FirePerTrigger(ray, spread, shotgunBullets, segmentSize, coneSize, false, shotInfo, ignoreEnt);
-                    TriggerManager.SendInstance(this, pos, dir, amount);
+
+                    if (!CWC.HasTrait<Traits.Projectile>())
+                        TriggerManager.SendInstance(this, pos, dir, amount);
                 }
             }
             else
             {
                 for (int iter = 0; iter < iterations; iter++)
                     FirePerTrigger(ray, spread, shotgunBullets, segmentSize, coneSize, false);
-            }
 
-            TriggerManager.SendInstance(this, iterations);
+                if (!CWC.HasTrait<Traits.Projectile>())
+                    TriggerManager.SendInstance(this, iterations);
+            }
         }
 
         public void TriggerApplySync(Vector3 position, Vector3 direction, float triggerSum)
         {
-            if (CWC.HasTrait<Traits.Projectile>()) return;
-
             // Should always be an int, so round JFS in case of network compression errors.
             int iterations = (int)Math.Round(triggerSum);
             Ray ray = new(position, direction);
@@ -212,7 +213,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 friendlyMask |= LayerUtil.MaskFriendly;
 
             ToggleRunTriggers(false);
-            CWC.ShotComponent!.FireSpread(ray, hitData, friendlyMask, ignoreEnt);
+            CWC.ShotComponent!.FireSpread(ray, FireFrom != FireSetting.User ? ray.origin : CWC.Weapon.MuzzleAlign.position, hitData, friendlyMask, ignoreEnt);
             ToggleRunTriggers(true);
         }
 
@@ -228,11 +229,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 owner = CWC.Weapon.Owner,
                 damage = CWC.ArchetypeData.Damage,
+                fireDir = ray.direction,
                 angOffsetX = x,
                 angOffsetY = y,
                 randomSpread = spread
             };
-            CWC.ShotComponent!.FireSpread(ray, hitData);
+            CWC.ShotComponent!.FireSpread(ray, FireFrom != FireSetting.User ? ray.origin : CWC.Weapon.MuzzleAlign.position, hitData);
         }
 
         public override WeaponPropertyBase Clone()

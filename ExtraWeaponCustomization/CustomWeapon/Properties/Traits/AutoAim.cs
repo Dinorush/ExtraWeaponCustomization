@@ -15,7 +15,7 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class AutoAim : 
         Trait,
         IGunProperty,
-        IWeaponProperty<WeaponSetupContext>,
+        IWeaponProperty<WeaponOwnerSetContext>,
         IWeaponProperty<WeaponEnableContext>,
         IWeaponProperty<WeaponDisableContext>,
         IWeaponProperty<WeaponUpdateContext>,
@@ -111,11 +111,10 @@ namespace EWC.CustomWeapon.Properties.Traits
             context.Data.fireDir = (GetTargetPos() - _camera.Position).normalized;
         }
 
-        public void Invoke(WeaponSetupContext context)
+        public void Invoke(WeaponOwnerSetContext context)
         {
-            if (!CWC.IsLocal) return;
-
             _reticle = AutoAimReticle.Reticle;
+            _camera = CWC.Weapon.Owner.FPSCamera;
             OnEnable();
         }
 
@@ -126,17 +125,12 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponUpdateContext _) 
         {
-            if (_camera == null && CWC.Weapon.Owner != null)
-                _camera = CWC.Weapon.Owner.FPSCamera;
-
             UpdateDetection();
             UpdateAnimate();
         }
 
         public void OnDisable()
         {
-            if (!CWC.IsLocal) return;
-
             _progress = 0f;
             _target = null;
             if (_reticle != null)

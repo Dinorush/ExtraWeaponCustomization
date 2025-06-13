@@ -1,6 +1,8 @@
-﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+﻿using EWC.Attributes;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
 using Il2CppInterop.Runtime.Attributes;
+using Il2CppInterop.Runtime.Injection;
 using System;
 using UnityEngine;
 
@@ -24,6 +26,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 #pragma warning disable CS8618
         public EWCProjectileComponentShooter(IntPtr ptr) : base(ptr) { }
 #pragma warning restore CS8618
+
+        [InvokeOnLoad]
+        private static void Init()
+        {
+            ClassInjector.RegisterTypeInIl2Cpp<EWCProjectileComponentShooter>();
+        }
 
         [HideFromIl2Cpp]
         public override void Init(ushort playerIndex, ushort ID, Projectile settings, bool isLocal, Vector3 position, Vector3 dir, HitData? hitData = null, IntPtr ignoreEnt = default)

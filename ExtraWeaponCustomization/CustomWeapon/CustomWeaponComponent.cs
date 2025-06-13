@@ -1,4 +1,5 @@
 ﻿using AK;
+using EWC.Attributes;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects.Spread;
@@ -11,6 +12,7 @@ using EWC.Utils;
 using GameData;
 using Gear;
 using Il2CppInterop.Runtime.Attributes;
+using Il2CppInterop.Runtime.Injection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -140,6 +142,12 @@ namespace EWC.CustomWeapon
             _propertyController = new(IsGun, IsLocal);
             _timeSensitiveCallbacks = new();
             enabled = false;
+        }
+
+        [InvokeOnLoad]
+        private static void Init()
+        {
+            ClassInjector.RegisterTypeInIl2Cpp<CustomWeaponComponent>();
         }
 
         public bool TryGetBurstArchetype([MaybeNullWhen(false)] out BWA_Burst burstArchetype)

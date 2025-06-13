@@ -271,8 +271,11 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponShotInitContext>();
             RegisterContext<WeaponShotGroupInitContext>();
 
+            RegisterContext<WeaponChargeContext>();
+
             RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponSetupContext>();
+            RegisterContext<WeaponOwnerSetContext>();
         }
 
         private void RegisterSyncContexts()

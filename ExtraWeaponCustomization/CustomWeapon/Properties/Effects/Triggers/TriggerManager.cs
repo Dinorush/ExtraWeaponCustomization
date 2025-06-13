@@ -1,4 +1,5 @@
 ﻿using Agents;
+using EWC.Attributes;
 using EWC.Utils.Log;
 using Player;
 using SNetwork;
@@ -16,7 +17,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private readonly static TriggerResetSync _resetSync = new();
         public const float MaxMod = 256f;
 
-        internal static void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
             _triggerSync.Setup();
             _triggerDirSync.Setup();

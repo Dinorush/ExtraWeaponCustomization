@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Effects.Heal;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Dependencies;
 using Player;
 using System;
@@ -18,25 +19,45 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float CapRel { get; private set; } = -1f;
         public bool CancelRegen { get; private set; } = false;
         public bool StopBleed { get; private set; } = false;
+        public bool ApplyToTarget { get; private set; } = false;
 
         public override void TriggerReset() {}
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
+            if (ApplyToTarget)
+            {
+                foreach (var tContext in contexts)
+                {
+                    PlayerAgent target;
+                    if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(Enums.DamageType.Player))
+                        target = damContext.Damageable.GetBaseAgent().Cast<PlayerAgent>();
+                    else
+                        target = CWC.Weapon.Owner;
+
+                    DoHeal(target, tContext.triggerAmt);
+                }
+            }
+            else
+            {
+                DoHeal(CWC.Weapon.Owner, contexts.Sum(tContext => tContext.triggerAmt));
+            }
+        }
+
+        private void DoHeal(PlayerAgent target, float mod)
+        {
             float cap = CapRel >= 0f ? CapRel : Math.Sign(HealthChangeRel);
-            PlayerAgent owner = CWC.Weapon.Owner;
-            float heal = HealthChangeRel * owner.Damage.HealthMax;
-            heal *= contexts.Sum(context => context.triggerAmt);
+            float heal = HealthChangeRel * target.Damage.HealthMax * mod;
 
             HealManager.DoHeal(
-                owner,
+                target,
                 heal,
-                cap * owner.Damage.HealthMax,
+                cap * target.Damage.HealthMax,
                 this
                 );
 
             if (StopBleed)
-                EECAPIWrapper.StopBleed(owner);
+                EECAPIWrapper.StopBleed(target);
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -47,6 +68,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(CapRel), CapRel);
             writer.WriteBoolean(nameof(CancelRegen), CancelRegen);
             writer.WriteBoolean(nameof(StopBleed), StopBleed);
+            writer.WriteBoolean(nameof(ApplyToTarget), ApplyToTarget);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -73,6 +95,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "stopbleed":
                     StopBleed = reader.GetBoolean();
+                    break;
+                case "applytotarget":
+                    ApplyToTarget = reader.GetBoolean();
                     break;
                 default:
                     break;

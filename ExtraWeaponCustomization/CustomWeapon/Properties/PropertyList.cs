@@ -7,6 +7,8 @@ namespace EWC.CustomWeapon.Properties
 {
     public sealed class PropertyList
     {
+        private static readonly List<WeaponPropertyBase> s_emptyList = new(0);
+
         public readonly List<WeaponPropertyBase> Properties;
         public Dictionary<Type, Trait>? Traits { get; private set; }
         public List<ReferenceProperty>? ReferenceProperties { get; private set; }
@@ -19,7 +21,7 @@ namespace EWC.CustomWeapon.Properties
 
         private bool _setup = false;
 
-        public PropertyList() => Properties = new(0);
+        public PropertyList() => Properties = s_emptyList;
 
         public PropertyList(List<WeaponPropertyBase> properties)
         {

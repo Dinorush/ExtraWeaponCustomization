@@ -52,6 +52,16 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         }
     }
 
+    internal sealed class FoamActivateSync : SyncedEvent<FoamActivateSyncData>
+    {
+        public override string GUID => "FMASYN";
+
+        protected override void Receive(FoamActivateSyncData packet)
+        {
+            FoamActionManager.Internal_ReceiveFoamActivateSync(packet);
+        }
+    }
+
     internal sealed class FoamBubbleSync : SyncedEvent<FoamBubbleSyncData>
     {
         public override string GUID => "FMBSYN";

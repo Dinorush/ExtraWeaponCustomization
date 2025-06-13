@@ -3,6 +3,7 @@ using BepInEx;
 using System.IO;
 using GTFO.API.Utilities;
 using EWC.CustomWeapon;
+using EWC.Attributes;
 
 namespace EWC
 {
@@ -51,7 +52,8 @@ namespace EWC
             CheckAndRefreshTemplate();
         }
 
-        internal static void Init()
+        [InvokeOnLoad]
+        private static void Init()
         {
             LiveEditListener listener = LiveEdit.CreateListener(Paths.ConfigPath, EntryPoint.MODNAME + ".cfg", false);
             listener.FileChanged += OnFileChanged;

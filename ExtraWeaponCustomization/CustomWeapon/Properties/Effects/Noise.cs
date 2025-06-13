@@ -221,12 +221,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 position = position,
                 radiusMin = WakeUpRadius,
-                radiusMax = Math.Max(WakeUpRadius, FakeAlertRadius),
+                radiusMax = Math.Max(WakeUpRadius + 0.01f, FakeAlertRadius),
                 yScale = 1f,
                 includeToNeightbourAreas = CrossDoorMode != CrossDoorMode.None,
                 raycastFirstNode = false,
                 type = NM_NoiseType.Detectable
             };
+            noiseData.noiseMaker.Set(CWC.Weapon.Owner);
             noiseData.node.Set(SearchUtil.GetCourseNode(position, CWC.Weapon.Owner));
 
             if (SNet.IsMaster)

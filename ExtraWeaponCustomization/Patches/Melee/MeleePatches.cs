@@ -55,18 +55,40 @@ namespace EWC.Patches.Melee
         private static CustomWeaponComponent? _cachedCWC = null;
         public static float CachedCharge { get; private set; } = 0f;
 
-        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.SetNextDamageToDeal))]
+        [HarmonyPatch(typeof(MWS_AttackLight), nameof(MWS_AttackLight.Enter))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void SetDamageCallback(MeleeWeaponFirstPerson __instance, eMeleeWeaponDamage dam, float scale)
+        private static void SetLightDamage(MWS_AttackLight __instance)
         {
-            _cachedCWC = __instance.GetComponent<CustomWeaponComponent>();
+            OnSwingStart(__instance.m_weapon, 0);
+        }
+
+        [HarmonyPatch(typeof(MWS_AttackHeavy), nameof(MWS_AttackHeavy.Enter))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void SetHeavyDamage(MWS_AttackHeavy __instance)
+        {
+            var weapon = __instance.m_weapon;
+            var chargeUp = (__instance.m_data.m_side == eMeleeAttackSide.Left ? weapon.m_states[(int)eMeleeWeaponState.AttackChargeUpLeft] : weapon.m_states[(int)eMeleeWeaponState.AttackChargeUpRight]).Cast<MWS_ChargeUp>();
+            OnSwingStart(weapon, Math.Min(chargeUp.m_elapsed / chargeUp.m_maxDamageTime, 1f));
+        }
+
+        private static void OnSwingStart(MeleeWeaponFirstPerson weapon, float charge)
+        {
+            _cachedCWC = weapon.GetComponent<CustomWeaponComponent>();
             if (_cachedCWC == null) return;
             ShotManager.AdvanceGroupMod(_cachedCWC);
 
-            HitData.shotInfo.Reset(__instance.m_damageToDeal, __instance.m_precisionMultiToDeal, __instance.m_staggerMultiToDeal, false);
+            HitData.shotInfo.Reset(weapon.m_damageToDeal, weapon.m_precisionMultiToDeal, weapon.m_staggerMultiToDeal, false);
             HitData.shotInfo.NewShot(_cachedCWC);
-            CachedCharge = dam == eMeleeWeaponDamage.Heavy ? (float)Math.Cbrt(scale) : 0f;
+            CachedCharge = charge;
+
+            if (charge > 0 && charge < 1)
+            {
+                var context = _cachedCWC.Invoke(new WeaponChargeContext());
+                if (context.Exponent != 3)
+                    weapon.SetNextDamageToDeal(eMeleeWeaponDamage.Heavy, (float)Math.Pow(charge, context.Exponent));
+            }
         }
 
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.DoAttackDamage))]

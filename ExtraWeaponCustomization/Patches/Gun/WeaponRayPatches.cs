@@ -38,7 +38,6 @@ namespace EWC.Patches.Gun
 
             if (ShotManager.FiringWeapon == null) return true;
 
-
             var cwc = ShotManager.FiringWeapon.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return true;
 

@@ -1,5 +1,6 @@
 ﻿using Agents;
 using Enemies;
+using EWC.Attributes;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
 using SNetwork;
 using System.Collections.Generic;
@@ -19,7 +20,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         private static readonly EWCProjectileSyncTarget _targetSync = new();
         private static readonly EWCProjectileSyncBounce _bounceSync = new();
 
-        internal static void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
             Shooter.Init();
             _destroySync.Setup();
@@ -27,7 +29,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             _bounceSync.Setup();
         }
 
-        internal static void Reset()
+        [InvokeOnCleanup]
+        private static void Reset()
         {
             Shooter.Reset();
             _cachedTargets.Clear();

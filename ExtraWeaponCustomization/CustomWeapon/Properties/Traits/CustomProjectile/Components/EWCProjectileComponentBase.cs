@@ -1,8 +1,10 @@
 ﻿using EWC.API;
+using EWC.Attributes;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using Il2CppInterop.Runtime.Attributes;
+using Il2CppInterop.Runtime.Injection;
 using System;
 using UnityEngine;
 
@@ -54,6 +56,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public ushort SyncID { get; private set; }
         public ushort PlayerIndex { get; private set; }
 
+        [InvokeOnLoad]
+        private static void Init()
+        {
+            ClassInjector.RegisterTypeInIl2Cpp<EWCProjectileComponentBase>();
+        }
+
         protected virtual void Awake()
         {
             enabled = false;
@@ -86,7 +94,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             IsLocal = isLocal;
 
             ProjectileAPI.FireProjectileSpawnedCallback(this);
-            Hitbox.Init(projBase, hitData, ignoreEnt, out var bounceHit);
+            Hitbox.Init(projBase, position, dir, hitData, ignoreEnt, out var bounceHit);
             if (bounceHit != null)
                 _fixedInfo.BaseDir = Vector3.Reflect(_fixedInfo.BaseDir, bounceHit.Value.normal);
 
@@ -206,6 +214,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             LerpVisualOffset();
         }
 
+        [HideFromIl2Cpp]
         private Vector3 GetDeltaMove(PhysicsInfo info, float delta)
         {
             Vector3 deltaMove;

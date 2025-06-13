@@ -164,7 +164,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_hitData.shotInfo.NewShot(CWC);
 
             ToggleRunTriggers(false);
-            CWC.ShotComponent!.FireSpread(s_ray, s_hitData);
+            CWC.ShotComponent!.FireSpread(s_ray, CWC.Weapon.MuzzleAlign.position, s_hitData);
             ToggleRunTriggers(true);
         }
 
@@ -181,7 +181,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_hitData.angOffsetX = x;
             s_hitData.angOffsetY = y;
             s_hitData.randomSpread = spread;
-            CWC.ShotComponent!.FireSpread(s_ray, s_hitData);
+            CWC.ShotComponent!.FireSpread(s_ray, CWC.Weapon.MuzzleAlign.position, s_hitData);
         }
 
         public override WeaponPropertyBase Clone()

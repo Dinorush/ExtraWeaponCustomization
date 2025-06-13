@@ -13,7 +13,7 @@ namespace EWC.Utils
     {
         public float damage;
         public Vector2 damageFalloff;
-        public float falloff;
+        public float falloff = 1f;
         public float precisionMulti;
         public float staggerMulti;
         public float maxRayDist;
@@ -95,7 +95,7 @@ namespace EWC.Utils
             fireDir = hitData.fireDir;
             maxRayDist = hitData.maxRayDist;
             RayHit = hitData.rayHit;
-            SetFalloff(additionalDist);
+            falloff = CalcFalloff(additionalDist);
         }
 
         public void Setup(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData)
@@ -125,6 +125,7 @@ namespace EWC.Utils
         {
             hitData.owner = owner;
             hitData.damage = damage;
+            hitData.damageFalloff = damageFalloff;
             hitData.precisionMulti = precisionMulti;
             hitData.staggerMulti = staggerMulti;
             hitData.randomSpread = randomSpread;
@@ -151,9 +152,9 @@ namespace EWC.Utils
             staggerMulti = shotInfo.OrigStagger;
         }
 
-        public void SetFalloff(float additionalDist = 0)
+        public float CalcFalloff(float additionalDist = 0)
         {
-            falloff = (RayHit.distance + additionalDist).Map(damageFalloff.x, damageFalloff.y, 1f, BulletWeapon.s_falloffMin);
+            return (RayHit.distance + additionalDist).Map(damageFalloff.x, damageFalloff.y, 1f, BulletWeapon.s_falloffMin);
         }
 
         private void UpdateDamageType()

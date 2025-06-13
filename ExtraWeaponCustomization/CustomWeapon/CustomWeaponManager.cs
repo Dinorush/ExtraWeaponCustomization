@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.Properties;
+﻿using EWC.Attributes;
+using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects;
 using EWC.JSON;
 using EWC.Utils.Log;
@@ -199,7 +200,13 @@ namespace EWC.CustomWeapon
             }
         }
 
-        internal void ResetCWCs(bool activate = true)
+        [InvokeOnCleanup]
+        private static void OnCleanup()
+        {
+            Current.ResetCWCs(false);
+        }
+
+        private void ResetCWCs(bool activate = true)
         {
             // JFS - Reset crosshair modifier. Should be cleared by other stuff but doesn't hurt
             Dependencies.ACAPIWrapper.ResetCrosshairSpread();
@@ -235,7 +242,13 @@ namespace EWC.CustomWeapon
             }
         }
 
-        internal void ActivateCWCs()
+        [InvokeOnEnter]
+        private static void OnEnter()
+        {
+            Current.ActivateCWCs();
+        }
+
+        private void ActivateCWCs()
         {
             for (int i = _listenCWs.Count - 1; i >= 0; i--)
             {

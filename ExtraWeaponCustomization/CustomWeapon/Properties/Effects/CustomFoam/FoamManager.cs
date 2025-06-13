@@ -1,4 +1,5 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using Enemies;
 using EWC.CustomWeapon.ObjectWrappers;
 using SNetwork;
 using System;
@@ -45,7 +46,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                 Current.AddUnfoamHandler(handler);
         }
 
-        internal static void ReceiveSyncFoam(Dam_EnemyDamageBase damBase, float amountRel, float timeRel, bool unfoam)
+        internal static void ReceiveSyncFoam(Dam_EnemyDamageBase damBase, float amountRel, float timeRel)
         {
             if (!Current._foamTimes.TryGetValue(TempWrapper.Set(damBase), out var handler))
             {
@@ -53,7 +54,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                 handler = Current._foamTimes[new BaseDamageableWrapper<Dam_EnemyDamageBase>(TempWrapper)] = new FoamTimeHandler(damBase);
             }
 
-            if (handler.ReceiveSyncFoam(amountRel, timeRel, unfoam))
+            handler.ReceiveSyncFoam(amountRel, timeRel);
+        }
+
+        internal static void ReceiveActivateSyncFoam(Dam_EnemyDamageBase damBase, float amountRel, float timeRel, byte animIndex, bool fromHibernate)
+        {
+            if (!Current._foamTimes.TryGetValue(TempWrapper.Set(damBase), out var handler))
+            {
+                Current.CleanupFoam();
+                handler = Current._foamTimes[new BaseDamageableWrapper<Dam_EnemyDamageBase>(TempWrapper)] = new FoamTimeHandler(damBase);
+            }
+
+            if (handler.ReceiveActivateSyncFoam(amountRel, timeRel, animIndex, fromHibernate))
                 Current.AddUnfoamHandler(handler);
         }
 
@@ -147,12 +159,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             private float UnfoamAmount => Math.Min((_totalTime / _foamTime + 0.1f) * _tolerance, _tolerance);
 
             public readonly Dam_EnemyDamageBase DamBase;
+            private readonly ES_StuckInGlue _stuckInGlue;
             private readonly float _tolerance;
             private readonly float _foamTime;
 
             public FoamTimeHandler(Dam_EnemyDamageBase damBase)
             {
                 DamBase = damBase;
+                _stuckInGlue = DamBase.Owner.Locomotion.StuckInGlue;
                 var block = damBase.Owner.EnemyBalancingData;
                 _tolerance = block.GlueTolerance;
                 _foamTime = block.GlueFadeOutTime * 0.9f;
@@ -194,7 +208,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                         _totalTime = Math.Min(time, _totalTime + amount / _tolerance * time);
                     _totalAmount = UnfoamAmount;
 
-                    FixFoamVisual(DamBase.Owner.Locomotion.StuckInGlue);
+                    FixFoamVisual();
                     SendSyncFoam();
                     return false;
                 }
@@ -207,10 +221,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
                     if (SNet.IsMaster)
                     {
-                        var stuck = DamBase.Owner.Locomotion.StuckInGlue;
                         if (!DamBase.IsStuckInGlue)
-                            stuck.ActivateState();
-                        FixFoamVisual(stuck);
+                        {
+                            pES_EnemyStuckInGlueData data = new();
+                            int lastIndex = _stuckInGlue.m_lastAnimIndex;
+                            data.AnimIndex = (byte)_stuckInGlue.m_locomotion.GetUniqueAnimIndex(EnemyLocomotion.s_hashScreams, ref lastIndex);
+                            data.FromHibernate = _stuckInGlue.m_locomotion.CurrentStateEnum == ES_StateEnum.Hibernate;
+                            _stuckInGlue.m_lastAnimIndex = lastIndex;
+                            _stuckInGlue.m_stuckInGlueData = data;
+                            _stuckInGlue.DoStartStuckInGlue(data.AnimIndex, data.FromHibernate);
+                        }
+                        FixFoamVisual();
+                        SendActivateSyncFoam();
                     }
 
                     _lastUpdateTime = Time.time;
@@ -219,44 +241,58 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                 {
                     _totalTime += amount / _tolerance * time;
                     _totalAmount += amount;
+                    SendSyncFoam();
                 }
 
                 DamBase.m_attachedGlueVolume = _totalAmount;
-                SendSyncFoam();
                 return _unfoam;
             }
 
-            internal bool ReceiveSyncFoam(float amountRel, float timeRel, bool unfoam)
+            internal void ReceiveSyncFoam(float amountRel, float timeRel)
             {
-                bool addToHandlers = unfoam && !_unfoam;
                 _totalAmount = amountRel * _tolerance;
                 _totalTime = timeRel * _foamTime;
-                _unfoam = unfoam;
                 if (_unfoam)
                 {
                     DamBase.m_attachedGlueVolume = UnfoamAmount;
-                    FixFoamVisual(DamBase.Owner.Locomotion.StuckInGlue);
+                    FixFoamVisual();
                 }
                 else
                     DamBase.m_attachedGlueVolume = amountRel * _tolerance;
-                return addToHandlers;
+            }
+
+            internal bool ReceiveActivateSyncFoam(float amountRel, float timeRel, byte animIndex, bool fromHibernate)
+            {
+                ReceiveSyncFoam(amountRel, timeRel);
+                bool shouldAddHandler = !_unfoam;
+                _unfoam = true;
+                DamBase.m_attachedGlueVolume = UnfoamAmount;
+                if (!DamBase.IsStuckInGlue || DamBase.Owner.Locomotion.CurrentStateEnum != Enemies.ES_StateEnum.StuckInGlue)
+                    _stuckInGlue.DoStartStuckInGlue(animIndex, fromHibernate);
+                FixFoamVisual();
+                return shouldAddHandler;
             }
 
             private void SendSyncFoam()
             {
-                FoamActionManager.FoamSync(DamBase.Owner, _totalAmount / _tolerance, _totalTime / _foamTime, _unfoam);
+                FoamActionManager.FoamSync(DamBase.Owner, _totalAmount / _tolerance, _totalTime / _foamTime);
             }
 
-            private void FixFoamVisual(Enemies.ES_StuckInGlue stuck)
+            private void SendActivateSyncFoam()
+            {
+                FoamActionManager.FoamActivateSync(DamBase.Owner, _totalAmount / _tolerance, _totalTime / _foamTime, _stuckInGlue.m_stuckInGlueData.AnimIndex, _stuckInGlue.m_stuckInGlueData.FromHibernate);
+            }
+
+            private void FixFoamVisual()
             {
                 // Might not sync perfectly on clients if ActivateState comes in late but idrc
                 // 1.6 is a magic number that lines up the animation better
-                float duration = (_totalTime - stuck.m_fadeInDuration) * 1.6f;
-                stuck.m_fadeOutDuration = duration;
-                stuck.m_fadeOutTimer = stuck.m_fadeInTimer;
-                if (Clock.Time > stuck.m_fadeOutTimer)
+                float duration = (_totalTime - _stuckInGlue.m_fadeInDuration) * 1.6f;
+                _stuckInGlue.m_fadeOutDuration = duration;
+                _stuckInGlue.m_fadeOutTimer = _stuckInGlue.m_fadeInTimer;
+                if (Clock.Time > _stuckInGlue.m_fadeOutTimer)
                 {
-                    stuck.m_glueFadeOutTriggered = true;
+                    _stuckInGlue.m_glueFadeOutTriggered = true;
                     var appearance = DamBase.Owner.Appearance;
                     appearance.m_lastGlueEnd = 1f;
                     appearance.SetGlueAmount(0f, duration);

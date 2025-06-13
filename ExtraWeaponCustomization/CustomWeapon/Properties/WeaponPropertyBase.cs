@@ -7,7 +7,8 @@ namespace EWC.CustomWeapon.Properties
 {
     public abstract class WeaponPropertyBase : IWeaponProperty
     {
-        public CustomWeaponComponent CWC { get; set; } = null!; // Set when added to CWC
+        private CustomWeaponComponent _cwc = null!;
+        public CustomWeaponComponent CWC { get => _cwc; set { _cwc = value; OnCWCSet(); } } // Set when added to CWC
 
         public uint ID { get; private set; } = 0;
         public PropertyRef Reference { get; protected set; }
@@ -30,6 +31,8 @@ namespace EWC.CustomWeapon.Properties
             copy.Reference = new(copy);
             return copy;
         }
+
+        protected virtual void OnCWCSet() { }
 
         public abstract void Serialize(Utf8JsonWriter writer);
 

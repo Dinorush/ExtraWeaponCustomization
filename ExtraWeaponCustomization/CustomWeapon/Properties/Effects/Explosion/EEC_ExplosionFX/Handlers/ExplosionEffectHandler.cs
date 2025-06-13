@@ -1,4 +1,6 @@
-﻿using EWC.Utils.Extensions;
+﻿using EWC.Attributes;
+using EWC.Utils.Extensions;
+using Il2CppInterop.Runtime.Injection;
 using System;
 using UnityEngine;
 
@@ -14,6 +16,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Hand
 
         private float _initIntensity;
         private float _fadeDuration;
+
+        [InvokeOnLoad]
+        private static void Init()
+        {
+            ClassInjector.RegisterTypeInIl2Cpp<ExplosionEffectHandler>();
+        }
 
         internal void DoEffect(ExplosionEffectData data)
         {

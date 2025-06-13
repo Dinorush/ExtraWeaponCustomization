@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using EWC.Attributes;
+using UnityEngine;
 
 namespace EWC.Utils
 {
@@ -19,7 +20,8 @@ namespace EWC.Utils
         public static int MaskEnemyDynamic { get; private set; }
 
         // Has duplicates with LayerManager, want to avoid Il2Cpp overhead
-        internal static void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
             MaskOwner = LayerMask.GetMask("PlayerMover");
             MaskFriendly = LayerMask.GetMask("PlayerSynced");

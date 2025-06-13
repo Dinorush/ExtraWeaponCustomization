@@ -2,6 +2,7 @@
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
+using EWC.Attributes;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
@@ -17,15 +18,16 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
     public static class DOTDamageManager
     {
         private readonly static DOTEnemyDamageSync _sync = new();
-        public const float MaxStagger = 16384; // 2 ^ 14
 
-        internal static void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
             _sync.Setup();
             DOTGlowPooling.Initialize();
         }
 
-        internal static void Reset()
+        [InvokeOnCleanup]
+        private static void Reset()
         {
             DOTGlowPooling.Reset();
         }

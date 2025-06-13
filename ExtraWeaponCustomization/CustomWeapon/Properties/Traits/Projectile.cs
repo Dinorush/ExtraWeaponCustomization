@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
@@ -58,6 +59,27 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public ProjectileHomingSettings HomingSettings { get; private set; } = new();
 
+        // Used by Shrapnel to override properties that the hitbox uses
+
+        private Func<HitData, ContextController, bool>? _hitFuncOverride = null;
+        public Func<HitData, ContextController, bool>? HitFuncOverride => _hitFuncOverride;
+
+        private WallPierce? _wallPierceOverride = null;
+        public WallPierce? WallPierce => _useOverrides ? _wallPierceOverride : CWC?.GetTrait<WallPierce>();
+
+        private int _pierceLimitOverride = 0;
+        public int PierceLimit
+        {
+            get
+            {
+                if (_useOverrides)
+                    return _pierceLimitOverride;
+                else 
+                    return CWC.ArchetypeData.PierceLimit();
+            }
+        }
+
+        private bool _useOverrides = false;
         private float _cachedRayDist;
 
         private static RaycastHit s_rayHit;
@@ -91,6 +113,15 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (VisualLerpDist > 0)
                 comp.SetVisualPosition(CWC.Gun!.MuzzleAlign.position, visualDist);
+        }
+
+        internal void SetOverrides(Func<HitData, ContextController, bool>? hitFunc = null, WallPierce? wallPierce = null, int pierceLimit = 0)
+        {
+            _useOverrides = true;
+            _hitFuncOverride = hitFunc;
+            _wallPierceOverride = wallPierce;
+            _pierceLimitOverride = pierceLimit;
+            VisualLerpDist = 0;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

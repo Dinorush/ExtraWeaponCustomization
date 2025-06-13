@@ -10,6 +10,7 @@ using BepInEx.Unity.IL2CPP.Hook;
 using Il2CppInterop.Runtime.Runtime;
 using GTFO.API;
 using EWC.API;
+using EWC.Attributes;
 
 namespace EWC.Patches.Native
 {
@@ -20,7 +21,8 @@ namespace EWC.Patches.Native
         private unsafe delegate void d_DetectOnNoise(IntPtr _this, IntPtr agentTarget, float movementDetectionDistance, float shootDetectionDistance, float delta, out float output, Il2CppMethodInfo* methodInfo);
 
         // Can't harmony patch the function due to out parameter so need a native detour
-        internal unsafe static void ApplyNativePatch()
+        [InvokeOnLoad]
+        private unsafe static void ApplyNativePatch()
         {
             DetectOnNoiseDetour = INativeDetour.CreateAndApply(
                 (nint)Il2CppAPI.GetIl2CppMethod<EnemyDetection>(

@@ -1,7 +1,9 @@
 ﻿using EWC.CustomWeapon;
 using EWC.CustomWeapon.Properties;
-using EWC.CustomWeapon.Properties.Effects;
-using EWC.CustomWeapon.Properties.Traits;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace EWC.JSON
 {
@@ -9,50 +11,31 @@ namespace EWC.JSON
     {
         internal static CustomWeaponData CreateTemplate()
         {
+            var propTypes = Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => t.Namespace?.StartsWith(typeof(WeaponPropertyBase).Namespace!) == true);
+            
+            var effectTypes = propTypes
+                .Where(t => t.Namespace!.EndsWith("Effects") && t.IsAssignableTo(typeof(WeaponPropertyBase)) && !t.IsAbstract)
+                .OrderBy(t => t.Name);
+            var traitTypes = propTypes
+                .Where(t => t.Namespace!.EndsWith("Traits") && t.IsAssignableTo(typeof(WeaponPropertyBase)) && !t.IsAbstract)
+                .OrderBy(t => t.Name);
+
+            List<WeaponPropertyBase> examples = new() { new ReferenceProperty() };
+
+            Utils.Log.EWCLogger.Log($"Effects: [{string.Join(", ", effectTypes.Select(t => t.Name))}], Traits: [{string.Join(", ", traitTypes.Select(t => t.Name))}]");
+
+            foreach (var type in effectTypes)
+                examples.Add((WeaponPropertyBase)Activator.CreateInstance(type)!);
+
+            foreach (var type in traitTypes)
+                examples.Add((WeaponPropertyBase)Activator.CreateInstance(type)!);
+
             CustomWeaponData data = new()
             {
                 ArchetypeID = 0,
                 Name = "Example",
-                Properties = new(new()
-                {
-                    new ReferenceProperty(),
-
-                    new AmmoMod(),
-                    new AmmoRegen(),
-                    new ShotMod(),
-                    new ShotModPerTarget(),
-                    new DamageOverTime(),
-                    new Explosive(),
-                    new FireRateMod(),
-                    new FireShot(),
-                    new Foam(),
-                    new HealthMod(),
-                    new Noise(),
-                    new RecoilMod(),
-                    new ReferenceTrigger(),
-                    new SpreadMod(),
-                    new TempProperties(),
-
-                    new Accelerate(),
-                    new AmmoCap(),
-                    new ArmorPierce(),
-                    new AutoAim(),
-                    new AutoTrigger(),
-                    new BackstabMulti(),
-                    new BioPing(),
-                    new DataSwap(),
-                    new EnforceFireRate(),
-                    new HitmarkerCooldown(),
-                    new HoldBurst(),
-                    new MultiShot(),
-                    new PierceMulti(),
-                    new CustomWeapon.Properties.Traits.Projectile(),
-                    new ReserveClip(),
-                    new Silence(),
-                    new ThickBullet(),
-                    new TumorMulti(),
-                    new WallPierce()
-                })
+                Properties = new(examples)
             };
             return data;
         }

@@ -1,4 +1,6 @@
-﻿using Il2CppInterop.Runtime.Attributes;
+﻿using EWC.Attributes;
+using Il2CppInterop.Runtime.Attributes;
+using Il2CppInterop.Runtime.Injection;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -17,6 +19,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX
         private IDamageable? _damBase;
         private Transform? _targetTransform;
         private Vector3 _targetPos;
+
+        [InvokeOnLoad]
+        private static void Init()
+        {
+            ClassInjector.RegisterTypeInIl2Cpp<DOTGlowHandler>();
+        }
 
         [HideFromIl2Cpp]
         internal void DoEffect(DamageOverTime data, IDamageable damBase, Transform target, float mod)

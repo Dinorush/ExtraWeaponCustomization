@@ -1,5 +1,6 @@
 ﻿using Agents;
 using Enemies;
+using EWC.Attributes;
 using Player;
 using SNetwork;
 using System.Diagnostics.CodeAnalysis;
@@ -14,6 +15,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         private readonly static FoamDoorSync _doorSync = new();
         private readonly static FoamDirectSync _directSync = new();
         private readonly static FoamSync _foamSync = new();
+        private readonly static FoamActivateSync _activateSync = new();
         private readonly static FoamBubbleSync _bubbleSync = new();
 
         public const float MaxVolumeMod = 256f;
@@ -21,13 +23,15 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         public const float MaxFoam = 32f;
         public const float MaxTime = 32f;
 
-        internal static void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
             _staticSync.Setup();
             _enemySync.Setup();
             _doorSync.Setup();
             _directSync.Setup();
             _foamSync.Setup();
+            _activateSync.Setup();
             _bubbleSync.Setup();
         }
 
@@ -151,7 +155,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             FoamManager.AddFoam(enemy.Damage, packet.amount.Get(MaxDirect), property);
         }
 
-        public static void FoamSync(EnemyAgent enemy, float amountRel, float timeRel, bool unfoam)
+        public static void FoamSync(EnemyAgent enemy, float amountRel, float timeRel)
         {
             // Only master should send syncs.
             if (!SNet.IsMaster) return;
@@ -160,7 +164,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             data.target.Set(enemy);
             data.amount.Set(amountRel, MaxFoam);
             data.time.Set(timeRel, MaxTime);
-            data.unfoam = unfoam;
             _foamSync.Send(data);
         }
 
@@ -168,7 +171,31 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         {
             if (!packet.target.TryGet(out var enemy)) return;
 
-            FoamManager.ReceiveSyncFoam(enemy.Damage, packet.amount.Get(MaxFoam), packet.time.Get(MaxTime), packet.unfoam);
+            FoamManager.ReceiveSyncFoam(enemy.Damage, packet.amount.Get(MaxFoam), packet.time.Get(MaxTime));
+        }
+
+        public static void FoamActivateSync(EnemyAgent enemy, float amountRel, float timeRel, byte animIndex, bool fromHibernate)
+        {
+            // Only master should send syncs.
+            if (!SNet.IsMaster) return;
+
+            FoamSyncData syncData = default;
+            syncData.target.Set(enemy);
+            syncData.amount.Set(amountRel, MaxFoam);
+            syncData.time.Set(timeRel, MaxTime);
+
+            FoamActivateSyncData data = default;
+            data.syncData = syncData;
+            data.animIndex = animIndex;
+            data.fromHibernate = fromHibernate;
+            _activateSync.Send(data);
+        }
+
+        internal static void Internal_ReceiveFoamActivateSync(FoamActivateSyncData packet)
+        {
+            if (!packet.syncData.target.TryGet(out var enemy)) return;
+
+            FoamManager.ReceiveActivateSyncFoam(enemy.Damage, packet.syncData.amount.Get(MaxFoam), packet.syncData.time.Get(MaxTime), packet.animIndex, packet.fromHibernate);
         }
 
         public static void FoamBubbleSync(PlayerAgent owner, uint syncID, float volumeMod, Foam property)
@@ -229,7 +256,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         public pEnemyAgent target;
         public UFloat16 amount;
         public UFloat16 time;
-        public bool unfoam;
+    }
+
+    public struct FoamActivateSyncData
+    {
+        public FoamSyncData syncData;
+        public byte animIndex;
+        public bool fromHibernate;
     }
 
     public struct FoamBubbleSyncData

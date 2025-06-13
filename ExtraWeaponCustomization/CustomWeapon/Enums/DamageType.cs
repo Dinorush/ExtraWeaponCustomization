@@ -13,16 +13,17 @@ namespace EWC.CustomWeapon.Enums
         Bullet = 1<<2,
         Explosive = 1<<3,
         DOT = 1<<4,
-        Foam = 1<<5,
-        Armor = 1<<6,
-        Flesh = 1<<7,
-        Foamed = 1<<8,
-        Unfoamed = 1<<9,
-        Enemy = 1<<10,
-        Player = 1<<11,
-        Lock = 1<<12,
-        Dead = 1<<13,
-        Terrain = 1<<14 | Dead
+        Shrapnel = 1<<5,
+        Foam = 1<<6,
+        Armor = 1<<7,
+        Flesh = 1<<8,
+        Foamed = 1<<9,
+        Unfoamed = 1<<10,
+        Enemy = 1<<11,
+        Player = 1<<12,
+        Lock = 1<<13,
+        Dead = 1<<14,
+        Terrain = 1<<15 | Dead
     }
 
     public static class DamageTypeConst
@@ -85,6 +86,8 @@ namespace EWC.CustomWeapon.Enums
                 flag |= DamageType.Explosive;
             else if (name.Contains("dot"))
                 flag |= DamageType.DOT;
+            else if (name.Contains("shrapnel"))
+                flag |= DamageType.Shrapnel;
             else if (name.Contains("glue"))
                 flag |= DamageType.Foam;
 
@@ -100,7 +103,7 @@ namespace EWC.CustomWeapon.Enums
             return false;
         }
 
-        public static DamageType GetBaseType(this DamageType type) => type & (DamageType.Bullet | DamageType.Explosive | DamageType.DOT);
+        public static DamageType GetBaseType(this DamageType type) => type & (DamageType.Bullet | DamageType.Explosive | DamageType.DOT | DamageType.Shrapnel);
         public static DamageType GetBaseType(this DamageType[] types)
         {
             DamageType result = (DamageType)~0;

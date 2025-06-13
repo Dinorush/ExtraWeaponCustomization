@@ -1,8 +1,10 @@
 ﻿using Agents;
 using EWC.API;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using FX_EffectSystem;
 using Gear;
 using Player;
@@ -29,12 +31,6 @@ namespace EWC.CustomWeapon.CustomShot
             get => _normalCancel > 0;
             set => _normalCancel += value ? 1 : -1;
         }
-        private int _normalOverride = 0;
-        public bool OverrideNormalShot
-        {
-            get => _normalOverride > 0;
-            set => _normalOverride += value ? 1 : -1;
-        }
         private int _fxCancel = 0;
         public bool CancelAllFX
         {
@@ -42,40 +38,9 @@ namespace EWC.CustomWeapon.CustomShot
             set => _fxCancel += value ? 1 : -1;
         }
 
-        public bool OverrideVanillaShot => true;
-
-        private Properties.Traits.Projectile? _projectile;
-        public Properties.Traits.Projectile? Projectile
-        {
-            get => _projectile;
-            set
-            {
-                _projectile = value;
-                OverrideNormalShot = value != null;
-            }
-        }
-
-        private WallPierce? _wallPierce;
-        public WallPierce? WallPierce
-        {
-            get => _wallPierce;
-            set
-            {
-                _wallPierce = value;
-                OverrideNormalShot = value != null;
-            }
-        }
-
-        private ThickBullet? _thickBullet;
-        public ThickBullet? ThickBullet
-        {
-            get => _thickBullet;
-            set
-            {
-                _thickBullet = value;
-                OverrideNormalShot = value != null;
-            }
-        }
+        public Properties.Traits.Projectile? Projectile { get; set; }
+        public WallPierce? WallPierce { get; set; }
+        public ThickBullet? ThickBullet { get; set; }
 
         private static RaycastHit s_rayHit;
 
@@ -87,22 +52,22 @@ namespace EWC.CustomWeapon.CustomShot
             hitData.fireDir = ray.direction;
             ShotManager.VanillaFireDir = ray.direction;
             if (!CancelNormalShot)
-                Fire(ray, hitData, LayerUtil.MaskFriendly);
+                Fire(ray, _gun.MuzzleAlign.position, hitData, LayerUtil.MaskFriendly);
         }
 
-        public void FireSpread(Ray fireRay, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default)
+        public void FireSpread(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default)
         {
             CalcRayDir(ref fireRay, hitData.angOffsetX, hitData.angOffsetY, hitData.randomSpread);
             hitData.fireDir = fireRay.direction;
-            Fire(fireRay, hitData, friendlyMask, ignoreEnt);
+            Fire(fireRay, fxPos, hitData, friendlyMask, ignoreEnt);
         }
 
-        public void Fire(Ray fireRay, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default)
+        public void Fire(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default)
         {
             if (!_cwc.IsLocal)
             {
                 if (Projectile == null)
-                    FireVisual(fireRay, hitData);
+                    FireVisual(fireRay, fxPos, hitData);
                 return;
             }
 
@@ -112,33 +77,50 @@ namespace EWC.CustomWeapon.CustomShot
                 return;
             }
 
-            FireShotAPI.FirePreShotFiredCallback(hitData, fireRay);
-            new ShotHitbox(this, hitData, fireRay, friendlyMask, ignoreEnt);
+            new ShotHitbox(this, hitData, fireRay, fxPos, friendlyMask, ignoreEnt);
         }
 
-        private void FireVisual(Ray fireRay, HitData hitData)
+        public void FireCustom(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default, CustomShotSettings shotSettings = default)
+        {
+            if (!_cwc.IsLocal)
+            {
+                if (shotSettings.projectile == null)
+                    FireVisual(fireRay, fxPos, hitData);
+                return;
+            }
+
+            if (shotSettings.projectile != null)
+            {
+                shotSettings.projectile.Fire(fireRay, hitData, ignoreEnt);
+                return;
+            }
+
+            new ShotHitbox(this, hitData, fireRay, fxPos, friendlyMask, ignoreEnt, shotSettings);
+        }
+
+        private void FireVisual(Ray fireRay, Vector3 fxPos, HitData hitData)
         {
             FireShotAPI.FirePreShotFiredCallback(hitData, fireRay);
 
-            if (Physics.Raycast(fireRay, out s_rayHit, 20f, LayerUtil.MaskEntityAndWorld))
+            float dist = Math.Min(hitData.maxRayDist, 20f);
+            if (Physics.Raycast(fireRay, out s_rayHit, dist, LayerUtil.MaskEntityAndWorld))
             {
                 FX_Manager.EffectTargetPosition = s_rayHit.point;
                 hitData.RayHit = s_rayHit;
                 BulletWeapon.BulletHit(hitData.ToWeaponHitData(), false);
             }
             else
-                FX_Manager.EffectTargetPosition = fireRay.origin + fireRay.direction * 20f;
+                FX_Manager.EffectTargetPosition = fireRay.origin + fireRay.direction * dist;
 
             FireShotAPI.FireShotFiredCallback(hitData, fireRay.origin, FX_Manager.EffectTargetPosition);
             FX_Manager.PlayLocalVersion = false;
-            BulletWeapon.s_tracerPool.AquireEffect().Play(null, _gun.MuzzleAlign.position, Quaternion.LookRotation(fireRay.direction));
+            BulletWeapon.s_tracerPool.AquireEffect().Play(null, fxPos, Quaternion.LookRotation(fireRay.direction));
         }
 
         public Vector3 CalcRayDir(Vector3 fireDir, float x, float y, float spread)
         {
-            Transform cameraTransform = _cwc.IsLocal ? _gun.Owner.FPSCamera.transform : _gun.transform;
-            Vector3 up = cameraTransform.up;
-            Vector3 right = cameraTransform.right;
+            Vector3 right = Vector3.Cross(Vector3.up, fireDir).normalized;
+            Vector3 up = Vector3.Cross(right, fireDir).normalized;
             if (x != 0)
                 fireDir = Quaternion.AngleAxis(x, up) * fireDir;
             if (y != 0)
@@ -167,30 +149,34 @@ namespace EWC.CustomWeapon.CustomShot
             private readonly HitData _hitData;
             private readonly ShotInfo.Const _origInfo;
             private readonly Ray _ray;
+            private readonly Vector3 _fxPos;
             private readonly WallPierce? _wallPierce;
             private readonly float _hitSize;
             private readonly float _hitSizeFriendly;
             private readonly SearchSetting _friendlySetting;
             private readonly int _friendlyMask;
+            private readonly Func<HitData, bool> _hitFunc;
 
             private int _pierceCount;
 
             private static RaycastHit s_rayHit;
             private const float SightCheckMinSize = 0.5f;
 
-            public ShotHitbox(CustomShotComponent parent, HitData hitData, Ray fireRay, int friendlyMask, IntPtr ignoreEnt)
+            public ShotHitbox(CustomShotComponent parent, HitData hitData, Ray fireRay, Vector3 fxPos, int friendlyMask, IntPtr ignoreEnt)
+                : this(parent, hitData, fireRay, fxPos, friendlyMask, ignoreEnt, new(parent.ThickBullet, parent.WallPierce, pierceLimit: parent._gun.ArchetypeData.PierceLimit())) {}
+
+            public ShotHitbox(CustomShotComponent parent, HitData hitData, Ray fireRay, Vector3 fxPos, int friendlyMask, IntPtr ignoreEnt, CustomShotSettings shotSettings)
             {
                 _parent = parent;
                 _gun = _parent._gun;
                 _owner = _gun.Owner;
 
                 _ray = fireRay;
+                _fxPos = fxPos;
                 _hitData = hitData;
                 _origInfo = _hitData.shotInfo.State;
 
-                _pierceCount = 1;
-                if (_gun.ArchetypeData.PiercingBullets)
-                    _pierceCount = Math.Max(1, _gun.ArchetypeData.PiercingDamageCountLimit);
+                _pierceCount = shotSettings.pierceLimit;
 
                 if (_pierceCount > 1 || ignoreEnt != IntPtr.Zero)
                 {
@@ -199,7 +185,7 @@ namespace EWC.CustomWeapon.CustomShot
                         _hitEnts.Add(ignoreEnt);
                 }
 
-                _wallPierce = _parent.WallPierce;
+                _wallPierce = shotSettings.wallPierce;
                 _hitSize = 0;
                 _hitSizeFriendly = 0;
                 _friendlySetting = SearchSetting.None;
@@ -209,11 +195,13 @@ namespace EWC.CustomWeapon.CustomShot
                 if ((_friendlyMask & LayerUtil.MaskOwner) != 0)
                     _friendlySetting |= SearchSetting.CheckOwner;
 
-                if (parent.ThickBullet != null)
+                if (shotSettings.thickBullet != null)
                 {
-                    _hitSize = parent.ThickBullet.HitSize;
-                    _hitSizeFriendly = parent.ThickBullet.HitSizeFriendly;
+                    _hitSize = shotSettings.thickBullet.HitSize;
+                    _hitSizeFriendly = shotSettings.thickBullet.HitSizeFriendly;
                 }
+
+                _hitFunc = shotSettings.hitFunc;
 
                 Fire();
             }
@@ -235,9 +223,9 @@ namespace EWC.CustomWeapon.CustomShot
                 {
                     FX_Manager.EffectTargetPosition = fxPos;
                     FX_Manager.PlayLocalVersion = false;
-                    BulletWeapon.s_tracerPool.AquireEffect().Play(null, _gun.MuzzleAlign.position, Quaternion.LookRotation(_ray.direction));
+                    BulletWeapon.s_tracerPool.AquireEffect().Play(null, _fxPos, Quaternion.LookRotation(_ray.direction));
                 }
-                _parent._cwc.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, _hitData.shotInfo, _origInfo));
+                _parent._cwc.Invoke(new WeaponShotEndContext(_hitData.damageType.GetBaseType(), _hitData.shotInfo, _origInfo));
             }
 
             public void Fire_Internal(ref Vector3 fxPos, bool hitWall, RaycastHit wallRayHit)
@@ -320,7 +308,7 @@ namespace EWC.CustomWeapon.CustomShot
                     else
                         _hitData.RayHit = hit;
 
-                    if (ShotManager.BulletHit(_hitData))
+                    if (_hitFunc(_hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return;
@@ -332,7 +320,7 @@ namespace EWC.CustomWeapon.CustomShot
                     if (_wallPierce == null)
                     {
                         _hitData.RayHit = wallRayHit;
-                        ShotManager.BulletHit(_hitData);
+                        _hitFunc(_hitData);
                     }
                 }
             }
@@ -378,7 +366,7 @@ namespace EWC.CustomWeapon.CustomShot
                         fxPos = s_rayHit.point;
                     }
 
-                    if (ShotManager.BulletHit(_hitData))
+                    if (_hitFunc(_hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) break;
@@ -395,7 +383,7 @@ namespace EWC.CustomWeapon.CustomShot
                     if (AlreadyHit(_hitData.damageable)) continue;
                     if (_wallPierce == null && !CheckLineOfSight(hit.collider, origin, fxPos, _hitSize, true)) continue;
 
-                    if (ShotManager.BulletHit(_hitData))
+                    if (_hitFunc(_hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) break;

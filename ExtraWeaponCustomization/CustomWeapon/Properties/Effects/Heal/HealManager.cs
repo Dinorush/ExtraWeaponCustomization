@@ -1,4 +1,5 @@
 ﻿using Agents;
+using EWC.Attributes;
 using Player;
 using SNetwork;
 using System;
@@ -7,13 +8,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
 {
     public static class HealManager
     {
-        internal static HealSync Sync { get; private set; } = new();
+        private readonly static HealSync _sync = new();
         private const float SingleVal = 1f / 65535f; // For fixing rounding errors
         private const float FLASH_CONVERSION = 6f;
 
-        internal static void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
-            Sync.Setup();
+            _sync.Setup();
         }
 
         public static void DoHeal(PlayerAgent player, float heal, float cap, HealthMod hBase)
@@ -26,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
             data.player.Set(player);
             data.heal.Set(heal, player.Damage.HealthMax);
             data.cap.Set(cap, player.Damage.HealthMax);
-            Sync.Send(data, SNet_ChannelType.GameNonCritical);
+            _sync.Send(data, SNet_ChannelType.GameNonCritical);
             ReceiveHealLocal(player, heal, cap);
         }
 

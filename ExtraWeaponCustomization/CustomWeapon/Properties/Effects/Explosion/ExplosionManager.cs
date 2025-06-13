@@ -3,6 +3,7 @@ using AIGraph;
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
+using EWC.Attributes;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
@@ -24,10 +25,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         private readonly static ExplosionDamageSync _sync = new();
 
         private const SearchSetting BaseSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
-        public const float MaxRadius = 1024f;
-        public const float MaxStagger = 16384f; // 2^14
 
-        internal static void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
             _sync.Setup();
             ExplosionFXManager.Init();

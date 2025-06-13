@@ -26,6 +26,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private ShotInfo.Const _origInfo;
         private int _friendlyLayer;
         private WallPierce? _wallPierce;
+        private float _baseFalloff;
         private bool _runHitTriggers = true;
         private bool _enabled = false;
 
@@ -61,7 +62,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 #pragma warning restore CS8618
 
-        public void Init(Projectile projBase, HitData? hitData, IntPtr ignoreEnt, out RaycastHit? bounceHit)
+        public void Init(Projectile projBase, Vector3 pos, Vector3 dir, HitData? hitData, IntPtr ignoreEnt, out RaycastHit? bounceHit)
         {
             bounceHit = null;
             if (_enabled || !_base.IsLocal) return;
@@ -88,9 +89,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _runHitTriggers = cwc.RunHitTriggers;
             }
 
-            Vector3 pos = _weapon.Owner.FPSCamera.Position;
-            Vector3 dir = _weapon.Owner.FPSCamera.CameraRayDir;
-
+            s_ray.origin = pos;
+            s_ray.direction = dir;
             _friendlyLayer = 0;
             _searchSettings = SearchSetting.CacheHit | SearchSetting.IgnoreDupes;
             IntPtr ownerPtr = _weapon.Owner.Pointer;
@@ -113,15 +113,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
             }
 
-            _wallPierce = cwc.GetTrait<WallPierce>();
-
-            if (_weapon.ArchetypeData.PiercingBullets && _weapon.ArchetypeData.PiercingDamageCountLimit > 1)
-                _pierceCount = _weapon.ArchetypeData.PiercingDamageCountLimit;
-            else
-                _pierceCount = 1;
-
+            _wallPierce = _settings.WallPierce;
+            _pierceCount = _settings.PierceLimit;
             _ricochetCount = _settings.RicochetCount;
             _hitData = new(hitData!);
+            _baseFalloff = _hitData.falloff;
             _origInfo = _hitData.shotInfo.State;
             if (ignoreEnt != IntPtr.Zero)
                 HitEnts.Add(ignoreEnt);
@@ -287,9 +283,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
             }
 
-            if (hit)
+            if (hit && BulletHit(null))
             {
-                BulletHit(null);
                 s_rayHit.point += (s_ray.origin - s_rayHit.point) * _settings.HitSizeWorld;
                 bounceHit = s_rayHit;
             }
@@ -300,12 +295,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             bounceHit = null;
             if (_settings.HitSizeWorld == 0) return;
 
-            Vector3 pos = _weapon.Owner.FPSCamera.Position;
+            Vector3 pos = s_ray.origin;
             Collider[] colliders = Physics.OverlapSphere(pos, _settings.HitSizeWorld, LayerUtil.MaskWorld);
             if (colliders.Length == 0) return;
 
             s_rayHit.distance = float.MaxValue;
-            s_ray.origin = pos;
             foreach (var collider in colliders)
             {
                 s_ray.direction = collider.transform.position - pos;
@@ -317,15 +311,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (s_rayHit.distance == float.MaxValue) return;
 
-            bounceHit = s_rayHit;
-            BulletHit(null);
+            if (BulletHit(null))
+                bounceHit = s_rayHit;
         }
 
         private void DoDamage(IDamageable damageable)
         {
             if (!ShouldDamage(damageable)) return;
-
-            BulletHit(damageable);
 
             IntPtr basePtr = damageable.GetBaseDamagable().Pointer;
             HitEnts.Add(basePtr);
@@ -333,6 +325,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _hitEntCooldowns.Enqueue((basePtr, Clock.Time + _settings.HitCooldown));
             if (damageable.GetBaseAgent() != null)
                 _ignoreWallsTime = Clock.Time + _settings.HitIgnoreWallsDuration;
+
+            if (!BulletHit(damageable)) return;
 
             if (--_pierceCount <= 0)
                 _base.Die();
@@ -378,23 +372,27 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             FX_Manager.PlayEffect(false, impactFX, null, s_rayHit.point, Quaternion.LookRotation(s_rayHit.normal), isDecalsAllowed);
         }
 
-        private void BulletHit(IDamageable? damageable)
+        private bool BulletHit(IDamageable? damageable)
         {
             _hitData.ResetDamage();
             _hitData.fireDir = (_settings.HitFromOwnerPos ? s_rayHit.point - _weapon.Owner.FPSCamera.Position : s_ray.direction).normalized;
             _hitData.RayHit = s_rayHit;
-            _hitData.SetFalloff(_distanceMoved);
+            _hitData.falloff = _hitData.CalcFalloff(_distanceMoved) * _baseFalloff;
 
             DoImpactFX(damageable);
 
             API.ProjectileAPI.FireProjectileHitCallback(_base, damageable);
 
+            if (_settings.HitFuncOverride != null)
+                return _settings.HitFuncOverride(_hitData, _contextController);
+            
             ToggleRunTriggers(false);
             WeaponPatches.ApplyEWCHit(_settings.CWC, _contextController, _hitData, out bool backstab);
             ToggleRunTriggers(true);
 
             float damage = _hitData.damage * _hitData.falloff;
             damageable?.BulletDamage(damage, _hitData.owner, _hitData.hitPos, _hitData.fireDir, _hitData.RayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
+            return true;
         }
 
         private void ToggleRunTriggers(bool enable)
