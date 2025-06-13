@@ -13,11 +13,13 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Fire Shot: Fires shots at offsets. [Gun]
 - Foam: Applies foam where bullets land. [BulletLanded, Prehit, Hit, Damage, Charge]
 - Health Mod: Modifies the user's health.
+- Health Shot Mod: Applies a modifier to shots/melees depending on the user's current health.
 - Noise: Creates detectable noise where triggers occur.
 - Recoil Mod: Applies a recoil modifier. [Gun]
 - Reference Trigger: Sends Apply and Reset triggers to other properties.
 - Shot Mod: Applies a stat modifier to shots/melees.
 - Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
+- Shrapnel: Causes bullets to fire out from where bullets land. [Gun]
 - Spread Mod: Applies a spread modifier. [Gun]
 - Temp Properties: Temporarily adds another set of properties.
 
@@ -27,6 +29,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Auto Aim: Automatically fire toward targets. [Gun]
 - Auto Trigger: Hold the trigger to fire. [Semi, Burst]
 - Backstab Multi: Applies a multiplier to backstab damage.
+- Charge Exponent: Modifies the exponent applied to melee charge attacks. [Melee]
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
 - Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate.
 - Hitmarker Cooldown: Sets a cooldown on how frequently the weapon can generate hitmarkers.
