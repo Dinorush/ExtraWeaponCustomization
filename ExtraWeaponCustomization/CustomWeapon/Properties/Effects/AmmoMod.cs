@@ -20,6 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
         public bool UseRawAmmo { get; private set; } = false;
+        public bool BypassReserveCap { get; private set; } = false;
         public InventorySlot ReceiverSlot { get; private set; } = InventorySlot.None;
 
         private float _clipBuffer = 0;
@@ -99,13 +100,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
 
             float reserveCost = reserveChange * costOfBullet;
-            if (slotAmmo.IsFull)
+            if (BypassReserveCap || reserveCost < 0)
             {
-                if (reserveCost < 0)
-                    slotAmmo.AmmoInPack = Math.Max(0, slotAmmo.AmmoInPack + reserveCost);
+                slotAmmo.AmmoInPack = Math.Max(slotAmmo.AmmoInPack + reserveCost, 0);
             }
-            else
+            else if (!slotAmmo.IsFull)
+            {
                 slotAmmo.AmmoInPack = Math.Clamp(slotAmmo.AmmoInPack + reserveCost, 0, slotAmmo.AmmoMaxCap);
+            }
 
             slotAmmo.OnBulletsUpdateCallback?.Invoke(slotAmmo.BulletsInPack);
             ammoStorage.NeedsSync = true;
@@ -121,6 +123,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
+            writer.WriteBoolean(nameof(BypassReserveCap), BypassReserveCap);
             writer.WriteString(nameof(ReceiverSlot), SlotToName(ReceiverSlot));
             SerializeTrigger(writer);
             writer.WriteEndObject();
@@ -149,6 +152,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "userawammo":
                 case "useammo":
                     UseRawAmmo = reader.GetBoolean();
+                    break;
+                case "bypassreservecap":
+                case "bypasscap":
+                    BypassReserveCap = reader.GetBoolean();
                     break;
                 case "receiverslot":
                 case "slot":

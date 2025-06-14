@@ -24,6 +24,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
         public bool UseRawAmmo { get; private set; } = false;
+        public bool BypassReserveCap { get; private set; } = false;
         public bool AllowReload { get; private set; } = true;
         public bool ActiveInHolster { get; private set; } = true;
         public bool ResetWhileFull { get; private set; } = true;
@@ -134,7 +135,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     }
 
                     if (ReserveRegen > 0)
-                        addReserve = currPack < maxPack;
+                        addReserve = BypassReserveCap || currPack < maxPack;
                     else if (ReserveRegen < 0)
                     {
                         addReserve = currPack > costOfBullet;
@@ -182,13 +183,14 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
 
                 float reserveCost = reserveChange * costOfBullet;
-                if (_slotAmmo.IsFull)
+                if (BypassReserveCap || reserveCost < 0)
                 {
-                    if (reserveCost < 0)
-                        _slotAmmo.AmmoInPack = Math.Max(0, currPack + reserveCost);
+                    _slotAmmo.AmmoInPack = Math.Max(currPack + reserveCost, 0);
                 }
-                else
+                else if (!_slotAmmo.IsFull)
+                {
                     _slotAmmo.AmmoInPack = Math.Clamp(currPack + reserveCost, 0, maxPack);
+                }
 
                 _slotAmmo.OnBulletsUpdateCallback?.Invoke(_slotAmmo.BulletsInPack);
                 _ammoStorage!.NeedsSync = true;
@@ -216,6 +218,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
+            writer.WriteBoolean(nameof(BypassReserveCap), BypassReserveCap);
             writer.WriteBoolean(nameof(AllowReload), AllowReload);
             writer.WriteBoolean(nameof(ActiveInHolster), ActiveInHolster);
             writer.WriteBoolean(nameof(ResetWhileFull), ResetWhileFull);
@@ -249,6 +252,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "userawammo":
                 case "useammo":
                     UseRawAmmo = reader.GetBoolean();
+                    break;
+                case "bypassreservecap":
+                case "bypasscap":
+                    BypassReserveCap = reader.GetBoolean();
                     break;
                 case "allowreload":
                     AllowReload = reader.GetBoolean();
