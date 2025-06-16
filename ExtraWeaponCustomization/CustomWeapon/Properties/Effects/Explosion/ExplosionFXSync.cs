@@ -12,6 +12,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             ExplosionFXManager.Internal_ReceiveExplosionFX(
                 packet.position,
+                packet.normal.Value,
                 property
                 );
         }

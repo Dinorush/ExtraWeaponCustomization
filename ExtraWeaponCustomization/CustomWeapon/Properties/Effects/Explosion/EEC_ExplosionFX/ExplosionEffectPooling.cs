@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
+﻿using EWC.Attributes;
+using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX.Handlers;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,7 +9,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX
     {
         private static readonly Queue<ExplosionEffectHandler> _pool = new();
 
-        internal static void Initialize()
+        [InvokeOnAssetLoad]
+        private static void Initialize()
         {
             for (int i = 0; i < 30; i++)
             {

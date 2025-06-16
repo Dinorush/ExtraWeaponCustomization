@@ -30,14 +30,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         private static void Init()
         {
             _sync.Setup();
-            ExplosionFXManager.Init();
         }
 
-        public static void DoExplosion(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, ShotInfo? triggerInfo = null)
+        public static void DoExplosion(Vector3 position, Vector3 direction, Vector3 normal, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, ShotInfo? triggerInfo = null)
         {
             if (!source.IsLocallyOwned) return;
 
-            ExplosionFXManager.DoExplosionFX(position, eBase);
+            ExplosionFXManager.DoExplosionFX(position, normal, eBase);
             DoExplosionDamage(position, direction, source, falloffMod, eBase, triggerAmt, triggerInfo);
         }
 

@@ -36,6 +36,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageOwner { get; private set; } = true;
         public bool DamageLocks { get; private set; } = true;
         public uint SoundID { get; private set; } = EVENTS.STICKYMINEEXPLODE;
+        public bool EnableMineFX { get; private set; } = false;
         public Color GlowColor { get; private set; } = new(1, 0.2f, 0, 1);
         public float GlowIntensity { get; private set; } = 5f;
         public float GlowDuration { get; private set; } = 0.1f;
@@ -75,12 +76,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                     else
                         position += hitContext.Normal * WallHitBuffer;
 
-                    ExplosionManager.DoExplosion(position, hitContext.Direction, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt, hitContext.ShotInfo.Orig);
+                    ExplosionManager.DoExplosion(position, hitContext.Direction, hitContext.Normal, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt, hitContext.ShotInfo.Orig);
                 }
                 else
                 {
                     Player.PlayerAgent owner = CWC.Weapon.Owner;
-                    ExplosionManager.DoExplosion(owner.FPSCamera.Position, owner.FPSCamera.CameraRayDir, owner, 1f, this, tContext.triggerAmt);
+                    ExplosionManager.DoExplosion(owner.FPSCamera.Position, owner.FPSCamera.CameraRayDir, owner.FPSCamera.CameraRayDir, owner, 1f, this, tContext.triggerAmt);
                 }
             }
         }
@@ -108,6 +109,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             SerializeTrigger(writer);
             writer.WriteNumber(nameof(SoundID), SoundID);
+            writer.WriteBoolean(nameof(EnableMineFX), EnableMineFX);
             EWCJson.Serialize(writer, nameof(GlowColor), GlowColor);
             writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowDuration), GlowDuration);
@@ -200,6 +202,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                         SoundID = AkSoundEngine.GetIDFromString(reader.GetString()!);
                     else
                         SoundID = reader.GetUInt32();
+                    break;
+                case "enableminefx":
+                case "minefx":
+                    EnableMineFX = reader.GetBoolean();
                     break;
                 case "glowcolor":
                 case "color":

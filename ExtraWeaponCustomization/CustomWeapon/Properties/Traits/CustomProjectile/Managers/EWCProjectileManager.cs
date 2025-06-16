@@ -23,7 +23,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         [InvokeOnAssetLoad]
         private static void Init()
         {
-            Shooter.Init();
             _destroySync.Setup();
             _targetSync.Setup();
             _bounceSync.Setup();

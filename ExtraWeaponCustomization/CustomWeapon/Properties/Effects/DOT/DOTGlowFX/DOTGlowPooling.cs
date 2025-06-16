@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.ObjectWrappers;
+﻿using EWC.Attributes;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Hit.DOT.DOTGlowFX;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,7 +12,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private static readonly Dictionary<DamageOverTime, Dictionary<BaseDamageableWrapper, DOTGlowHandler>> _activeHandlers = new();
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
-        internal static void Initialize()
+        [InvokeOnAssetLoad]
+        private static void Initialize()
         {
             for (int i = 0; i < 30; i++)
             {
@@ -19,7 +21,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             }
         }
 
-        internal static void Reset()
+        [InvokeOnCleanup]
+        private static void Reset()
         {
             _activeHandlers.Clear();
         }

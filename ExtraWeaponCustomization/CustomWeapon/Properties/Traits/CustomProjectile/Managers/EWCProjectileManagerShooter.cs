@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using SNetwork;
 using EWC.Utils;
 using System;
+using EWC.Attributes;
 
 namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
@@ -12,7 +13,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         private readonly Dictionary<ProjectileType, Queue<EWCProjectileComponentShooter>> _pools = new();
         private static readonly EWCProjectileSyncShooter s_shooterSync = new();
 
-        public void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
             s_shooterSync.Setup();
         }

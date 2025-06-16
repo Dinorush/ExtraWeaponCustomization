@@ -1,6 +1,8 @@
 ﻿using EWC.API;
+using EWC.Attributes;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX;
 using EWC.Utils.Extensions;
+using FX_EffectSystem;
 using Player;
 using SNetwork;
 using UnityEngine;
@@ -10,26 +12,30 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
     internal static class ExplosionFXManager
     {
         private readonly static ExplosionFXSync _sync = new();
+        private static FX_Pool _mineFXPool = null!;
 
         private static float _lastSoundTime = 0f;
         private static int _soundShotOverride = 0;
+        private static Quaternion _mineFXRotation;
 
         public const float MaxGlowDuration = 50f;
         public const float MaxGlowIntensity = 512f;
 
-        internal static void Init()
+        [InvokeOnAssetLoad]
+        private static void Init()
         {
             _sync.Setup();
-            ExplosionEffectPooling.Initialize();
+            _mineFXPool = FX_Manager.GetEffectPool(AssetShards.AssetShardManager.GetLoadedAsset<GameObject>("Assets/AssetPrefabs/FX_Effects/FX_Tripmine.prefab"));
         }
 
-        public static void DoExplosionFX(Vector3 position, Explosive eBase)
+        public static void DoExplosionFX(Vector3 position, Vector3 normal, Explosive eBase)
         {
             ExplosionFXData fxData = new() { position = position, propertyID = eBase.SyncPropertyID };
-            _sync.Send(fxData, null, SNet_ChannelType.GameNonCritical);
+            fxData.normal.Value = normal;
+            _sync.Send(fxData);
         }
 
-        internal static void Internal_ReceiveExplosionFX(Vector3 position, Explosive eBase)
+        internal static void Internal_ReceiveExplosionFX(Vector3 position, Vector3 normal, Explosive eBase)
         {
             // Sound
             if (Configuration.PlayExplosionSFX)
@@ -44,17 +50,26 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             }
 
             // Lighting
-            if (Configuration.ShowExplosionEffect && eBase.Radius > 0 && eBase.GlowDuration > 0 && eBase.GlowIntensity > 0)
+            if (Configuration.ShowExplosionEffect && eBase.Radius > 0)
             {
-                ExplosionEffectPooling.TryDoEffect(new ExplosionEffectData()
+                if (eBase.EnableMineFX)
                 {
-                    position = position,
-                    flashColor = eBase.GlowColor,
-                    intensity = eBase.GlowIntensity,
-                    range = eBase.Radius,
-                    duration = eBase.GlowDuration,
-                    fadeDuration = eBase.GlowFadeDuration
-                });
+                    _mineFXRotation.SetLookRotation(normal);
+                    _mineFXPool.AquireEffect().Play(null, position, _mineFXRotation);
+                }
+
+                if (eBase.GlowDuration > 0 && eBase.GlowIntensity > 0)
+                {
+                    ExplosionEffectPooling.TryDoEffect(new ExplosionEffectData()
+                    {
+                        position = position,
+                        flashColor = eBase.GlowColor,
+                        intensity = eBase.GlowIntensity,
+                        range = eBase.Radius,
+                        duration = eBase.GlowDuration,
+                        fadeDuration = eBase.GlowFadeDuration
+                    });
+                }
             }
 
             // Screen Shake
@@ -79,6 +94,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
     public struct ExplosionFXData
     {
         public Vector3 position;
+        public LowResVector3_Normalized normal;
         public ushort propertyID;
     }
 }
