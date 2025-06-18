@@ -42,17 +42,6 @@ namespace EWC.Patches.Melee
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.OnUnWield))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void UpdateWeaponUnwielded(MeleeWeaponFirstPerson __instance)
-        {
-            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
-            cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
-        }
-
-        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.OnUnWield))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
         private static void ClearCharge(MeleeWeaponFirstPerson __instance)
         {
             CachedCharge = 0f;

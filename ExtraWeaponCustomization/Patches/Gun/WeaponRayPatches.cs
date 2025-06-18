@@ -43,12 +43,15 @@ namespace EWC.Patches.Gun
 
             s_hitData.Setup(weaponRayData, cwc);
             cwc.Invoke(new WeaponPreRayContext(s_hitData, originPos));
-            float mod = cwc.SpreadController!.Value;
-            if (mod != 1f)
+            if (cwc.IsLocal)
             {
-                s_hitData.randomSpread *= mod;
-                s_hitData.angOffsetX *= mod;
-                s_hitData.angOffsetY *= mod;
+                float mod = cwc.SpreadController!.Value;
+                if (mod != 1f)
+                {
+                    s_hitData.randomSpread *= mod;
+                    s_hitData.angOffsetX *= mod;
+                    s_hitData.angOffsetY *= mod;
+                }
             }
 
             cwc.ShotComponent!.FireVanilla(s_hitData, originPos);
