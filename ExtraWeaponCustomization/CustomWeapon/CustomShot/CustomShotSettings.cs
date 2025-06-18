@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.CustomShot
             this.pierceLimit = pierceLimit;
         }
 
-        public CustomShotSettings Clone(Func<HitData, bool>? hitFunc = null)
+        public readonly CustomShotSettings Clone(Func<HitData, bool>? hitFunc = null)
         {
             return new(
                 (ThickBullet?)thickBullet?.Clone(),

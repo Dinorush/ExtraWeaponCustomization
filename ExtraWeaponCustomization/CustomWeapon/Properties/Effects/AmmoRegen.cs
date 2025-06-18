@@ -92,7 +92,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             return true;
         }
 
-        public IEnumerator Update()
+        private IEnumerator Update()
         {
             _lastTickTime = Clock.Time;
             
