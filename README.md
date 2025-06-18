@@ -20,6 +20,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Shot Mod: Applies a stat modifier to shots/melees.
 - Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
 - Shrapnel: Causes bullets to fire out from where bullets land. [Gun]
+- Speed Mod: Applies a modifier to the user's movement speed.
 - Spread Mod: Applies a spread modifier. [Gun]
 - Temp Properties: Temporarily adds another set of properties.
 
