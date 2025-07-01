@@ -1,14 +1,15 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.JSON;
 using EWC.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public sealed class ActivateHolder : TriggerHolder
     {
-        public float ApplyDelay { get; private set; } = 0f;
         public float CooldownOnApply { get; private set; } = 0f;
         public uint CooldownOnApplyThreshold { get; private set; } = 1;
         public bool ApplyAboveThreshold { get; private set; } = false;
@@ -16,6 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private readonly List<TriggerContext> _accumulatedTriggers = new();
         private uint _applyCount = 0;
+        private List<float>? _applyDelays;
         private Queue<DelayedCallback>? _delayedApplies;
 
         public ActivateHolder(TriggerCoordinator parent, params ITrigger[] triggers) : base(parent, triggers) { }
@@ -23,6 +25,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public override TriggerHolder Clone(TriggerCoordinator parent)
         {
             var copy = (ActivateHolder) base.Clone(parent);
+            copy._applyDelays = _applyDelays;
             copy._delayedApplies = _delayedApplies != null ? new() : null;
             return copy;
         }
@@ -75,15 +78,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private void DoApply(List<TriggerContext> triggerContexts)
         {
-            if (ApplyDelay > 0f)
+            if (_applyDelays != null)
             {
-                var callback = new DelayedCallback(ApplyDelay, () =>
+                foreach (var delay in _applyDelays)
                 {
-                    Caller?.TriggerApply(triggerContexts);
-                    _delayedApplies!.Dequeue();
-                });
-                _delayedApplies!.Enqueue(callback);
-                StartDelayedCallback(callback);
+                    var callback = new DelayedCallback(delay, () =>
+                    {
+                        Caller?.TriggerApply(triggerContexts);
+                        _delayedApplies!.Dequeue();
+                    });
+                    _delayedApplies!.Enqueue(callback);
+                    StartDelayedCallback(callback);
+                }
             }
             else
                 Caller?.TriggerApply(triggerContexts);
@@ -97,7 +103,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _applyCount = 0;
             }
 
-            if (ApplyDelay > 0)
+            if (_delayedApplies != null)
             {
                 while (_delayedApplies!.TryDequeue(out var callback))
                     callback.Cancel();
@@ -136,11 +142,22 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             base.DeserializeProperty(property, ref reader);
             switch (property)
             {
+                case "applydelays":
                 case "applydelay":
+                case "delays":
                 case "delay":
-                    ApplyDelay = reader.GetSingle();
-                    if (ApplyDelay > 0f)
+                    if (reader.TokenType == JsonTokenType.Number)
+                        _applyDelays = new(1) { reader.GetSingle() };
+                    else
+                        _applyDelays = EWCJson.Deserialize<List<float>>(ref reader)!;
+
+                    if (_applyDelays.Count == 0 || !_applyDelays.Any(val => val > 0))
+                        _applyDelays = null;
+                    else
+                    {
+                        _applyDelays.Sort();
                         _delayedApplies = new();
+                    }
                     break;
                 case "cooldownonapply":
                     CooldownOnApply = reader.GetSingle();

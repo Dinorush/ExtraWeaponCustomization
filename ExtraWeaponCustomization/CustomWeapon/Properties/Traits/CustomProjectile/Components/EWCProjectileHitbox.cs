@@ -108,7 +108,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 foreach (PlayerAgent agent in PlayerManager.PlayerAgentsInLevel)
                 {
                     Vector3 diff = agent.Position - pos;
-                    if (agent.Pointer != ownerPtr && Vector3.Dot(dir, diff) > 0)
+                    if (agent.Pointer != ownerPtr && Vector3.Dot(dir, diff) < 0)
                         _initialPlayers.Add(agent.Pointer);
                 }
             }
@@ -223,7 +223,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                         s_hits.Add(hit);
 
                     // Get all enemies/locks ahead of the projectile
-                    RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSizeFriendly, s_velMagnitude, LayerUtil.MaskFriendly);
+                    RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSizeFriendly, s_velMagnitude, _friendlyLayer);
                     for (int i = 0; i < castHits.Length; i++)
                     {
                         if (castHits[i].distance > 0) // Ignore anything overlapping the sphere (internal search hits these)
