@@ -273,13 +273,13 @@ namespace EWC.CustomWeapon
         {
             foreach (var property in list.Properties)
             {
-                if (property is TempProperties tempProperties)
-                    RegisterSyncedProperties_Recurse(tempProperties.Properties);
-                else if (property is ISyncProperty syncProperty)
+                if (property is ISyncProperty syncProperty)
                 {
-                    syncProperty.SyncPropertyID = (ushort) _syncedProperties.Count;
+                    syncProperty.SyncPropertyID = (ushort)_syncedProperties.Count;
                     _syncedProperties.Add(syncProperty);
                 }
+                if (property is IReferenceHolder refHolder)
+                    RegisterSyncedProperties_Recurse(refHolder.Properties);
             }
         }
 
