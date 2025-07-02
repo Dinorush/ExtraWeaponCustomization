@@ -79,16 +79,15 @@ namespace EWC.Patches.Melee
             if (_cachedCWC == null) return;
             ShotManager.AdvanceGroupMod(_cachedCWC);
 
-            HitData.shotInfo.Reset(weapon.m_damageToDeal, weapon.m_precisionMultiToDeal, weapon.m_staggerMultiToDeal, false);
-            HitData.shotInfo.NewShot(_cachedCWC);
             CachedCharge = charge;
-
             if (charge > 0 && charge < 1)
             {
                 var context = _cachedCWC.Invoke(new WeaponChargeContext());
                 if (context.Exponent != 3)
                     weapon.SetNextDamageToDeal(eMeleeWeaponDamage.Heavy, (float)Math.Pow(charge, context.Exponent));
             }
+            HitData.shotInfo.Reset(weapon.m_damageToDeal, weapon.m_precisionMultiToDeal, weapon.m_staggerMultiToDeal, false);
+            HitData.shotInfo.NewShot(_cachedCWC);
         }
 
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.DoAttackDamage))]

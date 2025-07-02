@@ -35,6 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = true;
         public bool DamageLocks { get; private set; } = true;
+        public bool HitClosestFirst { get; private set; } = false;
         public uint SoundID { get; private set; } = EVENTS.STICKYMINEEXPLODE;
         public bool EnableMineFX { get; private set; } = false;
         public Color GlowColor { get; private set; } = new(1, 0.2f, 0, 1);
@@ -107,6 +108,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
+            writer.WriteBoolean(nameof(HitClosestFirst), HitClosestFirst);
             SerializeTrigger(writer);
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WriteBoolean(nameof(EnableMineFX), EnableMineFX);
@@ -195,6 +197,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "damagelocks":
                     DamageLocks = reader.GetBoolean();
+                    break;
+                case "hitclosestfirst":
+                case "closestfirst":
+                    HitClosestFirst = reader.GetBoolean();
                     break;
                 case "soundid":
                 case "sound":

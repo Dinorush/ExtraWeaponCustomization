@@ -70,6 +70,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             if (explosiveBase.DamageLocks)
                 hits.AddRange(SearchUtil.GetLockHitsInRange(ray, explosiveBase.Radius, 180f, searchSetting));
 
+            if (explosiveBase.HitClosestFirst)
+                hits.Sort(SortUtil.Rayhit);
+
             ShotInfo shotInfo;
             if (triggerInfo != null)
                 shotInfo = new(triggerInfo, true, explosiveBase.UseParentShotMod);
