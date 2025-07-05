@@ -14,7 +14,7 @@ using EWC.Attributes;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.5.8")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.5.9")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MSAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
@@ -31,6 +31,7 @@ internal sealed class EntryPoint : BasePlugin
     public static bool Loaded { get; private set; } = false;
 
     private IEnumerable<MethodInfo> _cleanupCallbacks = null!;
+    private IEnumerable<MethodInfo> _checkpointCallbacks = null!;
     private IEnumerable<MethodInfo> _enterCallbacks = null!;
 
     public override void Load()
@@ -48,10 +49,17 @@ internal sealed class EntryPoint : BasePlugin
         CacheFrequentCallbacks();
         InvokeCallbacks<InvokeOnLoadAttribute>();
 
+        Patches.SNet.SyncManagerPatches.OnCheckpointReload += OnCheckpointReload;
         LevelAPI.OnLevelCleanup += LevelAPI_OnLevelCleanup;
         LevelAPI.OnEnterLevel += LevelAPI_OnLevelEnter;
         AssetAPI.OnStartupAssetsLoaded += AssetAPI_OnStartupAssetsLoaded;
         EWCLogger.Log("Loaded " + MODNAME);
+    }
+
+    private void OnCheckpointReload()
+    {
+        foreach (var callback in _checkpointCallbacks)
+            callback.Invoke(null, null);
     }
 
     private void LevelAPI_OnLevelCleanup()
@@ -76,10 +84,17 @@ internal sealed class EntryPoint : BasePlugin
     {
         Type[] typesFromAssembly = AccessTools.GetTypesFromAssembly(GetType().Assembly);
         var methods = typesFromAssembly.SelectMany(AccessTools.GetDeclaredMethods);
-        _cleanupCallbacks = from method in methods
-                            where method.GetCustomAttribute<InvokeOnCleanupAttribute>() != null
-                            where method.IsStatic
-                            select method;
+        var cleanups = from method in methods
+                            let attr = method.GetCustomAttribute<InvokeOnCleanupAttribute>()
+                            where attr != null && method.IsStatic
+                            select new { Method = method, Attribute = attr };
+
+        _cleanupCallbacks = from pair in cleanups select pair.Method;
+
+        _checkpointCallbacks = from pair in cleanups
+                               where pair.Attribute.OnCheckpoint
+                               select pair.Method;
+
         _enterCallbacks = from method in methods
                           where method.GetCustomAttribute<InvokeOnEnterAttribute>() != null
                           where method.IsStatic

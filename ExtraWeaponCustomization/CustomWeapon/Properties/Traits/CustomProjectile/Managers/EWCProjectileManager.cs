@@ -28,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             _bounceSync.Setup();
         }
 
-        [InvokeOnCleanup]
+        [InvokeOnCleanup(onCheckpoint: true)]
         private static void Reset()
         {
             Shooter.Reset();

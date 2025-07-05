@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             }
         }
 
-        [InvokeOnCleanup]
+        [InvokeOnCleanup(onCheckpoint: true)]
         private static void Reset()
         {
             _activeHandlers.Clear();

@@ -6,5 +6,10 @@ namespace EWC.Attributes
     [AttributeUsage(AttributeTargets.Method)]
     internal sealed class InvokeOnCleanupAttribute : Attribute
     {
+        public bool OnCheckpoint { get; set; }
+        public InvokeOnCleanupAttribute(bool onCheckpoint = false)
+        {
+            OnCheckpoint = onCheckpoint;
+        }
     }
 }
