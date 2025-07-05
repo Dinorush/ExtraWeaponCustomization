@@ -78,6 +78,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             return DotBase.EndDamageFrac * tick + (DotBase.EndDamageFrac - 1) * Math.Pow(_totalTicks - tick, _expoPlusOne) / _expoDivisor;
         }
 
+        public float GetRemainingDamage() => (float) (_damagePerTick * (ComputeDamageMod(_totalTicks) - ComputeDamageMod(_tick)));
+
         public void DoDamage(IDamageable damageable)
         {
             if (!CanTick || Expired) return;

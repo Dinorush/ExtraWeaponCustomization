@@ -130,7 +130,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             float precisionMulti = PrecisionDamageMulti;
             float staggerMulti = StaggerDamageMulti;
 
-
             ShotInfo info = new(context.ShotInfo.Orig, true, UseParentShotMod);
             damage *= info.XpMod;
 
@@ -156,9 +155,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     queue = _lastDOTs[TempWrapper];
                     if (queue.Count >= StackLimit)
                     {
-                        // If the first DOT hasn't even done damage, no point in adding a new one
+                        // If the new instance won't do more damage than the previous, no point in adding a new one
                         DOTInstance firstDot = queue.Peek();
-                        if (!firstDot.Started)
+                        if (damage <= firstDot.GetRemainingDamage())
                             return;
 
                         nextTickTime = firstDot.NextTickTime;
