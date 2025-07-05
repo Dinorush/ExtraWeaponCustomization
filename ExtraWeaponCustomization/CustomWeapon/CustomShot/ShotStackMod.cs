@@ -37,6 +37,11 @@ namespace EWC.CustomWeapon.CustomShot
             }
             else
                 _modsPerTarget = null;
+
+            _needRecompute = mod._needRecompute;
+            _needType = mod._needType;
+            _lastDamPtr = mod._lastDamPtr;
+            _lastType = mod._lastType;
         }
 
         public void AddMod(TriggerMod triggerMod, float mod, IDamageable? damageable = null, params DamageType[] types) => AddMod(triggerMod, mod, triggerMod.Cap, triggerMod.StackType, triggerMod.StackLayer, damageable, types);
