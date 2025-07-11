@@ -177,6 +177,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
 
             ProcessReceivedDOTDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
+            DamageSyncWrapper.RunDamageSync(target, damageLimb ? limbID : -1);
+
             DamageAPI.FirePostDOTCallbacks(damage, target, limb, source);
         }
 

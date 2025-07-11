@@ -32,6 +32,7 @@
 	<ItemGroup>
 		<Reference Include="$(PluginsFolder)/GTFO-API.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\MTFO.dll" Private="false" />
+		<Reference Include="$(PluginsFolder)\**\DamageSync.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\KillIndicatorFix.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\GTFuckingXP.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\EndskApi.dll" Private="false" />
