@@ -16,9 +16,10 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IGunProperty,
         IWeaponProperty<WeaponOwnerSetContext>,
-        IWeaponProperty<WeaponEnableContext>,
-        IWeaponProperty<WeaponDisableContext>,
+        IWeaponProperty<WeaponWieldContext>,
+        IWeaponProperty<WeaponUnWieldContext>,
         IWeaponProperty<WeaponUpdateContext>,
+        IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>,
@@ -50,6 +51,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private EnemyAgent? _target;
         private bool _hasTarget = false;
         private Vector3 _lastTargetPos;
+        private bool _wielded;
         private float _progress;
         private float _lastUpdateTime;
 
@@ -115,12 +117,28 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             _reticle = AutoAimReticle.Reticle;
             _camera = CWC.Weapon.Owner.FPSCamera;
+            if (_wielded)
+                OnEnable();
+        }
+
+        public void Invoke(WeaponWieldContext _)
+        {
+            _wielded = true;
             OnEnable();
         }
 
-        public void Invoke(WeaponEnableContext _) => OnEnable();
+        public void Invoke(WeaponUnWieldContext _)
+        {
+            _wielded = false;
+            OnDisable();
+        }
 
-        public void Invoke(WeaponDisableContext _) => OnDisable();
+        public void Invoke(WeaponSetupContext _)
+        {
+            if (_wielded)
+                OnEnable();
+        }
+
         public void Invoke(WeaponClearContext _) => OnDisable();
 
         public void Invoke(WeaponUpdateContext _) 
