@@ -1,7 +1,9 @@
 ﻿using Agents;
 using EWC.CustomWeapon;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.KillTracker;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
@@ -72,15 +74,28 @@ namespace EWC.Patches
 
             IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(weaponRayData.rayHit);
             IDamageable? damBase = damageable != null ? damageable.GetBaseDamagable() : damageable;
-            if (damBase != null && damBase.GetHealthRel() <= 0) return;
-
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
 
-            CustomWeaponComponent? cwc = weaponRayData.owner.Inventory.WieldedItem?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
+            if (ShotManager.FiringWeapon == null) return;
+
+            CustomWeaponComponent? cwc = ShotManager.FiringWeapon.GetComponent<CustomWeaponComponent>();
+            HitData data = new(weaponRayData, cwc, additionalDis);
+            if (cwc == null)
+            {
+                if (data.damageType.HasFlag(DamageType.Dead)) return;
+
+                data.ResetDamage();
+                if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Damage, data.damageType, DebuffManager.DefaultGroupSet, out var damageMod))
+                    data.damage *= damageMod.Value;
+                if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Precision, data.damageType, DebuffManager.DefaultGroupSet, out var precisionMod))
+                    data.precisionMulti *= precisionMod.Value;
+                if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Stagger, data.damageType, DebuffManager.DefaultGroupSet, out var staggerMod))
+                    data.staggerMulti *= staggerMod.Value;
+                data.Apply();
+                return;
+            }
 
             // Can't cache a single object since this function might be called by triggers during a previous call
-            HitData data = new(weaponRayData, cwc, additionalDis);
             ApplyEWCHit(cwc, data, out allowDirectionalBonus);
         }
 

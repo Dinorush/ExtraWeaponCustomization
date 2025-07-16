@@ -98,9 +98,6 @@ namespace EWC.Patches.Melee
             if (isPush || _cachedCWC == null) return;
 
             HitData.Setup(__instance, data);
-            IDamageable? damageable = HitData.damageable;
-            IDamageable? baseDamageable = damageable?.GetBaseDamagable();
-            if (baseDamageable != null && baseDamageable.GetHealthRel() <= 0) return;
 
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;

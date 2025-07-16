@@ -47,7 +47,7 @@ namespace EWC.Utils
 
 #pragma warning disable CS8618
         // All used fields are set
-        public HitData(WeaponHitData hitData, CustomWeaponComponent cwc, float additionalDist = 0) : this(DamageType.Bullet) => Setup(hitData, cwc, additionalDist);
+        public HitData(WeaponHitData hitData, CustomWeaponComponent? cwc, float additionalDist = 0) : this(DamageType.Bullet) => Setup(hitData, cwc, additionalDist);
         public HitData(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData) : this(DamageType.Bullet) => Setup(melee, hitData);
         public HitData(HitData data)
         {
@@ -80,7 +80,7 @@ namespace EWC.Utils
         }
 #pragma warning restore CS8618
 
-        public void Setup(WeaponHitData hitData, CustomWeaponComponent cwc, float additionalDist = 0)
+        public void Setup(WeaponHitData hitData, CustomWeaponComponent? cwc, float additionalDist = 0)
         {
             _weaponHitData = hitData;
             _meleeWeapon = null;

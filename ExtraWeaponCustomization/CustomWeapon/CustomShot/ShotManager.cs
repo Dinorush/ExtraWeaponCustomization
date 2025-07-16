@@ -20,7 +20,7 @@ namespace EWC.CustomWeapon.CustomShot
 
         private static (IntPtr ptr, ShotInfo info) s_vanillaShotInfo = (IntPtr.Zero, new ShotInfo());
         private static bool s_hasRanShotEnd = true;
-        public static ShotInfo GetVanillaShotInfo(Weapon.WeaponHitData vanillaData, CustomWeaponComponent cwc)
+        public static ShotInfo GetVanillaShotInfo(Weapon.WeaponHitData vanillaData, CustomWeaponComponent? cwc)
         {
             if (vanillaData.Pointer != s_vanillaShotInfo.ptr)
             {
@@ -38,20 +38,20 @@ namespace EWC.CustomWeapon.CustomShot
                     vanillaData.damageFalloff = archData.DamageFalloff;
                 }
 
-                s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(vanillaData.damage, vanillaData.precisionMulti, vanillaData.staggerMulti, cwc.IsGun));
+                s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(vanillaData.damage, vanillaData.precisionMulti, vanillaData.staggerMulti, isGun: true));
                 s_vanillaShotInfo.info.GroupMod = CurrentGroupMod;
-                cwc.Invoke(new WeaponShotInitContext(s_vanillaShotInfo.info.Mod));
+                cwc?.Invoke(new WeaponShotInitContext(s_vanillaShotInfo.info.Mod));
             }
             return s_vanillaShotInfo.info;
         }
 
         public static void CancelHandleShotEnd() => s_hasRanShotEnd = true;
-        public static void RunVanillaShotEnd(CustomWeaponComponent cwc)
+        public static void RunVanillaShotEnd(CustomWeaponComponent? cwc)
         {
             if (s_hasRanShotEnd) return;
 
             s_hasRanShotEnd = true;
-            cwc.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, s_vanillaShotInfo.info, null));
+            cwc?.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, s_vanillaShotInfo.info, null));
         }
 
         public static bool BulletHit(HitData data)

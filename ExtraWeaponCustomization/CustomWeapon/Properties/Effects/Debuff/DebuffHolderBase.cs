@@ -5,8 +5,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
 {
     public abstract class DebuffHolderBase<T> where T : IDebuffGroup
     {
+        private static readonly HashSet<uint> s_emptyGroup = new();
         protected readonly Dictionary<uint, T> Groups = new();
-        private HashSet<uint> _currentGroup = DebuffManager.DefaultGroupSet;
+        private HashSet<uint> _currentGroup = s_emptyGroup;
         protected readonly HashSet<T> ActiveGroups = new();
         protected bool NeedRecompute = false;
 

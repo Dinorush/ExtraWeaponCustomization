@@ -1,10 +1,6 @@
-﻿using AIGraph;
-using EWC.CustomWeapon;
-using EWC.CustomWeapon.CustomShot;
-using EWC.Utils.Log;
+﻿using EWC.CustomWeapon.CustomShot;
 using Gear;
 using HarmonyLib;
-using Player;
 
 namespace EWC.Patches.Gun
 {
