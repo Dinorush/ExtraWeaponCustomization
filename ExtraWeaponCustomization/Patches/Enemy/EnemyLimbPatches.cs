@@ -34,7 +34,7 @@ namespace EWC.Patches.Enemy
             
             var armorMulti = _cachedCC.Invoke(new WeaponArmorContext(_cachedArmor)).ArmorMulti;
             if (armorMulti < 1f && DebuffManager.TryGetArmorShredDebuff(__instance.Cast<IDamageable>(), _cachedCWC!.DebuffIDs, out var armorEffect))
-                armorMulti = 1f - (1f - armorMulti) * armorEffect;
+                armorMulti = 1f - (1f - armorMulti) * Math.Clamp(armorEffect, 0, 1);
             __instance.m_armorDamageMulti = armorMulti;
         }
 

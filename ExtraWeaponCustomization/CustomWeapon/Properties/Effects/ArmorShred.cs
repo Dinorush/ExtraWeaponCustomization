@@ -124,7 +124,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             if (debuff.stack.TryGetMod(out var mod))
             {
-                debuff.modifier.Enable(Math.Max(0, 1f - mod));
+                debuff.modifier.Enable(mod);
                 StartUpdate();
             }
         }
@@ -142,7 +142,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 {
                     if (triggerStack.TryGetMod(out float mod))
                     {
-                        modifier.Mod = Math.Max(0, 1f - mod);
+                        modifier.Mod = mod;
                     }
                     else
                     {
