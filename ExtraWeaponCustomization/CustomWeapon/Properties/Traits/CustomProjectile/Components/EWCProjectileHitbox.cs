@@ -4,6 +4,7 @@ using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Patches;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using FX_EffectSystem;
 using Gear;
 using Player;
@@ -27,6 +28,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private int _friendlyLayer;
         private WallPierce? _wallPierce;
         private float _baseFalloff;
+        private float _startLifetime;
         private bool _runHitTriggers = true;
         private bool _enabled = false;
 
@@ -72,6 +74,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _settings = projBase;
             _weapon = cwc.Gun!;
             _runHitTriggers = true;
+            _startLifetime = Time.time;
 
             if (cwc.HasTempProperties())
             {
@@ -389,6 +392,23 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             ToggleRunTriggers(false);
             WeaponPatches.ApplyEWCHit(_settings.CWC, _contextController, _hitData, out bool backstab);
             ToggleRunTriggers(true);
+
+            foreach (var statChange in _settings.StatChanges)
+            {
+                float mod = Time.time.Map(_startLifetime + statChange.Delay, _startLifetime + statChange.Delay + statChange.ChangeTime, 1f, statChange.EndFrac);
+                switch (statChange.StatType)
+                {
+                    case Enums.StatType.Damage:
+                        _hitData.damage *= mod;
+                        break;
+                    case Enums.StatType.Precision:
+                        _hitData.precisionMulti *= mod;
+                        break;
+                    case Enums.StatType.Stagger:
+                        _hitData.staggerMulti *= mod;
+                        break;
+                }
+            }
 
             float damage = _hitData.damage * _hitData.falloff;
             damageable?.BulletDamage(damage, _hitData.owner, _hitData.hitPos, _hitData.fireDir, _hitData.RayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);

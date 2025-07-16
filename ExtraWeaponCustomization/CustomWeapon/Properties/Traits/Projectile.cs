@@ -7,6 +7,7 @@ using EWC.Utils;
 using EWC.Utils.Extensions;
 using EWC.Utils.Log;
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
 
@@ -57,6 +58,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
 
+        public List<ProjectileStatChange> StatChanges { get; private set; } = new();
         public ProjectileHomingSettings HomingSettings { get; private set; } = new();
 
         // Used by Shrapnel to override properties that the hitbox uses
@@ -158,6 +160,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(RicochetOnHit), RicochetOnHit);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
+            writer.WritePropertyName(nameof(StatChanges));
+            ProjectileStatChange.SerializeList(StatChanges, writer);
             writer.WritePropertyName(nameof(HomingSettings));
             HomingSettings.Serialize(writer);
             writer.WriteEndObject();
@@ -277,6 +281,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                     Lifetime = reader.GetSingle();
                     break;
 
+                case "statchanges":
+                    StatChanges = ProjectileStatChange.DeserializeList(ref reader);
+                    break;
                 case "homingsettings":
                 case "homing":
                     HomingSettings.Deserialize(ref reader);
