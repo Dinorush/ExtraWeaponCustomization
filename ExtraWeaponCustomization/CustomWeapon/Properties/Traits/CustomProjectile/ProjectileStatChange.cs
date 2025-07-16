@@ -8,10 +8,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
 {
     public sealed class ProjectileStatChange
     {
-        public float EndFrac { get; set; } = 1f;
-        public StatType StatType { get; set; } = StatType.Damage;
-        public float Delay { get; set; } = 0f;
-        public float ChangeTime { get; set; } = 0f;
+        public float EndFrac { get; private set; } = 1f;
+        public float Exponent { get; private set; } = 1f;
+        public StatType StatType { get; private set; } = StatType.Damage;
+        public float Delay { get; private set; } = 0f;
+        public float ChangeTime { get; private set; } = 0f;
 
         public void Serialize(Utf8JsonWriter writer)
         {
@@ -39,6 +40,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
                 case "frac":
                 case "mod":
                     EndFrac = reader.GetSingle();
+                    break;
+                case "exponent":
+                    Exponent = reader.GetSingle();
                     break;
                 case "stattype":
                 case "stat":

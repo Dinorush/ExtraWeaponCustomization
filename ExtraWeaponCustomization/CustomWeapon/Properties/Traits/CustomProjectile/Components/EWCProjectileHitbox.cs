@@ -395,7 +395,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             foreach (var statChange in _settings.StatChanges)
             {
-                float mod = Time.time.Map(_startLifetime + statChange.Delay, _startLifetime + statChange.Delay + statChange.ChangeTime, 1f, statChange.EndFrac);
+                float mod = Time.time.Map(_startLifetime + statChange.Delay, _startLifetime + statChange.Delay + statChange.ChangeTime, 1f, statChange.EndFrac, statChange.Exponent);
                 switch (statChange.StatType)
                 {
                     case Enums.StatType.Damage:
