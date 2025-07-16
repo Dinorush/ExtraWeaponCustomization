@@ -6,6 +6,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
 - Ammo Mod: Modifies the magazine/reserve ammo counts.
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
+- Armor Shred: Applies a global armor reduction to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
 - Damage Over Time: Applies a damage over time effect. [Prehit, Hit, Damage, Charge]
 - Explosive: Causes explosions where bullets land.
@@ -18,6 +19,7 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Recoil Mod: Applies a recoil modifier. [Gun]
 - Reference Trigger: Sends Apply and Reset triggers to other properties.
 - Shot Mod: Applies a stat modifier to shots/melees.
+- Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
 - Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
 - Shrapnel: Causes bullets to fire out from where bullets land. [Gun]
 - Speed Mod: Applies a modifier to the user's movement speed.
