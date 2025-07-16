@@ -1,4 +1,7 @@
-﻿namespace EWC.CustomWeapon.Enums
+﻿using System;
+using System.Linq;
+
+namespace EWC.CustomWeapon.Enums
 {
     public enum StackType
     {
@@ -6,6 +9,12 @@
         Override, None = Override,
         Add,
         Multiply, Mult = Multiply,
-        Max, Min = Max
+        Max,
+        Min
+    }
+
+    public static class StackTypeConst
+    {
+        public static readonly int Count = (int)Enum.GetValues<StackType>().Max() + 1;
     }
 }

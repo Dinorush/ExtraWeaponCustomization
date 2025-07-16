@@ -133,7 +133,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             ShotInfo info = new(context.ShotInfo.Orig, true, UseParentShotMod);
             damage *= info.XpMod;
 
-            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, DamageType.DOT.WithSubTypes(context.Damageable), context.Damageable, context.ShotInfo.Orig);
+            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, DamageType.DOT.WithSubTypes(context.Damageable), context.Damageable, context.ShotInfo.Orig, CWC.DebuffIDs);
             CWC.Invoke(statContext);
             if (!CalcShotModsPerTick && !IgnoreShotMods)
             {

@@ -15,6 +15,7 @@ namespace EWC.CustomWeapon.CustomShot
         private Dictionary<WeaponPropertyBase, (float mod, StackType layer, DamageType[] types)> Mods => _mods ??= new(3);
 
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
+
         private DamageType _lastType = DamageType.Invalid;
         private IntPtr _lastDamPtr = IntPtr.Zero;
         private bool _needType = false;
@@ -54,8 +55,7 @@ namespace EWC.CustomWeapon.CustomShot
             Dictionary<WeaponPropertyBase, (float mod, StackType, DamageType[])> mods;
             if (damageable != null)
             {
-                TempWrapper.Set(damageable);
-                if (!ModsPerTarget.TryGetValue(TempWrapper, out var dict))
+                if (!ModsPerTarget.TryGetValue(TempWrapper.Set(damageable), out var dict))
                     ModsPerTarget.Add(new BaseDamageableWrapper(TempWrapper), mods = new(3));
                 else
                     mods = dict;
@@ -78,10 +78,10 @@ namespace EWC.CustomWeapon.CustomShot
                         value.mod *= mod;
                         break;
                     case StackType.Max:
-                        if (mod > 1f)
-                            value.mod = Math.Max(value.mod, mod);
-                        else if (mod < 1f)
-                            value.mod = Math.Min(value.mod, mod);
+                        value.mod = Math.Max(value.mod, mod);
+                        break;
+                    case StackType.Min:
+                        value.mod = Math.Min(value.mod, mod);
                         break;
                 }
                 value.mod = cap > 1f ? Math.Min(value.mod, cap) : Math.Max(value.mod, cap);
@@ -97,17 +97,14 @@ namespace EWC.CustomWeapon.CustomShot
 
         public void Reset(float min = 0f) => Reset(1f, min);
 
-        public bool Recompute(DamageType damageType = DamageType.Any, IDamageable? damageable = null)
+        public bool HasMod(DamageType damageType = DamageType.Any, IDamageable? damageable = null)
         {
             if (_mods == null && _modsPerTarget == null) return false;
 
             IntPtr ptr = damageable?.Pointer ?? IntPtr.Zero;
             if (!_needRecompute && (!_needType || _lastType == damageType) && (_modsPerTarget == null || _lastDamPtr == ptr)) return true;
 
-            _addMod = 1f;
-            _multMod = 1f;
-            _maxMod = 1f;
-            _override = false;
+            _stackValue.Reset();
             _lastDamPtr = ptr;
             _lastType = damageType;
             _needRecompute = false;

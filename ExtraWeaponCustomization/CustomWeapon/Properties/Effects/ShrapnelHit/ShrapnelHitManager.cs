@@ -64,7 +64,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             hitData.falloff = oldFalloff;
             cc.Invoke(preContext);
 
-            WeaponStatContext statContext = new(hitData);
+            WeaponStatContext statContext = new(hitData, shrapnel.CWC.DebuffIDs);
             cc.Invoke(statContext);
             if (!shrapnel.IgnoreShotMods)
             {

@@ -29,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             _triggerStack.Clear();
             _updateTimes.Clear();
-            CoroutineUtil.Stop(ref _updateRoutine, CWC);
+            CoroutineUtil.Stop(ref _updateRoutine);
             OnDisable();
         }
 

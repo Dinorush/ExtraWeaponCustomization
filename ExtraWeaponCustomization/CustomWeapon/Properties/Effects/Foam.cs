@@ -72,7 +72,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                     if (!IgnoreShotMods)
                     {
-                        WeaponStatContext damageContext = new(damageMod, precisionMulti, 1f, DamageType.Foam.WithSubTypes(damContext.Damageable), damContext.Damageable, baseContext.ShotInfo.Orig);
+                        WeaponStatContext damageContext = new(damageMod, precisionMulti, 1f, DamageType.Foam.WithSubTypes(damContext.Damageable), damContext.Damageable, baseContext.ShotInfo.Orig, CWC.DebuffIDs);
                         CWC.Invoke(damageContext);
                         damageMod = damageContext.Damage;
                         precisionMulti = damageContext.Precision;

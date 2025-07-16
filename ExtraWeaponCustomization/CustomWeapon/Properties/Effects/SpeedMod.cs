@@ -32,7 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             return StackLayer switch
             {
                 StackType.Override => MovementSpeedAPI.StackLayer.Override,
-                StackType.Max => Mod > 1 ? MovementSpeedAPI.StackLayer.Max : MovementSpeedAPI.StackLayer.Min,
+                StackType.Max or StackType.Min => Mod > 1 ? MovementSpeedAPI.StackLayer.Max : MovementSpeedAPI.StackLayer.Min,
                 StackType.Mult => MovementSpeedAPI.StackLayer.Multiply,
                 StackType.Add => MovementSpeedAPI.StackLayer.Add,
                 _ => MovementSpeedAPI.StackLayer.Multiply

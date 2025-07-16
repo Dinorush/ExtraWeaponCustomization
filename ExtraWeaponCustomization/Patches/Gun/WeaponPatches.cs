@@ -90,7 +90,7 @@ namespace EWC.Patches
         {
             hitData.ResetDamage();
             doBackstab = true;
-            Enemy.EnemyLimbPatches.CachedCC = cc;
+            Enemy.EnemyLimbPatches.CacheComponents(cwc, cc);
 
             IDamageable? damageable = hitData.damageable;
             if (!hitData.damageType.HasFlag(DamageType.Dead))
@@ -109,8 +109,7 @@ namespace EWC.Patches
 
                 cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab));
 
-                // Modify damage BEFORE pre hit callback so explosion doesn't modify bullet damage
-                WeaponStatContext damageContext = new(hitData);
+                WeaponStatContext damageContext = new(hitData, cwc.DebuffIDs);
                 cc.Invoke(damageContext);
                 hitData.damage = damageContext.Damage;
                 hitData.staggerMulti = damageContext.Stagger;

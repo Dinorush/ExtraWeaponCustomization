@@ -32,7 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 StackType.None => Mod,
                 StackType.Multiply or StackType.Add => CalculateMod(Sum(count)),
-                StackType.Max => CalculateMod(Mod > 1f ? count.Max(x => x.triggerAmt) : count.Min(x => x.triggerAmt)),
+                StackType.Max or StackType.Min => CalculateMod(Mod > 1f ? count.Max(x => x.triggerAmt) : count.Min(x => x.triggerAmt)),
                 _ => 1f
             };
             return clamped ? ClampToCap(result) : result;

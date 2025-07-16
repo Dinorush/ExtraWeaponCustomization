@@ -14,7 +14,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         // Need to access that specific wrapper so we can get the last DOT instance added to it.
         private readonly Dictionary<IntPtr, DOTDamageableWrapper> _ptrToWrapper = new();
         private readonly Dictionary<DOTDamageableWrapper, PriorityQueue<DOTInstance, DOTInstance>> _activeDots = new();
-        private readonly DOTComparer _comparer = new();
+        private static readonly DOTComparer s_comparer = new();
         private Coroutine? _updateRoutine = null;
         private float _nextTickTime = float.MaxValue;
 
@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             {
                 DOTDamageableWrapper wrapper = new(damageable, ptr);
                 _ptrToWrapper[ptr] = wrapper;
-                _activeDots[wrapper] = new(_comparer);
+                _activeDots[wrapper] = new(s_comparer);
                 _activeDots[wrapper].Enqueue(newDot, newDot);
                 wrapper.LastInstance = newDot;
             }

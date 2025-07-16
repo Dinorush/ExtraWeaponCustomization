@@ -124,7 +124,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         {
             if (!dotBase.CalcShotModsPerTick || dotBase.IgnoreShotMods) return true;
 
-            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, context.DamageType, context.Damageable, context.ShotInfo.Orig);
+            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, context.DamageType, context.Damageable, context.ShotInfo.Orig, dotBase.CWC.DebuffIDs);
             dotBase.CWC.Invoke(statContext);
             damage = statContext.Damage;
             precisionMulti = statContext.Precision;

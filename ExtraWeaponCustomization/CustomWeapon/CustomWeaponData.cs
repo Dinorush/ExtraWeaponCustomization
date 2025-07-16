@@ -9,6 +9,7 @@ namespace EWC.CustomWeapon
         public uint ArchetypeID { get; set; } = 0;
         public uint MeleeArchetypeID { get; set; } = 0;
         public string Name { get; set; } = string.Empty;
+        public DebuffGroup DebuffIDs { get; set; } = DebuffGroup.Default;
         public PropertyList Properties { get; set; } = new();
     }
 }

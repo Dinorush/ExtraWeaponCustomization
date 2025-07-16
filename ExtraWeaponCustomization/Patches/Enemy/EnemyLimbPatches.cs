@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.WeaponContext;
+﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
+using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using HarmonyLib;
 using System;
@@ -10,7 +12,14 @@ namespace EWC.Patches.Enemy
     {
         private static float _cachedArmor = 0f;
         // Cached variables are set for each call that would require them (i.e. once per BulletHit) and cleared after use
-        public static ContextController? CachedCC { get; set; } = null;
+        private static CustomWeaponComponent? _cachedCWC = null;
+        private static ContextController? _cachedCC = null;
+        public static void CacheComponents(CustomWeaponComponent cwc, ContextController cc)
+        {
+            _cachedCWC = cwc;
+            _cachedCC = cc;
+        }
+
         public static bool CachedBypassTumorCap { get; set; } = false;
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.BulletDamage))]
@@ -19,10 +28,14 @@ namespace EWC.Patches.Enemy
         [HarmonyPrefix]
         private static void Pre_Damage(Dam_EnemyDamageLimb __instance)
         {
-            if (CachedCC == null || __instance.m_type != eLimbDamageType.Armor) return;
+            if (_cachedCC == null || __instance.m_type != eLimbDamageType.Armor) return;
 
             _cachedArmor = __instance.m_armorDamageMulti;
-            __instance.m_armorDamageMulti = CachedCC.Invoke(new WeaponArmorContext(_cachedArmor)).ArmorMulti;
+            
+            var armorMulti = _cachedCC.Invoke(new WeaponArmorContext(_cachedArmor)).ArmorMulti;
+            if (armorMulti < 1f && DebuffManager.TryGetArmorShredDebuff(__instance.Cast<IDamageable>(), _cachedCWC!.DebuffIDs, out var armorEffect))
+                armorMulti = 1f - (1f - armorMulti) * armorEffect;
+            __instance.m_armorDamageMulti = armorMulti;
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.ShowHitIndicator))]
@@ -31,7 +44,7 @@ namespace EWC.Patches.Enemy
         private static bool Pre_ShowHitMarker(Dam_EnemyDamageLimb __instance, bool willDie)
         {
             if (willDie) return true;
-            return CachedCC == null || CachedCC.Invoke(new WeaponHitmarkerContext(__instance.m_base.Owner)).Result;
+            return _cachedCC == null || _cachedCC.Invoke(new WeaponHitmarkerContext(__instance.m_base.Owner)).Result;
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.BulletDamage))]
@@ -40,8 +53,9 @@ namespace EWC.Patches.Enemy
         [HarmonyPostfix]
         private static void Post_Damage(Dam_EnemyDamageLimb __instance)
         {
-            if (CachedCC == null) return;
-            CachedCC = null;
+            if (_cachedCC == null) return;
+            _cachedCC = null;
+            _cachedCWC = null;
             
             if (__instance.m_type != eLimbDamageType.Armor) return;
             __instance.m_armorDamageMulti = _cachedArmor;

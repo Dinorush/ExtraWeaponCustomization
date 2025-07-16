@@ -100,6 +100,8 @@ namespace EWC.CustomWeapon
             }
         }
 
+        public HashSet<uint> DebuffIDs { get; private set; } = DebuffGroup.DefaultGroupList;
+
         // Used to update delayed callbacks before invocations happen.
         private readonly LinkedList<DelayedCallback> _timeSensitiveCallbacks;
         private float _lastInvokeTime = 0f;
@@ -225,6 +227,8 @@ namespace EWC.CustomWeapon
             }
 
             _propertyController.Init(this, data.Properties.Clone());
+            DebuffIDs = data.DebuffIDs.IDs;
+            DebuffIDs.Add(0);
             Invoke(StaticContext<WeaponInitContext>.Instance);
             if (IsGun && GunArchetype!.m_owner != null)
                 OwnerInit();
@@ -235,6 +239,7 @@ namespace EWC.CustomWeapon
             Invoke(StaticContext<WeaponClearContext>.Instance);
             SpreadController?.Reset();
             _propertyController.Clear();
+            DebuffIDs = DebuffGroup.DefaultGroupList;
             _ownerPtr = IntPtr.Zero;
             enabled = false;
             CurrentFireRate = BaseFireRate;

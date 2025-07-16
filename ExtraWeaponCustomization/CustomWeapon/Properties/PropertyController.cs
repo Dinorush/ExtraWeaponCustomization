@@ -30,19 +30,6 @@ namespace EWC.CustomWeapon.Properties
             _contextController = new(isGun, isLocal);
         }
 
-        // Plan of action on override activate:
-        // 1. Clear controller
-        // 2. Iterate over property tree (node, newRoot, enabled = false)
-        //  a. Store the reference and value of refCount of each property to dict if not stored
-        //  b. If (node == newRoot), enabled = true. Set node.Enabled = enabled.
-        //  b. If Active, add (Enabled ? 1 : -1) to refCount
-        //  c. If Active and Enabled, add to trait dict and register to controller (register is safe-guarded against double-registers)
-        // 3. Iterate over reference dict
-        //  a. Store (origRefCount == 0, refCount > 0) to setup list
-        //  b. Store (origRefCount > 0, refCount == 0) to clear list
-        // 4. Run clear context on clear list
-        // 5. Run setup context on setup list
-
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
 
         // Does not go through the standard invoke checks/pipeline like context controller.

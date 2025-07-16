@@ -139,7 +139,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 DamageType.Explosive
                 ));
 
-            WeaponStatContext statContext = new(damage, precisionMult, staggerMult, preContext.DamageType, damageable, info);
+            WeaponStatContext statContext = new(damage, precisionMult, staggerMult, preContext.DamageType, damageable, info, eBase.CWC.DebuffIDs);
             eBase.CWC.Invoke(statContext);
             if (!eBase.IgnoreShotMods)
             {
