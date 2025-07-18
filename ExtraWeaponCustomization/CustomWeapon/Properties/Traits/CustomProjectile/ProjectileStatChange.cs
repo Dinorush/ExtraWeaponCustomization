@@ -65,15 +65,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
 
             while (reader.Read())
             {
-                Utils.Log.EWCLogger.Log($"Read token {reader.TokenType}");
                 if (reader.TokenType == JsonTokenType.EndObject) return;
 
                 if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected PropertyName token");
 
                 string property = reader.GetString()!;
-                Utils.Log.EWCLogger.Log($"Read property {property}");
                 reader.Read();
-                Utils.Log.EWCLogger.Log($"Read token type {reader.TokenType}");
                 DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
             }
 
