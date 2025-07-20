@@ -24,4 +24,22 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 );
         }
     }
+
+    internal sealed class ExplosionDamagePlayerSync : SyncedEvent<ExplosionDamagePlayerData>
+    {
+        public override string GUID => "EXPDMGP";
+
+        protected override void Receive(ExplosionDamagePlayerData packet)
+        {
+            if (!packet.target.TryGet(out PlayerAgent target)) return;
+            packet.source.TryGet(out PlayerAgent source);
+
+            ExplosionManager.Internal_ReceiveExplosionDamagePlayer(
+                target,
+                source,
+                packet.damage,
+                packet.direction.Value
+                );
+        }
+    }
 }

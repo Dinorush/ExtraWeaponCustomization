@@ -1,5 +1,6 @@
 ﻿using Agents;
 using AIGraph;
+using AK;
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
@@ -12,6 +13,7 @@ using EWC.Dependencies;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using EWC.Utils.Log;
+using GameEvent;
 using Player;
 using SNetwork;
 using System;
@@ -23,6 +25,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
     public static class ExplosionManager
     {
         private readonly static ExplosionDamageSync _sync = new();
+        private readonly static ExplosionDamagePlayerSync _playerSync = new();
 
         private const SearchSetting BaseSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
 
@@ -30,6 +33,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         private static void Init()
         {
             _sync.Setup();
+            _playerSync.Setup();
         }
 
         public static void DoExplosion(Vector3 position, Vector3 direction, Vector3 normal, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, ShotInfo? triggerInfo = null)
@@ -172,8 +176,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti;
                 damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
                 eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preContext));
-                // Only damage and direction are used AFAIK, but again, just in case...
-                playerBase.BulletDamage(damage, source, position, playerBase.DamageTargetPos - position, Vector3.zero);
+                ExplosionDamagePlayerData playerData = default;
+                playerData.target.Set(playerBase.Owner);
+                playerData.source.Set(source);
+                playerData.damage = damage;
+                playerData.direction.Value = direction;
+
+                GuiManager.CrosshairLayer.PopFriendlyTarget();
+                _playerSync.Send(playerData);
                 return;
             }
             else if (agent == null) // Lock damage; direction doesn't matter
@@ -250,6 +260,23 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             damBase.ProcessReceivedDamage(damage, source, position, Vector3.up * 1000f, hitreact, tryForceHitreact, limbID, staggerMult);
             DamageAPI.FirePostExplosiveCallbacks(damage, target, limb, source);
         }
+
+        internal static void Internal_ReceiveExplosionDamagePlayer(PlayerAgent target, PlayerAgent? source, float damage, Vector3 direction)
+        {
+            var damBase = target.Damage;
+            if (target.IsLocallyOwned)
+            {
+                target.Sound.Post(EVENTS.BULLETHITPLAYERSYNC);
+                if (source == null || source.Pointer != target.Pointer)
+                {
+                    PlayerDialogManager.WantToStartDialog(152u, target.CharacterID);
+                    GameEventManager.PostEvent(eGameEvent.player_take_friendly_fire, target, damage);
+                }
+                damBase.Cast<Dam_PlayerDamageLocal>().Hitreact(damage, direction);
+            }
+            damBase.OnIncomingDamage(damage, damage, source);
+        }
+
     }
 
     public struct ExplosionDamageData
@@ -261,5 +288,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public LowResVector3 localPosition;
         public float damage;
         public float staggerMult;
+    }
+
+    public struct ExplosionDamagePlayerData
+    {
+        public pPlayerAgent target;
+        public pPlayerAgent source;
+        public float damage;
+        public LowResVector3_Normalized direction;
     }
 }
