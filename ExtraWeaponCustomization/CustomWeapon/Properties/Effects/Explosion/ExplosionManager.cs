@@ -176,6 +176,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti;
                 damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
                 eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preContext));
+                if (damage == 0) return;
+
                 ExplosionDamagePlayerData playerData = default;
                 playerData.target.Set(playerBase.Owner);
                 playerData.source.Set(source);
