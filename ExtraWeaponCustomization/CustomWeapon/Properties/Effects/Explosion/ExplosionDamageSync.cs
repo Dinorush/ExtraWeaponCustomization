@@ -41,5 +41,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 packet.direction.Value
                 );
         }
+
+        protected override void ReceiveLocal(ExplosionDamagePlayerData packet) => base.Receive(packet);
     }
 }
