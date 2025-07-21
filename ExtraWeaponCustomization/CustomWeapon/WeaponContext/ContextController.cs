@@ -198,6 +198,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponHitDamageableContext>(triggerList);
             RegisterContext<WeaponShotEndContext>(triggerList);
             RegisterContext<WeaponDamageTakenContext>(triggerList);
+            RegisterContext<WeaponHealthContext>(triggerList);
             RegisterContext<WeaponPostReloadContext>(triggerList);
             RegisterContext<WeaponReloadStartContext>(triggerList);
             RegisterContext<WeaponUnWieldContext>(triggerList);
@@ -253,6 +254,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponHitDamageableContext>(triggerList);
             RegisterContext<WeaponShotEndContext>(triggerList);
             RegisterContext<WeaponDamageTakenContext>(triggerList);
+            RegisterContext<WeaponHealthContext>(triggerList);
             RegisterContext<WeaponWieldContext>(triggerList);
             RegisterContext<WeaponUnWieldContext>(triggerList);
             RegisterContext<WeaponCrouchContext>(triggerList);

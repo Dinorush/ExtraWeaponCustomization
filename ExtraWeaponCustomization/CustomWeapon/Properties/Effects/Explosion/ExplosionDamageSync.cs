@@ -42,6 +42,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 );
         }
 
-        protected override void ReceiveLocal(ExplosionDamagePlayerData packet) => base.Receive(packet);
+        protected override void ReceiveLocal(ExplosionDamagePlayerData packet) => Receive(packet);
     }
 }

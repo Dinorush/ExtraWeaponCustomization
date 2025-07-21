@@ -25,5 +25,13 @@ namespace EWC.Patches.Player
 
             CustomWeaponManager.InvokeOnGear(__instance.Owner.Owner, new WeaponDamageTakenContext(damage));
         }
+
+        [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveSetHealth))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void Post_ReceiveHealth(Dam_PlayerDamageBase __instance)
+        {
+            CustomWeaponManager.InvokeOnGear(__instance.Owner.Owner, new WeaponHealthContext(__instance));
+        }
     }
 }

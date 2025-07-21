@@ -16,6 +16,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public bool CombineModifiers { get; private set; } = false;
         public float CombineDecayTime { get; private set; } = 0f;
         public StackType StackType { get; private set; } = StackType.Add;
+        public StackType OverrideStackType { get; private set; } = StackType.Override;
         public StackType StackLayer { get; private set; } = StackType.Multiply;
 
         private float ClampToCap(float mod)
@@ -30,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
             float result = StackType switch
             {
-                StackType.None => Mod,
+                StackType.None => CalculateMod(count.First().triggerAmt),
                 StackType.Multiply or StackType.Add => CalculateMod(Sum(count)),
                 StackType.Max or StackType.Min => CalculateMod(Mod > 1f ? count.Max(x => x.triggerAmt) : count.Min(x => x.triggerAmt)),
                 _ => 1f
@@ -38,9 +39,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             return clamped ? ClampToCap(result) : result;
         }
 
-        protected float CalculateMod(float num, bool clamped = true)
+        protected float CalculateMod(float num, bool clamped = true) => CalculateMod(StackType == StackType.Override ? OverrideStackType : StackType, num, clamped);
+
+        protected float CalculateMod(StackType type, float num, bool clamped = true)
         {
-            float result = StackType switch
+            float result = type switch
             {
                 StackType.None => Mod,
                 StackType.Multiply => (float)Math.Pow(Mod, num),
@@ -95,6 +98,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "stacktype":
                 case "stack":
                     StackType = reader.GetString().ToEnum(StackType.Invalid);
+                    break;
+                case "overridestacktype":
+                case "overridestack":
+                    OverrideStackType = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 case "stacklayer":
                 case "layer":
