@@ -147,7 +147,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 {
                     RefreshStackMod();
                     _lastStackTime = Clock.Time;
-                    _currentStacks += num;
+                    if (_parent.StackType == StackType.Override)
+                        _currentStacks = num;
+                    else
+                        _currentStacks += num;
                     return;
                 }
 
