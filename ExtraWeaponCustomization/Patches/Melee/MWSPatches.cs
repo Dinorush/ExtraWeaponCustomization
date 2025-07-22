@@ -9,6 +9,7 @@ namespace EWC.Patches.Melee
     [HarmonyPatch]
     internal static class MWSPatches
     {
+        private static float _cacheChargeDiff = -1;
         [HarmonyPatch(typeof(MWS_ChargeUp), nameof(MWS_ChargeUp.Enter))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
@@ -19,7 +20,27 @@ namespace EWC.Patches.Melee
 
             WeaponFireRateContext context = new(1f);
             cwc.Invoke(context);
+            if (context.Value == 1f) return;
+
+            _cacheChargeDiff = __instance.m_maxDamageTime;
             __instance.m_maxDamageTime /= context.Value;
+            _cacheChargeDiff -= __instance.m_maxDamageTime;
+            var animData = __instance.m_weapon.MeleeAnimationData;
+            animData.AutoAttackTime -= _cacheChargeDiff;
+            animData.AutoAttackWarningTime -= _cacheChargeDiff;
+        }
+
+        [HarmonyPatch(typeof(MWS_ChargeUp), nameof(MWS_ChargeUp.Exit))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void RestoreAutoAttackTimings(MWS_ChargeUp __instance)
+        {
+            if (_cacheChargeDiff == -1) return;
+
+            var animData = __instance.m_weapon.MeleeAnimationData;
+            animData.AutoAttackTime += _cacheChargeDiff;
+            animData.AutoAttackWarningTime += _cacheChargeDiff;
+            _cacheChargeDiff = -1;
         }
 
         [HarmonyPatch(typeof(MWS_Push), nameof(MWS_Push.Enter))]
