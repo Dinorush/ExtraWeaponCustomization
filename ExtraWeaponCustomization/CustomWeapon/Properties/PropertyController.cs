@@ -290,7 +290,7 @@ namespace EWC.CustomWeapon.Properties
             // Clear any properties that were not preserved
             foreach (var property in _contextController.Properties)
             {
-                if (property.Reference.RefCount == 0 && property is IWeaponProperty<WeaponClearContext> clearProp)
+                if (property.Reference.RefCount == 0 && property.IsProperty<WeaponClearContext>(out var clearProp))
                     clearProp.Invoke(StaticContext<WeaponClearContext>.Instance);
                 else
                     s_subtreeKeepCache.Add(property);
@@ -301,7 +301,7 @@ namespace EWC.CustomWeapon.Properties
             // Add the properties back in from the cache
             foreach (var property in s_subtreePropCache)
             {
-                if (!s_subtreeKeepCache.Contains(property) && property is IWeaponProperty<WeaponSetupContext> setupProp)
+                if (!s_subtreeKeepCache.Contains(property) && property.IsProperty<WeaponSetupContext>(out var setupProp))
                     setupProp.Invoke(StaticContext<WeaponSetupContext>.Instance);
                 if (property is Trait trait)
                     _activeTraits.TryAdd(property.GetType(), trait);
