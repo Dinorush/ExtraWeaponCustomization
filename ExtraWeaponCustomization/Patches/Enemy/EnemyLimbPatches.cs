@@ -28,7 +28,7 @@ namespace EWC.Patches.Enemy
         [HarmonyPrefix]
         private static void Pre_Damage(Dam_EnemyDamageLimb __instance)
         {
-            if (_cachedCC == null || __instance.m_type != eLimbDamageType.Armor) return;
+            if (_cachedCC == null || __instance.m_armorDamageMulti >= 1f) return;
 
             _cachedArmor = __instance.m_armorDamageMulti;
             
@@ -57,7 +57,7 @@ namespace EWC.Patches.Enemy
             _cachedCC = null;
             _cachedCWC = null;
             
-            if (__instance.m_type != eLimbDamageType.Armor) return;
+            if (__instance.m_armorDamageMulti >= 1) return;
             __instance.m_armorDamageMulti = _cachedArmor;
         }
 
