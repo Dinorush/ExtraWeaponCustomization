@@ -10,7 +10,7 @@ namespace EWC.Patches.Enemy
     [HarmonyPatch]
     internal static class EnemyLimbPatches
     {
-        private static float _cachedArmor = 0f;
+        private static float _cachedArmor = -1f;
         // Cached variables are set for each call that would require them (i.e. once per BulletHit) and cleared after use
         private static CustomWeaponComponent? _cachedCWC = null;
         private static ContextController? _cachedCC = null;
@@ -57,8 +57,9 @@ namespace EWC.Patches.Enemy
             _cachedCC = null;
             _cachedCWC = null;
             
-            if (__instance.m_armorDamageMulti >= 1) return;
+            if (_cachedArmor == -1) return;
             __instance.m_armorDamageMulti = _cachedArmor;
+            _cachedArmor = -1;
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb_Custom), nameof(Dam_EnemyDamageLimb_Custom.ApplyWeakspotAndArmorModifiers))]
