@@ -54,11 +54,16 @@ namespace EWC.CustomWeapon.CustomShot
             cwc?.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, s_vanillaShotInfo.info, null));
         }
 
-        public static bool BulletHit(HitData data)
+        public static bool BulletHit(BulletWeapon weapon, HitData data)
         {
             var hitData = data.Apply(Weapon.s_weaponRayData);
             s_vanillaShotInfo = (hitData.Pointer, data.shotInfo);
-            return BulletWeapon.BulletHit(hitData, true);
+
+            var oldWeapon = FiringWeapon;
+            FiringWeapon = weapon;
+            var result = BulletWeapon.BulletHit(hitData, true);
+            FiringWeapon = oldWeapon;
+            return result;
         }
 
         public static void CancelTracerFX(CustomWeaponComponent cwc)

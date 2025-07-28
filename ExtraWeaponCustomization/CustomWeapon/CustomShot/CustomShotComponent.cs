@@ -155,7 +155,7 @@ namespace EWC.CustomWeapon.CustomShot
             private readonly float _hitSizeFriendly;
             private readonly SearchSetting _friendlySetting;
             private readonly int _friendlyMask;
-            private readonly Func<HitData, bool> _hitFunc;
+            private readonly Func<BulletWeapon, HitData, bool> _hitFunc;
 
             private int _pierceCount;
 
@@ -308,7 +308,7 @@ namespace EWC.CustomWeapon.CustomShot
                     else
                         _hitData.RayHit = hit;
 
-                    if (_hitFunc(_hitData))
+                    if (_hitFunc(_gun, _hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return;
@@ -320,7 +320,7 @@ namespace EWC.CustomWeapon.CustomShot
                     if (_wallPierce == null)
                     {
                         _hitData.RayHit = wallRayHit;
-                        _hitFunc(_hitData);
+                        _hitFunc(_gun, _hitData);
                     }
                 }
             }
@@ -366,7 +366,7 @@ namespace EWC.CustomWeapon.CustomShot
                         fxPos = s_rayHit.point;
                     }
 
-                    if (_hitFunc(_hitData))
+                    if (_hitFunc(_gun, _hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) break;
@@ -383,7 +383,7 @@ namespace EWC.CustomWeapon.CustomShot
                     if (AlreadyHit(_hitData.damageable)) continue;
                     if (_wallPierce == null && !CheckLineOfSight(hit.collider, origin, fxPos, _hitSize, true)) continue;
 
-                    if (_hitFunc(_hitData))
+                    if (_hitFunc(_gun, _hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) break;

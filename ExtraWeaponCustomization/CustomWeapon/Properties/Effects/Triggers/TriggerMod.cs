@@ -15,6 +15,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float Duration { get; private set; } = 0f;
         public bool CombineModifiers { get; private set; } = false;
         public float CombineDecayTime { get; private set; } = 0f;
+        public float CombineCap { get; private set; } = 0f;
         public StackType StackType { get; private set; } = StackType.Add;
         public StackType OverrideStackType { get; private set; } = StackType.Override;
         public StackType StackLayer { get; private set; } = StackType.Multiply;
@@ -95,6 +96,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "decay":
                     CombineDecayTime = reader.GetSingle();
                     break;
+                case "combinecap":
+                    CombineCap = reader.GetSingle();
+                    break;
                 case "stacktype":
                 case "stack":
                     StackType = reader.GetString().ToEnum(StackType.Invalid);
@@ -150,7 +154,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     if (_parent.StackType == StackType.Override)
                         _currentStacks = num;
                     else
-                        _currentStacks += num;
+                        _currentStacks = _parent.CombineCap > 0f ? Math.Min(_parent.CombineCap, _currentStacks + num) : _currentStacks + num;
                     return;
                 }
 
