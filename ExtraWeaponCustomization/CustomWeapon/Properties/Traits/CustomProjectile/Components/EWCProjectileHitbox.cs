@@ -192,13 +192,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private void CheckCollision(ref RaycastHit? bounceHit)
         {
+            SearchUtil.DupeCheckSet = HitEnts;
             if (_settings.HitSize == 0)
-                s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, LayerUtil.MaskEnemyDynamic));
+                s_hits.AddRange(SearchUtil.RaycastAll(s_ray, s_velMagnitude, LayerUtil.MaskEnemyDynamic, _searchSettings));
             else
             {
                 // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
-                SearchUtil.DupeCheckSet = HitEnts;
                 foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), _searchSettings))
                     s_hits.Add(hit);
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f, _searchSettings));
@@ -218,10 +218,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_friendlyLayer != 0)
             {
                 if (_settings.HitSizeFriendly == 0)
-                    s_hits.AddRange(Physics.RaycastAll(s_ray, s_velMagnitude, _friendlyLayer));
+                    s_hits.AddRange(SearchUtil.RaycastAll(s_ray, s_velMagnitude, _friendlyLayer, _searchSettings));
                 else
                 {
-                    SearchUtil.DupeCheckSet = HitEnts;
                     foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSizeFriendly, 180f, _searchSettings))
                         s_hits.Add(hit);
 

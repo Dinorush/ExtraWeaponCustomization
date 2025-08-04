@@ -456,7 +456,7 @@ namespace EWC.CustomWeapon.CustomShot
                         return Array.Empty<RaycastHit>();
                 }
                 else
-                    return Physics.RaycastAll(ray, maxDist, layerMask);
+                    return SearchUtil.RaycastAll(ray, maxDist, layerMask).ToArray();
             }
 
             private RaycastHit[] SpherecastOneOrAll(Ray ray, float hitSize, float maxDist, int layerMask)

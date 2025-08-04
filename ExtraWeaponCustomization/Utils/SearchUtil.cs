@@ -17,12 +17,12 @@ namespace EWC.Utils
     {
         None = 0,
         Alloc = 1,
-        CacheHit = 2,
-        CheckLOS = 4,
-        CheckDoors = 8,
-        CheckOwner = 16,
-        CheckFriendly = 32,
-        IgnoreDupes = 64,
+        CacheHit = 1 << 1,
+        CheckLOS = 1 << 2,
+        CheckDoors = 1 << 3,
+        CheckOwner = 1 << 4,
+        CheckFriendly = 1 << 5,
+        IgnoreDupes = 1 << 6
     }
 
     internal static class SearchUtil
@@ -32,7 +32,7 @@ namespace EWC.Utils
         private static readonly List<(PlayerAgent, RaycastHit)> s_combinedCachePlayer = new();
         private static readonly Queue<AIG_CourseNode> s_nodeQueue = new();
 
-        private static readonly List<RaycastHit> s_lockCache = new();
+        private static readonly List<RaycastHit> s_rayHitCache = new();
 
         public static HashSet<IntPtr>? DupeCheckSet;
         public static int SightBlockLayer = 0;
@@ -317,9 +317,9 @@ namespace EWC.Utils
 
         public static List<RaycastHit> GetLockHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.None)
         {
-            s_lockCache.Clear();
+            s_rayHitCache.Clear();
             if (range == 0 || angle == 0)
-                return settings.HasFlag(SearchSetting.Alloc) ? new List<RaycastHit>() : s_lockCache;
+                return settings.HasFlag(SearchSetting.Alloc) ? new List<RaycastHit>() : s_rayHitCache;
 
             Collider[] colliders = Physics.OverlapSphere(ray.origin, range, LayerUtil.MaskDynamic);
             Vector3 origDir = ray.direction;
@@ -331,19 +331,19 @@ namespace EWC.Utils
                 if (settings.HasFlag(SearchSetting.IgnoreDupes) && DupeCheckSet?.Contains(damageable.GetBaseDamagable().Pointer) == true) continue;
 
                 if (settings.HasFlag(SearchSetting.CheckLOS)
-                 && Physics.Linecast(ray.origin, damageable.DamageTargetPos, out s_rayHit, SightBlockLayer)
-                 && s_rayHit.collider.gameObject.Pointer != collider.gameObject.Pointer)
-                    continue;
+                    && Physics.Linecast(ray.origin, damageable.DamageTargetPos, out s_rayHit, SightBlockLayer)
+                    && s_rayHit.collider.gameObject.Pointer != collider.gameObject.Pointer)
+                        continue;
 
                 ray.direction = damageable.DamageTargetPos - ray.origin;
                 if (collider.Raycast(ray, out s_rayHit, range) && Vector3.Angle(ray.direction, origDir) < angle)
-                    s_lockCache.Add(s_rayHit);
+                    s_rayHitCache.Add(s_rayHit);
             }
 
             if (settings.HasFlag(SearchSetting.Alloc))
-                return new(s_lockCache);
+                return new(s_rayHitCache);
 
-            return s_lockCache;
+            return s_rayHitCache;
         }
 
         public static List<(PlayerAgent player, RaycastHit hit)> GetPlayerHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.CheckFriendly | SearchSetting.CheckOwner)
@@ -438,6 +438,37 @@ namespace EWC.Utils
             
             cell = grid.GetCell(x, z);
             return true;
+        }
+
+        public static List<RaycastHit> RaycastAll(Ray ray, float maxDist, int layerMask, SearchSetting settings = SearchSetting.None)
+        {
+            if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Raycast(ray, out s_rayHit, maxDist, SightBlockLayer))
+                maxDist = s_rayHit.distance;
+
+            s_rayHitCache.Clear();
+            DamageUtil.IncrementSearchID();
+            var searchID = DamageUtil.SearchID;
+            while (Physics.Raycast(ray, out s_rayHit, maxDist, layerMask))
+            {
+                IDamageable? damageable = s_rayHit.collider.GetComponent<IDamageable>();
+                if (damageable != null)
+                {
+                    var baseDam = damageable.GetBaseDamagable();
+                    if (baseDam.TempSearchID != searchID && (!settings.HasFlag(SearchSetting.IgnoreDupes) || !DupeCheckSet?.Contains(baseDam.Pointer) == true))
+                    {
+                        s_rayHitCache.Add(s_rayHit);
+                        baseDam.TempSearchID = searchID;
+                    }
+                }
+                float move = s_rayHit.distance + 0.1f;
+                ray.origin += ray.direction * move;
+                maxDist -= move;
+            }
+
+            if (settings.HasFlag(SearchSetting.Alloc))
+                return new(s_rayHitCache);
+
+            return s_rayHitCache;
         }
     }
 }
