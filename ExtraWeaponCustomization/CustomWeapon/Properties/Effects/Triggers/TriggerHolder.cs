@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -41,6 +42,20 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 () => ResetDelay,
                 DelayedReset
                 );
+        }
+
+        public void OnReferenceSet()
+        {
+            if (Caller == null) return;
+            var cwc = Caller.CWC;
+            foreach (var trigger in Triggers)
+                trigger.OnReferenceSet(cwc);
+
+            foreach (var trigger in Apply.OrEmptyIfNull())
+                trigger.OnReferenceSet(cwc);
+
+            foreach (var trigger in Cancel.OrEmptyIfNull())
+                trigger.OnReferenceSet(cwc);
         }
 
         public virtual TriggerHolder Clone(TriggerCoordinator parent)

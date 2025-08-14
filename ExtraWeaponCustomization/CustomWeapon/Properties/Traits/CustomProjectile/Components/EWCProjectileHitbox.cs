@@ -29,6 +29,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private WallPierce? _wallPierce;
         private float _baseFalloff;
         private float _startLifetime;
+        private eDimensionIndex _dimensionIndex;
         private bool _runHitTriggers = true;
         private bool _enabled = false;
 
@@ -37,7 +38,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private int _ricochetCount = 0;
         private float _distanceMoved;
         private float _lastFixedTime;
-        private SearchSetting _searchSettings = SearchSetting.CacheHit | SearchSetting.IgnoreDupes;
+        private SearchSetting _searchSettings = SearchSetting.ClosestHit | SearchSetting.IgnoreDupes;
         public readonly HashSet<IntPtr> HitEnts = new();
         private readonly Queue<(IntPtr, float)> _hitEntCooldowns = new();
         private float _ignoreWallsTime = 0f;
@@ -73,6 +74,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _enabled = true;
             _settings = projBase;
             _weapon = cwc.Gun!;
+            _dimensionIndex = _weapon.Owner.DimensionIndex;
             _runHitTriggers = true;
             _startLifetime = Time.time;
 
@@ -95,7 +97,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             s_ray.origin = pos;
             s_ray.direction = dir;
             _friendlyLayer = 0;
-            _searchSettings = SearchSetting.CacheHit | SearchSetting.IgnoreDupes;
+            _searchSettings = SearchSetting.ClosestHit | SearchSetting.IgnoreDupes;
             IntPtr ownerPtr = _weapon.Owner.Pointer;
             if (projBase.DamageOwner)
             {
@@ -199,7 +201,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
-                foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, SearchUtil.GetCourseNode(s_ray.origin, _weapon.Owner), _searchSettings))
+                foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, CourseNodeUtil.GetCourseNode(s_ray.origin, _dimensionIndex), _searchSettings))
                     s_hits.Add(hit);
                 s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f, _searchSettings));
 

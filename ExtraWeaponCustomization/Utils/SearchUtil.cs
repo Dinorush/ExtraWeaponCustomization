@@ -2,11 +2,9 @@
 using AIGraph;
 using Enemies;
 using EWC.Utils.Structs;
-using LevelGeneration;
 using Player;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using SVector3 = System.Numerics.Vector3;
 
@@ -17,7 +15,7 @@ namespace EWC.Utils
     {
         None = 0,
         Alloc = 1,
-        CacheHit = 1 << 1,
+        ClosestHit = 1 << 1,
         CheckLOS = 1 << 2,
         CheckDoors = 1 << 3,
         CheckOwner = 1 << 4,
@@ -153,7 +151,7 @@ namespace EWC.Utils
             if (collider.Raycast(s_ray, out hit, 10f)) return true;
 
             // All hope is lost.
-            Log.EWCLogger.Warning($"Attempted to get a raycast to {collider.name} but failed! Pos: {s_ray.origin}, Dir: {oldDir.ToDetailedString()}, Collider center: {collider.bounds.center}, Diff to collider center: {s_ray.direction.ToDetailedString()}");
+            EWCLogger.Warning($"Attempted to get a raycast to {collider.name} but failed! Pos: {s_ray.origin}, Dir: {oldDir.ToDetailedString()}, Collider center: {collider.bounds.center}, Diff to collider center: {s_ray.direction.ToDetailedString()}");
             return false;
         }
 
@@ -179,7 +177,7 @@ namespace EWC.Utils
             return colliders;
         }
 
-        private static bool TryGetClosestHit(Ray ray, float range, float angle, Agent agent, out RaycastHit hit, SearchSetting settings)
+        public static bool IsAgentInCone(Ray ray, float range, float angle, Agent agent, out RaycastHit hit, SearchSetting settings = SearchSetting.None)
         {
             hit = default;
             if (agent == null || !agent.Alive) return false;
@@ -208,7 +206,7 @@ namespace EWC.Utils
                 Vector3 diff = trgtPos - ray.origin;
                 float sqrDist = diff.sqrMagnitude;
                 float origDist = sqrDist;
-                if (type == AgentType.Enemy && sqrDist < sqrRange && collider.GetComponent<Dam_EnemyDamageLimb>().m_type == eLimbDamageType.Weakspot)
+                if (settings.HasFlag(SearchSetting.ClosestHit) && type == AgentType.Enemy && sqrDist < sqrRange && collider.GetComponent<Dam_EnemyDamageLimb>().m_type == eLimbDamageType.Weakspot)
                 {
                     float newDist = Math.Max(diff.magnitude - WeakspotBufferDist, 0);
                     sqrDist = newDist * newDist;
@@ -221,7 +219,7 @@ namespace EWC.Utils
                     minDist = sqrDist;
                     minCollider = collider;
                     // If not caching a hit to the closest collider, can just add the enemy as soon as one is valid
-                    if (!settings.HasFlag(SearchSetting.CacheHit)) break;
+                    if (!settings.HasFlag(SearchSetting.ClosestHit)) break;
 
                     s_ray.direction = diff;
 
@@ -245,7 +243,7 @@ namespace EWC.Utils
                 }
             }
             if (minCollider == null) return false;
-            if (settings.HasFlag(SearchSetting.CacheHit) && !casted && !RaycastEnsured(minCollider, range, out hit))
+            if (settings.HasFlag(SearchSetting.ClosestHit) && !casted && !RaycastEnsured(minCollider, range, out hit))
                 return false;
             return true;
         }
@@ -254,11 +252,16 @@ namespace EWC.Utils
         {
             AIG_SearchID.IncrementSearchID();
             ushort searchID = AIG_SearchID.SearchID;
-            float sqrRange = range * range;
             s_nodeQueue.Enqueue(origin);
             origin.m_searchID = searchID;
-            s_combinedCache.Clear();
+            CacheEnemiesInRangeFromQueue(ray, range, angle, settings);
+        }
 
+        private static void CacheEnemiesInRangeFromQueue(Ray ray, float range, float angle, SearchSetting settings)
+        {
+            ushort searchID = AIG_SearchID.SearchID;
+            float sqrRange = range * range;
+            s_combinedCache.Clear();
             while (s_nodeQueue.TryDequeue(out AIG_CourseNode? node))
             {
                 foreach (AIG_CoursePortal portal in node.m_portals)
@@ -278,7 +281,7 @@ namespace EWC.Utils
                 {
                     if (enemy == null || !enemy.Alive || enemy.Damage.Health <= 0) continue;
                     if ((ClosestPointOnBounds(enemy.MovingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange) continue;
-                    if (!TryGetClosestHit(ray, range, angle, enemy, out s_rayHit, settings)) continue;
+                    if (!IsAgentInCone(ray, range, angle, enemy, out s_rayHit, settings)) continue;
                     s_combinedCache.Add((enemy, s_rayHit));
                 }
             }
@@ -299,7 +302,7 @@ namespace EWC.Utils
             return s_enemyCache;
         }
 
-        public static List<(EnemyAgent enemy, RaycastHit hit)> GetEnemyHitsInRange(Ray ray, float range, float angle, AIG_CourseNode origin, SearchSetting settings = SearchSetting.CacheHit)
+        public static List<(EnemyAgent enemy, RaycastHit hit)> GetEnemyHitsInRange(Ray ray, float range, float angle, AIG_CourseNode origin, SearchSetting settings = SearchSetting.ClosestHit)
         {
             if (range == 0 || angle == 0)
             {
@@ -307,7 +310,7 @@ namespace EWC.Utils
                 return settings.HasFlag(SearchSetting.Alloc) ? new List<(EnemyAgent, RaycastHit)>() : s_combinedCache;
             }
 
-            settings |= SearchSetting.CacheHit;
+            settings |= SearchSetting.ClosestHit;
             CacheEnemiesInRange(ray, range, angle, origin, settings);
             if (settings.HasFlag(SearchSetting.Alloc))
                 return new(s_combinedCache);
@@ -366,7 +369,7 @@ namespace EWC.Utils
                     if (!player.GetComponent<Collider>().Raycast(s_ray, out s_rayHit, range)) continue;
                     if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, s_rayHit.point, SightBlockLayer)) continue;
                 }
-                else if (!settings.HasFlag(SearchSetting.CheckFriendly) || !TryGetClosestHit(ray, range, angle, player, out s_rayHit, settings))
+                else if (!settings.HasFlag(SearchSetting.CheckFriendly) || !IsAgentInCone(ray, range, angle, player, out s_rayHit, settings))
                     continue;
 
                 s_combinedCachePlayer.Add((player, s_rayHit));
@@ -376,68 +379,6 @@ namespace EWC.Utils
                 return new(s_combinedCachePlayer);
 
             return s_combinedCachePlayer;
-        }
-
-
-        private static bool HasCluster(AIG_VoxelNodePillar pillar)
-        {
-            foreach (var node in pillar.m_nodes)
-                if (node.ClusterID != 0 && AIG_NodeCluster.TryGetNodeCluster(node.ClusterID, out _))
-                    return true;
-            return false;
-        }
-
-        public static AIG_CourseNode GetCourseNode(Vector3 position, Agent agent)
-        {
-            Vector3 source = agent.Position;
-            var dimension = Dimension.GetDimensionFromPos(position);
-            if (dimension != null && TryGetGeomorphVolumeSilent(dimension.DimensionIndex, position, out var volume))
-            {
-                position.y = volume.Position.y;
-                source.y = position.y;
-                Vector3 move = (source - position).normalized;
-                AIG_VoxelNodePillar? pillar = null;
-
-                for (int i = 0; i < 10 && (!volume.m_voxelNodeVolume.TryGetPillar(position, out pillar) || !HasCluster(pillar)); i++)
-                    position += move;
-
-                if (pillar == null)
-                    return agent.CourseNode;
-
-                foreach (var voxelNode in pillar.m_nodes)
-                    if (voxelNode.ClusterID != 0 && AIG_NodeCluster.TryGetNodeCluster(voxelNode.ClusterID, out var nodeCluster) && nodeCluster.CourseNode != null)
-                        return nodeCluster.CourseNode;
-            }
-            return agent.CourseNode;
-        }
-
-        // Copy-pasted code without logging errors
-        private static bool TryGetGeomorphVolumeSilent(eDimensionIndex dimensionIndex, Vector3 pos, [MaybeNullWhen(false)] out AIG_GeomorphNodeVolume resultingGeoVolume)
-        {
-            resultingGeoVolume = null;
-            LG_Floor currentFloor = Builder.Current.m_currentFloor;
-            if (currentFloor == null) return false;
-            if (!currentFloor.GetDimension(dimensionIndex, out var dimension)) return false;
-            if (dimension.Grid == null || !TryGetCell(dimension.Grid, pos, out LG_Cell? cell)) return false;
-            if (cell.m_grouping == null || cell.m_grouping.m_geoRoot == null) return false;
-
-            resultingGeoVolume = cell.m_grouping.m_geoRoot.m_nodeVolume.TryCast<AIG_GeomorphNodeVolume>();
-            return resultingGeoVolume != null;
-        }
-
-        private static bool TryGetCell(LG_Grid grid, Vector3 pos, [MaybeNullWhen(false)] out LG_Cell cell)
-        {
-            pos -= grid.m_gridPosition;
-            int x = (int)Math.Round((pos.x - grid.m_cellDimHalf) / grid.m_cellDim);
-            int z = (int)Math.Round((pos.z - grid.m_cellDimHalf) / grid.m_cellDim);
-            if (x < 0 || z < 0 || x >= grid.m_sizeX || z >= grid.m_sizeZ)
-            {
-                cell = null;
-                return false;
-            }            
-            
-            cell = grid.GetCell(x, z);
-            return true;
         }
 
         public static List<RaycastHit> RaycastAll(Ray ray, float maxDist, int layerMask, SearchSetting settings = SearchSetting.None)

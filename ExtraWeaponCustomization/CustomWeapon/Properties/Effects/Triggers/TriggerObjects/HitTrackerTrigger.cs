@@ -1,22 +1,23 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
-    public sealed class KillTrigger : DamageTypeTrigger<WeaponPostKillContext>
+    public class HitTrackerTrigger<TContext> : DamageTypeTrigger<TContext> where TContext : WeaponHitTrackerContextBase
     {
         public float MaxDelay { get; set; } = 0.5f;
-        public bool RequireDidKill { get; set; } = true;
+        public bool RequireLastHit { get; set; } = true;
 
-        public KillTrigger(params DamageType[] types) : base(TriggerName.Kill, types) { }
+        public HitTrackerTrigger(TriggerName name, params DamageType[] types) : base(name, types) { }
 
         public override bool Invoke(WeaponTriggerContext context, out float amount)
         {
             if (!base.Invoke(context, out amount)) return false;
 
-            var killContext = (WeaponPostKillContext)context;
-            if (killContext.Delay < MaxDelay && (!RequireDidKill || killContext.DidKill))
+            var killContext = (TContext)context;
+            if (killContext.Delay < MaxDelay && (!RequireLastHit || killContext.DidLastHit))
                 return true;
 
             amount = 0;
@@ -34,7 +35,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "requiredidkill":
                 case "requirekill":
-                    RequireDidKill = reader.GetBoolean();
+                case "requirelasthit":
+                    RequireLastHit = reader.GetBoolean();
                     break;
             }
         }

@@ -32,6 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public uint SoundID { get; private set; } = 0u;
         public CrossDoorMode CrossDoorMode { get; private set; } = CrossDoorMode.NoPenalty;
         public bool UseNoiseSystem { get; private set; } = false;
+        public bool LocalSoundOnly { get; private set; } = false;
 
         private readonly Dictionary<ObjectWrapper<Agent>, float> _alertProgress = new();
 
@@ -52,7 +53,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override bool ShouldRegister(Type contextType)
         {
-            if (contextType == typeof(WeaponStealthUpdateContext)) return !UseNoiseSystem && SNet.IsMaster;
+            if (contextType == typeof(WeaponStealthUpdateContext)) return !LocalSoundOnly && !UseNoiseSystem && SNet.IsMaster;
 
             return base.ShouldRegister(contextType);
         }
@@ -62,6 +63,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             foreach (var trigger in triggerList)
             {
                 Vector3 position = trigger.context is WeaponHitContextBase hitContext ? hitContext.Position : CWC.Weapon.Owner.EyePosition;
+                if (LocalSoundOnly)
+                {
+                    CellSound.Post(SoundID, position);
+                    continue;
+                }
+
                 TriggerApplySync(position, Vector3.zero, trigger.triggerAmt);
                 TriggerManager.SendInstance(this, position, Vector3.zero, trigger.triggerAmt);
 
@@ -116,7 +123,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             if (!SNet.IsMaster) return;
 
-            var node = SearchUtil.GetCourseNode(position, CWC.Weapon.Owner);
+            var node = CourseNodeUtil.GetCourseNode(position, CWC.Weapon.Owner.DimensionIndex);
             bool runAlert = AlertRadius > WakeUpRadius;
             bool runFakeAlert = FakeAlertRadius > AlertRadius && FakeAlertRadius > WakeUpRadius;
 
@@ -228,7 +235,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 type = NM_NoiseType.Detectable
             };
             noiseData.noiseMaker.Set(CWC.Weapon.Owner);
-            noiseData.node.Set(SearchUtil.GetCourseNode(position, CWC.Weapon.Owner));
+            noiseData.node.Set(CourseNodeUtil.GetCourseNode(position, CWC.Weapon.Owner.DimensionIndex));
 
             if (SNet.IsMaster)
                 NoiseManager.ReceiveNoise(noiseData);
@@ -247,6 +254,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WriteString(nameof(CrossDoorMode), CrossDoorMode.ToString());
             writer.WriteBoolean(nameof(UseNoiseSystem), UseNoiseSystem);
+            writer.WriteBoolean(nameof(LocalSoundOnly), LocalSoundOnly);
             writer.WriteEndObject();
         }
 
@@ -285,6 +293,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "usenoisesystem":
                 case "noisesystem":
                     UseNoiseSystem = reader.GetBoolean();
+                    break;
+                case "localsoundonly":
+                case "localsound":
+                    LocalSoundOnly = reader.GetBoolean();
                     break;
                 default:
                     break;

@@ -76,7 +76,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                     groupMod = ShotInfo.GroupMod.Stagger;
                     break;
                 default:
-                    Utils.Log.EWCLogger.Error($"Invalid stat type in StatContext! {type}");
+                    EWCLogger.Error($"Invalid stat type in StatContext! {type}");
                     return 1f;
             }
 

@@ -1,6 +1,5 @@
 ﻿using Agents;
 using EWC.Attributes;
-using EWC.Utils.Log;
 using Player;
 using SNetwork;
 using System.Diagnostics.CodeAnalysis;

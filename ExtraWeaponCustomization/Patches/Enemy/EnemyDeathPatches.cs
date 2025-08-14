@@ -1,10 +1,7 @@
 ﻿using Enemies;
-using EWC.CustomWeapon.KillTracker;
-using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon;
+using EWC.CustomWeapon.HitTracker;
 using HarmonyLib;
 using System;
-using EWC.CustomWeapon.ObjectWrappers;
 
 namespace EWC.Patches.Enemy
 {
@@ -18,7 +15,7 @@ namespace EWC.Patches.Enemy
         {
             if (__instance.m_currentStateName == state || state != EB_States.Dead) return;
 
-            RunKillContext(__instance.m_ai.m_enemyAgent);
+            HitTrackerManager.RunKillContexts(__instance.m_ai.m_enemyAgent);
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.ShowHitIndicator))]
@@ -28,28 +25,7 @@ namespace EWC.Patches.Enemy
         {
             if (!willDie) return;
 
-            RunKillContext(__instance.m_base.Owner);
-        }
-
-        private static void RunKillContext(EnemyAgent enemy)
-        {
-            var killInfo = KillTrackerManager.GetKillHitContexts(enemy);
-            if (killInfo == null) return;
-
-            float maxTime = 0f;
-            ObjectWrapper<CustomWeaponComponent>? lastCWC = null;
-            foreach ((var cwc, (var context, float time)) in killInfo)
-            {
-                if (time > maxTime)
-                {
-                    lastCWC = cwc;
-                    maxTime = time;
-                }
-            }
-            if (lastCWC == null) return;
-
-            foreach ((var cwc, (var context, float time)) in killInfo)
-                cwc.Object!.Invoke(new WeaponPostKillContext(context, time, cwc.Pointer == lastCWC.Pointer));
+            HitTrackerManager.RunKillContexts(__instance.m_base.Owner);
         }
     }
 }

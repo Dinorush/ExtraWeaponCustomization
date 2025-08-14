@@ -4,7 +4,6 @@ using HarmonyLib;
 using EWC.Dependencies;
 using GTFO.API;
 using EWC.CustomWeapon;
-using EWC.Utils.Log;
 using System.Runtime.CompilerServices;
 using System;
 using System.Linq;
@@ -14,7 +13,7 @@ using EWC.Attributes;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.6.10")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.7.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MSAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
@@ -34,6 +33,7 @@ internal sealed class EntryPoint : BasePlugin
     private IEnumerable<MethodInfo> _cleanupCallbacks = null!;
     private IEnumerable<MethodInfo> _checkpointCallbacks = null!;
     private IEnumerable<MethodInfo> _enterCallbacks = null!;
+    private IEnumerable<MethodInfo> _buildDoneCallbacks = null!;
 
     public override void Load()
     {
@@ -50,29 +50,21 @@ internal sealed class EntryPoint : BasePlugin
         CacheFrequentCallbacks();
         InvokeCallbacks<InvokeOnLoadAttribute>();
 
-        Patches.SNet.SyncManagerPatches.OnCheckpointReload += OnCheckpointReload;
-        LevelAPI.OnLevelCleanup += LevelAPI_OnLevelCleanup;
-        LevelAPI.OnEnterLevel += LevelAPI_OnLevelEnter;
+        Patches.SNet.SyncManagerPatches.OnCheckpointReload += RunFrequentCallback(_checkpointCallbacks);
+        LevelAPI.OnLevelCleanup += RunFrequentCallback(_cleanupCallbacks);
+        LevelAPI.OnEnterLevel += RunFrequentCallback(_enterCallbacks);
+        LevelAPI.OnBuildDone += RunFrequentCallback(_buildDoneCallbacks);
         AssetAPI.OnStartupAssetsLoaded += AssetAPI_OnStartupAssetsLoaded;
         EWCLogger.Log("Loaded " + MODNAME);
     }
 
-    private void OnCheckpointReload()
+    private static Action RunFrequentCallback(IEnumerable<MethodInfo> callbacks)
     {
-        foreach (var callback in _checkpointCallbacks)
-            callback.Invoke(null, null);
-    }
-
-    private void LevelAPI_OnLevelCleanup()
-    {
-        foreach (var callback in _cleanupCallbacks)
-            callback.Invoke(null, null);
-    }
-
-    private void LevelAPI_OnLevelEnter()
-    {
-        foreach (var callback in _enterCallbacks)
-            callback.Invoke(null, null);
+        return () =>
+        {
+            foreach (var callback in callbacks)
+                callback.Invoke(null, null);
+        };
     }
 
     private void AssetAPI_OnStartupAssetsLoaded()
@@ -84,10 +76,10 @@ internal sealed class EntryPoint : BasePlugin
     private void CacheFrequentCallbacks()
     {
         Type[] typesFromAssembly = AccessTools.GetTypesFromAssembly(GetType().Assembly);
-        var methods = typesFromAssembly.SelectMany(AccessTools.GetDeclaredMethods);
+        var methods = typesFromAssembly.SelectMany(AccessTools.GetDeclaredMethods).Where(method => method.IsStatic);
         var cleanups = from method in methods
                             let attr = method.GetCustomAttribute<InvokeOnCleanupAttribute>()
-                            where attr != null && method.IsStatic
+                            where attr != null
                             select new { Method = method, Attribute = attr };
 
         _cleanupCallbacks = from pair in cleanups select pair.Method;
@@ -98,8 +90,11 @@ internal sealed class EntryPoint : BasePlugin
 
         _enterCallbacks = from method in methods
                           where method.GetCustomAttribute<InvokeOnEnterAttribute>() != null
-                          where method.IsStatic
                           select method;
+
+        _buildDoneCallbacks = from method in methods
+                               where method.GetCustomAttribute<InvokeOnBuildDoneAttribute>() != null
+                               select method;
     }
 
     private void InvokeCallbacks<T>() where T : Attribute

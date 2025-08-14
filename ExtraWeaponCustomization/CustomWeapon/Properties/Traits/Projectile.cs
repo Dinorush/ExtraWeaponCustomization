@@ -5,7 +5,6 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
-using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;

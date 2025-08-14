@@ -6,6 +6,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public enum TriggerName
     {
+        Empty,
         PreFire,
         Fire,
         StartFiring,
@@ -22,11 +23,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         PreHit,
         Charge,
         Damage,
+        Stagger,
         Kill,
         Miss,
         HitTaken,
         DamageTaken,
         Health,
+        Clip,
         Crouch,
         CrouchEnd,
         Sprint,
@@ -34,14 +37,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         Jump,
         JumpEnd,
         PerTarget,
+        Reference,
         Init
     }
 
     public interface ITrigger
     {
+        public static readonly TriggerName[] PositionalTriggers = new TriggerName[] { TriggerName.Empty, TriggerName.PreHit, TriggerName.Hit, TriggerName.Charge, TriggerName.Damage, TriggerName.Stagger };
+
         TriggerName Name { get; }
         bool Invoke(WeaponTriggerContext context, out float amount);
         void Reset();
+        void OnReferenceSet(CustomWeaponComponent cwc) { }
         ITrigger Clone();
         void DeserializeProperty(string property, ref Utf8JsonReader reader);
 
@@ -51,9 +58,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (name == null) return null;
 
+            var origName = name;
             name = name.ToLowerInvariant().Replace(" ", null).Replace("on", null);
             return name switch
             {
+                "invalid" => null,
+                "empty" => EmptyTrigger.Instance,
                 "prefire" or "preshot" or "preswing" => new BasicTrigger<WeaponPreFireContext>(TriggerName.PreFire),
                 "fire" or "shot" or "swing" => new BasicTrigger<WeaponPostFireContext>(TriggerName.Fire),
                 "startfiring" => new BasicTrigger<WeaponPostStartFireContext>(TriggerName.StartFiring),
@@ -67,12 +77,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "hittaken" => new BasicTrigger<WeaponDamageTakenContext>(TriggerName.HitTaken),
                 "damagetaken" => new DamageTakenTrigger(),
                 "health" => new HealthTrigger(),
+                "clip" or "ammo" => new ClipTrigger(),
                 "crouch" => new BasicTrigger<WeaponCrouchContext>(TriggerName.Crouch),
                 "crouchend" or "uncrouch" or "stand" => new BasicTrigger<WeaponCrouchEndContext>(TriggerName.CrouchEnd),
                 "sprint" or "run" => new BasicTrigger<WeaponSprintContext>(TriggerName.Sprint),
                 "sprintend" or "runend" => new BasicTrigger<WeaponSprintEndContext>(TriggerName.SprintEnd),
                 "jump" => new BasicTrigger<WeaponJumpContext>(TriggerName.Jump),
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
+                "reference" => new ReferenceCallTrigger(),
                 "setup" or "init" or "drop" => new BasicTrigger<WeaponInitContext>(TriggerName.Init),
                 string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(perTarget),
                 string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
@@ -80,9 +92,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageTypes()),
                 string miss when miss.Contains("miss") => new MissTrigger(name.ToDamageTypes()),
                 string charge when charge.Contains("charge") => new ChargeTrigger(name.ToDamageTypes()),
+                string stagger when stagger.Contains("stagger") || stagger.Contains("stun") => new StaggerTrigger(name.ToDamageTypes()),
                 string damage when damage.Contains("damage") => new DamageTrigger(name.ToDamageTypes()),
-                string kill when kill.Contains("kill") => new KillTrigger(name.ToDamageTypes()),
-                _ => null
+                string kill when kill.Contains("kill") => new HitTrackerTrigger<WeaponPostKillContext>(TriggerName.Kill, name.ToDamageTypes()),
+                _ => new ReferenceCallTrigger(origName)
             };
         }
 

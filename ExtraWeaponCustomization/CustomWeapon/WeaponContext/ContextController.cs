@@ -1,7 +1,6 @@
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,13 +55,13 @@ namespace EWC.CustomWeapon.WeaponContext
             {
                 _entries = new();
 
-                _baseContextList = baseList;
-                if (_baseContextList == null)
+                if (baseList == null)
                 {
                     Type? baseType = typeof(TContext).BaseType;
-                    if (baseType != null && manager._allContextLists.ContainsKey(baseType))
-                        _baseContextList = manager._allContextLists[baseType];
+                    if (baseType != null)
+                        baseList = manager._allContextLists.GetValueOrDefault(baseType);
                 }
+                _baseContextList = baseList;
             }
 
             public bool Add(IWeaponProperty property)
@@ -190,7 +189,9 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponDamageTypeContext>(triggerList);
             RegisterContext<WeaponAimContext>(triggerList);
             RegisterContext<WeaponAimEndContext>(triggerList);
+            RegisterContext<WeaponAmmoContext>(triggerList);
             RegisterContext<WeaponPostKillContext>(triggerList);
+            RegisterContext<WeaponPostStaggerContext>(triggerList);
             RegisterContext<WeaponPostFireContext>(triggerList);
             RegisterContext<WeaponPreFireContext>(triggerList);
             RegisterContext<WeaponHitContext>(triggerList);
@@ -209,6 +210,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponSprintEndContext>(triggerList);
             RegisterContext<WeaponJumpContext>(triggerList);
             RegisterContext<WeaponJumpEndContext>(triggerList);
+            RegisterContext<WeaponReferenceContext>(triggerList);
             RegisterContext<WeaponInitContext>(triggerList);
 
             // Standard contexts
@@ -247,6 +249,7 @@ namespace EWC.CustomWeapon.WeaponContext
             var triggerList = RegisterContext<WeaponTriggerContext>();
             RegisterContext<WeaponDamageTypeContext>(triggerList);
             RegisterContext<WeaponPostKillContext>(triggerList);
+            RegisterContext<WeaponPostStaggerContext>(triggerList);
             RegisterContext<WeaponPostFireContext>(triggerList);
             RegisterContext<WeaponPreFireContext>(triggerList);
             RegisterContext<WeaponHitContext>(triggerList);
@@ -263,6 +266,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponSprintEndContext>(triggerList);
             RegisterContext<WeaponJumpContext>(triggerList);
             RegisterContext<WeaponJumpEndContext>(triggerList);
+            RegisterContext<WeaponReferenceContext>(triggerList);
             RegisterContext<WeaponInitContext>(triggerList);
 
             RegisterContext<WeaponArmorContext>();

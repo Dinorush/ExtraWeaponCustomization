@@ -7,12 +7,11 @@ using EWC.API;
 using EWC.Attributes;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.KillTracker;
+using EWC.CustomWeapon.HitTracker;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
 using EWC.Utils.Extensions;
-using EWC.Utils.Log;
 using GameEvent;
 using Player;
 using SNetwork;
@@ -27,7 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         private readonly static ExplosionDamageSync _sync = new();
         private readonly static ExplosionDamagePlayerSync _playerSync = new();
 
-        private const SearchSetting BaseSettings = SearchSetting.CheckLOS | SearchSetting.CacheHit;
+        private const SearchSetting BaseSettings = SearchSetting.CheckLOS | SearchSetting.ClosestHit;
 
         [InvokeOnAssetLoad]
         private static void Init()
@@ -48,7 +47,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         {
             if (explosiveBase.Radius == 0 || (explosiveBase.MaxDamage == 0 && explosiveBase.MinDamage == 0)) return;
 
-            AIG_CourseNode? node = SearchUtil.GetCourseNode(position, source);
+            AIG_CourseNode? node = CourseNodeUtil.GetCourseNode(position, source.DimensionIndex);
             if (node == null)
             {
                 EWCLogger.Error($"Unable to find node containing position [{position}] for an explosion.");
@@ -222,7 +221,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             bool willKill = damBase.WillDamageKill(precDamage);
-            KillTrackerManager.RegisterHit(eBase.CWC, hitContext);
+            HitTrackerManager.RegisterHit(eBase.CWC, hitContext);
             if (willKill || eBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result)
                 limb.ShowHitIndicator(precDamage > damage, willKill, position, armorMulti < 1f || damBase.IsImortal);
 

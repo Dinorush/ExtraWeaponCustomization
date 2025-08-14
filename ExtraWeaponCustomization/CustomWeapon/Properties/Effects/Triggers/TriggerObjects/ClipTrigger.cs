@@ -1,45 +1,48 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils.Extensions;
-using System.Runtime.Intrinsics.Arm;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
-    public sealed class HealthTrigger : ITrigger
+    public sealed class ClipTrigger : ITrigger
     {
-        public TriggerName Name { get; } = TriggerName.Health;
+        public TriggerName Name { get; } = TriggerName.Clip;
         public float Amount { get; private set; } = 1f;
         public float AmountAtMin { get; private set; } = 1f;
         public float AmountAtMax { get; private set; } = 1f;
-        public float HealthMinRel { get; private set; } = 0f;
-        public float HealthMaxRel { get; private set; } = 1f;
+        public int ClipMin { get; private set; } = 0;
+        public int ClipMax { get; private set; } = 1;
+        public float ClipMinRel { get; private set; } = -1;
+        public float ClipMaxRel { get; private set; } = -1;
         public float Exponent { get; private set; } = 1f;
         public bool FlipExponent { get; private set; } = false;
 
-        public HealthTrigger() {}
+        public ClipTrigger() {}
 
         public bool Invoke(WeaponTriggerContext context, out float amount)
         {
-            if (context is WeaponHealthContext healthContext)
+            if (context is WeaponAmmoContext fireContext)
             {
-                amount = CalculateAmount(healthContext.Health, healthContext.HealthMax);
+                amount = ClipMaxRel >= 0 ? CalculateAmount(fireContext.ClipRel) : CalculateAmount(fireContext.Clip);
                 return true;
             }
             else if (context is WeaponInitContext _)
             {
-                amount = CalculateAmount(1, 1);
+                amount = ClipMaxRel >= 0 ? CalculateAmount(1f) : CalculateAmount(ClipMax);
                 return true;
             }
             amount = 0f;
             return false;
         }
 
-        private float CalculateAmount(float health, float healthMax)
+        private float CalculateAmount(int ammo) => CalculateAmount(ammo, ClipMin, ClipMax);
+        private float CalculateAmount(float ammoRel) => CalculateAmount(ammoRel, ClipMinRel, ClipMaxRel);
+        private float CalculateAmount(float val, float min, float max)
         {
             if (FlipExponent)
-                return Amount * (health / healthMax).MapInverted(HealthMinRel, HealthMaxRel, AmountAtMin, AmountAtMax, Exponent);
+                return Amount * val.MapInverted(min, max, AmountAtMin, AmountAtMax, Exponent);
             else
-                return Amount * (health / healthMax).Map(HealthMinRel, HealthMaxRel, AmountAtMin, AmountAtMax, Exponent);
+                return Amount * val.Map(min, max, AmountAtMin, AmountAtMax, Exponent);
         }
 
         public void Reset() { }
@@ -62,13 +65,17 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "amountatmax":
                     AmountAtMax = reader.GetSingle();
                     break;
-                case "healthminrel":
-                case "healthmin":
-                    HealthMinRel = reader.GetSingle();
+                case "clipmin":
+                    ClipMin = reader.GetInt32();
                     break;
-                case "healthmaxrel":
-                case "healthmax":
-                    HealthMaxRel = reader.GetSingle();
+                case "clipminrel":
+                    ClipMinRel = reader.GetSingle();
+                    break;
+                case "clipmax":
+                    ClipMax = reader.GetInt32();
+                    break;
+                case "clipmaxrel":
+                    ClipMaxRel = reader.GetSingle();
                     break;
                 case "exponent":
                     Exponent = reader.GetSingle();

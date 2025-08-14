@@ -2,7 +2,7 @@
 using EWC.CustomWeapon;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.KillTracker;
+using EWC.CustomWeapon.HitTracker;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -58,6 +58,19 @@ namespace EWC.Patches
             cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
             if (cwc.SpreadController != null)
                 cwc.SpreadController.Active = false;
+        }
+
+        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetCurrentClip))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void UpdateClip(BulletWeapon __instance)
+        {
+            if (__instance == null) return;
+
+            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
+            if (cwc == null) return;
+
+            cwc.Invoke(new WeaponAmmoContext(__instance.m_clip, __instance.ClipSize));
         }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.BulletHit))]
@@ -142,7 +155,7 @@ namespace EWC.Patches
 
                     cc.Invoke(hitContext);
 
-                    KillTrackerManager.RegisterHit(cwc, hitContext);
+                    HitTrackerManager.RegisterHit(cwc, hitContext);
 
                     if (backstab > 1f)
                         hitData.damage *= backstab / origBackstab;

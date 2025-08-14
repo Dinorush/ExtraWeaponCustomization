@@ -1,6 +1,9 @@
 ﻿using Agents;
 using Enemies;
+using EWC.CustomWeapon.ObjectWrappers;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
@@ -15,11 +18,11 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class AutoAim : 
         Trait,
         IGunProperty,
+        ITriggerCallback,
+        ITriggerEvent,
         IWeaponProperty<WeaponOwnerSetContext>,
-        IWeaponProperty<WeaponWieldContext>,
         IWeaponProperty<WeaponUnWieldContext>,
         IWeaponProperty<WeaponUpdateContext>,
-        IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>,
@@ -44,6 +47,18 @@ namespace EWC.CustomWeapon.Properties.Traits
         public Color LockedColor { get; private set; } = new(1.2f, 0.3f, 0.1f, 1f);
         public Color LockingColor { get; private set; } = new(0.8f, 0.3f, 0.2f, 1f);
         public float LockScale { get; private set; } = 1f;
+        public bool UseTrigger { get; private set; } = false;
+        private TriggerCoordinator? _coordinator;
+        public TriggerCoordinator? Trigger
+        {
+            get => _coordinator;
+            set
+            {
+                _coordinator = value;
+                if (value != null)
+                    value.Parent = this;
+            }
+        }
 
         public CrosshairHitIndicator? _reticle;
         private FPSCamera? _camera;
@@ -51,9 +66,12 @@ namespace EWC.CustomWeapon.Properties.Traits
         private EnemyAgent? _target;
         private bool _hasTarget = false;
         private Vector3 _lastTargetPos;
-        private bool _wielded;
+        private bool _reticleActive;
         private float _progress;
         private float _lastUpdateTime;
+        private HashSet<BaseDamageableWrapper>? _triggerTargets;
+        private HashSet<ObjectWrapper<EnemyAgent>>? _triggerAgents;
+        private readonly TriggerEventHelper _eventHelper = new(CallbackMap);
 
         private float _weakspotDetectionTick;
         private Dam_EnemyDamageLimb? _weakspotLimb;
@@ -67,10 +85,14 @@ namespace EWC.CustomWeapon.Properties.Traits
         private readonly Color _passiveDetection = new(0.5f, 0.5f, 0.5f, 1f);
         private readonly Vector3 _targetedAngles = new(0f, 0f, 45f);
 
+        private static BaseDamageableWrapper TempDamWrapper => BaseDamageableWrapper.SharedInstance;
+        private static ObjectWrapper<EnemyAgent> TempEnemyWrapper => ObjectWrapper<EnemyAgent>.SharedInstance;
+
         public override bool ShouldRegister(Type contextType)
         {
             if (!CWC.IsLocal) return false;
             if (!RequireLock && (contextType == typeof(WeaponPreStartFireContext) || contextType == typeof(WeaponFireCancelContext))) return false;
+            if ((!UseTrigger || Trigger == null) && contextType == typeof(WeaponTriggerContext)) return false;
             return base.ShouldRegister(contextType);
         }
 
@@ -117,38 +139,69 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             _reticle = AutoAimReticle.Reticle;
             _camera = CWC.Weapon.Owner.FPSCamera;
-            if (_wielded)
-                OnEnable();
         }
 
-        public void Invoke(WeaponWieldContext _)
-        {
-            _wielded = true;
-            OnEnable();
-        }
-
-        public void Invoke(WeaponUnWieldContext _)
-        {
-            _wielded = false;
-            OnDisable();
-        }
-
-        public void Invoke(WeaponSetupContext _)
-        {
-            if (_wielded)
-                OnEnable();
-        }
+        public void Invoke(WeaponUnWieldContext _) => OnDisable();
 
         public void Invoke(WeaponClearContext _) => OnDisable();
 
         public void Invoke(WeaponUpdateContext _) 
         {
+            if (!_reticleActive)
+            {
+                _reticleActive = true;
+                OnEnable();
+            }
+
+            var oldProgress = _progress;
+            var oldTarget = _target;
             UpdateDetection();
+            if (_progress == 1f && oldProgress != 1f)
+            {
+                _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.Locked));
+                _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.NewLock));
+            }
+            else if (_progress == 1f && _target != oldTarget && _target != null)
+                _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.NewLock));
+            else if (_progress != 1f && oldProgress == 1f)
+                _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.Unlocked));
+
             UpdateAnimate();
         }
 
+        public void Invoke(WeaponTriggerContext context) => Trigger!.Invoke(context);
+
+        public void TriggerApply(List<TriggerContext> contexts)
+        {
+            if (!UseTrigger) return;
+
+            foreach (var tContext in contexts)
+            {
+                var hitContext = (WeaponHitDamageableContextBase)tContext.context;
+                if (!_triggerTargets!.Contains(TempDamWrapper.Set(hitContext.Damageable)))
+                {
+                    _triggerTargets.Add(new(TempDamWrapper));
+                    _triggerAgents!.Add(new(TempDamWrapper.Object!.GetBaseAgent().Cast<EnemyAgent>()));
+                }
+            }
+        }
+
+        public void TriggerReset()
+        {
+            if (!UseTrigger) return;
+
+            _triggerTargets!.Clear();
+            _triggerAgents!.Clear();
+        }
+
+        public int GetCallbackID(string callbackName) => _eventHelper.GetCallbackID(callbackName);
+
         public void OnDisable()
         {
+            if (_progress == 1f)
+                _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.Unlocked));
+
+            _reticleActive = false;
             _progress = 0f;
             _target = null;
             if (_reticle != null)
@@ -279,6 +332,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private bool CheckTargetValid()
         {
             if (_target == null || !_target.Alive || _target.Damage.Health <= 0) return false;
+            if (UseTrigger && !_triggerAgents!.Contains(TempEnemyWrapper.Set(_target))) return false;
             if (!IgnoreInvisibility && (_target.RequireTagForDetection || TagOnly) && !_target.IsTagged) return false;
 
             // Check if any part of the target is still valid
@@ -306,7 +360,23 @@ namespace EWC.CustomWeapon.Properties.Traits
             // s_ray may get changed by other functions, so to ensure it remains the same, use a local one
             Ray ray = new(_camera!.Position, _camera!.CameraRayDir);
 
-            List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, Range, Angle, CWC.Weapon.Owner.CourseNode);
+            List<EnemyAgent> enemies;
+            if (UseTrigger)
+            {
+                if (_triggerAgents!.Count == 0) return null;
+
+                enemies = new(_triggerAgents.Count);
+                foreach (var wrapper in _triggerAgents)
+                {
+                    var agent = wrapper.Object!;
+                    if (SearchUtil.IsAgentInCone(ray, Range, Angle, agent, out _))
+                        enemies.Add(agent);
+                }
+            }
+            else
+                enemies = SearchUtil.GetEnemiesInRange(ray, Range, Angle, CWC.Weapon.Owner.CourseNode);
+
+            if (enemies.Count == 0) return null;
 
             List<(EnemyAgent, float)>? angleList = null; // Needed for later comparisons with current target
             switch (TargetPriority)
@@ -455,6 +525,18 @@ namespace EWC.CustomWeapon.Properties.Traits
             return angleX < angleY ? -1 : 1;
         }
 
+        public override WeaponPropertyBase Clone()
+        {
+            var copy = (AutoAim)base.Clone();
+            copy.Trigger = Trigger?.Clone();
+            if (UseTrigger)
+            {
+                copy._triggerTargets = new();
+                copy._triggerAgents = new();
+            }
+            return copy;
+        }
+
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
@@ -478,6 +560,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             EWCJson.Serialize(writer, nameof(LockedColor), LockedColor);
             EWCJson.Serialize(writer, nameof(LockingColor), LockingColor);
             writer.WriteNumber(nameof(LockScale), LockScale);
+            writer.WriteBoolean(nameof(UseTrigger), UseTrigger);
+            writer.WriteString(nameof(Trigger), "Invalid");
             writer.WriteEndObject();
         }
 
@@ -553,9 +637,56 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "lockscale":
                     LockScale = reader.GetSingle();
                     break;
+                case "usetrigger":
+                    UseTrigger = reader.GetBoolean();
+                    if (UseTrigger)
+                    {
+                        _triggerTargets = new();
+                        _triggerAgents = new();
+                    }
+                    break;
+                case "locktrigger":
+                case "trigger":
+                    Trigger = TriggerCoordinator.Deserialize(ref reader);
+                    VerifyTriggers();
+                    break;
                 default:
                     break;
             }
+        }
+
+        private void VerifyTriggers()
+        {
+            if (Trigger == null) return;
+
+            for (int i = Trigger.Activate.Triggers.Count - 1; i >= 0; i--)
+            {
+                TriggerName name = Trigger.Activate.Triggers[i].Name;
+                if (!ITrigger.PositionalTriggers.Contains(name))
+                {
+                    EWCLogger.Warning($"{GetType().Name} has an invalid trigger {name}. Only the following are allowed: {string.Join(", ", ITrigger.PositionalTriggers)}");
+                    Trigger.Activate.Triggers.RemoveAt(i);
+                    continue;
+                }
+            }
+
+            if (Trigger?.Activate.Triggers.Any() != true)
+                Trigger = null;
+        }
+
+        private static int CallbackMap(string callback) => callback switch
+        {
+            "locked" => (int)Callback.Locked,
+            "unlocked" => (int)Callback.Unlocked,
+            "newlock" => (int)Callback.NewLock,
+            _ => 0
+        };
+
+        enum Callback
+        {
+            Locked,
+            Unlocked,
+            NewLock
         }
     }
     

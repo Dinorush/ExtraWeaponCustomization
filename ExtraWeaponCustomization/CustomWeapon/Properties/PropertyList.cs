@@ -32,7 +32,7 @@ namespace EWC.CustomWeapon.Properties
         {
             if (_setup)
             {
-                Utils.Log.EWCLogger.Error($"Property list {string.Join(", ", Properties)} was setup twice! This shouldn't happen!");
+                EWCLogger.Error($"Property list {string.Join(", ", Properties)} was setup twice! This shouldn't happen!");
                 return;
             }
             _setup = true;

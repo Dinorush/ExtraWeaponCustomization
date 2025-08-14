@@ -2,7 +2,6 @@
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects;
 using EWC.JSON;
-using EWC.Utils.Log;
 using Gear;
 using GTFO.API.Utilities;
 using MTFO.API;

@@ -3,7 +3,7 @@ using System;
 
 namespace EWC.CustomWeapon.ObjectWrappers
 {
-    internal class ObjectWrapper<T> where T : Il2CppObjectBase
+    public class ObjectWrapper<T> where T : Il2CppObjectBase
     {
         public static readonly ObjectWrapper<T> SharedInstance = new(null, IntPtr.Zero);
 

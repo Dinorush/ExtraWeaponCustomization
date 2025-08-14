@@ -13,6 +13,9 @@ namespace EWC.JSON.Converters
             if (reader.TokenType == JsonTokenType.String)
                 return ITrigger.GetTrigger(reader.GetString());
 
+            if (reader.TokenType == JsonTokenType.Number)
+                return new ReferenceCallTrigger(reader.GetUInt32());
+
             if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException("Expected Trigger to be either a string or object");
 
             // Full object case
@@ -55,6 +58,9 @@ namespace EWC.JSON.Converters
                 if (property.ToLowerInvariant() != "name") continue;
 
                 reader.Read();
+                if (reader.TokenType == JsonTokenType.Number)
+                    return new ReferenceCallTrigger(reader.GetUInt32());
+
                 string? name = reader.GetString();
                 if (name == null) throw new JsonException("Name field cannot be empty in trigger object.");
 

@@ -1,13 +1,12 @@
-﻿using EWC.CustomWeapon.WeaponContext;
-using System.Collections.Generic;
-using EWC.CustomWeapon.Properties.Effects;
-using EWC.CustomWeapon.WeaponContext.Contexts;
-using System;
-using EWC.CustomWeapon.Properties.Traits;
+﻿using EWC.CustomWeapon.Properties.Effects;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
-using EWC.Utils.Log;
-using System.Diagnostics.CodeAnalysis;
+using EWC.CustomWeapon.Properties.Traits;
+using EWC.CustomWeapon.WeaponContext;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils.Extensions;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EWC.CustomWeapon.Properties
 {
@@ -49,19 +48,41 @@ namespace EWC.CustomWeapon.Properties
             if (baseList == null) return;
 
             _root = CreateTree(cwc, baseList);
-            RemoveInvalidProperties(_root, cwc.IsGun);
-            RegisterPropertyIDs();
+            foreach (var property in _properties)
+                property.OnReferenceSet();
             Activate(_root);
-            RegisterSyncProperties();
         }
 
         private PropertyNode CreateTree(CustomWeaponComponent cwc, PropertyList list, PropertyNode? parent = null)
         {
             PropertyNode curNode = new(list, parent);
             list.SetCWC(cwc);
-            foreach (WeaponPropertyBase property in list.Properties)
+            for (int i = list.Properties.Count - 1; i >= 0; i--)
             {
+                WeaponPropertyBase property = list.Properties[i];
+                if (!property.ValidProperty())
+                {
+                    EWCLogger.Warning($"Cannot add {property.GetType().Name} to a {(cwc.IsGun ? "gun" : "melee")}!");
+
+                    list.Properties.Remove(property);
+                    Type type = property.GetType();
+                    if (list.Traits?.TryGetValue(type, out var trait) == true && trait == property)
+                        list.Traits.Remove(type);
+                    continue;
+                }
+
                 _properties.Add(property);
+                if (property is ITriggerCallbackSync syncProperty)
+                {
+                    syncProperty.SyncID = (ushort)_syncList.Count;
+                    _syncList.Add(syncProperty);
+                }
+
+                if (property.ID != 0)
+                {
+                    if (!_idToProperty.TryAdd(property.ID, property.Reference))
+                        EWCLogger.Warning("Duplicate property ID detected: " + property.ID);
+                }
 
                 if (property is TempProperties tempProperties)
                 {
@@ -72,80 +93,6 @@ namespace EWC.CustomWeapon.Properties
                     refHolder.Properties.SetCWC(cwc);
             }
             return curNode;
-        }
-
-        private void RemoveInvalidProperties(PropertyNode? node, bool isGun)
-        {
-            if (node == null) return;
-
-            for (int i = node.List.Properties.Count - 1; i >= 0; i--)
-            {
-                WeaponPropertyBase property = node.List.Properties[i];
-                if (!property.ValidProperty())
-                {
-                    EWCLogger.Warning($"Cannot add {property.GetType().Name} to a {(isGun ? "gun" : "melee")}!");
-
-                    node.List.Properties.Remove(property);
-                    Type type = property.GetType();
-                    if (node.List.Traits?.TryGetValue(type, out var trait) == true && trait == property)
-                        node.List.Traits.Remove(type);
-                }
-            }
-
-            foreach (var child in node.Children)
-                RemoveInvalidProperties(child, isGun);
-        }
-
-        private void RegisterSyncProperties()
-        {
-            foreach (var property in _properties)
-            {
-                if (property is ITriggerCallbackSync syncProperty)
-                {
-                    syncProperty.SyncID = (ushort)_syncList.Count;
-                    _syncList.Add(syncProperty);
-                }
-            }
-        }
-
-        private void RegisterPropertyIDs()
-        {
-            if (_root == null) return;
-
-            CachePropertyIDs();
-            SetReferenceProperties(_root);
-        }
-
-        private void CachePropertyIDs()
-        {
-            foreach (var property in _properties)
-            {
-                if (property.ID != 0)
-                {
-                    if (!_idToProperty.TryAdd(property.ID, property.Reference))
-                        EWCLogger.Warning("Duplicate property ID detected: " + property.ID);
-                }
-            }
-        }
-
-        private void SetReferenceProperties(PropertyNode node)
-        {
-            foreach (var refHolder in node.List.ReferenceHolders.OrEmptyIfNull())
-            {
-                foreach (var property in refHolder.Properties.ReferenceProperties.OrEmptyIfNull())
-                {
-                    if (_idToProperty.TryGetValue(property.ReferenceID, out var refProperty))
-                    {
-                        property.SetReference(refProperty);
-                        refHolder.OnReferenceSet(refProperty.Property);
-                    }
-                    else if (property.ReferenceID != 0)
-                        EWCLogger.Error($"Unable to find property with ID {property.ReferenceID}!");
-                }
-            }
-
-            foreach (var child in node.Children)
-                SetReferenceProperties(child);
         }
 
         public void Clear()
@@ -163,6 +110,16 @@ namespace EWC.CustomWeapon.Properties
         public bool HasTrait<T>() where T : Trait => _activeTraits.ContainsKey(typeof(T));
         public T? GetTrait<T>() where T : Trait => _activeTraits.TryGetValueAs<Type, Trait, T>(typeof(T), out T? trait) ? trait : null;
         public bool TryGetTrait<T>([MaybeNullWhen(false)] out T trait) where T : Trait => _activeTraits.TryGetValueAs(typeof(T), out trait);
+        public bool TryGetReference(uint id, [MaybeNullWhen(false)] out WeaponPropertyBase property)
+        {
+            if (_idToProperty.TryGetValue(id, out var refProp))
+            {
+                property = refProp.Property;
+                return true;
+            }
+            property = null;
+            return false;
+        }
 
         internal ITriggerCallbackSync GetTriggerSync(ushort id)
         {

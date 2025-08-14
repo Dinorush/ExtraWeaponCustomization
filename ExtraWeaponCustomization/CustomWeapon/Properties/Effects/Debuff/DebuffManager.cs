@@ -2,7 +2,6 @@
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Structs;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 

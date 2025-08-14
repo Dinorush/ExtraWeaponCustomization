@@ -1,5 +1,4 @@
 ﻿using BepInEx.Unity.IL2CPP;
-using EWC.Utils.Log;
 using Player;
 using System;
 using System.Linq;

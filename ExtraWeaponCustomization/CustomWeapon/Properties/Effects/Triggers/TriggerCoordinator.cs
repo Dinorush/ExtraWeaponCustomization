@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 using EWC.Utils;
+using System.Linq;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
@@ -22,6 +23,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             copy.Activate = (ActivateHolder) Activate.Clone(copy);
             copy.Reset = (ResetHolder?) Reset?.Clone(copy);
             return copy;
+        }
+
+        public void OnReferenceSet()
+        {
+            Activate.OnReferenceSet();
+            Reset?.OnReferenceSet();
         }
 
         public void Invoke(WeaponTriggerContext context)

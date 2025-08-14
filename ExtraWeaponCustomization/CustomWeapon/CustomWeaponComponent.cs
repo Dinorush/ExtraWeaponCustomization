@@ -260,6 +260,8 @@ namespace EWC.CustomWeapon
         public T? GetTrait<T>() where T : Trait => _propertyController.GetTrait<T>();
         [HideFromIl2Cpp]
         public bool TryGetTrait<T>([MaybeNullWhen(false)] out T trait) where T : Trait => _propertyController.TryGetTrait(out trait);
+        [HideFromIl2Cpp]
+        public bool TryGetReference(uint id, [MaybeNullWhen(false)] out WeaponPropertyBase property) => _propertyController.TryGetReference(id, out property);
 
         [HideFromIl2Cpp]
         internal ITriggerCallbackSync GetTriggerSync(ushort id) => _propertyController.GetTriggerSync(id);

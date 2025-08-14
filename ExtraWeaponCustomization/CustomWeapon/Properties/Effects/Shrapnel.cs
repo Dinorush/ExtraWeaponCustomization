@@ -10,7 +10,6 @@ using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
-using EWC.Utils.Log;
 using FX_EffectSystem;
 using GameData;
 using System;

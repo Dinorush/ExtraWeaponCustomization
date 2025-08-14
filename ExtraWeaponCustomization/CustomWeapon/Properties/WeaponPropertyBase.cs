@@ -1,4 +1,6 @@
-﻿using EWC.Utils;
+﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.Utils;
+using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -33,6 +35,22 @@ namespace EWC.CustomWeapon.Properties
         }
 
         protected virtual void OnCWCSet() { }
+        public virtual void OnReferenceSet()
+        {
+            if (this is IReferenceHolder refHolder)
+            {
+                foreach (var property in refHolder.Properties.ReferenceProperties.OrEmptyIfNull())
+                {
+                    if (CWC.TryGetReference(property.ReferenceID, out var prop))
+                        refHolder.OnReferenceSet(prop);
+                    else if (property.ReferenceID != 0)
+                        EWCLogger.Error($"Unable to find property with ID {property.ReferenceID}!");
+                }
+            }
+
+            if (this is ITriggerCallback callback)
+                callback.Trigger?.OnReferenceSet();
+        }
 
         public abstract void Serialize(Utf8JsonWriter writer);
 
@@ -49,7 +67,7 @@ namespace EWC.CustomWeapon.Properties
             }
         }
 
-        protected static uint StringIDToInt(string id)
+        public static uint StringIDToInt(string id)
         {
             if (!s_stringToIDDict.ContainsKey(id))
                 s_stringToIDDict.Add(id, s_nextID--);

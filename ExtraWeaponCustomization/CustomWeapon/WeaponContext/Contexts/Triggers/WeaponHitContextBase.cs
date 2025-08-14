@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.CustomShot;
+﻿using Enemies;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.Utils;
 using System;
@@ -6,7 +7,7 @@ using UnityEngine;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
 {
-    public class WeaponHitContextBase : WeaponDamageTypeContext
+    public abstract class WeaponHitContextBase : WeaponDamageTypeContext
     {
         public Vector3 Position { get; }
         public Vector3 Direction { get; }
@@ -36,7 +37,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
         }
     }
 
-    public class WeaponHitDamageableContextBase : WeaponHitContextBase
+    public abstract class WeaponHitDamageableContextBase : WeaponHitContextBase
     {
         public Vector3 LocalPosition { get; }
         public IDamageable Damageable { get; }
@@ -58,5 +59,29 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Triggers
         public WeaponHitDamageableContextBase(WeaponHitDamageableContextBase context) :
             this(context.Damageable, context.Position, context.Direction, context.Normal, context.Backstab, context.Falloff, context.ShotInfo, context.DamageType)
         { }
+    }
+
+    public abstract class WeaponHitTrackerContextBase : WeaponHitDamageableContextBase
+    {
+        public EnemyAgent Enemy { get; }
+        public float Delay { get; }
+        public bool DidLastHit { get; }
+
+        public WeaponHitTrackerContextBase(WeaponHitDamageableContext hitContext, float lastTime, bool didKill) :
+            base(
+                hitContext.Damageable,
+                hitContext.LocalPosition + hitContext.Damageable.GetBaseAgent().Position,
+                hitContext.Direction,
+                hitContext.Normal,
+                hitContext.Backstab,
+                hitContext.Falloff,
+                hitContext.ShotInfo,
+                hitContext.DamageType
+                )
+        {
+            Enemy = hitContext.Damageable.GetBaseAgent().Cast<EnemyAgent>();
+            Delay = Clock.Time - lastTime;
+            DidLastHit = didKill;
+        }
     }
 }

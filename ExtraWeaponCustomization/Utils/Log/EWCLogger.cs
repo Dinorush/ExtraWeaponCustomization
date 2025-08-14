@@ -1,6 +1,6 @@
 ﻿using BepInEx.Logging;
 
-namespace EWC.Utils.Log
+namespace EWC
 {
     internal static class EWCLogger
     {

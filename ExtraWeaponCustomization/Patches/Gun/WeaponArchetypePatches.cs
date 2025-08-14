@@ -101,6 +101,8 @@ namespace EWC.Patches.Gun
             cwc.NotifyShotFired();
             ShotManager.CancelTracerFX(cwc);
             ShotManager.RunVanillaShotEnd(cwc);
+
+            cwc.Invoke(new WeaponAmmoContext(cwc.Gun!.m_clip, cwc.Gun.ClipSize));
             cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
         }
 

@@ -2,7 +2,7 @@
 
 namespace EWC.CustomWeapon.ObjectWrappers
 {
-    internal class BaseDamageableWrapper : ObjectWrapper<IDamageable>
+    public class BaseDamageableWrapper : ObjectWrapper<IDamageable>
     {
         public static readonly new BaseDamageableWrapper SharedInstance = new(null, IntPtr.Zero);
         public bool Alive => Object != null && Object.GetHealthRel() > 0;
@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.ObjectWrappers
         }
     }
 
-    internal class BaseDamageableWrapper<T> : ObjectWrapper<T> where T : Dam_SyncedDamageBase
+    public class BaseDamageableWrapper<T> : ObjectWrapper<T> where T : Dam_SyncedDamageBase
     {
         public static readonly new BaseDamageableWrapper<T> SharedInstance = new(null, IntPtr.Zero);
         public bool Alive => Object != null && Object.GetHealthRel() > 0;

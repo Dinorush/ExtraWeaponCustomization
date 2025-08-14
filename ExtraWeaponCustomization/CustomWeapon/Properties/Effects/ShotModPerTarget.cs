@@ -5,7 +5,6 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.Utils.Extensions;
-using EWC.Utils.Log;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public ShotModPerTarget()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(ITrigger.PositionalTriggers);
         }
 
         public override bool ShouldRegister(Type contextType)

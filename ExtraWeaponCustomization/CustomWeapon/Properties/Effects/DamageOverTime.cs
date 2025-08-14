@@ -7,7 +7,6 @@ using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
-using EWC.Dependencies;
 using EWC.JSON;
 using Player;
 using System;
@@ -61,7 +60,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public DamageOverTime() : base()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(DamageType.DOT, TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(DamageType.DOT, ITrigger.PositionalTriggers);
         }
 
         public override void TriggerApply(List<TriggerContext> triggerList)

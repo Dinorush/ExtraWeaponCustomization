@@ -17,6 +17,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private ProjectileHomingSettings _settings;
         private PlayerAgent? _owner;
+        private eDimensionIndex _dimensionIndex;
         private WallPierce? _wallPierce;
         private bool _enabled = false;
 
@@ -80,6 +81,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (!_base.IsLocal) return;
             _owner = projBase.CWC.Weapon.Owner;
+            _dimensionIndex = _owner.DimensionIndex;
             _wallPierce = projBase.CWC.GetTrait<WallPierce>();
 
             if (_homingEnabled)
@@ -220,7 +222,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _weakspotList.Clear();
             Ray ray = new(s_position, s_dir);
             SearchUtil.DupeCheckSet = _base.Hitbox.HitEnts;
-            List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings.SearchRange, _settings.SearchAngle, SearchUtil.GetCourseNode(s_position, _owner!), SearchSetting.IgnoreDupes);
+            List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings.SearchRange, _settings.SearchAngle, CourseNodeUtil.GetCourseNode(s_position, _dimensionIndex), SearchSetting.IgnoreDupes);
 
             switch (_settings.TargetPriority)
             {

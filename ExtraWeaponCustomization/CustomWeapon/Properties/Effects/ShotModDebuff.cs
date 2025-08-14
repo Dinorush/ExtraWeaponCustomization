@@ -37,7 +37,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public ShotModDebuff()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge);
+            SetValidTriggers(ITrigger.PositionalTriggers);
         }
 
         public override void TriggerReset() => TriggerResetSync();

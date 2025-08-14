@@ -3,7 +3,7 @@ using CharacterDestruction;
 using Enemies;
 using EWC.API;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.KillTracker;
+using EWC.CustomWeapon.HitTracker;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using Player;
@@ -137,7 +137,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             var hitContext = cc.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             bool willKill = damBase.WillDamageKill(precDamage);
-            KillTrackerManager.RegisterHit(shrapnel.CWC, hitContext);
+            HitTrackerManager.RegisterHit(shrapnel.CWC, hitContext);
             if (willKill || cc.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result)
                 limb.ShowHitIndicator(precDamage > damage, willKill, hitData.hitPos, armorMulti < 1f || damBase.IsImortal);
 

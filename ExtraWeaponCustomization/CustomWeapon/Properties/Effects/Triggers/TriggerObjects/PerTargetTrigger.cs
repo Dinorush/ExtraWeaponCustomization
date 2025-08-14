@@ -3,6 +3,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,8 +32,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         }
 
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
-        private readonly static TriggerName[] ValidActivates = new[] { TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge };
-        private readonly static TriggerName[] ValidApplies = new[] { TriggerName.PreHit, TriggerName.Hit, TriggerName.Damage, TriggerName.Charge, TriggerName.Kill };
+        private readonly static TriggerName[] ValidActivates = ITrigger.PositionalTriggers.Remove(TriggerName.Empty);
+        private readonly static TriggerName[] ValidApplies = ValidActivates.Extend(TriggerName.Kill);
 
         private readonly Dictionary<BaseDamageableWrapper, float> _targetAmounts = new();
 
