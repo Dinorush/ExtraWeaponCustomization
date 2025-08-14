@@ -77,7 +77,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "hittaken" => new BasicTrigger<WeaponDamageTakenContext>(TriggerName.HitTaken),
                 "damagetaken" => new DamageTakenTrigger(),
                 "health" => new HealthTrigger(),
-                "clip" or "ammo" => new ClipTrigger(),
+                "clip" or "mag" => new ClipTrigger(),
                 "crouch" => new BasicTrigger<WeaponCrouchContext>(TriggerName.Crouch),
                 "crouchend" or "uncrouch" or "stand" => new BasicTrigger<WeaponCrouchEndContext>(TriggerName.CrouchEnd),
                 "sprint" or "run" => new BasicTrigger<WeaponSprintContext>(TriggerName.Sprint),
