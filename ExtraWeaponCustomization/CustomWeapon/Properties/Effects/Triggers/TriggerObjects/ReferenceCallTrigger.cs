@@ -20,7 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (context is WeaponReferenceContext refContext && refContext.ID == ID && refContext.CallbackID == _callbackID)
             {
-                amount = Amount;
+                amount = Amount * refContext.Mod;
                 return true;
             }
             amount = 0f;
