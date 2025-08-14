@@ -67,6 +67,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private bool _hasTarget = false;
         private Vector3 _lastTargetPos;
         private bool _reticleActive;
+        private bool _lastAutoAim = false;
         private float _progress;
         private float _lastUpdateTime;
         private HashSet<BaseDamageableWrapper>? _triggerTargets;
@@ -153,19 +154,19 @@ namespace EWC.CustomWeapon.Properties.Traits
                 OnEnable();
             }
 
-            var oldAutoAim = UseAutoAim;
             var oldTarget = _target;
             UpdateDetection();
-            if (UseAutoAim && !oldAutoAim)
+            if (UseAutoAim && !_lastAutoAim)
             {
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.Locked));
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.NewLock));
             }
             else if (UseAutoAim && _target != oldTarget && _target != null)
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.NewLock));
-            else if (!UseAutoAim && oldAutoAim)
+            else if (!UseAutoAim && _lastAutoAim)
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.Unlocked));
 
+            _lastAutoAim = UseAutoAim;
             UpdateAnimate();
         }
 
@@ -201,6 +202,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (_progress == 1f)
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.Unlocked));
 
+            _lastAutoAim = false;
             _reticleActive = false;
             _progress = 0f;
             _target = null;
