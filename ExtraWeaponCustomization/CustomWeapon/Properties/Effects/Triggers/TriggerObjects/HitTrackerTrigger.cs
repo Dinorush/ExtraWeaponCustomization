@@ -36,6 +36,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "requiredidkill":
                 case "requirekill":
                 case "requirelasthit":
+                case "lasthit":
                     RequireLastHit = reader.GetBoolean();
                     break;
             }
