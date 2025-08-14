@@ -45,7 +45,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public Foam()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.BulletLanded));
-            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.PositionalTriggers.Extend(TriggerName.BulletLanded));
+            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.PositionalTriggers.Extend(TriggerName.BulletLanded, TriggerName.ChargeLanded));
         }
 
         public override void TriggerReset() {}
