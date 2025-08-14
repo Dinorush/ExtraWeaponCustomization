@@ -645,7 +645,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                         _triggerAgents = new();
                     }
                     break;
-                case "locktrigger":
+                case "triggertype":
                 case "trigger":
                     Trigger = TriggerCoordinator.Deserialize(ref reader);
                     VerifyTriggers();
