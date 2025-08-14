@@ -153,17 +153,17 @@ namespace EWC.CustomWeapon.Properties.Traits
                 OnEnable();
             }
 
-            var oldProgress = _progress;
+            var oldAutoAim = UseAutoAim;
             var oldTarget = _target;
             UpdateDetection();
-            if (_progress == 1f && oldProgress != 1f)
+            if (UseAutoAim && !oldAutoAim)
             {
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.Locked));
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.NewLock));
             }
-            else if (_progress == 1f && _target != oldTarget && _target != null)
+            else if (UseAutoAim && _target != oldTarget && _target != null)
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.NewLock));
-            else if (_progress != 1f && oldProgress == 1f)
+            else if (!UseAutoAim && oldAutoAim)
                 _eventHelper.Invoke(CWC, new WeaponReferenceContext(ID, (int)Callback.Unlocked));
 
             UpdateAnimate();
