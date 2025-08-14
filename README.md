@@ -6,21 +6,21 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
 - Ammo Mod: Modifies the magazine/reserve ammo counts.
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
-- Armor Shred: Applies a global armor reduction to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
+- Armor Shred: Applies a global armor reduction to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
-- Damage Over Time: Applies a damage over time effect. [Prehit, Hit, Damage, Charge]
+- Damage Over Time: Applies a damage over time effect. [Prehit, Hit, Damage, Charge, Stagger]
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
 - Fire Shot: Fires shots at offsets. [Gun]
-- Foam: Applies foam where bullets land. [BulletLanded, Prehit, Hit, Damage, Charge]
+- Foam: Applies foam where bullets land. [Landed, Prehit, Hit, Damage, Charge, Stagger]
 - Health Mod: Modifies the user's health.
 - Health Shot Mod: Applies a modifier to shots/melees depending on the user's current health.
 - Noise: Creates detectable noise where triggers occur.
 - Recoil Mod: Applies a recoil modifier. [Gun]
 - Reference Trigger: Sends Apply and Reset triggers to other properties.
 - Shot Mod: Applies a stat modifier to shots/melees.
-- Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
-- Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge]
+- Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
+- Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
 - Shrapnel: Causes bullets to fire out from where bullets land. [Gun]
 - Speed Mod: Applies a modifier to the user's movement speed.
 - Spread Mod: Applies a spread modifier. [Gun]
