@@ -7,8 +7,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public class HitTrackerTrigger<TContext> : DamageTypeTrigger<TContext> where TContext : WeaponHitTrackerContextBase
     {
-        public float MaxDelay { get; set; } = 0.5f;
-        public bool RequireLastHit { get; set; } = true;
+        public float MaxDelay { get; private set; } = 0.5f;
+        public bool RequireLastHit { get; private set; } = true;
 
         public HitTrackerTrigger(TriggerName name, params DamageType[] types) : base(name, types) { }
 

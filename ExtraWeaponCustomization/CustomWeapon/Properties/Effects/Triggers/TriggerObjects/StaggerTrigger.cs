@@ -6,7 +6,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public sealed class StaggerTrigger : HitTrackerTrigger<WeaponPostStaggerContext>
     {
-        public bool IncludeLimbBreak { get; set; } = true;
+        public bool IncludeLimbBreak { get; private set; } = true;
 
         public StaggerTrigger(params DamageType[] types) : base(TriggerName.Stagger, types) { }
 
