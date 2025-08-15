@@ -110,9 +110,22 @@ namespace EWC.CustomWeapon.Properties
         public bool HasTrait<T>() where T : Trait => _activeTraits.ContainsKey(typeof(T));
         public T? GetTrait<T>() where T : Trait => _activeTraits.TryGetValueAs<Type, Trait, T>(typeof(T), out T? trait) ? trait : null;
         public bool TryGetTrait<T>([MaybeNullWhen(false)] out T trait) where T : Trait => _activeTraits.TryGetValueAs(typeof(T), out trait);
+        public bool TryGetReferenceHolder(uint id, [MaybeNullWhen(false)] out PropertyRef propertyRef)
+        {
+            if (id == 0)
+            {
+                propertyRef = null;
+                return false;
+            }
+
+            if (_idToProperty.TryGetValue(id, out propertyRef))
+                return true;
+            EWCLogger.Error($"Unable to find property with ID {id}!");
+            return false;
+        }
         public bool TryGetReference(uint id, [MaybeNullWhen(false)] out WeaponPropertyBase property)
         {
-            if (_idToProperty.TryGetValue(id, out var refProp))
+            if (TryGetReferenceHolder(id, out var refProp))
             {
                 property = refProp.Property;
                 return true;

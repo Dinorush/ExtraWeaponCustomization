@@ -40,8 +40,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 else
                     EWCLogger.Error($"Cannot use {property.GetType().Name} as a trigger!");
             }
-            else
-                EWCLogger.Error($"Unable to find property with ID {ID}!");
         }
 
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)

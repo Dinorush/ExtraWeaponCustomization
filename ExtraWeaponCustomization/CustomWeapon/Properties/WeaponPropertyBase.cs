@@ -43,8 +43,6 @@ namespace EWC.CustomWeapon.Properties
                 {
                     if (CWC.TryGetReference(property.ReferenceID, out var prop))
                         refHolder.OnReferenceSet(prop);
-                    else if (property.ReferenceID != 0)
-                        EWCLogger.Error($"Unable to find property with ID {property.ReferenceID}!");
                 }
             }
 

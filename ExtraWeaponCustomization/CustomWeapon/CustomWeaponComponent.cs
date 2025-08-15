@@ -261,6 +261,8 @@ namespace EWC.CustomWeapon
         [HideFromIl2Cpp]
         public bool TryGetTrait<T>([MaybeNullWhen(false)] out T trait) where T : Trait => _propertyController.TryGetTrait(out trait);
         [HideFromIl2Cpp]
+        public bool TryGetReferenceHolder(uint id, [MaybeNullWhen(false)] out PropertyRef propertyRef) => _propertyController.TryGetReferenceHolder(id, out propertyRef);
+        [HideFromIl2Cpp]
         public bool TryGetReference(uint id, [MaybeNullWhen(false)] out WeaponPropertyBase property) => _propertyController.TryGetReference(id, out property);
 
         [HideFromIl2Cpp]
