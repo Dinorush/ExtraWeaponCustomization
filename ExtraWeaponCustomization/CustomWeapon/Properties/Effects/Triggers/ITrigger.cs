@@ -62,7 +62,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             name = name.ToLowerInvariant().Replace(" ", null).Replace("on", null);
             return name switch
             {
-                "invalid" => null,
+                "invalid" or "null" => null,
                 "empty" => EmptyTrigger.Instance,
                 "prefire" or "preshot" or "preswing" => new BasicTrigger<WeaponPreFireContext>(TriggerName.PreFire),
                 "fire" or "shot" or "swing" => new BasicTrigger<WeaponPostFireContext>(TriggerName.Fire),

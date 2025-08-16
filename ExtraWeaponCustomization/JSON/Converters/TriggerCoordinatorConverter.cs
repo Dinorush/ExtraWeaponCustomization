@@ -9,6 +9,9 @@ namespace EWC.JSON.Converters
     {
         public override TriggerCoordinator? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
+            if (reader.TokenType == JsonTokenType.Null)
+                return null;
+
             TriggerCoordinator coordinator = new();
 
             // Simple trigger case (just one activation trigger)
