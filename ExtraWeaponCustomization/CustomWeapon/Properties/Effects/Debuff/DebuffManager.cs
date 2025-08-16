@@ -35,7 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
                         _shotMods.Remove(kv.Key);
                     });
 
-                _shotMods.Add(new BaseDamageableWrapper(TempWrapper), shotMods = new DebuffShotHolder[StackTypeConst.Count]);
+                _shotMods.Add(new BaseDamageableWrapper(TempWrapper), shotMods = new DebuffShotHolder[StatTypeConst.Count]);
             }
 
             int statInt = (int)statType;
