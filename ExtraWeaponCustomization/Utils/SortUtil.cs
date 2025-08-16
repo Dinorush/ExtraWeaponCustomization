@@ -22,7 +22,6 @@ namespace EWC.Utils
             return x.hit.distance < y.hit.distance ? -1 : 1;
         }
 
-
         public static void SortWithWeakspotBuffer(IList<RaycastHit> list)
         {
             s_limbCache.EnsureCapacity(list.Count);

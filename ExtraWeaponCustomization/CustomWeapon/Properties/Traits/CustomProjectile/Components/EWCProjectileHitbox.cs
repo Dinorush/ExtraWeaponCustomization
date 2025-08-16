@@ -241,22 +241,26 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             int prevCount = _pierceCount;
             bool checkLOS = _settings.HitSize >= SightCheckMinSize;
-            SortUtil.SortWithWeakspotBuffer(s_hits);
+            if (_settings.HitSize > 0)
+                SortUtil.SortWithWeakspotBuffer(s_hits);
+            else
+                s_hits.Sort(SortUtil.Rayhit);
+
             foreach (RaycastHit hit in s_hits)
             {
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                 if (damageable == null) continue;
                 if (AlreadyHit(damageable)) continue;
                 if (checkLOS && _wallPierce == null
-                 && Physics.Linecast(hit.point, s_ray.origin, out s_rayHit, LayerUtil.MaskWorld)
-                 && s_rayHit.collider.gameObject.Pointer != hit.collider.gameObject.Pointer) // Needed for locks
+                    && Physics.Linecast(hit.point, s_ray.origin, out s_rayHit, LayerUtil.MaskWorld)
+                    && s_rayHit.collider.gameObject.Pointer != hit.collider.gameObject.Pointer) // Needed for locks
                     continue;
 
                 s_rayHit = hit;
-                
+
                 if (damageable != null)
                     DoDamage(damageable);
-                
+
                 if (_pierceCount <= 0) break;
             }
 

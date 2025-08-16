@@ -389,19 +389,22 @@ namespace EWC.Utils
             s_rayHitCache.Clear();
             DamageUtil.IncrementSearchID();
             var searchID = DamageUtil.SearchID;
+            float totalMoved = 0;
             while (Physics.Raycast(ray, out s_rayHit, maxDist, layerMask))
             {
                 IDamageable? damageable = s_rayHit.collider.GetComponent<IDamageable>();
                 if (damageable != null)
                 {
                     var baseDam = damageable.GetBaseDamagable();
-                    if (baseDam.TempSearchID != searchID && (!settings.HasFlag(SearchSetting.IgnoreDupes) || !DupeCheckSet?.Contains(baseDam.Pointer) == true))
+                    if (baseDam.TempSearchID != searchID && (!settings.HasFlag(SearchSetting.IgnoreDupes) || DupeCheckSet?.Contains(baseDam.Pointer) != true))
                     {
                         s_rayHitCache.Add(s_rayHit);
                         baseDam.TempSearchID = searchID;
                     }
                 }
                 float move = s_rayHit.distance + 0.1f;
+                s_rayHit.distance += totalMoved; // Reflect the true distance of the hit
+                totalMoved += move;
                 ray.origin += ray.direction * move;
                 maxDist -= move;
             }
