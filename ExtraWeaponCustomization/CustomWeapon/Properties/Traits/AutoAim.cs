@@ -563,7 +563,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             EWCJson.Serialize(writer, nameof(LockingColor), LockingColor);
             writer.WriteNumber(nameof(LockScale), LockScale);
             writer.WriteBoolean(nameof(UseTrigger), UseTrigger);
-            writer.WriteString(nameof(Trigger), "Invalid");
+            writer.WriteNull(nameof(Trigger));
             writer.WriteEndObject();
         }
 

@@ -173,7 +173,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 writer.WriteNumber(nameof(AccelExponent), AccelExponent);
             writer.WriteNumber(nameof(DecelTime), DecelTime);
             writer.WriteNumber(nameof(DecelDelay), DecelDelay);
-            writer.WriteString("ResetTrigger", "Invalid");
+            writer.WriteNull("ResetTrigger");
             writer.WriteEndObject();
         }
 

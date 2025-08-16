@@ -43,7 +43,10 @@ namespace EWC.JSON.Converters
         // Only called for templates, so don't need logic for customized triggers
         public override void Write(Utf8JsonWriter writer, ITrigger? value, JsonSerializerOptions options)
         {
-            writer.WriteStringValue(value?.Name.ToString() ?? "Invalid");
+            if (value == null)
+                writer.WriteNullValue();
+            else
+                writer.WriteStringValue(value.Name.ToString());
         }
 
         private static ITrigger? CreateTriggerInstance(Utf8JsonReader reader)

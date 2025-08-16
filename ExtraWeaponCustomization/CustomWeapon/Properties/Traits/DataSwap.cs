@@ -333,7 +333,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(EndCharge), EndCharge);
             writer.WriteBoolean(nameof(EndFiring), EndFiring);
             writer.WriteBoolean(nameof(KeepMagCost), KeepMagCost);
-            writer.WriteString(nameof(Trigger), "Invalid");
+            writer.WriteNull(nameof(Trigger));
             writer.WriteEndObject();
         }
 

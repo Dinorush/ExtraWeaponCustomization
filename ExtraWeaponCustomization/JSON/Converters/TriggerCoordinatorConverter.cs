@@ -60,7 +60,10 @@ namespace EWC.JSON.Converters
         // Only called for templates, so don't need logic for customized coordinators/triggers
         public override void Write(Utf8JsonWriter writer, TriggerCoordinator? value, JsonSerializerOptions options)
         {
-            writer.WriteStringValue(value?.Activate.Triggers[0].Name.ToString() ?? "Invalid");
+            if (value == null)
+                writer.WriteNullValue();
+            else
+                writer.WriteStringValue(value.Activate.Triggers[0].Name.ToString());
         }
     }
 }
