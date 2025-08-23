@@ -62,10 +62,19 @@ namespace EWC.Patches
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetCurrentClip))]
         [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void UpdateClip(BulletWeapon __instance)
+        [HarmonyPrefix]
+        private static void UpdateClip(BulletWeapon __instance, int clip, ref bool __state)
         {
             if (__instance == null) return;
+
+            __state = __instance.m_clip != clip;
+        }
+        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetCurrentClip))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void UpdateClip(BulletWeapon __instance, bool __state)
+        {
+            if (__instance == null || !__state) return;
 
             CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
             if (cwc == null) return;

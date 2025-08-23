@@ -1,6 +1,5 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils.Extensions;
-using System.Runtime.Intrinsics.Arm;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
@@ -17,6 +16,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public bool FlipExponent { get; private set; } = false;
 
         public HealthTrigger() {}
+
+        public bool StoreZeroAmount => true;
 
         public bool Invoke(WeaponTriggerContext context, out float amount)
         {

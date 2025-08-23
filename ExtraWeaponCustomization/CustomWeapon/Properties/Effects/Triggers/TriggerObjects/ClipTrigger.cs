@@ -19,6 +19,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public ClipTrigger() {}
 
+        public bool StoreZeroAmount => true;
+
         public bool Invoke(WeaponTriggerContext context, out float amount)
         {
             if (context is WeaponAmmoContext fireContext)

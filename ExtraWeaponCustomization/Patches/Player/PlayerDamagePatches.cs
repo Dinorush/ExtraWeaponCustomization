@@ -27,10 +27,19 @@ namespace EWC.Patches.Player
         }
 
         [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveSetHealth))]
+        [HarmonyPrefix]
+        private static void Pre_ReceiveHealth(Dam_PlayerDamageBase __instance, ref float __state)
+        {
+            __state = __instance.Health;
+        }
+
+        [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveSetHealth))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void Post_ReceiveHealth(Dam_PlayerDamageBase __instance)
+        private static void Post_ReceiveHealth(Dam_PlayerDamageBase __instance, float __state)
         {
+            if (__state == __instance.Health) return;
+
             CustomWeaponManager.InvokeOnGear(__instance.Owner.Owner, new WeaponHealthContext(__instance));
         }
     }

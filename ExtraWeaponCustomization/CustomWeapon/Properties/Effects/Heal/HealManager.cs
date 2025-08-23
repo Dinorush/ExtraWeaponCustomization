@@ -41,8 +41,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
                 heal = Math.Min(heal, (cap + SingleVal) - dam.Health);
                 if (heal <= 0) return;
 
-                dam.Health = Math.Min(dam.Health + heal, player.Damage.HealthMax);
-                dam.SendSetHealth(dam.Health);
+                dam.SendSetHealth(Math.Min(dam.Health + heal, player.Damage.HealthMax));
                 if (cancelRegen)
                     dam.m_nextRegen = Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage * EXPAPIWrapper.GetHealthRegenMod(player);
             }

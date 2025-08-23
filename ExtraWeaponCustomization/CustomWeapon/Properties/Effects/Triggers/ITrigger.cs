@@ -46,6 +46,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public static readonly TriggerName[] PositionalTriggers = new TriggerName[] { TriggerName.Empty, TriggerName.PreHit, TriggerName.Hit, TriggerName.Charge, TriggerName.Damage, TriggerName.Stagger };
 
         TriggerName Name { get; }
+        bool StoreZeroAmount => false;
         bool Invoke(WeaponTriggerContext context, out float amount);
         void Reset();
         void OnReferenceSet(CustomWeaponComponent cwc) { }
