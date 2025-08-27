@@ -15,6 +15,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     public interface ITriggerCallback : IWeaponProperty<WeaponTriggerContext>
     {
         public TriggerCoordinator? Trigger { get; set; }
+        public bool UseZeroAmountTrigger => false;
         public void TriggerApply(List<TriggerContext> triggerList);
         public void TriggerReset();
         public void RemoteReset()

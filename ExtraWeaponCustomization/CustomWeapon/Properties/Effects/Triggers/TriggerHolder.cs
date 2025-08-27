@@ -81,7 +81,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     {
                         if (ResetDelay > 0f)
                             StartDelayedCallback(_delayedReset, checkEnd: true);
-                        if (amount > 0f || trigger.StoreZeroAmount)
+                        if (amount > 0f || (trigger.StoreZeroAmount && Caller?.UseZeroAmountTrigger == true))
                             AddTrigger(context, amount);
                         if (Cap > 0 && _triggerSum >= Cap) break;
                     }
