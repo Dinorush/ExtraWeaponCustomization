@@ -108,54 +108,6 @@ namespace EWC.Utils
                 EWCLogger.Error($"Unable to get any node for ({position})! How are you even playing the game?!");
                 return null!;
             }
-
-            public AIG_CourseNode GetNode(Vector3 position)
-            {
-                var list = GetNodes(position);
-                if (list == null)
-                    return null!;
-
-                if (list.Length == 1)
-                    return list[0];
-
-                // Retrieve the closest nodes in each course node
-                (AIG_CourseNode, AIG_INode)[] bestNodes = new (AIG_CourseNode, AIG_INode)[list.Length];
-                int index = 0;
-                foreach (var courseNode in list)
-                {
-                    float bestDistInNode = float.MaxValue;
-                    AIG_INode bestNodeInNode = null!;
-                    foreach (var node in courseNode.m_nodeCluster.m_nodes)
-                    {
-                        float sqrDist = (position - node.Position).sqrMagnitude;
-                        if (sqrDist < bestDistInNode)
-                        {
-                            bestDistInNode = sqrDist;
-                            bestNodeInNode = node;
-                        }
-                    }
-                    bestNodes[index++] = (courseNode, bestNodeInNode);
-                }
-
-                // Determine the closest of the closest nodes
-                // Prioritize below the position so hitting a roof uses the node with the roof
-                bool bestIsValidHeight = false;
-                float bestDist = float.MaxValue;
-                AIG_CourseNode bestNode = null!;
-                foreach ((var courseNode, var node) in bestNodes)
-                {
-                    bool validHeight = node.Position.y - 0.25f <= position.y;
-                    float sqrDist = (position - node.Position).sqrMagnitude;
-                    if ((!bestIsValidHeight && validHeight) || (bestIsValidHeight == validHeight && sqrDist < bestDist))
-                    {
-                        bestIsValidHeight = validHeight;
-                        bestDist = sqrDist;
-                        bestNode = courseNode;
-                    }
-                }
-
-                return bestNode;
-            }
         }
 
         private readonly static Dictionary<eDimensionIndex, DimensionMap> _maps = new();
@@ -193,6 +145,45 @@ namespace EWC.Utils
                 map.FinishBuild();
         }
 
+        public static AIG_CourseNode ResolveCourseNode(AIG_CourseNode[] list, Vector3 position)
+        {
+            if (list == null)
+                return null!;
+
+            if (list.Length == 1)
+                return list[0];
+
+            // Retrieve the closest nodes in each course node
+            (AIG_CourseNode, AIG_INode)[] bestNodes = new (AIG_CourseNode, AIG_INode)[list.Length];
+            int index = 0;
+            foreach (var courseNode in list)
+            {
+                courseNode.m_nodeCluster.TryGetClosestNodeInCluster(position, out var bestNodeInNode);
+                bestNodes[index++] = (courseNode, bestNodeInNode);
+            }
+
+            // Determine the closest of the closest nodes
+            // Prioritize below the position so hitting a roof uses the node with the roof
+            bool bestIsValidHeight = false;
+            float bestDist = float.MaxValue;
+            AIG_CourseNode bestNode = null!;
+            foreach ((var courseNode, var node) in bestNodes)
+            {
+                if (node == null) continue;
+
+                bool validHeight = node.Position.y - 0.25f <= position.y;
+                float sqrDist = (position - node.Position).sqrMagnitude;
+                if ((!bestIsValidHeight && validHeight) || (bestIsValidHeight == validHeight && sqrDist < bestDist))
+                {
+                    bestIsValidHeight = validHeight;
+                    bestDist = sqrDist;
+                    bestNode = courseNode;
+                }
+            }
+
+            return bestNode;
+        }
+
         public static AIG_CourseNode GetCourseNode(Vector3 position, eDimensionIndex dimensionIndex)
         {
             if (!_maps.TryGetValue(dimensionIndex, out var map))
@@ -201,7 +192,18 @@ namespace EWC.Utils
                 return null!;
             }
 
-            return map.GetNode(position);
+            return ResolveCourseNode(map.GetNodes(position), position);
+        }
+
+        public static AIG_CourseNode[] GetCourseNodes(Vector3 position, eDimensionIndex dimensionIndex)
+        {
+            if (!_maps.TryGetValue(dimensionIndex, out var map))
+            {
+                EWCLogger.Error($"No Position-To-Node map for dimension {dimensionIndex}!");
+                return null!;
+            }
+
+            return map.GetNodes(position);
         }
     }
 }
