@@ -69,6 +69,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public bool Invoke(WeaponTriggerContext context)
         {
+            bool activate = _triggerSum > 0;
             if (Clock.Time >= _nextTriggerTime
              && (Cap == 0 || _triggerSum < Cap)
              && (Chance == 1f || Chance > Random.NextSingle()))
@@ -82,13 +83,17 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                         if (ResetDelay > 0f)
                             StartDelayedCallback(_delayedReset, checkEnd: true);
                         if (amount > 0f || (trigger.StoreZeroAmount && Caller?.UseZeroAmountTrigger == true))
+                        {
+                            activate = true;
                             AddTrigger(context, amount);
+                        }
+
                         if (Cap > 0 && _triggerSum >= Cap) break;
                     }
                 }
             }
 
-            bool activate = _triggerSum > 0 && _triggerSum >= Threshold;
+            activate &= _triggerSum >= Threshold;
             if (activate)
             {
                 if (ConsumeThreshold)

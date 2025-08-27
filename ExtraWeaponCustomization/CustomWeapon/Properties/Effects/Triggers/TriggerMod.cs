@@ -20,7 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public StackType OverrideStackType { get; private set; } = StackType.Override;
         public StackType StackLayer { get; private set; } = StackType.Multiply;
 
-        public bool UseZeroAmountTrigger => true;
+        public virtual bool UseZeroAmountTrigger => StackType == StackType.Override;
 
         private float ClampToCap(float mod)
         {

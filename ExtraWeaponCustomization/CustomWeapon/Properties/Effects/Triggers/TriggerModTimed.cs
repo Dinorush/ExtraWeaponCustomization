@@ -41,6 +41,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 OnUpdate(mod);
                 EnqueueUpdate();
             }
+            else if(CoroutineUtil.Stop(ref _updateRoutine))
+                OnDisable();
         }
 
         public void Invoke(WeaponSetupContext context)
