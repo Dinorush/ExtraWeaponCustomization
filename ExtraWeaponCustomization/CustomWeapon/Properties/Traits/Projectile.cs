@@ -54,6 +54,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float RicochetSpeedMod { get; private set; } = 1f;
         public float RicochetSpeedAngleFactor { get; private set; } = 0f;
         public bool RicochetOnHit { get; private set; } = false;
+        public bool EnableTerrainHitFX { get; private set; } = true;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
 
@@ -157,6 +158,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(RicochetSpeedMod), RicochetSpeedMod);
             writer.WriteNumber(nameof(RicochetSpeedAngleFactor), RicochetSpeedAngleFactor);
             writer.WriteBoolean(nameof(RicochetOnHit), RicochetOnHit);
+            writer.WriteBoolean(nameof(EnableTerrainHitFX), EnableTerrainHitFX);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
             writer.WritePropertyName(nameof(StatChanges));
@@ -270,6 +272,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "ricochetonhit":
                     RicochetOnHit = reader.GetBoolean();
+                    break;
+                case "enableterrainhitfx":
+                case "enableterrainfx":
+                    EnableTerrainHitFX = reader.GetBoolean();
                     break;
                 case "visuallerpdist":
                 case "lerpdist":

@@ -367,6 +367,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private void DoImpactFX(IDamageable? damageable)
         {
+            if (damageable == null && !_settings.EnableTerrainHitFX) return;
+
             GameObject gameObject = s_rayHit.collider.gameObject;
             var colliderMaterial = gameObject.GetComponent<ColliderMaterial>();
             bool isDecalsAllowed = (LayerUtil.MaskDecalValid & gameObject.gameObject.layer) == 0;

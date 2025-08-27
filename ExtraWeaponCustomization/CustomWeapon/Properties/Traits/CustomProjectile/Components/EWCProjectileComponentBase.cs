@@ -163,7 +163,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             for (int i = 0; i < MaxCollisionCheck && Hitbox.Update(_fixedInfo.Position, collisionVel, out var bounce); i++)
             {
                 float angleFactor = Math.Abs(Vector3.Dot(Dir, bounce.normal));
-                _fixedInfo.BaseSpeed *= (1f - Settings.RicochetSpeedAngleFactor * angleFactor).Lerp(Settings.RicochetSpeedMod, 1f);
+                _fixedInfo.BaseSpeed *= (1f - Settings.RicochetSpeedAngleFactor * (1f - angleFactor)).Lerp(1f, Settings.RicochetSpeedMod);
                 float remainingDist = collisionVel.magnitude - (bounce.point - _fixedInfo.Position).magnitude;
                 _fixedInfo.BaseDir = Vector3.Reflect(Dir, bounce.normal);
                 deltaMove = Vector3.Reflect(collisionVel, bounce.normal).normalized * remainingDist;
