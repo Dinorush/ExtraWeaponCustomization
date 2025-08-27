@@ -352,6 +352,7 @@ namespace EWC.CustomWeapon
                 GunArchetype!.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
                 if (GunArchetype.BurstIsDone())
                     GunArchetype.m_nextBurstTimer = GunArchetype.HasCooldown ? _lastFireTime + CurrentCooldownDelay : Math.Max(_lastFireTime + CurrentBurstDelay, GunArchetype.m_nextShotTimer);
+                API.FireRateAPI.FireCooldownSetCallback(Gun!, 1f / CurrentFireRate, CurrentBurstDelay, CurrentCooldownDelay);
             }
             else
             {
