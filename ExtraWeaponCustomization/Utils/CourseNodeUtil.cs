@@ -145,6 +145,54 @@ namespace EWC.Utils
                 map.FinishBuild();
         }
 
+        // AIG_NodeCluster.TryGetClosestNodeInCluster pasted but inner loop changed to clamp position
+        private static bool TryGetClosestNodeInCluster(AIG_NodeCluster cluster, Vector3 position, out AIG_INode node)
+        {
+            var voxelVolume = cluster.m_nodeVolume.m_voxelNodeVolume;
+            if (voxelVolume.TryGetCloseVoxelNode_Safe(position, position.y - 0.5f, position.y + 0.5f, out node))
+                return true;
+
+            voxelVolume.GetGridPosition(position, out var x, out var z);
+            x = Mathf.Clamp(x, 0, voxelVolume.m_countX - 1);
+            z = Mathf.Clamp(z, 0, voxelVolume.m_countZ - 1);
+
+            float bestDist = float.MaxValue;
+            AIG_VoxelNode? bestNode = null;
+            for (int i = -1; i < 2; i++)
+            {
+                for (int j = -1; j < 2; j++)
+                {
+                    if (voxelVolume.TryGetPillar(x + i, z + j, out var pillar))
+                    {
+                        foreach (var pillarNode in pillar.m_nodes)
+                        {
+                            if (pillarNode.ClusterID != cluster.ID)
+                                continue;
+
+                            float sqrMagnitude = (pillarNode.Position - position).sqrMagnitude;
+                            if (sqrMagnitude < bestDist)
+                            {
+                                bestNode = pillarNode;
+                                bestDist = sqrMagnitude;
+                                if (bestDist < 0.55f)
+                                {
+                                    node = bestNode.Cast<AIG_INode>();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (bestNode != null)
+            {
+                node = bestNode.Cast<AIG_INode>();
+                return true;
+            }
+            return false;
+        }
+
         public static AIG_CourseNode ResolveCourseNode(AIG_CourseNode[] list, Vector3 position)
         {
             if (list == null)
@@ -158,8 +206,9 @@ namespace EWC.Utils
             int index = 0;
             foreach (var courseNode in list)
             {
-                courseNode.m_nodeCluster.TryGetClosestNodeInCluster(position, out var bestNodeInNode);
-                bestNodes[index++] = (courseNode, bestNodeInNode);
+                if (!TryGetClosestNodeInCluster(courseNode.m_nodeCluster, position, out var node))
+                    node = courseNode.m_nodeCluster.m_nodes[0]; // Position probably isn't near the map, just get something
+                bestNodes[index++] = (courseNode, node);
             }
 
             // Determine the closest of the closest nodes

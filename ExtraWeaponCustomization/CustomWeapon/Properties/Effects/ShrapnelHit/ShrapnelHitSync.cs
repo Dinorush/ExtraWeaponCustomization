@@ -21,7 +21,8 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 packet.localPosition.Get(10f),
                 packet.dir.Value,
                 packet.damage,
-                packet.staggerMult
+                packet.staggerMult,
+                packet.setCooldowns
                 );
         }
     }

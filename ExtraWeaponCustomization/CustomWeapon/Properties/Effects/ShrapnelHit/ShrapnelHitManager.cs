@@ -121,6 +121,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             data.localPosition.Set(localPosition, 10f);
             data.dir.Value = hitData.fireDir;
             data.staggerMult = staggerMult;
+            data.setCooldowns = shrapnel.ApplyAttackCooldown;
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = shrapnel.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
@@ -145,7 +146,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             return true;
         }
 
-        internal static void Internal_ReceiveShrapnelDamage(EnemyAgent target, PlayerAgent? source, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult)
+        internal static void Internal_ReceiveShrapnelDamage(EnemyAgent target, PlayerAgent? source, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
@@ -174,8 +175,37 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
 
             Vector3 position = localPos + target.Position;
-            damBase.ProcessReceivedDamage(damage, source, position, direction, hitreact, tryForceHitreact, limbID, staggerMult);
+            ProcessReceivedShrapnelDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
             DamageAPI.FirePostShrapnelCallbacks(damage, target, limb, source);
+        }
+
+        private static void ProcessReceivedShrapnelDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
+        {
+            EnemyAgent owner = damBase.Owner;
+            bool num = damBase.RegisterDamage(damage);
+            owner.RegisterDamageInflictor(damageSource);
+            if (setCooldowns)
+                owner.Abilities.OnTakeDamage(damage);
+            bool flag = false;
+            if (num)
+            {
+                hitreact = ES_HitreactType.ToDeath;
+                flag = true;
+            }
+            else
+            {
+                damBase.m_damBuildToHitreact += damage * staggerDamageMulti;
+                if (tryForceHitreact || damBase.m_damBuildToHitreact >= owner.EnemyBalancingData.Health.DamageUntilHitreact)
+                {
+                    flag = true;
+                    damBase.m_damBuildToHitreact = 0f;
+                }
+            }
+            if (flag && owner.Locomotion.Hitreact.CanHitreact(hitreact, tryForceHitreact))
+            {
+                ImpactDirection direction2 = ES_Hitreact.GetDirection(owner.transform, direction);
+                owner.Locomotion.Hitreact.ActivateState(hitreact, direction2, attackerIsPlayer: true, damageSource, position, DamageNoiseLevel.Normal);
+            }
         }
     }
 
@@ -189,5 +219,6 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
         public LowResVector3_Normalized dir;
         public float damage;
         public float staggerMult;
+        public bool setCooldowns;
     }
 }

@@ -52,6 +52,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public PropertyList Properties { get; private set; } = new();
         public bool HitTriggerTarget { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
+        public bool ApplyAttackCooldown { get; private set; } = true;
 
         private const float WallHitBuffer = 0.03f;
 
@@ -303,6 +304,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             EWCJson.Serialize(writer, "Traits", Properties);
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
             writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
+            writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -416,6 +418,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "runhittriggers":
                 case "hittriggers":
                     RunHitTriggers = reader.GetBoolean();
+                    break;
+                case "applyattackcooldowns":
+                case "applyattackcooldown":
+                    ApplyAttackCooldown = reader.GetBoolean();
                     break;
             }
         }

@@ -36,6 +36,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageOwner { get; private set; } = true;
         public bool DamageLocks { get; private set; } = true;
         public bool HitClosestFirst { get; private set; } = false;
+        public bool ApplyAttackCooldown { get; private set; } = true;
         public uint SoundID { get; private set; } = EVENTS.STICKYMINEEXPLODE;
         public bool EnableMineFX { get; private set; } = false;
         public Color GlowColor { get; private set; } = new(1, 0.2f, 0, 1);
@@ -109,6 +110,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             writer.WriteBoolean(nameof(HitClosestFirst), HitClosestFirst);
+            writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
             SerializeTrigger(writer);
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WriteBoolean(nameof(EnableMineFX), EnableMineFX);
@@ -201,6 +203,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "hitclosestfirst":
                 case "closestfirst":
                     HitClosestFirst = reader.GetBoolean();
+                    break;
+                case "applyattackcooldowns":
+                case "applyattackcooldown":
+                    ApplyAttackCooldown = reader.GetBoolean();
                     break;
                 case "soundid":
                 case "sound":

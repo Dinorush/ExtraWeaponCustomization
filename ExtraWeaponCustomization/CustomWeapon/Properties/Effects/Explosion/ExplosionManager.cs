@@ -92,6 +92,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     hit.collider.GetComponent<IDamageable>(),
                     hit.point,
                     direction,
+                    (hit.point - position).normalized,
                     hit.normal,
                     hit.distance,
                     source,
@@ -103,7 +104,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             explosiveBase.CWC.Invoke(new WeaponShotEndContext(DamageType.Explosive, shotInfo.State, oldInfo));
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float distance, PlayerAgent source, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 blastDir, Vector3 normal, float distance, PlayerAgent source, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
         {
             float damage = distance.MapInverted(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;
@@ -181,7 +182,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 playerData.target.Set(playerBase.Owner);
                 playerData.source.Set(source);
                 playerData.damage = damage;
-                playerData.direction.Value = direction;
+                playerData.direction.Value = blastDir;
 
                 GuiManager.CrosshairLayer.PopFriendlyTarget();
                 _playerSync.Send(playerData);
@@ -204,7 +205,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             data.limbID = (byte) limb.m_limbID;
             data.damageLimb = eBase.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
+            data.direction.Value = blastDir;
             data.staggerMult = staggerMult;
+            data.setCooldowns = eBase.ApplyAttackCooldown;
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
@@ -228,7 +231,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
-        internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult)
+        internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
@@ -253,13 +256,41 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             EXPAPIWrapper.RegisterDamage(target, source, damage, willKill);
 
-            Vector3 direction = Vector3.up;
             if (damageLimb && (willKill || limb.DoDamage(damage)))
                 damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
 
             Vector3 position = localPos + target.Position;
-            damBase.ProcessReceivedDamage(damage, source, position, Vector3.up * 1000f, hitreact, tryForceHitreact, limbID, staggerMult);
+            ProcessReceivedExplosiveDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
             DamageAPI.FirePostExplosiveCallbacks(damage, target, limb, source);
+        }
+
+        private static void ProcessReceivedExplosiveDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
+        {
+            EnemyAgent owner = damBase.Owner;
+            bool num = damBase.RegisterDamage(damage);
+            owner.RegisterDamageInflictor(damageSource);
+            if (setCooldowns)
+                owner.Abilities.OnTakeDamage(damage);
+            bool flag = false;
+            if (num)
+            {
+                hitreact = ES_HitreactType.ToDeath;
+                flag = true;
+            }
+            else
+            {
+                damBase.m_damBuildToHitreact += damage * staggerDamageMulti;
+                if (tryForceHitreact || damBase.m_damBuildToHitreact >= owner.EnemyBalancingData.Health.DamageUntilHitreact)
+                {
+                    flag = true;
+                    damBase.m_damBuildToHitreact = 0f;
+                }
+            }
+            if (flag && owner.Locomotion.Hitreact.CanHitreact(hitreact, tryForceHitreact))
+            {
+                ImpactDirection direction2 = ES_Hitreact.GetDirection(owner.transform, direction);
+                owner.Locomotion.Hitreact.ActivateState(hitreact, direction2, attackerIsPlayer: true, damageSource, position, DamageNoiseLevel.Normal);
+            }
         }
 
         internal static void Internal_ReceiveExplosionDamagePlayer(PlayerAgent target, PlayerAgent? source, float damage, Vector3 direction)
@@ -287,8 +318,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public byte limbID;
         public bool damageLimb;
         public LowResVector3 localPosition;
+        public LowResVector3_Normalized direction;
         public float damage;
         public float staggerMult;
+        public bool setCooldowns;
     }
 
     public struct ExplosionDamagePlayerData

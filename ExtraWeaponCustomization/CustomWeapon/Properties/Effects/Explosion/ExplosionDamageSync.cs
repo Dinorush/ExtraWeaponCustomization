@@ -19,8 +19,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 packet.limbID,
                 packet.damageLimb,
                 packet.localPosition.Get(10f),
+                packet.direction.Value,
                 packet.damage,
-                packet.staggerMult
+                packet.staggerMult,
+                packet.setCooldowns
                 );
         }
     }
