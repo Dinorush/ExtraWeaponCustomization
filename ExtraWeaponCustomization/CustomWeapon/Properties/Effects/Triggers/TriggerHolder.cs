@@ -25,6 +25,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public List<ITrigger>? Cancel { get; private set; }
         public float CancelReduceAmount { get; private set; } = 0f;
+        public bool CancelDelay { get; private set; } = false;
 
         public readonly TriggerCoordinator Parent;
         public ITriggerCallback? Caller => Parent.Parent;
@@ -212,6 +213,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "cancelreduceamount":
                     CancelReduceAmount = reader.GetSingle();
+                    break;
+                case "cancelapplydelay":
+                case "canceldelay":
+                    CancelDelay = reader.GetBoolean();
                     break;
             }
         }

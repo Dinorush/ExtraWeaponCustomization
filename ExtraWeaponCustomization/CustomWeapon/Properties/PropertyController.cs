@@ -239,6 +239,10 @@ namespace EWC.CustomWeapon.Properties
                         s_subtreePropCache.Add(curr.List.Owner);
                     enabled = true;
                 }
+                // If subtree already added by reference property, ignore it
+                else if (curr.List.Owner != null && curr.List.Owner.Reference.RefCount > 0)
+                    return;
+
                 curr.Enabled = enabled;
 
                 // Add all properties from active nodes
@@ -246,8 +250,15 @@ namespace EWC.CustomWeapon.Properties
                 {
                     foreach (var property in curr.List.Properties)
                     {
-                        if (property.Reference.RefCount++ == 0) // Only add a single property once
+                        if (property.Reference.RefCount == 0) // Only add a single property once
+                        {
                             s_subtreePropCache.Add(property.Reference.Property);
+
+                            if (property.Reference.Property is TempProperties tempProp)
+                                SetSubtree(tempProp.Node!, enabled);
+                        }
+
+                        property.Reference.RefCount++;
                     }
                 }
 

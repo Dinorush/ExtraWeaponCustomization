@@ -35,6 +35,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public void ApplyReset() => DoReset(true);
 
+        protected override void OnCancel()
+        {
+            if (CancelDelay && ApplyDelay > 0)
+                _delayedApply!.Cancel();
+
+            base.OnCancel();
+        }
+
         public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             base.DeserializeProperty(property, ref reader);

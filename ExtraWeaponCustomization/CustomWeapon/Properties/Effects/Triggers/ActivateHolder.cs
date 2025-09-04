@@ -134,6 +134,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             }
             else
                 _accumulatedTriggers.Clear();
+
+            if (CancelDelay && _delayedApplies != null)
+            {
+                while (_delayedApplies!.TryDequeue(out var callback))
+                    callback.Cancel();
+            }
+
             base.OnCancel();
         }
 
