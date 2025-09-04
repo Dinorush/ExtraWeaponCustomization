@@ -63,7 +63,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             foreach (var trigger in triggerList)
             {
-                Vector3 position = trigger.context is WeaponHitContextBase hitContext ? hitContext.Position : CWC.Weapon.Owner.EyePosition;
+                Vector3 position = !FollowUser && trigger.context is WeaponHitContextBase hitContext ? hitContext.Position : CWC.Weapon.Owner.EyePosition;
                 if (LocalSoundOnly)
                 {
                     PostSound(position);
