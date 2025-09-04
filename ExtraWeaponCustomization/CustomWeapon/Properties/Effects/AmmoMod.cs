@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public float ClipChange { get; private set; } = 0;
         public float ReserveChange { get; private set; } = 0;
-        public bool OverflowToReserve { get; private set; } = true;
+        public bool OverflowAtBounds { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
         public bool UseRawAmmo { get; private set; } = false;
         public bool BypassReserveCap { get; private set; } = false;
@@ -78,12 +78,21 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _reserveBuffer /= costOfBullet;
             }
 
+            int reserves = slotAmmo.BulletsInPack;
+            int clipMod = 0;
+            if (OverflowAtBounds && ReserveChange < 0 && reserves < -_reserveBuffer)
+            {
+                int remainder = (int)_reserveBuffer + reserves;
+                _reserveBuffer = -reserves;
+                clipMod = remainder;
+            }
+
             // Calculate the actual changes we can make to clip/ammo
-            int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, slotAmmo.BulletsInPack) : _clipBuffer);
+            int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, reserves) : _clipBuffer + clipMod);
             int newClip = Math.Clamp(weapon.GetCurrentClip() + clipChange, accountForShot, weapon.GetMaxClip() + accountForShot);
 
             // If we overflow/underflow the magazine, send the rest to reserves (if not pulling from reserves)
-            int bonusReserve = OverflowToReserve ? clipChange - (newClip - weapon.GetCurrentClip()) : 0;
+            int bonusReserve = OverflowAtBounds ? clipChange - (newClip - weapon.GetCurrentClip()) : 0;
             clipChange = newClip - weapon.GetCurrentClip();
 
             int reserveChange = (int) (PullFromReserve ? _reserveBuffer - clipChange : _reserveBuffer + bonusReserve);
@@ -120,7 +129,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(ClipChange), ClipChange);
             writer.WriteNumber(nameof(ReserveChange), ReserveChange);
-            writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
+            writer.WriteBoolean(nameof(OverflowAtBounds), OverflowAtBounds);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
             writer.WriteBoolean(nameof(BypassReserveCap), BypassReserveCap);
@@ -142,9 +151,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "reserve":
                     ReserveChange = reader.GetSingle();
                     break;
+                case "overflowatbounds":
                 case "overflowtoreserve":
                 case "overflow":
-                    OverflowToReserve = reader.GetBoolean();
+                    OverflowAtBounds = reader.GetBoolean();
                     break;
                 case "pullfromreserve":
                     PullFromReserve = reader.GetBoolean();

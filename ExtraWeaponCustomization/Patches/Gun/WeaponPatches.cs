@@ -69,6 +69,7 @@ namespace EWC.Patches
 
             __state = __instance.m_clip != clip;
         }
+
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetCurrentClip))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]

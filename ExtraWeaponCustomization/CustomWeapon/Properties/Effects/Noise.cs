@@ -33,6 +33,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public CrossDoorMode CrossDoorMode { get; private set; } = CrossDoorMode.NoPenalty;
         public bool UseNoiseSystem { get; private set; } = false;
         public bool LocalSoundOnly { get; private set; } = false;
+        public bool FollowUser { get; private set; } = false;
 
         private readonly Dictionary<ObjectWrapper<Agent>, float> _alertProgress = new();
 
@@ -65,7 +66,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 Vector3 position = trigger.context is WeaponHitContextBase hitContext ? hitContext.Position : CWC.Weapon.Owner.EyePosition;
                 if (LocalSoundOnly)
                 {
-                    CellSound.Post(SoundID, position);
+                    PostSound(position);
                     continue;
                 }
 
@@ -79,11 +80,19 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void TriggerApplySync(Vector3 position, Vector3 dir, float mod)
         {
-            CellSound.Post(SoundID, position);
+            PostSound(position);
 
             if (UseNoiseSystem || !SNet.IsMaster) return;
 
             TriggerSound(position, mod);
+        }
+
+        private void PostSound(Vector3 position)
+        {
+            if (FollowUser)
+                CWC.Weapon.Sound.Post(SoundID, position);
+            else
+                CellSound.Post(SoundID, position);
         }
 
         public void TriggerResetSync()
@@ -255,6 +264,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteString(nameof(CrossDoorMode), CrossDoorMode.ToString());
             writer.WriteBoolean(nameof(UseNoiseSystem), UseNoiseSystem);
             writer.WriteBoolean(nameof(LocalSoundOnly), LocalSoundOnly);
+            writer.WriteBoolean(nameof(FollowUser), FollowUser);
             writer.WriteEndObject();
         }
 
@@ -297,6 +307,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "localsoundonly":
                 case "localsound":
                     LocalSoundOnly = reader.GetBoolean();
+                    break;
+                case "followuser":
+                case "follow":
+                    FollowUser = reader.GetBoolean();
                     break;
                 default:
                     break;
