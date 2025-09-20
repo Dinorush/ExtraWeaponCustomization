@@ -26,6 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
             HealData data = new() {
                 cancelRegen = hBase.CancelRegen
             };
+
             data.player.Set(player);
             data.heal.Set(heal, player.Damage.HealthMax);
             data.cap.Set(cap, player.Damage.HealthMax);

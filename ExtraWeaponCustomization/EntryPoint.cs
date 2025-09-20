@@ -13,7 +13,7 @@ using EWC.Attributes;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.7.9")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.7.10")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MSAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]

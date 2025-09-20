@@ -89,11 +89,21 @@ namespace EWC.Patches
         [HarmonyPrefix]
         private static void HitCallback(ref WeaponHitData weaponRayData, bool doDamage, float additionalDis, uint damageSearchID, ref bool allowDirectionalBonus)
         {
+            if (!doDamage) return;
+
             // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
-            if (!doDamage || !allowDirectionalBonus || weaponRayData.vfxBulletHit != null) return;
+            if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null)
+            {
+                ApplyDebuffs(weaponRayData, additionalDis);
+                return;
+            }
 
             // All CWC behavior is handled client-side.
-            if (!weaponRayData.owner.IsLocallyOwned) return;
+            if (!weaponRayData.owner.IsLocallyOwned)
+            {
+                ApplyDebuffs(weaponRayData, additionalDis);
+                return;
+            }
 
             IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(weaponRayData.rayHit);
             IDamageable? damBase = damageable != null ? damageable.GetBaseDamagable() : damageable;
@@ -105,16 +115,7 @@ namespace EWC.Patches
             HitData data = new(weaponRayData, cwc, additionalDis);
             if (cwc == null)
             {
-                if (data.damageType.HasFlag(DamageType.Dead)) return;
-
-                data.ResetDamage();
-                if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Damage, data.damageType, DebuffManager.DefaultGroupSet, out var damageMod))
-                    data.damage *= damageMod.Value;
-                if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Precision, data.damageType, DebuffManager.DefaultGroupSet, out var precisionMod))
-                    data.precisionMulti *= precisionMod.Value;
-                if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Stagger, data.damageType, DebuffManager.DefaultGroupSet, out var staggerMod))
-                    data.staggerMulti *= staggerMod.Value;
-                data.Apply();
+                ApplyDebuffs(data);
                 return;
             }
 
@@ -122,6 +123,21 @@ namespace EWC.Patches
             ApplyEWCHit(cwc, data, out allowDirectionalBonus);
         }
 
+        private static void ApplyDebuffs(WeaponHitData weaponRayData, float additionalDis) => ApplyDebuffs(new(weaponRayData, null, additionalDis));
+        private static void ApplyDebuffs(HitData data)
+        {
+            if (data.damageType.HasFlag(DamageType.Dead)) return;
+
+            data.ResetDamage();
+            if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Damage, data.damageType, DebuffManager.DefaultGroupSet, out var damageMod))
+                data.damage *= damageMod.Value;
+            if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Precision, data.damageType, DebuffManager.DefaultGroupSet, out var precisionMod))
+                data.precisionMulti *= precisionMod.Value;
+            if (DebuffManager.TryGetShotModDebuff(data.damageable!, StatType.Stagger, data.damageType, DebuffManager.DefaultGroupSet, out var staggerMod))
+                data.staggerMulti *= staggerMod.Value;
+            data.Apply();
+        }
+        
         public static void ApplyEWCHit(CustomWeaponComponent cwc, HitData hitData, out bool doBackstab) => ApplyEWCHit(cwc, cwc.GetContextController(), hitData, out doBackstab);
 
         public static void ApplyEWCHit(CustomWeaponComponent cwc, ContextController cc, HitData hitData, out bool doBackstab)
