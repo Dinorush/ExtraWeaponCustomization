@@ -17,6 +17,7 @@ namespace EWC;
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MSAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency(AmorLibWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(DamageSyncWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(PDAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
