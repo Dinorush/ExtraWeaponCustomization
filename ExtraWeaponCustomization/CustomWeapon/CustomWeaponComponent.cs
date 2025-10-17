@@ -175,6 +175,7 @@ namespace EWC.CustomWeapon
             DebuffIDs.Add(DebuffManager.DefaultGroup);
             InvokeAll(StaticContext<WeaponCreatedContext>.Instance);
             Invoke(new WeaponInitContext(Owner, Weapon));
+            TriggerManager.RunQueuedReceives(Weapon.InventorySlot, Weapon.IsType(Enums.WeaponType.Sentry));
         }
 
         public virtual void Clear()

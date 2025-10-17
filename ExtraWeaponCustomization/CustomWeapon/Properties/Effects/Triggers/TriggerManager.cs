@@ -2,6 +2,8 @@
 using EWC.Attributes;
 using Player;
 using SNetwork;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using static SNetwork.SNetStructs;
@@ -14,6 +16,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private readonly static TriggerDirSync _triggerDirSync = new();
         private readonly static TriggerAgentSync _triggerAgentSync = new();
         private readonly static TriggerResetSync _resetSync = new();
+        private readonly static Dictionary<(InventorySlot slot, bool isSentry), Queue<Action>> _queuedReceives = new();
         public const float MaxMod = 256f;
 
         [InvokeOnAssetLoad]
@@ -25,6 +28,20 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _resetSync.Setup();
         }
 
+        [InvokeOnCleanup]
+        private static void Cleanup()
+        {
+            _queuedReceives.Clear();
+        }
+
+        internal static void RunQueuedReceives(InventorySlot slot, bool isSentry)
+        {
+            if (!_queuedReceives.TryGetValue((slot, isSentry), out var queue)) return;
+
+            while (queue.TryDequeue(out var onProcess))
+                onProcess();
+        }
+
         public static void SendInstance(ITriggerCallbackBasicSync caller, float mod = 1f)
         {
             if (caller.CWC.Owner.Player == null) return;
@@ -32,10 +49,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _triggerSync.Send(PackInstance(caller, mod));
         }
 
-        internal static void Internal_ReceiveInstance(TriggerInstanceData data)
+        internal static void Internal_ReceiveInstance(TriggerInstanceData data, bool storeOnFail = true)
         {
             if (TryGetTriggerSync(data, out var callback))
                 ((ITriggerCallbackBasicSync)callback).TriggerApplySync(data.mod.Get(MaxMod));
+            else if (storeOnFail)
+                QueueReceive(data, () => Internal_ReceiveInstance(data, storeOnFail: false));
+            else
+                LogFailMessage(data);
         }
 
         private static TriggerInstanceData PackInstance(ITriggerCallbackSync caller, float mod)
@@ -60,10 +81,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _triggerDirSync.Send(data);
         }
 
-        internal static void Internal_ReceiveInstance(TriggerDirInstanceData data)
+        internal static void Internal_ReceiveInstance(TriggerDirInstanceData data, bool storeOnFail = true)
         {
             if (TryGetTriggerSync(data.instance, out var callback))
                 ((ITriggerCallbackDirSync)callback).TriggerApplySync(data.position, data.dir.Value, data.instance.mod.Get(MaxMod));
+            else if (storeOnFail)
+                QueueReceive(data.instance, () => Internal_ReceiveInstance(data, storeOnFail: false));
+            else
+                LogFailMessage(data.instance);
         }
 
         public static void SendInstance(ITriggerCallbackAgentSync caller, Agent target, float mod = 1f)
@@ -76,10 +101,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _triggerAgentSync.Send(data);
         }
 
-        internal static void Internal_ReceiveInstance(TriggerAgentInstanceData data)
+        internal static void Internal_ReceiveInstance(TriggerAgentInstanceData data, bool storeOnFail = true)
         {
             if (TryGetTriggerSync(data.instance, out var callback) && data.target.TryGet(out var target))
                 ((ITriggerCallbackAgentSync)callback).TriggerApplySync(target, data.instance.mod.Get(MaxMod));
+            else if (storeOnFail)
+                QueueReceive(data.instance, () => Internal_ReceiveInstance(data, storeOnFail: false));
+            else
+                LogFailMessage(data.instance);
         }
 
         public static void SendReset(ITriggerCallbackSync caller)
@@ -93,10 +122,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _resetSync.Send(data);
         }
 
-        internal static void Internal_ReceiveReset(TriggerResetData data)
+        internal static void Internal_ReceiveReset(TriggerResetData data, bool storeOnFail = true)
         {
             if (TryGetTriggerSync(data, out var callback))
                 callback.TriggerResetSync();
+            else if (storeOnFail)
+                QueueReceive(data, () => Internal_ReceiveReset(data, storeOnFail: false));
+            else
+                LogFailMessage(data);
         }
 
         private static bool TryGetTriggerSync(TriggerInstanceData data, [MaybeNullWhen(false)] out ITriggerCallbackSync callback)
@@ -117,13 +150,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             callback = null;
             CustomWeaponComponent? cwc;
-            GameObject sourceGO;
             if (isSentry)
             {
                 if (!source.HasPlayerAgent) return false;
                 if (!CustomWeaponManager.TryGetSentry(source.PlayerAgent.Cast<PlayerAgent>(), out var info)) return false;
 
-                sourceGO = info.sentry.gameObject;
                 cwc = info.cgc;
             }
             else
@@ -131,19 +162,33 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 if (!PlayerBackpackManager.TryGetBackpack(source, out var backpack)) return false;
                 if (!backpack.TryGetBackpackItem(slot, out var item)) return false;
 
-                sourceGO = item.Instance.gameObject;
                 cwc = item.Instance.GetComponent<CustomWeaponComponent>();
             }
 
-            if (cwc == null)
-            {
-                EWCLogger.Error("Received a networked trigger for a weapon that has no custom info. Client has incorrect EWC properties.");
-                cwc = sourceGO.AddComponent<CustomWeaponComponent>();
-            }
+            if (cwc == null) return false;
 
             callback = cwc.GetTriggerSync(id);
             return true;
         }
+
+        private static void QueueReceive(TriggerInstanceData instance, Action onProcess)
+        {
+            (InventorySlot, bool) target = (instance.slot, instance.isSentry);
+            if (!_queuedReceives.TryGetValue(target, out var queue))
+                _queuedReceives.Add(target, queue = new());
+            queue.Enqueue(onProcess);
+        }
+
+        private static void QueueReceive(TriggerResetData instance, Action onProcess)
+        {
+            (InventorySlot, bool) target = (instance.slot, instance.isSentry);
+            if (!_queuedReceives.TryGetValue(target, out var queue))
+                _queuedReceives.Add(target, queue = new());
+            queue.Enqueue(onProcess);
+        }
+
+        private static void LogFailMessage(TriggerInstanceData instance) => EWCLogger.Error($"Unable to get custom weapon for {(instance.source.TryGetPlayer(out var player) ? player.NickName : "No Player")} on slot {instance.slot} ({(instance.isSentry ? "Sentry" : "Not Sentry")}");
+        private static void LogFailMessage(TriggerResetData instance) => EWCLogger.Error($"Unable to get custom weapon for {(instance.source.TryGetPlayer(out var player) ? player.NickName : "No Player")} on slot {instance.slot} ({(instance.isSentry ? "Sentry" : "Not Sentry")}");
     }
 
     public struct TriggerInstanceData
