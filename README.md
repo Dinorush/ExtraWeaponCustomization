@@ -34,8 +34,8 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Backstab Multi: Applies a multiplier to backstab damage.
 - Charge Exponent: Modifies the exponent applied to melee charge attacks. [Melee]
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
-- Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate. [Playern]
-- Hitmarker Cooldown: Sets a cooldown on how frequently the weapon can generate hitmarkers.
+- Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate. [Player]
+- Hitmarker Cooldown: Sets a cooldown on how frequently the weapon can generate hitmarkers. [Player]
 - Hold Burst: Releasing the trigger ends a burst early. [Player]
 - Multi Shot: Fires additional bullets per shot at given offsets. [Gun]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
