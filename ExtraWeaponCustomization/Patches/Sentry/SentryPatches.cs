@@ -115,7 +115,6 @@ namespace EWC.Patches.Sentry
             {
                 cgc.NotifyShotFired();
                 ShotManager.CancelTracerFX(cgc);
-                ShotManager.RunVanillaShotEnd();
 
                 var core = __instance.m_core;
                 float cost = core.CostOfBullet;

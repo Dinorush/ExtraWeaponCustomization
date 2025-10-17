@@ -50,7 +50,6 @@ namespace EWC.CustomWeapon.CustomShot
 
         public void FireVanilla(HitData hitData, Vector3 origin)
         {
-            ShotManager.CancelHandleShotEnd();
             Ray ray = new(origin, CalcRayDir(hitData.fireDir, hitData.angOffsetX, hitData.angOffsetY, hitData.randomSpread));
             Weapon.s_ray = ray;
             hitData.fireDir = ray.direction;
@@ -229,6 +228,7 @@ namespace EWC.CustomWeapon.CustomShot
                     FX_Manager.PlayLocalVersion = false;
                     BulletWeapon.s_tracerPool.AquireEffect().Play(null, _fxPos, Quaternion.LookRotation(_ray.direction));
                 }
+
                 _parent._cgc.Invoke(new WeaponShotEndContext(_hitData.damageType.GetBaseType(), _hitData.shotInfo, _origInfo));
             }
 

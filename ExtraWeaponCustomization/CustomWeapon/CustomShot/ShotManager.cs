@@ -40,17 +40,14 @@ namespace EWC.CustomWeapon.CustomShot
         public static Vector3 VanillaFireDir { get; set; }
 
         private static float s_lastShotTime = 0f;
+        private static WeaponType s_lastWeaponType = WeaponType.Any;
         private static IntPtr s_lastGroupOwner = IntPtr.Zero;
 
         private static (IntPtr ptr, ShotInfo info) s_vanillaShotInfo = (IntPtr.Zero, new ShotInfo());
-        private static bool s_hasRanShotEnd = true;
         public static ShotInfo GetVanillaShotInfo(Weapon.WeaponHitData vanillaData)
         {
             if (vanillaData.Pointer != s_vanillaShotInfo.ptr)
             {
-                RunVanillaShotEnd();
-                s_hasRanShotEnd = false;
-
                 if (ActiveFiringInfo.cgc != null)
                 {
                     s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(ActiveFiringInfo.cgc, ActiveFiringInfo.isTagged));
@@ -108,15 +105,6 @@ namespace EWC.CustomWeapon.CustomShot
             ActiveFiringInfo = default;
         }
 
-        public static void CancelHandleShotEnd() => s_hasRanShotEnd = true;
-        public static void RunVanillaShotEnd()
-        {
-            if (s_hasRanShotEnd) return;
-
-            s_hasRanShotEnd = true;
-            ActiveFiringInfo.cgc?.Invoke(new WeaponShotEndContext(DamageType.Bullet, s_vanillaShotInfo.info, null));
-        }
-
         public static bool BulletHit(IGunComp weapon, HitData data)
         {
             var hitData = data.Apply(weapon.VanillaHitData);
@@ -162,6 +150,7 @@ namespace EWC.CustomWeapon.CustomShot
         {
             s_lastGroupOwner = owner.Pointer;
             s_lastShotTime = Clock.Time;
+            s_lastWeaponType = weaponType;
 
             CurrentGroupMod = new();
             if (weaponType.HasFlag(WeaponType.Sentry))
@@ -176,18 +165,22 @@ namespace EWC.CustomWeapon.CustomShot
             }
             else
             {
-                switch (weaponType)
+                if (weaponType.HasFlag(WeaponType.BulletWeapon))
                 {
-                    case WeaponType.BulletWeapon:
-                        var modifier = slot == InventorySlot.GearStandard ? AgentModifier.StandardWeaponDamage : AgentModifier.SpecialWeaponDamage;
-                        CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(owner.IsLocallyOwned, weaponType);
-                        CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, modifier, 1f); 
-                        break;
-                    case WeaponType.Melee:
-                        var syringeBuff = owner.MeleeBuffTimer > Clock.Time ? 3f : 1f;
-                        CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(true, weaponType) * syringeBuff;
-                        CurrentDamageMod = 1f;
-                        break;
+                    var modifier = slot == InventorySlot.GearStandard ? AgentModifier.StandardWeaponDamage : AgentModifier.SpecialWeaponDamage;
+                    CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(owner.IsLocallyOwned, weaponType);
+                    CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, modifier, 1f);
+                }
+                else if (weaponType.HasFlag(WeaponType.Melee))
+                {
+                    var syringeBuff = owner.MeleeBuffTimer > Clock.Time ? 3f : 1f;
+                    CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(true, weaponType) * syringeBuff;
+                    CurrentDamageMod = 1f;
+                }
+                else
+                {
+                    CurrentExternalDamageMod = 1f;
+                    CurrentDamageMod = 1f;
                 }
                 CurrentStaggerMod = 1f;
             }
@@ -196,14 +189,14 @@ namespace EWC.CustomWeapon.CustomShot
         public static void AdvanceGroupModIfOld(CustomWeaponComponent cwc, bool isTagged)
         {
             float time = Clock.Time;
-            if (time == s_lastShotTime && s_lastGroupOwner == cwc.Owner.Player.Pointer) return;
+            if (cwc.Weapon.Type == s_lastWeaponType && time == s_lastShotTime && s_lastGroupOwner == cwc.Owner.Player.Pointer) return;
 
             AdvanceGroupMod(cwc, isTagged);
         }
         public static void AdvanceGroupModIfOld(ArchetypeDataBlock? archBlock, PlayerAgent owner, WeaponType weaponType, InventorySlot slot, bool isTagged)
         {
             float time = Clock.Time;
-            if (time == s_lastShotTime && s_lastGroupOwner == owner.Pointer) return;
+            if (weaponType == s_lastWeaponType && time == s_lastShotTime && s_lastGroupOwner == owner.Pointer) return;
 
             AdvanceGroupMod(archBlock, owner, weaponType, slot, isTagged);
         }

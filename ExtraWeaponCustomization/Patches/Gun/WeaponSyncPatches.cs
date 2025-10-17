@@ -86,7 +86,6 @@ namespace EWC.Patches.Gun
             ShotManager.CancelTracerFX(cgc);
             if (managed)
             {
-                ShotManager.RunVanillaShotEnd();
                 cgc.Invoke(new WeaponAmmoContext(__instance.m_clip, __instance.ClipSize));
                 cgc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
                 if (_botFireFlags.TryGetValue(__instance.Owner.Pointer, out var flags) && flags.end)
