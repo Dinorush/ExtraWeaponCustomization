@@ -40,7 +40,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Multi Shot: Fires additional bullets per shot at given offsets. [Gun]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
 - Projectile: Fires a projectile instead of a hitscan bullet. [Gun]
-- Reserve Clip: Combines reserve ammo with the magazine. [Player]
+- Reserve Clip: Combines reserve ammo with the magazine. [Gun]
 - Silence: Modifies the stealth properties for firing. [Gun]
 - Thick Bullet: Gives bullets a bigger entity hitbox. [Gun]
 - Tumor Multi: Applies a multiplier to tumor damage.
