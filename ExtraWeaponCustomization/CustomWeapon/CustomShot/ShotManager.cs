@@ -40,8 +40,7 @@ namespace EWC.CustomWeapon.CustomShot
         public static Vector3 VanillaFireDir { get; set; }
 
         private static float s_lastShotTime = 0f;
-        private static WeaponType s_lastWeaponType = WeaponType.Any;
-        private static IntPtr s_lastGroupOwner = IntPtr.Zero;
+        private static IntPtr s_lastGroupCWC = IntPtr.Zero;
 
         private static (IntPtr ptr, ShotInfo info) s_vanillaShotInfo = (IntPtr.Zero, new ShotInfo());
         public static ShotInfo GetVanillaShotInfo(Weapon.WeaponHitData vanillaData)
@@ -51,22 +50,21 @@ namespace EWC.CustomWeapon.CustomShot
                 if (ActiveFiringInfo.cgc != null)
                 {
                     s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(ActiveFiringInfo.cgc, ActiveFiringInfo.isTagged));
+
+                    if (vanillaData.owner == null)
+                    {
+                        // Shotguns only assign these AFTER CastWeaponRay runs, which breaks a lot of logic that rely on them being set.
+                        var archData = ActiveFiringInfo.archBlock;
+                        vanillaData.owner = ActiveFiringInfo.owner;
+                        vanillaData.damage = s_vanillaShotInfo.info.OrigDamage;
+                        vanillaData.staggerMulti = s_vanillaShotInfo.info.OrigStagger;
+                        vanillaData.precisionMulti = archData!.PrecisionDamageMulti;
+                        vanillaData.damageFalloff = archData.DamageFalloff;
+                    }
                 }
                 else if (ActiveFiringInfo.valid)
                 {
-                    AdvanceGroupModIfOld(ActiveFiringInfo.archBlock, ActiveFiringInfo.owner!, ActiveFiringInfo.type, ActiveFiringInfo.slot, ActiveFiringInfo.isTagged);
                     s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(vanillaData.damage, vanillaData.precisionMulti, vanillaData.staggerMulti, ActiveFiringInfo.owner!.IsLocallyOwned, ActiveFiringInfo.type));
-                }
-
-                if (ActiveFiringInfo.valid && vanillaData.owner == null)
-                {
-                    // Shotguns only assign these AFTER CastWeaponRay runs, which breaks a lot of logic that rely on them being set.
-                    var archData = ActiveFiringInfo.archBlock;
-                    vanillaData.owner = ActiveFiringInfo.owner;
-                    vanillaData.damage = s_vanillaShotInfo.info.OrigDamage;
-                    vanillaData.staggerMulti = s_vanillaShotInfo.info.OrigStagger;
-                    vanillaData.precisionMulti = archData!.PrecisionDamageMulti;
-                    vanillaData.damageFalloff = archData.DamageFalloff;
                 }
             }
             return s_vanillaShotInfo.info;
@@ -142,16 +140,11 @@ namespace EWC.CustomWeapon.CustomShot
 
         public static void AdvanceGroupMod(CustomWeaponComponent cwc, bool isTagged = false)
         {
-            ArchetypeDataBlock? archBlock = cwc.Weapon is IArchComp archComp ? archComp.ArchetypeData : null;
-            AdvanceGroupMod(archBlock, cwc.Owner.Player, cwc.Weapon.Type, cwc.Weapon.InventorySlot, isTagged);
-            cwc.Invoke(new WeaponShotGroupInitContext(CurrentGroupMod));
-        }
-        public static void AdvanceGroupMod(ArchetypeDataBlock? archBlock, PlayerAgent owner, WeaponType weaponType, InventorySlot slot, bool isTagged)
-        {
-            s_lastGroupOwner = owner.Pointer;
             s_lastShotTime = Clock.Time;
-            s_lastWeaponType = weaponType;
+            s_lastGroupCWC = cwc.Pointer;
 
+            var weaponType = cwc.Weapon.Type;
+            var owner = cwc.Owner.Player;
             CurrentGroupMod = new();
             if (weaponType.HasFlag(WeaponType.Sentry))
             {
@@ -159,7 +152,8 @@ namespace EWC.CustomWeapon.CustomShot
                 CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, AgentModifier.SentryGunDamage, 1f);
                 if (isTagged)
                 {
-                    CurrentDamageMod *= archBlock!.Sentry_DamageTagMulti;
+                    ArchetypeDataBlock archBlock = ((IArchComp)cwc.Weapon).ArchetypeData;
+                    CurrentDamageMod *= archBlock.Sentry_DamageTagMulti;
                     CurrentStaggerMod *= archBlock.Sentry_StaggerDamageTagMulti;
                 }
             }
@@ -167,8 +161,8 @@ namespace EWC.CustomWeapon.CustomShot
             {
                 if (weaponType.HasFlag(WeaponType.BulletWeapon))
                 {
-                    var modifier = slot == InventorySlot.GearStandard ? AgentModifier.StandardWeaponDamage : AgentModifier.SpecialWeaponDamage;
-                    CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(owner.IsLocallyOwned, weaponType);
+                    var modifier = cwc.Weapon.InventorySlot == InventorySlot.GearStandard ? AgentModifier.StandardWeaponDamage : AgentModifier.SpecialWeaponDamage;
+                    CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(cwc.Owner.IsType(OwnerType.Local), weaponType);
                     CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, modifier, 1f);
                 }
                 else if (weaponType.HasFlag(WeaponType.Melee))
@@ -184,21 +178,16 @@ namespace EWC.CustomWeapon.CustomShot
                 }
                 CurrentStaggerMod = 1f;
             }
+
+            cwc.Invoke(new WeaponShotGroupInitContext(CurrentGroupMod));
         }
 
         public static void AdvanceGroupModIfOld(CustomWeaponComponent cwc, bool isTagged)
         {
             float time = Clock.Time;
-            if (cwc.Weapon.Type == s_lastWeaponType && time == s_lastShotTime && s_lastGroupOwner == cwc.Owner.Player.Pointer) return;
+            if (cwc.Pointer == s_lastGroupCWC && time == s_lastShotTime) return;
 
             AdvanceGroupMod(cwc, isTagged);
-        }
-        public static void AdvanceGroupModIfOld(ArchetypeDataBlock? archBlock, PlayerAgent owner, WeaponType weaponType, InventorySlot slot, bool isTagged)
-        {
-            float time = Clock.Time;
-            if (weaponType == s_lastWeaponType && time == s_lastShotTime && s_lastGroupOwner == owner.Pointer) return;
-
-            AdvanceGroupMod(archBlock, owner, weaponType, slot, isTagged);
         }
     }
 }
