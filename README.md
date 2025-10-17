@@ -16,7 +16,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Health Mod: Modifies the user's health.
 - Health Shot Mod: Applies a modifier to shots/melees depending on the user's current health.
 - Noise: Creates detectable noise where triggers occur.
-- Recoil Mod: Applies a recoil modifier. [Gun]
+- Recoil Mod: Applies a recoil modifier. [Player]
 - Reference Trigger: Sends Apply and Reset triggers to other properties.
 - Shot Mod: Applies a stat modifier to shots/melees.
 - Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
@@ -29,18 +29,18 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 #### Traits - Innate gun behavior modifications
 - Ammo Cap: Adjust the value used to calculate ammopack refills and starting ammo. [Gun]
 - Armor Pierce: Pierces armor or modifies direct hit damage dealt to armor.
-- Auto Aim: Automatically fire toward targets. [Held Gun]
-- Auto Trigger: Hold the trigger to fire. [Held Gun]
+- Auto Aim: Automatically fire toward targets. [Player]
+- Auto Trigger: Hold the trigger to fire. [Player]
 - Backstab Multi: Applies a multiplier to backstab damage.
 - Charge Exponent: Modifies the exponent applied to melee charge attacks. [Melee]
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
-- Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate. [Held Gun]
+- Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate. [Playern]
 - Hitmarker Cooldown: Sets a cooldown on how frequently the weapon can generate hitmarkers.
-- Hold Burst: Releasing the trigger ends a burst early. [Held Gun]
+- Hold Burst: Releasing the trigger ends a burst early. [Player]
 - Multi Shot: Fires additional bullets per shot at given offsets. [Gun]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
 - Projectile: Fires a projectile instead of a hitscan bullet. [Gun]
-- Reserve Clip: Combines reserve ammo with the magazine. [Held Gun]
+- Reserve Clip: Combines reserve ammo with the magazine. [Player]
 - Silence: Modifies the stealth properties for firing. [Gun]
 - Thick Bullet: Gives bullets a bigger entity hitbox. [Gun]
 - Tumor Multi: Applies a multiplier to tumor damage.
