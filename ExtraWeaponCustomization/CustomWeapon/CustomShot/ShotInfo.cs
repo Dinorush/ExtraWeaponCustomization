@@ -38,8 +38,8 @@ namespace EWC.CustomWeapon.CustomShot
             }
         }
 
-        public ShotInfo() : this(0, 0, 0, false, WeaponType.Any) { }
-        public ShotInfo(float origDamage, float origPrecision, float origStagger, bool local, WeaponType type)
+        public ShotInfo() : this(0, 0, 0) { }
+        public ShotInfo(float origDamage, float origPrecision, float origStagger)
         {
             ID = ShotManager.NextID;
             _hits = new(5);

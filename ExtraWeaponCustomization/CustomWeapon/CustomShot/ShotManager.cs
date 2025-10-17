@@ -64,7 +64,7 @@ namespace EWC.CustomWeapon.CustomShot
                 }
                 else if (ActiveFiringInfo.valid)
                 {
-                    s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(vanillaData.damage, vanillaData.precisionMulti, vanillaData.staggerMulti, ActiveFiringInfo.owner!.IsLocallyOwned, ActiveFiringInfo.type));
+                    s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(vanillaData.damage, vanillaData.precisionMulti, vanillaData.staggerMulti));
                 }
             }
             return s_vanillaShotInfo.info;
