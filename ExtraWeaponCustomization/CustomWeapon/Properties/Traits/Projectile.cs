@@ -169,6 +169,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(EnableTerrainHitFX), EnableTerrainHitFX);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
+            writer.WriteNumber(nameof(AliveTriggerDelay), AliveTriggerDelay);
+            writer.WriteNumber(nameof(AliveTriggerInterval), AliveTriggerInterval);
             writer.WritePropertyName(nameof(StatChanges));
             ProjectileStatChange.SerializeList(StatChanges, writer);
             writer.WritePropertyName(nameof(HomingSettings));
@@ -292,6 +294,12 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "maxlifetime":
                 case "lifetime":
                     Lifetime = reader.GetSingle();
+                    break;
+                case "alivetriggerdelay":
+                    AliveTriggerDelay = reader.GetSingle();
+                    break;
+                case "alivetriggerinterval":
+                    AliveTriggerInterval = reader.GetSingle();
                     break;
 
                 case "statchanges":
