@@ -1,14 +1,16 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class ChargeExponent :
         Trait,
-        IMeleeProperty,
         IWeaponProperty<WeaponChargeContext>
     {
         public float Exponent { get; private set; } = 3f;
+
+        protected override WeaponType RequiredWeaponType => WeaponType.Melee;
 
         public void Invoke(WeaponChargeContext context)
         {

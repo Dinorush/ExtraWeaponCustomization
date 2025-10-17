@@ -1,8 +1,12 @@
 ﻿using EWC.CustomWeapon;
-using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
+using EWC.Utils.Extensions;
+using GameData;
 using Gear;
 using HarmonyLib;
+using MSC.CustomMeleeData;
 
 namespace EWC.Patches.Melee
 {
@@ -10,20 +14,17 @@ namespace EWC.Patches.Melee
     internal static class MWSPatches
     {
         private static float _cacheChargeDiff = -1;
+        private static MSCWrapper.MSCData _cacheData = new();
+
         [HarmonyPatch(typeof(MWS_ChargeUp), nameof(MWS_ChargeUp.Enter))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
         private static void ChargeCallback(MWS_ChargeUp __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_weapon.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
-            WeaponFireRateContext context = new(1f);
-            cwc.Invoke(context);
-            if (context.Value == 1f) return;
+            if (!__instance.m_weapon.TryGetComp<CustomMeleeComponent>(out var cmc)) return;
 
             _cacheChargeDiff = __instance.m_maxDamageTime;
-            __instance.m_maxDamageTime /= context.Value;
+            __instance.m_maxDamageTime /= cmc.CurrentAttackSpeed;
             _cacheChargeDiff -= __instance.m_maxDamageTime;
             var animData = __instance.m_weapon.MeleeAnimationData;
             animData.AutoAttackTime -= _cacheChargeDiff;
@@ -41,19 +42,6 @@ namespace EWC.Patches.Melee
             animData.AutoAttackTime += _cacheChargeDiff;
             animData.AutoAttackWarningTime += _cacheChargeDiff;
             _cacheChargeDiff = -1;
-        }
-
-        [HarmonyPatch(typeof(MWS_Push), nameof(MWS_Push.Enter))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void PushCallback(MWS_Push __instance)
-        {
-            CustomWeaponComponent? cwc = __instance.m_weapon.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
-            WeaponFireRateContext context = new(1f);
-            cwc.Invoke(context);
-            __instance.m_weapon.WeaponAnimator.speed *= context.Value;
         }
 
         [HarmonyPatch(typeof(MWS_AttackSwingBase), nameof(MWS_AttackSwingBase.Enter))]

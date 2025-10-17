@@ -1,12 +1,12 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
-using Gear;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class HoldBurst :
         Trait,
-        IGunProperty,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>
     {
@@ -14,16 +14,19 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private int _burstMaxCount = 0;
 
+        protected override OwnerType RequiredOwnerType => OwnerType.Local;
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
         public void Invoke(WeaponPostStartFireContext context)
         {
-            if (!CWC.TryGetBurstArchetype(out var arch)) return;
+            if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
             // Can't use archetype.m_burstMax in case clip < max burst count
             _burstMaxCount = arch.m_burstCurrentCount;
         }
 
         public void Invoke(WeaponFireCancelContext context)
         {
-            if (!CWC.TryGetBurstArchetype(out var arch)) return;
+            if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
 
             if (_burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel && !arch.m_fireHeld)
             {

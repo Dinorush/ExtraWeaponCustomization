@@ -1,4 +1,5 @@
 ﻿using Enemies;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
@@ -9,8 +10,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class HitmarkerCooldown : 
         Trait,
-        IGunProperty,
-        IMeleeProperty,
         IWeaponProperty<WeaponHitmarkerContext>
     {
         public float Cooldown { get; private set; } = 0f;
@@ -19,6 +18,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         private float _lastHitmarkerTime = 0f;
         private readonly Dictionary<ObjectWrapper<EnemyAgent>, float> _cooldownsPerTarget = new();
         private static ObjectWrapper<EnemyAgent> TempWrapper => ObjectWrapper<EnemyAgent>.SharedInstance;
+
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
+        protected override OwnerType ValidOwnerType => OwnerType.Local | OwnerType.Sentry;
 
         public void Invoke(WeaponHitmarkerContext context)
         {

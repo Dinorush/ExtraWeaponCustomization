@@ -11,6 +11,7 @@ using Il2CppInterop.Runtime.Runtime;
 using GTFO.API;
 using EWC.API;
 using EWC.Attributes;
+using EWC.Utils.Extensions;
 
 namespace EWC.Patches.Native
 {
@@ -53,40 +54,27 @@ namespace EWC.Patches.Native
             NativePatchAPI.RunDetectPostfix(detection, target, movementDetectionDistance, shootDetectionDistance, delta, ref output);
         }
 
-        struct CWCHolder
-        {
-            public CustomWeaponComponent? primary;
-            public bool hasPrimary;
-            public CustomWeaponComponent? special;
-            public bool hasSpecial;
-
-            public readonly bool IsValid => primary != null == hasPrimary && special != null == hasSpecial;
-        }
-        // Only applies to guns atm, so no need for 3 weapon support (switch to list if ever needed)
-        private static readonly Dictionary<int, CWCHolder> s_cachedCWCs = new();
+        private static readonly Dictionary<int, List<CustomWeaponComponent>> s_cachedCWCs = new();
+        private static readonly InventorySlot[] GunSlots = new InventorySlot[] { InventorySlot.GearStandard, InventorySlot.GearSpecial, InventorySlot.GearClass };
 
         private static void UpdateCache()
         {
             if (s_cachedCWCs.Count != PlayerManager.PlayerAgentsInLevel.Count
-             || s_cachedCWCs.Values.Any(holder => !holder.IsValid))
+             || s_cachedCWCs.Values.Any(list => !list.All(cwc => cwc == null)))
             {
                 s_cachedCWCs.Clear();
                 foreach (PlayerAgent player in PlayerManager.PlayerAgentsInLevel)
                 {
                     if (!PlayerBackpackManager.TryGetBackpack(player.Owner, out var backpack)) continue;
 
-                    if (!backpack.TryGetBackpackItem(InventorySlot.GearStandard, out var primary)
-                     || !backpack.TryGetBackpackItem(InventorySlot.GearSpecial, out var special)) continue;
-
-                    CustomWeaponComponent? primaryCWC = primary.Instance?.GetComponent<CustomWeaponComponent>();
-                    CustomWeaponComponent? specialCWC = special.Instance?.GetComponent<CustomWeaponComponent>();
-                    s_cachedCWCs.Add(player.GlobalID, new CWCHolder()
+                    List<CustomWeaponComponent> list = new(3);
+                    foreach (var slot in GunSlots)
                     {
-                        primary = primaryCWC,
-                        hasPrimary = primaryCWC != null,
-                        special = specialCWC,
-                        hasSpecial = specialCWC != null
-                    });
+                        if (backpack.TryGetBackpackItem(slot, out var item) && item.Instance?.TryGetComp<CustomWeaponComponent>(out var cwc) == true)
+                            list.Add(cwc);
+                    }
+
+                    s_cachedCWCs.Add(player.GlobalID, list);
                 }
             }
         }
@@ -94,12 +82,11 @@ namespace EWC.Patches.Native
         private static void Post_DetectAgentNoise(EnemyDetection __instance, AgentTarget agentTarget, float _mv, float _wp, float _delta, ref float output)
         {
             UpdateCache();
-            if (!s_cachedCWCs.TryGetValue(agentTarget.m_globalID, out var CWCs)
-             || !CWCs.hasPrimary && !CWCs.hasSpecial) return;
+            if (!s_cachedCWCs.TryGetValue(agentTarget.m_globalID, out var CWCs)) return;
 
             WeaponStealthUpdateContext context = new(__instance.m_ai.m_enemyAgent, __instance.m_noiseDetectionOn, output);
-            CWCs.primary?.Invoke(context);
-            CWCs.special?.Invoke(context);
+            foreach (var cwc in CWCs)
+                cwc.Invoke(context);
             output = context.Output;
         }
     }

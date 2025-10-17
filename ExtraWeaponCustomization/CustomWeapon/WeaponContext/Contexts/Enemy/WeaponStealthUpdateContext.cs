@@ -1,8 +1,10 @@
 ﻿using Enemies;
+using EWC.CustomWeapon.WeaponContext.Attributes;
 using System;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
+    [RequireType(Enums.OwnerType.Any)]
     public sealed class WeaponStealthUpdateContext : IWeaponContext
     {
         public EnemyAgent Enemy { get; }

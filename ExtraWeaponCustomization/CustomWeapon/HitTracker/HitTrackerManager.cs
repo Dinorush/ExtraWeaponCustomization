@@ -1,46 +1,38 @@
 ﻿using Agents;
-using Enemies;
-using EWC.CustomWeapon.ObjectWrappers;
+using EWC.Attributes;
+using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Dependencies;
+using System.Collections.Generic;
 
 namespace EWC.CustomWeapon.HitTracker
 {
     internal static class HitTrackerManager
     {
-        private static readonly HitTracker _killTracker = new();
-        private static readonly HitTracker _staggerTracker = new();
-        private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
-        private static ObjectWrapper<CustomWeaponComponent> TempCWCWrapper => ObjectWrapper<CustomWeaponComponent>.SharedInstance;
+        private static readonly Dictionary<IOwnerComp, PlayerHitTracker> _trackers = new();
 
-        public static void RegisterHit(CustomWeaponComponent cwc, WeaponHitDamageableContext hitContext)
+        [InvokeOnCleanup(onCheckpoint: true)]
+        private static void Cleanup()
         {
-            EnemyAgent? enemy = hitContext.Damageable.GetBaseAgent()?.TryCast<EnemyAgent>();
-            if (enemy == null || !cwc.IsLocal) return;
+            _trackers.Clear();
+        }
 
-            // Tag the enemy to ensure KillIndicatorFix tracks hit correctly.
-            KillAPIWrapper.TagEnemy(enemy, cwc.Weapon, hitContext.LocalPosition);
-
-            TempCWCWrapper.Set(cwc);
-            TempWrapper.Set(enemy);
-            _killTracker.RegisterHit(TempCWCWrapper, hitContext, TempWrapper);
-            _staggerTracker.RegisterHit(TempCWCWrapper, hitContext, TempWrapper);
+        public static void RegisterHit(IOwnerComp owner, CustomWeaponComponent cwc, WeaponHitDamageableContext hitContext)
+        {
+            if (!_trackers.TryGetValue(owner, out var tracker))
+                _trackers.Add(owner, tracker = new());
+            tracker.RegisterHit(cwc, hitContext);
         }
 
         public static void RunKillContexts(Agent? enemy)
         {
-            if (enemy == null || !_killTracker.TryGetContexts(TempWrapper.Set(enemy), out var hitsDict, out var lastCWCPtr)) return;
-
-            foreach ((var cwc, (var context, float time)) in hitsDict)
-                cwc.Object!.Invoke(new WeaponPostKillContext(context, time, cwc.Pointer == lastCWCPtr));
+            foreach (var tracker in _trackers.Values)
+                tracker.RunKillContexts(enemy);
         }
 
         public static void RunStaggerContexts(Agent? enemy, bool limbBreak)
         {
-            if (enemy == null || !_staggerTracker.TryGetContexts(TempWrapper.Set(enemy), out var hitsDict, out var lastCWCPtr)) return;
-
-            foreach ((var cwc, (var context, float time)) in hitsDict)
-                cwc.Object!.Invoke(new WeaponPostStaggerContext(context, time, cwc.Pointer == lastCWCPtr, limbBreak));
+            foreach (var tracker in _trackers.Values)
+                tracker.RunStaggerContexts(enemy, limbBreak);
         }
     }
 }

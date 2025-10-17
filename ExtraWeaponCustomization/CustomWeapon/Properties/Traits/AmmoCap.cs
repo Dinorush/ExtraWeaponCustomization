@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using GameData;
 using Player;
 using System;
@@ -8,8 +10,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public class AmmoCap :
         Trait,
-        IGunProperty,
-        IWeaponProperty<WeaponSetupContext>,
+        IWeaponProperty<WeaponCreatedContext>,
         IWeaponProperty<WeaponPostAmmoInitContext>,
         IWeaponProperty<WeaponPreAmmoPackContext>
     {
@@ -20,13 +21,16 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private const float DefaultPackConv = 5f;
 
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
+        protected override WeaponType ValidWeaponType => WeaponType.Gun | WeaponType.SentryHolder;
+
         public override bool ShouldRegister(Type contextType)
         {
             if (contextType == typeof(WeaponPostAmmoInitContext)) return ApplyOnDrop;
             return base.ShouldRegister(contextType);
         }
 
-        public void Invoke(WeaponSetupContext context)
+        public void Invoke(WeaponCreatedContext context)
         {
             if (AmmopackRefillRel > 0)
             {
@@ -40,6 +44,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                     case AmmoType.Special:
                         capToPack = (float)data.AmmoSpecialMaxCap / data.AmmoSpecialResourcePackMaxCap;
                         break;
+                    case AmmoType.Class:
+                        capToPack = (float)data.AmmoClassMaxCap / data.AmmoClassResourcePackMaxCap;
+                        break;
                 }
                 AmmoCapRel = AmmopackRefillRel * DefaultPackConv * capToPack;
                 AmmopackRefillRel = 0;
@@ -47,7 +54,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (CostOfBullet > 0)
             {
-                AmmoCapRel = CWC.ArchetypeData.CostOfBullet / CostOfBullet;
+                AmmoCapRel = ((IArchComp)CWC.Weapon).ArchetypeData.CostOfBullet / CostOfBullet;
                 CostOfBullet = 0;
             }
         }
@@ -56,8 +63,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             // Fix the starting ammo for the weapon.
             InventorySlotAmmo slot = context.SlotAmmo;
-            slot.AmmoInPack = (CWC.Weapon.GetCurrentClip() * slot.CostOfBullet + slot.AmmoInPack) * AmmoCapRel;
-            CWC.Weapon.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(0, slot.AmmoType));
+            var weapon = (IArchComp)CWC.Weapon;
+            slot.AmmoInPack = (weapon.GetCurrentClip() * slot.CostOfBullet + slot.AmmoInPack) * AmmoCapRel;
+            weapon.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(0, slot.AmmoType));
         }
 
         public void Invoke(WeaponPreAmmoPackContext context)

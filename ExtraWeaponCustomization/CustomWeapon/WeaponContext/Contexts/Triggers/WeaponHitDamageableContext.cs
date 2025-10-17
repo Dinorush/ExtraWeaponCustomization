@@ -1,6 +1,6 @@
 ﻿using System;
 using EWC.Utils;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
@@ -23,7 +23,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public WeaponHitDamageableContext(HitData data)
             : base(data, 1f)
         {
-            Damage = data.damage * Falloff * data.shotInfo.XpMod;
+            Damage = data.damage * Falloff * data.shotInfo.ExternalDamageMod;
             var damBase = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
             if (damBase != null)
                 DamageClamped = Math.Min(Damage, damBase.HealthMax);
@@ -34,7 +34,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb)
             : base(data, backstab)
         {
-            Damage = data.damage * Falloff * data.shotInfo.XpMod;
+            Damage = data.damage * Falloff * data.shotInfo.ExternalDamageMod;
             Damage = limb.ApplyWeakspotAndArmorModifiers(Damage, data.precisionMulti);
             // Need to set this AFTER calling the above function again since the patch will clear the cache.
             Patches.Enemy.EnemyLimbPatches.CachedBypassTumorCap = bypassTumor;

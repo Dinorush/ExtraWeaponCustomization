@@ -1,5 +1,6 @@
 ﻿using AIGraph;
 using Enemies;
+using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
 using EWC.Utils.Extensions;
@@ -16,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private readonly EWCProjectileComponentBase _base;
 
         private ProjectileHomingSettings _settings;
-        private PlayerAgent? _owner;
+        private IOwnerComp? _owner;
         private eDimensionIndex _dimensionIndex;
         private WallPierce? _wallPierce;
         private bool _enabled = false;
@@ -38,7 +39,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
 
                 // Only local homing cares about finding new limbs to target
-                if (_base.IsLocal && value != null)
+                if (_base.IsManaged && value != null)
                 {
                     ResetWeakspotList();
                     UpdateHomingTarget();
@@ -79,8 +80,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _nextSearchTime = 0f;
             HomingAgent = null;
 
-            if (!_base.IsLocal) return;
-            _owner = projBase.CWC.Weapon.Owner;
+            if (!_base.IsManaged) return;
+            _owner = projBase.CWC.Owner;
             _dimensionIndex = _owner.DimensionIndex;
             _wallPierce = projBase.CWC.GetTrait<WallPierce>();
 
@@ -106,7 +107,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 else
                 {
                     if (_settings.SearchInitialMode == SearchMode.AimDir)
-                        s_dir = _owner!.FPSCamera.Forward;
+                        s_dir = _owner.FireDir;
                     FindHomingAgent();
                     if (HomingAgent == null && _settings.SearchStopMode.HasFlag(StopSearchMode.Invalid))
                         _homingEnabled = false;
@@ -146,7 +147,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private bool UpdateHomingAgent()
         {
-            if (!_base.IsLocal)
+            if (!_base.IsManaged)
             {
                 if (HomingAgent == null || !HomingAgent.Alive || HomingAgent.Damage.Health <= 0) return false;
                 if (_homingLimb != null && !_homingLimb.IsDestroyed) return true;

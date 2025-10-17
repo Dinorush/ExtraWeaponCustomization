@@ -1,6 +1,6 @@
 ﻿using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
@@ -32,7 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         }
 
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
-        private readonly static TriggerName[] ValidActivates = ITrigger.PositionalTriggers.Remove(TriggerName.Empty);
+        private readonly static TriggerName[] ValidActivates = ITrigger.HitTriggers.Remove(TriggerName.Empty);
         private readonly static TriggerName[] ValidApplies = ValidActivates.Extend(TriggerName.Kill);
 
         private readonly Dictionary<BaseDamageableWrapper, float> _targetAmounts = new();

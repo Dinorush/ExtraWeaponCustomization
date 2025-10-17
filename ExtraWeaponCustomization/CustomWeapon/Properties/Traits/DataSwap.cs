@@ -1,4 +1,7 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.ComponentWrapper.OwnerComps;
+using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
@@ -13,9 +16,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class DataSwap : 
         Trait,
-        IGunProperty,
         ITriggerCallbackBasicSync,
-        IWeaponProperty<WeaponOwnerSetContext>,
+        IWeaponProperty<WeaponCreatedContext>,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>
     {
@@ -62,6 +64,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             );
         }
 
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
         public override bool ShouldRegister(Type contextType)
         {
             if (Trigger == null && contextType == typeof(WeaponTriggerContext)) return false;
@@ -70,13 +74,13 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponTriggerContext context) => Trigger!.Invoke(context);
 
-        public void Invoke(WeaponOwnerSetContext context)
+        public void Invoke(WeaponCreatedContext context)
         {
-            _archetype?.SetOwner(CWC.Weapon.Owner);
-            _cachedArchetype?.SetOwner(CWC.Weapon.Owner);
+            _archetype?.SetOwner(CWC.Owner.Player);
+            _cachedArchetype?.SetOwner(CWC.Owner.Player);
 
             ResetERDComponent();
-            CWC.RefreshSoundDelay();
+            CGC.RefreshSoundDelay();
         }
 
         public void Invoke(WeaponSetupContext context)
@@ -117,8 +121,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             _archBlock ??= ArchetypeDataBlock.GetBlock(ArchetypeID);
             _audioBlock ??= WeaponAudioDataBlock.GetBlock(AudioID);
-            if (_archBlock != null && _archetype == null)
+            if (_archBlock != null && CWC.Owner.IsType(OwnerType.Local) && _archetype == null)
             {
+                var gun = (LocalGunComp)CWC.Weapon;
                 switch (_archBlock.FireMode)
                 {
                     case eWeaponFireMode.Semi:
@@ -133,8 +138,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                     case eWeaponFireMode.SemiBurst:
                         _archetype = new BWA_SemiBurst(_archBlock);
                         break;
+                    default:
+                        throw new NotImplementedException($"DataSwap does not support FireMode {_archBlock.FireMode} for the player (should be one of the standard 4)");
                 }
-                _archetype!.Setup(CWC.Gun!);
+                _archetype!.Setup(gun.Value);
                 if (_archBlock.FireMode == eWeaponFireMode.Burst)
                 {
                     var burst = _archetype.Cast<BWA_Burst>();
@@ -144,41 +151,40 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (CWC.HasTrait<AutoTrigger>())
                     _archetype.m_triggerNeedsPress = false;
 
-                if (CWC.Gun!.Owner?.IsLocallyOwned == true)
-                {
-                    _archetype.SetOwner(CWC.Gun.Owner); // Why does this set audio delay
-                    ResetERDComponent();
-                    CWC.RefreshSoundDelay();
-                }
+                _archetype.SetOwner(CWC.Owner.Player); // Why does this set audio delay
+                ResetERDComponent();
+                CGC.RefreshSoundDelay();
             }
             return _archBlock != null || _audioBlock != null;
         }
 
         private void ApplyData()
         {
+            if (_audioBlock != null)
+                SetLoopingAudio(false);
+
             if (_archBlock != null)
                 ChangeArchetype();
 
             if (_audioBlock != null)
             {
-                SetLoopingAudio(false);
-                _cachedAudioBlock = CWC.Gun!.AudioData;
-                CWC.Gun.AudioData = _audioBlock;
-                CWC.Gun.SetupAudioEvents();
+                _cachedAudioBlock = CGC.Gun.AudioData;
+                CGC.Gun.AudioData = _audioBlock;
                 SetLoopingAudio(true);
             }
         }
 
         private void ClearData()
         {
+            if (_cachedAudioBlock != null)
+                SetLoopingAudio(false);
+
             if (_cachedArchBlock != null)
                 ChangeArchetype();
 
             if (_cachedAudioBlock != null)
             {
-                SetLoopingAudio(false);
-                CWC.Gun!.AudioData = _cachedAudioBlock;
-                CWC.Gun.SetupAudioEvents();
+                CGC.Gun.AudioData = _cachedAudioBlock;
                 SetLoopingAudio(true);
                 _cachedAudioBlock = null;
             }
@@ -187,40 +193,60 @@ namespace EWC.CustomWeapon.Properties.Traits
         private void ChangeArchetype()
         {
             ArchetypeDataBlock newBlock;
-            BulletWeaponArchetype newArch;
-            BulletWeaponArchetype oldArch;
+            BulletWeaponArchetype? newArch;
+            BulletWeaponArchetype? oldArch;
+            LocalGunComp? localGun = CGC.Gun as LocalGunComp;
             if (_cachedArchBlock != null)
             {
                 newBlock = _cachedArchBlock;
-                newArch = _cachedArchetype!;
-                oldArch = _archetype!;
+                newArch = _cachedArchetype;
+                oldArch = _archetype;
                 _cachedArchBlock = null;
                 _cachedArchetype = null;
             }
             else
             {
                 newBlock = _archBlock!;
-                newArch = _archetype!;
-                _cachedArchBlock = CWC.ArchetypeData;
-                _cachedArchetype = CWC.GunArchetype;
-                oldArch = _cachedArchetype!;
+                newArch = _archetype;
+                _cachedArchBlock = CGC.Gun.ArchetypeData;
+                _cachedArchetype = localGun?.GunArchetype;
+                oldArch = _cachedArchetype;
             }
 
-            PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(CWC.Gun!.Owner.Owner).AmmoStorage;
-            InventorySlotAmmo slotAmmo = ammoStorage.GetInventorySlotAmmo(CWC.Gun!.AmmoType);
+            PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(CGC.Owner.Player.Owner).AmmoStorage;
+            InventorySlotAmmo slotAmmo = ammoStorage.GetInventorySlotAmmo(CGC.Weapon.AmmoType);
 
-            int clip = CWC.Gun!.GetCurrentClip();
-            float clipCost = CWC.Gun!.GetCurrentClip() * slotAmmo.CostOfBullet;
-            int clipSize = CWC.Gun!.ClipSize;
+            int clip = CGC.Gun.GetCurrentClip();
+            float clipCost = CGC.Gun.GetCurrentClip() * slotAmmo.CostOfBullet;
+            int clipSize = CGC.Gun.GetMaxClip();
 
-            CWC.ArchetypeData = newBlock;
-            CopyArchetypeVars(newArch, oldArch);
-            CWC.GunArchetype = newArch;
-            CWC.RefreshArchetypeCache();
+            var oldBlock = CGC.Gun.ArchetypeData;
+            CGC.Gun.ArchetypeData = newBlock;
+            if (newArch != null)
+            {
+                CopyArchetypeVars(newArch, oldArch!);
+                localGun!.GunArchetype = newArch;
+            }
+            CGC.RefreshArchetypeCache();
             ResetERDComponent();
 
-            slotAmmo.Setup(newBlock.CostOfBullet / EXPAPIWrapper.GetAmmoMod(), CWC.Gun.ClipSize);
-            int newClipSize = CWC.Gun.ClipSize;
+            int newClipSize = CGC.Gun.GetMaxClip();
+            int slotAmmoClipSize = newClipSize;
+            float cost = newBlock.CostOfBullet;
+            if (CWC.Weapon.IsType(WeaponType.SentryHolder))
+                cost = ((SentryHolderComp)CWC.Weapon).CostOfBullet;
+            else if (CWC.Owner.IsType(OwnerType.Sentry))
+            {
+                slotAmmoClipSize = 0;
+                var sentryComp = (SentryGunComp)CWC.Weapon;
+                cost = sentryComp.CostOfBullet;
+                if (newBlock.FireMode != oldBlock.FireMode)
+                    ChangeSentryFireMode(sentryComp.Firing, newBlock);
+                if (newBlock.ShotgunBulletCount > 0)
+                    sentryComp.Firing.m_segmentSize = MathUtil.DegreeToRadian(360f / (newBlock.ShotgunBulletCount - 1f));
+            }
+
+            slotAmmo.Setup(cost / EXPAPIWrapper.GetAmmoMod(CWC.Owner.IsType(OwnerType.Local)), slotAmmoClipSize);
 
             if (KeepMagCost)
             {
@@ -231,7 +257,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 newBuffer -= newMag * slotAmmo.CostOfBullet;
 
                 slotAmmo.AmmoInPack += newBuffer;
-                CWC.Gun.SetCurrentClip(newMag);
+                CGC.Gun.SetCurrentClip(newMag);
             }
             else
             {
@@ -246,14 +272,40 @@ namespace EWC.CustomWeapon.Properties.Traits
 
                 _magBuffer = Math.Max(0, clip - newMag * clipSize / newClipSize);
                 slotAmmo.AmmoInPack += clipCost - newMag * slotAmmo.CostOfBullet;
-                CWC.Gun.SetCurrentClip(newMag); 
+                CGC.Gun.SetCurrentClip(newMag); 
             }
 
-            newArch.m_clip = CWC.Gun.GetCurrentClip();
-            if (CWC.Weapon.Owner.IsLocallyOwned && GuiManager.CrosshairLayer.m_circleCrosshair.Visible)
-                GuiManager.CrosshairLayer.ShowSpreadCircle(CWC.Gun.RecoilData.hipFireCrosshairSizeDefault);
-            ammoStorage.UpdateSlotAmmoUI(slotAmmo, CWC.Gun.GetCurrentClip());
+            if (newArch != null)
+                newArch.m_clip = CGC.Gun.GetCurrentClip();
+            if (localGun != null && GuiManager.CrosshairLayer.m_circleCrosshair.Visible)
+                GuiManager.CrosshairLayer.ShowSpreadCircle(localGun.Value.RecoilData.hipFireCrosshairSizeDefault);
+            ammoStorage.UpdateSlotAmmoUI(slotAmmo, CGC.Gun.GetCurrentClip());
             ammoStorage.NeedsSync = true;
+        }
+
+        private void ChangeSentryFireMode(SentryGunInstance_Firing_Bullets firing, ArchetypeDataBlock newBlock)
+        {
+            firing.m_playerAutoSoundLoop = false;
+            switch (newBlock.FireMode)
+            {
+                case eWeaponFireMode.Semi:
+                    if (newBlock.ShotgunBulletCount > 0)
+                        firing.m_fireUpdateFunc = (Action<bool, bool>)firing.UpdateFireShotgunSemi;
+                    else
+                        firing.m_fireUpdateFunc = (Action<bool, bool>)firing.UpdateFireSemi;
+                    break;
+                case eWeaponFireMode.Auto:
+                    firing.m_fireUpdateFunc = (Action<bool, bool>) firing.UpdateFireAuto;
+                    firing.m_playerAutoSoundLoop = true;
+                    break;
+                case eWeaponFireMode.Burst:
+                    firing.m_fireUpdateFunc = (Action<bool, bool>) firing.UpdateFireBurst;
+                    break;
+                default:
+                    firing.m_fireUpdateFunc = (Action<bool, bool>) firing.UpdateFireAuto;
+                    firing.m_playerAutoSoundLoop = true;
+                    break;
+            }
         }
 
         private void CopyArchetypeVars(BulletWeaponArchetype newArch, BulletWeaponArchetype oldArch)
@@ -303,24 +355,40 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private void SetLoopingAudio(bool start)
         {
-            if (!CWC.GunArchetype!.m_firing) return;
-
-            if (CWC.GunFireMode == eWeaponFireMode.Auto && !CWC.Gun!.AudioData.TriggerAutoAudioForEachShot)
+            if (CWC.Weapon is LocalGunComp localGun)
             {
-                if (start)
-                    CWC.Gun!.TriggerAutoFireStartAudio();
-                else
-                    CWC.Gun!.TriggerAutoFireEndAudio();
+                if (!localGun.GunArchetype.m_firing) return;
+
+                if (localGun.FireMode == eWeaponFireMode.Auto && !localGun.AudioData.TriggerAutoAudioForEachShot)
+                {
+                    if (start)
+                        localGun.Value.TriggerAutoFireStartAudio();
+                    else
+                        localGun.Value.TriggerAutoFireEndAudio();
+                }
+
+                if (localGun.FireMode == eWeaponFireMode.Burst && !localGun.AudioData.TriggerBurstAudioForEachShot)
+                {
+                    if (start)
+                        localGun.Value.TriggerBurstFireAudio();
+                }
             }
-
-            if (CWC.GunFireMode == eWeaponFireMode.Burst && !CWC.Gun!.AudioData.TriggerBurstAudioForEachShot)
+            else if (CWC.Weapon is SentryGunComp sentry)
             {
+                if (!sentry.Value.m_isFiring || sentry.FireMode != eWeaponFireMode.Auto) return;
+
                 if (start)
-                    CWC.Gun.TriggerBurstFireAudio();
+                    sentry.Firing.TriggerAutoFireStartAudio();
+                else
+                    sentry.Firing.TriggerAutoFireEndAudio();
             }
         }
 
-        private void ResetERDComponent() => ERDAPIWrapper.ChangeCustomRecoil(CWC.Weapon.ArchetypeID, CWC.Gun!);
+        private void ResetERDComponent()
+        {
+            if (CWC.Owner.IsType(OwnerType.Local))
+                ERDAPIWrapper.ChangeCustomRecoil(CGC.Gun.ArchetypeData.persistentID, ((IBulletWeaponComp)CWC.Weapon).BulletWeapon);
+        }
 
         public override void Serialize(Utf8JsonWriter writer)
         {

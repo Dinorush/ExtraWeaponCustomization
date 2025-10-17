@@ -12,7 +12,7 @@ using Gear;
 using HarmonyLib;
 using static Weapon;
 
-namespace EWC.Patches
+namespace EWC.Patches.Gun
 {
     [HarmonyPatch]
     internal static class WeaponPatches
@@ -20,44 +20,19 @@ namespace EWC.Patches
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnGearSpawnComplete))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void SetupCallback(BulletWeapon __instance)
+        private static void OnGearSpawn(BulletWeapon __instance)
         {
-            if (__instance.ArchetypeData == null) return;
-
-            CustomWeaponManager.Current.AddWeaponListener(__instance);
-            if (!CustomWeaponManager.TryGetCustomGunData(__instance.ArchetypeData.persistentID, out var data)) return;
-
-            if (__instance.gameObject.GetComponent<CustomWeaponComponent>() != null) return;
-
-            CustomWeaponComponent cwc = __instance.gameObject.AddComponent<CustomWeaponComponent>();
-            cwc.Register(data);
+            CustomWeaponManager.AddSpawnedItem(__instance);
         }
 
-        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnWield))]
+        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.ReloadTime), MethodType.Getter)]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void UpdateCurrentWeapon(BulletWeapon __instance)
+        private static void PostGetReloadTime(BulletWeapon __instance, ref float __result)
         {
-            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
+            if (!__instance.TryGetComp<CustomGunComponent>(out var cgc)) return;
 
-            if (cwc.SpreadController != null)
-                cwc.SpreadController.Active = true;
-            cwc.Invoke(StaticContext<WeaponWieldContext>.Instance);
-            cwc.RefreshSoundDelay();
-        }
-
-        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnUnWield))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void UpdateWeaponUnwielded(BulletWeapon __instance)
-        {
-            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
-            cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
-            if (cwc.SpreadController != null)
-                cwc.SpreadController.Active = false;
+            __result = cgc.Invoke(new WeaponReloadContext(__result)).Value;
         }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetCurrentClip))]
@@ -65,7 +40,7 @@ namespace EWC.Patches
         [HarmonyPrefix]
         private static void UpdateClip(BulletWeapon __instance, int clip, ref bool __state)
         {
-            if (__instance == null) return;
+            if (__instance == null) return; // Apparently this can happen?
 
             __state = __instance.m_clip != clip;
         }
@@ -77,8 +52,7 @@ namespace EWC.Patches
         {
             if (__instance == null || !__state) return;
 
-            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
+            if (!__instance.TryGetComp<CustomGunComponent>(out var cwc)) return;
 
             cwc.Invoke(new WeaponAmmoContext(__instance.m_clip, __instance.ClipSize));
         }
@@ -91,28 +65,12 @@ namespace EWC.Patches
         {
             if (!doDamage) return;
 
-            // Sentry filter. Auto has back damage, shotgun does not have vfx, none pass both conditions but guns do
-            if (!allowDirectionalBonus || weaponRayData.vfxBulletHit != null)
-            {
-                ApplyDebuffs(weaponRayData, additionalDis);
-                return;
-            }
-
-            // All CWC behavior is handled client-side.
-            if (!weaponRayData.owner.IsLocallyOwned)
-            {
-                ApplyDebuffs(weaponRayData, additionalDis);
-                return;
-            }
-
             IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(weaponRayData.rayHit);
             IDamageable? damBase = damageable != null ? damageable.GetBaseDamagable() : damageable;
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
 
-            if (ShotManager.FiringWeapon == null) return;
-
-            CustomWeaponComponent? cwc = ShotManager.FiringWeapon.GetComponent<CustomWeaponComponent>();
-            HitData data = new(weaponRayData, cwc, additionalDis);
+            CustomWeaponComponent? cwc = ShotManager.ActiveFiringInfo.cgc;
+            HitData data = new(weaponRayData, additionalDis);
             if (cwc == null)
             {
                 ApplyDebuffs(data);
@@ -123,7 +81,7 @@ namespace EWC.Patches
             ApplyEWCHit(cwc, data, out allowDirectionalBonus);
         }
 
-        private static void ApplyDebuffs(WeaponHitData weaponRayData, float additionalDis) => ApplyDebuffs(new(weaponRayData, null, additionalDis));
+        private static void ApplyDebuffs(WeaponHitData weaponRayData, float additionalDis) => ApplyDebuffs(new(weaponRayData, additionalDis));
         private static void ApplyDebuffs(HitData data)
         {
             if (data.damageType.HasFlag(DamageType.Dead)) return;
@@ -143,9 +101,9 @@ namespace EWC.Patches
         public static void ApplyEWCHit(CustomWeaponComponent cwc, ContextController cc, HitData hitData, out bool doBackstab)
         {
             hitData.ResetDamage();
-            doBackstab = true;
             Enemy.EnemyLimbPatches.CacheComponents(cwc, cc);
 
+            doBackstab = cwc.Weapon.AllowBackstab;
             IDamageable? damageable = hitData.damageable;
             if (!hitData.damageType.HasFlag(DamageType.Dead))
             {
@@ -157,8 +115,11 @@ namespace EWC.Patches
                 if (enemy)
                 {
                     limb = damageable!.Cast<Dam_EnemyDamageLimb>();
-                    origBackstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
-                    backstab = origBackstab.Map(1f, 2f, 1f, cc.Invoke(new WeaponBackstabContext()).Value);
+                    if (doBackstab)
+                    {
+                        origBackstab = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.fireDir.normalized);
+                        backstab = origBackstab.Map(1f, 2f, 1f, cc.Invoke(new WeaponBackstabContext()).Value);
+                    }
                 }
 
                 cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab));
@@ -181,7 +142,7 @@ namespace EWC.Patches
 
                     cc.Invoke(hitContext);
 
-                    HitTrackerManager.RegisterHit(cwc, hitContext);
+                    HitTrackerManager.RegisterHit(cwc.Owner, cwc, hitContext);
 
                     if (backstab > 1f)
                         hitData.damage *= backstab / origBackstab;

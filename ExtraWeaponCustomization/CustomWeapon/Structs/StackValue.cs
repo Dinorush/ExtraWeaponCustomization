@@ -136,7 +136,7 @@ namespace EWC.CustomWeapon.Structs
             _isDirty = true;
         }
 
-        private float GetMin() => _hasMin ? MinMod : float.MaxValue;
-        private float GetMax() => _hasMax ? MaxMod : float.MinValue;
+        private readonly float GetMin() => _hasMin ? MinMod : float.MaxValue;
+        private readonly float GetMax() => _hasMax ? MaxMod : float.MinValue;
     }
 }

@@ -1,4 +1,4 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+﻿using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {

@@ -1,6 +1,6 @@
 ﻿namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    public sealed class WeaponReferenceContext : WeaponTriggerContext
+    public class WeaponReferenceContext : WeaponTriggerContext
     {
         public float Mod { get; }
         public uint ID { get; }

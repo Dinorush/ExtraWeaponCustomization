@@ -16,6 +16,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             DOTDamageManager.Internal_ReceiveDOTEnemyDamage(
                 enemy,
                 player,
+                (Enums.OwnerType)packet.ownerType,
                 packet.limbID,
                 packet.damageLimb,
                 packet.localPosition.Get(10f),

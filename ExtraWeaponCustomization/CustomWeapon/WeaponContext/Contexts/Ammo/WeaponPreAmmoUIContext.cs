@@ -1,5 +1,8 @@
-﻿namespace EWC.CustomWeapon.WeaponContext.Contexts
+﻿using EWC.CustomWeapon.WeaponContext.Attributes;
+
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
+    [RequireType(Enums.OwnerType.Managed, requiredWeaponType: Enums.WeaponType.Gun)]
     public sealed class WeaponPreAmmoUIContext : IWeaponContext
     {
         public int Clip { get; set; }

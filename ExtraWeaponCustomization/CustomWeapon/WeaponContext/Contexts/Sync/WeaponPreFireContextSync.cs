@@ -1,5 +1,8 @@
-﻿namespace EWC.CustomWeapon.WeaponContext.Contexts
+﻿using EWC.CustomWeapon.WeaponContext.Attributes;
+
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
+    [RequireType(requiredOwnerType: Enums.OwnerType.Unmanaged, requiredWeaponType: Enums.WeaponType.Gun)]
     public sealed class WeaponPreFireContextSync : IWeaponContext
     {
         public WeaponPreFireContextSync()

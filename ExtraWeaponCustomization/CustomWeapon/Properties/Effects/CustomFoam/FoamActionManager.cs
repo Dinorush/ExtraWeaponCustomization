@@ -104,7 +104,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         private static bool TrySpawnNewFoam(pPlayerAgent owner, UFloat16 volumeMod, ushort propertyID, [MaybeNullWhen(false)] out GlueGunProjectile projectile, uint syncID = 0)
         {
             projectile = null;
-            if (!owner.TryGet(out var source) || !CustomWeaponManager.TryGetSyncProperty<Foam>(propertyID, out var property)) return false;
+            if (!owner.TryGet(out var source) || !CustomDataManager.TryGetSyncProperty<Foam>(propertyID, out var property)) return false;
 
             projectile = SpawnNewFoam(source, volumeMod.Get(MaxVolumeMod), property, syncID);
             return true;
@@ -149,7 +149,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
         internal static void Internal_ReceiveFoamDirect(FoamDirectData packet)
         {
-            if (!packet.target.TryGet(out var enemy) || !CustomWeaponManager.TryGetSyncProperty<Foam>(packet.propertyID, out var property)) return;
+            if (!packet.target.TryGet(out var enemy) || !CustomDataManager.TryGetSyncProperty<Foam>(packet.propertyID, out var property)) return;
 
             // If foam time isn't modified, we don't need to do anything
             FoamManager.AddFoam(enemy.Damage, packet.amount.Get(MaxDirect), property);

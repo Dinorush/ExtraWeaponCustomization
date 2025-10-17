@@ -1,6 +1,7 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Heal;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects.Heal;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Dependencies;
 using Player;
 using System;
@@ -11,9 +12,7 @@ using System.Text.Json;
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class HealthMod :
-        Effect,
-        IGunProperty,
-        IMeleeProperty
+        Effect
     {
         public float HealthChangeRel { get; private set; } = 0f;
         public float CapRel { get; private set; } = -1f;
@@ -30,17 +29,17 @@ namespace EWC.CustomWeapon.Properties.Effects
                 foreach (var tContext in contexts)
                 {
                     PlayerAgent target;
-                    if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(Enums.DamageType.Player))
+                    if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(DamageType.Player))
                         target = damContext.Damageable.GetBaseAgent().Cast<PlayerAgent>();
                     else
-                        target = CWC.Weapon.Owner;
+                        target = CWC.Owner.Player;
 
                     DoHeal(target, tContext.triggerAmt);
                 }
             }
             else
             {
-                DoHeal(CWC.Weapon.Owner, contexts.Sum(tContext => tContext.triggerAmt));
+                DoHeal(CWC.Owner.Player, contexts.Sum(tContext => tContext.triggerAmt));
             }
         }
 

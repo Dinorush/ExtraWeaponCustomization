@@ -1,6 +1,6 @@
 ﻿using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils;
 using UnityEngine;
 

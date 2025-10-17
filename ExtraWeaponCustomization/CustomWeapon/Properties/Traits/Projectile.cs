@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -14,7 +16,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class Projectile :
         Trait,
-        IGunProperty,
+        ITriggerEvent,
         ISyncProperty,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>
@@ -57,6 +59,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool EnableTerrainHitFX { get; private set; } = true;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
+        public float AliveTriggerDelay { get; private set; } = 0f;
+        public float AliveTriggerInterval { get; private set; } = 1f;
 
         public List<ProjectileStatChange> StatChanges { get; private set; } = new();
         public ProjectileHomingSettings HomingSettings { get; private set; } = new();
@@ -77,7 +81,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (_useOverrides)
                     return _pierceLimitOverride;
                 else 
-                    return CWC.ArchetypeData.PierceLimit();
+                    return CGC.Gun.ArchetypeData.PierceLimit();
             }
         }
 
@@ -85,36 +89,41 @@ namespace EWC.CustomWeapon.Properties.Traits
         private float _cachedRayDist;
 
         private static RaycastHit s_rayHit;
+        public readonly TriggerEventHelper EventHelper = new(CallbackMap);
+
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
+        public int GetCallbackID(string callbackName) => EventHelper.GetCallbackID(callbackName);
 
         public void Invoke(WeaponSetupContext context)
         {
-            _cachedRayDist = CWC.Gun!.MaxRayDist;
-            CWC.Gun!.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
-            CWC.ShotComponent!.Projectile = this;
+            _cachedRayDist = CGC.Gun.MaxRayDist;
+            CGC.Gun.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
+            CGC.ShotComponent.Projectile = this;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CWC.Gun!.MaxRayDist = _cachedRayDist;
-            CWC.ShotComponent!.Projectile = null;
+            CGC.Gun.MaxRayDist = _cachedRayDist;
+            CGC.ShotComponent.Projectile = null;
         }
 
-        public void Fire(Ray ray, HitData hitData, IntPtr ignoreEnt)
+        public void Fire(Ray ray, Vector3 fxPos, HitData hitData, IntPtr ignoreEnt)
         {
             float visualDist = VisualLerpDist > 0.1f ? VisualLerpDist : 0.1f;
             if (Physics.Raycast(ray, out s_rayHit, visualDist, LayerUtil.MaskEntityAndWorld3P))
                 visualDist = s_rayHit.distance;
 
             Vector3 position = ray.origin + ray.direction * Math.Min(visualDist, 0.1f);
-            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, hitData, ignoreEnt);
+            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, fxPos, hitData, ignoreEnt);
             if (comp == null)
             {
                 EWCLogger.Error("Unable to create shooter projectile!");
                 return;
             }
 
-            if (VisualLerpDist > 0)
-                comp.SetVisualPosition(CWC.Gun!.MuzzleAlign.position, visualDist);
+            if (VisualLerpDist > 0 && fxPos != Vector3.zero)
+                comp.SetVisualPosition(fxPos, visualDist);
         }
 
         internal void SetOverrides(Func<HitData, ContextController, bool>? hitFunc = null, WallPierce? wallPierce = null, int pierceLimit = 0)
@@ -123,7 +132,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             _hitFuncOverride = hitFunc;
             _wallPierceOverride = wallPierce;
             _pierceLimitOverride = pierceLimit;
-            VisualLerpDist = 0;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -296,6 +304,19 @@ namespace EWC.CustomWeapon.Properties.Traits
                 default:
                     break;
             }
+        }
+
+        private static int CallbackMap(string callback) => callback switch
+        {
+            "alive" => (int)Callback.Alive,
+            "destroyed" => (int)Callback.Destroyed,
+            _ => 0
+        };
+
+        public enum Callback
+        {
+            Alive,
+            Destroyed
         }
     }
 }

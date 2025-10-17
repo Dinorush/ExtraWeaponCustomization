@@ -4,7 +4,7 @@ using EWC.Attributes;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils;
 using System.Collections;
 using System.Collections.Generic;
@@ -33,7 +33,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public TriggerModDebuff()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(ITrigger.PositionalTriggers);
+            SetValidTriggers(ITrigger.HitTriggers);
         }
 
         [InvokeOnCleanup]

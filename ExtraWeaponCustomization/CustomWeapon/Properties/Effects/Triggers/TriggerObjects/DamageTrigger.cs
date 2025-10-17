@@ -9,15 +9,15 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     {
         public float Cap { get; private set; } = 0f;
         public bool ClampToHealth { get; private set; } = true;
-        public bool IgnoreXpMod { get; private set; } = false;
+        public bool IgnoreInnateMod { get; private set; } = false;
 
         public DamageTrigger(params DamageType[] types) : base(TriggerName.Damage, types) {}
 
         protected override float InvokeInternal(WeaponHitDamageableContext context)
         {
             float damage = context.Damage;
-            if (IgnoreXpMod)
-                damage /= context.ShotInfo.XpMod;
+            if (IgnoreInnateMod)
+                damage /= context.ShotInfo.ExternalDamageMod * context.ShotInfo.InnateDamageMod;
             if (ClampToHealth && damage > context.DamageClamped)
                 damage = context.DamageClamped;
             return Cap > 0 ? Math.Min(Cap, damage * Amount) : damage * Amount;
@@ -35,9 +35,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "clamp":
                     ClampToHealth = reader.GetBoolean();
                     break;
+                case "ignoreinnatemods":
+                case "ignoreinnatemod":
                 case "ignorexpmods":
                 case "ignorexpmod":
-                    IgnoreXpMod = reader.GetBoolean();
+                    IgnoreInnateMod = reader.GetBoolean();
                     break;
             }
         }

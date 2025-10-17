@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils.Extensions;
 using System.Text.Json;
 
@@ -28,9 +29,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 amount = ClipMaxRel >= 0 ? CalculateAmount(fireContext.ClipRel) : CalculateAmount(fireContext.Clip);
                 return true;
             }
-            else if (context is WeaponInitContext _)
+            else if (context is WeaponInitContext initContext)
             {
-                amount = ClipMaxRel >= 0 ? CalculateAmount(1f) : CalculateAmount(ClipMax);
+                var gun = (IGunComp)initContext.Weapon;
+                amount = ClipMaxRel >= 0 ? CalculateAmount((float)gun.GetCurrentClip() / gun.GetMaxClip()) : CalculateAmount(gun.GetCurrentClip());
                 return true;
             }
             amount = 0f;

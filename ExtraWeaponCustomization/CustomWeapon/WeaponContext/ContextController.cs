@@ -1,37 +1,52 @@
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Traits;
+using EWC.CustomWeapon.WeaponContext.Attributes;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace EWC.CustomWeapon.WeaponContext
 {
     public sealed class ContextController
     {
-        private readonly Dictionary<Type, IContextList> _allContextLists = new();
+        private static readonly Type[] s_contextTypes;
+        private static readonly Dictionary<Type, Type> s_parentContextTypes = new();
+        private static Dictionary<(OwnerType, WeaponType), List<Type>> s_cachedContextTypes = new();
+
+        static ContextController()
+        {
+            s_contextTypes = Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => 
+                t.IsAssignableTo(typeof(IWeaponContext)) &&
+                (!t.IsAbstract || t.GetCustomAttribute<AllowAbstractAttribute>() != null))
+                .ToArray();
+
+            foreach (var type in s_contextTypes)
+            {
+                var parent = type.GetCustomAttribute<ParentContextAttribute>()?.Parent;
+                if (parent != null && type != parent)
+                    s_parentContextTypes.Add(type, parent);
+            }
+        }
+
+        private readonly Dictionary<Type, IContextList> _contextLists = new();
         private readonly List<Type> _blacklist;
         private readonly HashSet<WeaponPropertyBase> _properties;
 
         public ContextController(ContextController contextController)
         {
-            foreach (IContextList list in contextController._allContextLists.Values)
+            foreach (IContextList list in contextController._contextLists.Values)
                 list.CopyTo(this);
             _blacklist = new(contextController._blacklist);
             _properties = new(contextController._properties);
         }
 
-        public ContextController(bool isGun, bool isLocal)
+        public ContextController(OwnerType ownerType, WeaponType weaponType)
         {
-            if (isLocal)
-            {
-                if (isGun)
-                    RegisterGunContexts();
-                else
-                    RegisterMeleeContexts();
-            }
-            else if (isGun)
-                RegisterSyncContexts();
+            RegisterContexts(ownerType, weaponType);
 
             _blacklist = new();
             _properties = new();
@@ -39,6 +54,7 @@ namespace EWC.CustomWeapon.WeaponContext
 
         private interface IContextList
         {
+            public IContextList? ParentContextList { get; set; }
             bool Add(IWeaponProperty property);
             bool Remove(IWeaponProperty property);
             void Clear();
@@ -49,19 +65,11 @@ namespace EWC.CustomWeapon.WeaponContext
         private sealed class ContextList<TContext> : IContextList where TContext : IWeaponContext
         {
             private readonly List<IWeaponProperty<TContext>> _entries;
-            private readonly IContextList? _baseContextList;
+            public IContextList? ParentContextList { get; set; }
 
-            internal ContextList(ContextController manager, IContextList? baseList = null)
+            public ContextList()
             {
                 _entries = new();
-
-                if (baseList == null)
-                {
-                    Type? baseType = typeof(TContext).BaseType;
-                    if (baseType != null)
-                        baseList = manager._allContextLists.GetValueOrDefault(baseType);
-                }
-                _baseContextList = baseList;
             }
 
             public bool Add(IWeaponProperty property)
@@ -78,7 +86,7 @@ namespace EWC.CustomWeapon.WeaponContext
 
             public bool Remove(IWeaponProperty property)
             {
-                return property is IWeaponProperty<TContext> contextedProperty && _entries.Remove(contextedProperty);
+                return property.IsProperty<TContext>(out var contextedProperty) && _entries.Remove(contextedProperty);
             }
 
             public void Clear() => _entries.Clear();
@@ -86,13 +94,14 @@ namespace EWC.CustomWeapon.WeaponContext
             public IContextList? CopyTo(ContextController manager)
             {
                 Type type = typeof(TContext);
-                if (manager._allContextLists.TryGetValue(type, out var context)) return context;
+                if (manager._contextLists.TryGetValue(type, out var context)) return context;
 
-                IContextList? baseList = _baseContextList?.CopyTo(manager);
+                IContextList? parentList = ParentContextList?.CopyTo(manager);
 
-                ContextList<TContext> copy = new(manager, baseList);
+                ContextList<TContext> copy = new();
+                copy.ParentContextList = parentList;
                 copy._entries.AddRange(_entries);
-                manager._allContextLists.Add(type, copy);
+                manager._contextLists.Add(type, copy);
                 return copy;
             }
 
@@ -111,7 +120,7 @@ namespace EWC.CustomWeapon.WeaponContext
                     }
                 }
 
-                _baseContextList?.Invoke(context, exceptions);
+                ParentContextList?.Invoke(context, exceptions);
             }
 
             void IContextList.Invoke(IWeaponContext context, List<Exception> exceptions)
@@ -130,7 +139,7 @@ namespace EWC.CustomWeapon.WeaponContext
 
             if (!_properties.Add(property)) return;
 
-            foreach (IContextList contextList in _allContextLists.Values)
+            foreach (IContextList contextList in _contextLists.Values)
             {
                 contextList.Add(property);
             }
@@ -140,7 +149,7 @@ namespace EWC.CustomWeapon.WeaponContext
         {
             if (!_properties.Remove(property)) return;
 
-            foreach (IContextList contextList in _allContextLists.Values)
+            foreach (IContextList contextList in _contextLists.Values)
             {
                 contextList.Remove(property);
             }
@@ -151,7 +160,7 @@ namespace EWC.CustomWeapon.WeaponContext
         public void Clear()
         {
             _properties.Clear();
-            foreach (IContextList contextList in _allContextLists.Values)
+            foreach (IContextList contextList in _contextLists.Values)
             {
                 contextList.Clear();
             }
@@ -164,7 +173,7 @@ namespace EWC.CustomWeapon.WeaponContext
         {
             Type type = typeof(TContext);
             if (_blacklist.Count > 0 && _blacklist.Any(exclude => type.IsAssignableTo(exclude))) return context;
-            if (!_allContextLists.TryGetValue(type, out IContextList? contextList)) return context;
+            if (!_contextLists.TryGetValue(type, out IContextList? contextList)) return context;
 
             List<Exception> exceptions = new();
             contextList.Invoke(context, exceptions);
@@ -176,9 +185,37 @@ namespace EWC.CustomWeapon.WeaponContext
 
         private ContextList<TContext> RegisterContext<TContext>(IContextList? baseList = null) where TContext : IWeaponContext
         {
-            var newList = new ContextList<TContext>(this, baseList);
-            _allContextLists.TryAdd(typeof(TContext), newList);
+            var newList = new ContextList<TContext>();
+            newList.ParentContextList = baseList;
+            _contextLists.TryAdd(typeof(TContext), newList);
             return newList;
+        }
+
+        private void RegisterContexts(OwnerType ownerType, WeaponType weaponType)
+        {
+            if (!s_cachedContextTypes.TryGetValue((ownerType, weaponType), out var contextTypes))
+            {
+                contextTypes = new();
+                foreach (var type in s_contextTypes)
+                {
+                    var requiredTypes = type.GetCustomAttribute<RequireTypeAttribute>();
+                    if (requiredTypes == null || requiredTypes.IsValid(ownerType, weaponType))
+                        contextTypes.Add(type);
+                }
+            }
+
+            foreach (var type in contextTypes)
+            {
+                var listType = typeof(ContextList<>).MakeGenericType(type);
+                var list = (IContextList)Activator.CreateInstance(listType)!;
+                _contextLists.TryAdd(type, list);
+            }
+
+            foreach ((var type, var parentType) in s_parentContextTypes)
+            {
+                if (_contextLists.TryGetValue(type, out var list) && _contextLists.TryGetValue(parentType, out var parentList))
+                    list.ParentContextList = parentList;
+            }
         }
 
         private void RegisterGunContexts()
@@ -186,7 +223,6 @@ namespace EWC.CustomWeapon.WeaponContext
             // Only contexts that aren't direct descendants of WeaponTriggerContext need to have it passed directly,
             // but why not micro-optimize?
             var triggerList = RegisterContext<WeaponTriggerContext>();
-            RegisterContext<WeaponDamageTypeContext>(triggerList);
             RegisterContext<WeaponAimContext>(triggerList);
             RegisterContext<WeaponAimEndContext>(triggerList);
             RegisterContext<WeaponAmmoContext>(triggerList);
@@ -212,6 +248,8 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponJumpEndContext>(triggerList);
             RegisterContext<WeaponReferenceContext>(triggerList);
             RegisterContext<WeaponInitContext>(triggerList);
+            RegisterContext<WeaponPostStartFireContext>(triggerList);
+            RegisterContext<WeaponPostStopFiringContext>(triggerList);
 
             // Standard contexts
             RegisterContext<WeaponArmorContext>();
@@ -226,9 +264,7 @@ namespace EWC.CustomWeapon.WeaponContext
             RegisterContext<WeaponFireRateContext>();
             RegisterContext<WeaponFireCancelContext>();
             RegisterContext<WeaponPreStartFireContext>();
-            RegisterContext<WeaponPostStartFireContext>();
             RegisterContext<WeaponPreRayContext>();
-            RegisterContext<WeaponPostStopFiringContext>();
             RegisterContext<WeaponPreReloadContext>();
             RegisterContext<WeaponRecoilContext>();
             RegisterContext<WeaponShotInitContext>();
@@ -238,16 +274,12 @@ namespace EWC.CustomWeapon.WeaponContext
             // Component management contexts
             RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponSetupContext>();
-            RegisterContext<WeaponOwnerSetContext>();
             RegisterContext<WeaponUpdateContext>();
-            RegisterContext<WeaponEnableContext>();
-            RegisterContext<WeaponDisableContext>();
         }
 
         private void RegisterMeleeContexts()
         {
             var triggerList = RegisterContext<WeaponTriggerContext>();
-            RegisterContext<WeaponDamageTypeContext>(triggerList);
             RegisterContext<WeaponPostKillContext>(triggerList);
             RegisterContext<WeaponPostStaggerContext>(triggerList);
             RegisterContext<WeaponPostFireContext>(triggerList);
@@ -282,7 +314,6 @@ namespace EWC.CustomWeapon.WeaponContext
 
             RegisterContext<WeaponClearContext>();
             RegisterContext<WeaponSetupContext>();
-            RegisterContext<WeaponOwnerSetContext>();
         }
 
         private void RegisterSyncContexts()

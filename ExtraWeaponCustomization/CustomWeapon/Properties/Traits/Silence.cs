@@ -1,5 +1,7 @@
 ﻿using Agents;
 using Enemies;
+using EWC.CustomWeapon.ComponentWrapper.OwnerComps;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -17,7 +19,8 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class Silence :
         Trait,
-        IGunProperty,
+        IWeaponProperty<WeaponSetupContext>,
+        IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponPreFireContextSync>,
         IWeaponProperty<WeaponPostFireContext>,
@@ -49,26 +52,42 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
 
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
         public override bool ShouldRegister(Type contextType)
         {
+            if (!SNet.IsMaster || CWC.Owner.Player.Owner.IsBot) return false;
+
             if (contextType == typeof(WeaponPreFireContext)
-             || contextType == typeof(WeaponPostFireContext)
-             || contextType == typeof(WeaponStealthUpdateContext))
-                return SNet.IsMaster;
+             || contextType == typeof(WeaponPreFireContextSync))
+                return CWC.Owner.IsType(OwnerType.Player);
+
+            if (contextType == typeof(WeaponSetupContext)
+             || contextType == typeof(WeaponClearContext))
+                return CWC.Owner.IsType(OwnerType.Sentry);
 
             return base.ShouldRegister(contextType);
+        }
+        public void Invoke(WeaponSetupContext context)
+        {
+            ((SentryOwnerComp)CWC.Owner).Value.m_noiseTimer = float.MaxValue;
+        }
+
+        public void Invoke(WeaponClearContext context)
+        {
+            ((SentryOwnerComp)CWC.Owner).Value.m_noiseTimer = Clock.Time;
         }
 
         public void Invoke(WeaponPreFireContext context)
         {
-            s_cachedNoise = CWC.Weapon.Owner.Noise;
-            s_cachedTimestamp = CWC.Weapon.Owner.m_noiseTimestamp;
+            s_cachedNoise = CWC.Owner.Player.Noise;
+            s_cachedTimestamp = CWC.Owner.Player.m_noiseTimestamp;
         }
 
         public void Invoke(WeaponPreFireContextSync context)
         {
-            s_cachedNoise = CWC.Weapon.Owner.Noise;
-            s_cachedTimestamp = CWC.Weapon.Owner.m_noiseTimestamp;
+            s_cachedNoise = CWC.Owner.Player.Noise;
+            s_cachedTimestamp = CWC.Owner.Player.m_noiseTimestamp;
         }
 
         public void Invoke(WeaponPostFireContext context)
@@ -108,14 +127,17 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (!SNet.IsMaster) return;
 
-            PlayerAgent owner = CWC.Weapon.Owner;
-            owner.m_noise = s_cachedNoise;
-            owner.m_noiseTimestamp = s_cachedTimestamp;
+            var owner = CWC.Owner;
+            if (owner.IsType(OwnerType.Player))
+            {
+                owner.Player.m_noise = s_cachedNoise;
+                owner.Player.m_noiseTimestamp = s_cachedTimestamp;
+            }
 
             bool runAlert = AlertRadius > WakeUpRadius;
             bool runFakeAlert = FakeAlertRadius > AlertRadius && FakeAlertRadius > WakeUpRadius;
 
-            s_ray.origin = owner.IsLocallyOwned ? Weapon.s_ray.origin : owner.EyePosition;
+            s_ray.origin = owner.FirePos;
 
             // Cache enemies
             if (runFakeAlert)
@@ -134,8 +156,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             s_wakeupList.Clear();
             s_wakeupList.AddRange(SearchUtil.GetEnemiesInRange(s_ray, WakeUpRadius, 180f, owner.CourseNode, SearchSettings));
-
-            Vector3 pos = owner.Position;
 
             // Instant wakeup
             for (int i = s_wakeupList.Count - 1; i >= 0; --i)
@@ -182,8 +202,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 if (!EnemyCanHear(enemy, FakeAlertRadius))
                     continue;
-
-                enemy.AI.m_locomotion.Hibernate.Heartbeat(0.5f, CWC.Weapon.Owner.Position);
+                enemy.AI.m_locomotion.Hibernate.Heartbeat(0.5f, owner.FirePos);
             }
         }
 
@@ -191,8 +210,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (!enemy.ListenerReady) return false;
 
-            PlayerAgent owner = CWC.Weapon.Owner;
-            float nodeDistance = enemy.CourseNode.m_playerCoverage.GetNodeDistanceToPlayer_Unblocked(owner);
+            var owner = CWC.Owner;
+            float nodeDistance = enemy.CourseNode.m_playerCoverage.GetNodeDistanceToPlayer_Unblocked(owner.Player);
             if (!enemy.AI.m_detection.GetWeaponDetectionDistance(nodeDistance, out float weaponDist)) return false;
 
             if (CrossDoorMode == CrossDoorMode.None && enemy.CourseNode.NodeID != owner.CourseNode.NodeID) return false;
@@ -201,7 +220,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (CrossDoorMode == CrossDoorMode.Normal)
                 weaponDist = Math.Max(0, range - (baseDist - weaponDist));
 
-            if ((owner.Position - enemy.Position).sqrMagnitude >= weaponDist * weaponDist) return false;
+            if ((owner.FirePos - enemy.Position).sqrMagnitude >= weaponDist * weaponDist) return false;
 
             return true;
         }

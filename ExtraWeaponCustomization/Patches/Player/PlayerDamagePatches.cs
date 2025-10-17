@@ -7,21 +7,21 @@ namespace EWC.Patches.Player
     [HarmonyPatch]
     internal static class PlayerDamagePatches
     {
-        private static bool _ignoreCall = false;
         [HarmonyPatch(typeof(Dam_PlayerDamageBase), nameof(Dam_PlayerDamageBase.OnIncomingDamage))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void Pre_TakeDamage(Dam_PlayerDamageBase __instance, float damage)
+        private static void Pre_TakeDamage(Dam_PlayerDamageBase __instance, float damage, ref bool __state)
         {
-            _ignoreCall = damage <= 0 || __instance.Health <= 0 || !__instance.Owner.IsLocallyOwned;
+            var owner = __instance.Owner.Owner;
+            __state = damage > 0 && __instance.Health > 0 && (owner.IsLocal || (owner.IsBot && SNetwork.SNet.IsMaster));
         }
 
         [HarmonyPatch(typeof(Dam_PlayerDamageBase), nameof(Dam_PlayerDamageBase.OnIncomingDamage))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void Post_TakeDamage(Dam_PlayerDamageBase __instance, float damage)
+        private static void Post_TakeDamage(Dam_PlayerDamageBase __instance, float damage, bool __state)
         {
-            if (_ignoreCall) return;
+            if (!__state) return;
 
             CustomWeaponManager.InvokeOnGear(__instance.Owner.Owner, new WeaponDamageTakenContext(damage));
         }

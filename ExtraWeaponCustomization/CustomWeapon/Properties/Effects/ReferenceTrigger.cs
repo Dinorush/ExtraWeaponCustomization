@@ -9,8 +9,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class ReferenceTrigger :
         Effect,
-        IGunProperty,
-        IMeleeProperty,
         IReferenceHolder
     {
         public PropertyList Properties { get; private set; } = new();

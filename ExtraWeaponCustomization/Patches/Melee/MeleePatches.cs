@@ -1,59 +1,39 @@
 ﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext;
+using EWC.Patches.Gun;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using Gear;
 using HarmonyLib;
 using System;
-using EWC.CustomWeapon.CustomShot;
 
 namespace EWC.Patches.Melee
 {
     [HarmonyPatch]
     internal static class MeleePatches
     {
-        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.SetupMeleeAnimations))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void SetupCallback(MeleeWeaponFirstPerson __instance)
-        {
-            CachedCharge = 0f;
-            CustomWeaponManager.Current.AddWeaponListener(__instance);
-            if (!CustomWeaponManager.TryGetCustomMeleeData(__instance.MeleeArchetypeData.persistentID, out var data)) return;
-
-            if (__instance.gameObject.GetComponent<CustomWeaponComponent>() != null) return;
-
-            CustomWeaponComponent cwc = __instance.gameObject.AddComponent<CustomWeaponComponent>();
-            cwc.Register(data);
-        }
-
-        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.OnWield))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void UpdateCurrentWeapon(MeleeWeaponFirstPerson __instance)
-        {
-            CachedCharge = 0f;
-            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
-            cwc.Invoke(StaticContext<WeaponWieldContext>.Instance);
-        }
-
-        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.OnUnWield))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void ClearCharge(MeleeWeaponFirstPerson __instance)
-        {
-            CachedCharge = 0f;
-            CustomWeaponComponent? cwc = __instance.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
-            cwc.Invoke(StaticContext<WeaponUnWieldContext>.Instance);
-        }
-
         public readonly static HitData HitData = new(CustomWeapon.Enums.DamageType.Bullet);
-        private static CustomWeaponComponent? _cachedCWC = null;
+        private static CustomWeaponComponent? _cachedSwingCWC = null;
         public static float CachedCharge { get; private set; } = 0f;
+
+        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.ChangeState))]
+        [HarmonyWrapSafe]
+        [HarmonyPrefix]
+        private static void Pre_MeleeChangeState(MeleeWeaponFirstPerson __instance, out CustomMeleeComponent? __state)
+        {
+            if (!__instance.TryGetComp<CustomMeleeComponent>(out __state)) return;
+
+            __state.UpdateAttackSpeed();
+        }
+
+        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.ChangeState))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void Post_MeleeChangeState(eMeleeWeaponState newState, CustomMeleeComponent? __state)
+        {
+            __state?.ModifyAttackSpeed(newState);
+        }
 
         [HarmonyPatch(typeof(MWS_AttackLight), nameof(MWS_AttackLight.Enter))]
         [HarmonyWrapSafe]
@@ -75,19 +55,18 @@ namespace EWC.Patches.Melee
 
         private static void OnSwingStart(MeleeWeaponFirstPerson weapon, float charge)
         {
-            _cachedCWC = weapon.GetComponent<CustomWeaponComponent>();
-            if (_cachedCWC == null) return;
-            ShotManager.AdvanceGroupMod(_cachedCWC);
+            _cachedSwingCWC = weapon.GetComponent<CustomWeaponComponent>();
+            if (_cachedSwingCWC == null) return;
+            ShotManager.AdvanceGroupMod(_cachedSwingCWC);
 
             CachedCharge = charge;
             if (charge > 0 && charge < 1)
             {
-                var context = _cachedCWC.Invoke(new WeaponChargeContext());
+                var context = _cachedSwingCWC.Invoke(new WeaponChargeContext());
                 if (context.Exponent != 3)
                     weapon.SetNextDamageToDeal(eMeleeWeaponDamage.Heavy, (float)Math.Pow(charge, context.Exponent));
             }
-            HitData.shotInfo.Reset(weapon.m_damageToDeal, weapon.m_precisionMultiToDeal, weapon.m_staggerMultiToDeal, false);
-            HitData.shotInfo.NewShot(_cachedCWC);
+            HitData.shotInfo.Reset(weapon.m_damageToDeal, weapon.m_precisionMultiToDeal, weapon.m_staggerMultiToDeal, _cachedSwingCWC);
         }
 
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.DoAttackDamage))]
@@ -95,7 +74,7 @@ namespace EWC.Patches.Melee
         [HarmonyPrefix]
         private static void HitCallback(MeleeWeaponFirstPerson __instance, MeleeWeaponDamageData data, bool isPush)
         {
-            if (isPush || _cachedCWC == null) return;
+            if (isPush || _cachedSwingCWC == null) return;
 
             HitData.Setup(__instance, data);
 

@@ -7,8 +7,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public class FireRateMod :
         TriggerMod,
-        IGunProperty,
-        IMeleeProperty,
         ITriggerCallbackBasicSync,
         IWeaponProperty<WeaponFireRateContext>
     {
@@ -32,7 +30,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             var num = Sum(contexts);
             TriggerApplySync(num);
 
-            TriggerManager.SendInstance(this, num);
+            if (CWC.Weapon.IsType(Enums.WeaponType.Gun))
+                TriggerManager.SendInstance(this, num);
         }
 
         public void TriggerResetSync()
@@ -44,10 +43,10 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             _triggerStack.Add(num);
 
-            if (ForceUpdate)
+            if (ForceUpdate && CWC.Weapon.IsType(Enums.WeaponType.Gun))
             {
-                CWC.UpdateStoredFireRate();
-                CWC.ModifyFireRate();
+                CGC.UpdateStoredFireRate();
+                CGC.ModifyFireRate();
             }
         }
 

@@ -24,9 +24,9 @@ namespace EWC.CustomWeapon.Properties
         private static readonly List<WeaponPropertyBase> s_subtreePropCache = new();
         private static readonly HashSet<WeaponPropertyBase> s_subtreeKeepCache = new();
 
-        public PropertyController(bool isGun, bool isLocal)
+        public PropertyController(Enums.OwnerType ownerType, Enums.WeaponType weaponType)
         {
-            _contextController = new(isGun, isLocal);
+            _contextController = new(ownerType, weaponType);
         }
 
         public TContext Invoke<TContext>(TContext context) where TContext : IWeaponContext => _contextController.Invoke(context);
@@ -60,10 +60,21 @@ namespace EWC.CustomWeapon.Properties
             for (int i = list.Properties.Count - 1; i >= 0; i--)
             {
                 WeaponPropertyBase property = list.Properties[i];
+
+                if (property.ID != 0)
+                {
+                    if (!_idToProperty.TryAdd(property.ID, property.Reference))
+                        EWCLogger.Warning("Duplicate property ID detected: " + property.ID);
+                }
+
+                if (property is ITriggerCallbackSync syncProperty)
+                {
+                    syncProperty.SyncID = (ushort)_syncList.Count;
+                    _syncList.Add(syncProperty);
+                }
+
                 if (!property.ValidProperty())
                 {
-                    EWCLogger.Warning($"Cannot add {property.GetType().Name} to a {(cwc.IsGun ? "gun" : "melee")}!");
-
                     list.Properties.Remove(property);
                     Type type = property.GetType();
                     if (list.Traits?.TryGetValue(type, out var trait) == true && trait == property)
@@ -72,17 +83,6 @@ namespace EWC.CustomWeapon.Properties
                 }
 
                 _properties.Add(property);
-                if (property is ITriggerCallbackSync syncProperty)
-                {
-                    syncProperty.SyncID = (ushort)_syncList.Count;
-                    _syncList.Add(syncProperty);
-                }
-
-                if (property.ID != 0)
-                {
-                    if (!_idToProperty.TryAdd(property.ID, property.Reference))
-                        EWCLogger.Warning("Duplicate property ID detected: " + property.ID);
-                }
 
                 if (property is TempProperties tempProperties)
                 {
@@ -119,7 +119,7 @@ namespace EWC.CustomWeapon.Properties
             }
 
             if (_idToProperty.TryGetValue(id, out propertyRef))
-                return true;
+                return propertyRef.Property.ValidProperty();
             EWCLogger.Error($"Unable to find property with ID {id}!");
             return false;
         }

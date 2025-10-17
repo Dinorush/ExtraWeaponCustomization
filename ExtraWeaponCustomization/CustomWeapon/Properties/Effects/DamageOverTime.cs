@@ -6,7 +6,7 @@ using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Hit.DOT;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.JSON;
 using Player;
 using System;
@@ -19,12 +19,10 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class DamageOverTime :
         Effect,
-        IGunProperty,
-        IMeleeProperty,
         ITriggerCallbackAgentSync
     {
         public ushort SyncID { get; set; }
-        public PlayerAgent Owner => CWC.Weapon.Owner;
+        public PlayerAgent Owner => CWC.Owner.Player;
 
         public float TotalDamage { get; private set; } = 0f;
         public float EndDamageFrac { get; private set; } = 1f;
@@ -57,10 +55,10 @@ namespace EWC.CustomWeapon.Properties.Effects
         private readonly Dictionary<BaseDamageableWrapper, Queue<DOTInstance>> _lastDOTs = new();
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
-        public DamageOverTime() : base()
+        public DamageOverTime()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(DamageType.DOT, ITrigger.PositionalTriggers);
+            SetValidTriggers(DamageType.DOT, ITrigger.HitTriggers);
         }
 
         public override void TriggerApply(List<TriggerContext> triggerList)
@@ -130,7 +128,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             float staggerMulti = StaggerDamageMulti;
 
             ShotInfo info = new(context.ShotInfo.Orig, true, UseParentShotMod);
-            damage *= info.XpMod;
+            damage *= info.ExternalDamageMod * info.InnateDamageMod;
+            staggerMulti *= info.InnateStaggerMod;
 
             WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, DamageType.DOT.WithSubTypes(context.Damageable), context.Damageable, context.ShotInfo.Orig, CWC.DebuffIDs);
             CWC.Invoke(statContext);

@@ -48,9 +48,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             return comp;
         }
 
-        public EWCProjectileComponentShooter CreateAndSendProjectile(Projectile projBase, Vector3 position, HitData hitData, IntPtr ignoreEnt = default)
+        public EWCProjectileComponentShooter CreateAndSendProjectile(Projectile projBase, Vector3 position, Vector3 fxPos, HitData hitData, IntPtr ignoreEnt = default)
         {
-            ushort index = (ushort) projBase.CWC.Weapon.Owner.PlayerSlotIndex;
+            ushort index = (ushort) projBase.CWC.Owner.Player.PlayerSlotIndex;
             ProjectileDataShooter data = new()
             {
                 playerIndex = index,
@@ -59,6 +59,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
                 position = position
             };
             data.dir.Value = hitData.fireDir;
+            data.localFXPos.Set(fxPos - position, 10f);
 
             s_shooterSync.Send(data);
             EWCProjectileComponentShooter comp = GetFromPool(projBase.ProjectileType);
@@ -67,11 +68,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             return comp;
         }
 
-        internal void Internal_ReceiveProjectile(ushort index, ushort id, Projectile projBase, Vector3 position, Vector3 dir)
+        internal void Internal_ReceiveProjectile(ushort index, ushort id, Projectile projBase, Vector3 position, Vector3 fxPos, Vector3 dir)
         {
             EWCProjectileComponentShooter comp = GetFromPool(projBase.ProjectileType);
             EWCProjectileManager.AddProjectile(index, id, comp);
             comp.Init(index, id, projBase, false, position, dir);
+            if (projBase.VisualLerpDist > 0 && fxPos != Vector3.zero)
+                comp.SetVisualPosition(fxPos, projBase.VisualLerpDist);
             EWCProjectileManager.TryPullCachedTarget(index, id);
         }
     }
@@ -82,6 +85,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         public ushort id;
         public ushort propertyID;
         public Vector3 position;
+        public LowResVector3 localFXPos;
         public LowResVector3_Normalized dir;
     }
 }

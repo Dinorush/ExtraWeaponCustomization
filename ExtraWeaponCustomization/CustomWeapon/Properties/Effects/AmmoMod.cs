@@ -1,17 +1,21 @@
-﻿using System;
-using Player;
-using EWC.CustomWeapon.WeaponContext.Contexts;
-using System.Text.Json;
-using System.Collections.Generic;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils.Extensions;
+using GameData;
+using Gear;
+using Player;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class AmmoMod :
         Effect,
-        IGunProperty,
-        IMeleeProperty,
         IWeaponProperty<WeaponPreFireContext>,
         IWeaponProperty<WeaponPostFireContext>
     {
@@ -20,12 +24,20 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool OverflowAtBounds { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
         public bool UseRawAmmo { get; private set; } = false;
+        public bool BypassClipCap { get; private set; } = false;
         public bool BypassReserveCap { get; private set; } = false;
         public InventorySlot ReceiverSlot { get; private set; } = InventorySlot.None;
 
         private float _clipBuffer = 0;
         private float _reserveBuffer = 0;
         private bool _bonusRound = false;
+
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
+
+        public override bool ValidProperty()
+        {
+            return base.ValidProperty() && (!CWC.Weapon.IsType(WeaponType.Melee) || ReceiverSlot != InventorySlot.None);
+        }
 
         public void Invoke(WeaponPreFireContext context)
         {
@@ -37,11 +49,6 @@ namespace EWC.CustomWeapon.Properties.Effects
             _bonusRound = false;
         }
 
-        public override bool ValidProperty()
-        {
-            return base.ValidProperty() && (CWC.IsGun || ReceiverSlot != InventorySlot.None);
-        }
-
         public override void TriggerReset()
         {
             _clipBuffer = 0;
@@ -50,12 +57,19 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            PlayerBackpack backpack = PlayerBackpackManager.GetBackpack(CWC.Weapon.Owner.Owner);
-            ItemEquippable? weapon = CWC.Gun;
-            if (!SlotMatchesWeapon() && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem) && bpItem.Instance != null)
-                weapon = bpItem.Instance.Cast<ItemEquippable>();
-
-            if (weapon == null) return;
+            PlayerBackpack backpack = PlayerBackpackManager.GetBackpack(CWC.Owner.Player.Owner);
+            IArchComp weapon;
+            if (!SlotMatchesWeapon() && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem))
+            {
+                if (!TryCreateHolder(bpItem, out weapon!))
+                    return;
+            }
+            else if (CWC.Weapon.IsType(WeaponType.Gun))
+                weapon = CGC.Gun;
+            else if (CWC.Weapon.IsType(WeaponType.SentryHolder) && !CustomWeaponManager.TryGetSentry(CWC.Owner.Player, out _))
+                weapon = (IArchComp)CWC.Weapon;
+            else
+                return;
 
             PlayerAmmoStorage ammoStorage = backpack.AmmoStorage;
             InventorySlotAmmo slotAmmo = ammoStorage.GetInventorySlotAmmo(weapon.AmmoType);
@@ -87,9 +101,15 @@ namespace EWC.CustomWeapon.Properties.Effects
                 clipMod = remainder;
             }
 
+            int maxClip = weapon.GetMaxClip(out bool overflow);
+            if (BypassClipCap)
+                maxClip = int.MaxValue - accountForShot;
+            else if (overflow)
+                accountForShot = 0;
+
             // Calculate the actual changes we can make to clip/ammo
             int clipChange = (int) (PullFromReserve ? Math.Min(_clipBuffer, reserves) : _clipBuffer + clipMod);
-            int newClip = Math.Clamp(weapon.GetCurrentClip() + clipChange, accountForShot, weapon.GetMaxClip() + accountForShot);
+            int newClip = Math.Clamp(weapon.GetCurrentClip() + clipChange, accountForShot, maxClip + accountForShot);
 
             // If we overflow/underflow the magazine, send the rest to reserves (if not pulling from reserves)
             int bonusReserve = OverflowAtBounds ? clipChange - (newClip - weapon.GetCurrentClip()) : 0;
@@ -132,6 +152,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(OverflowAtBounds), OverflowAtBounds);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
+            writer.WriteBoolean(nameof(BypassClipCap), BypassClipCap);
             writer.WriteBoolean(nameof(BypassReserveCap), BypassReserveCap);
             writer.WriteString(nameof(ReceiverSlot), SlotToName(ReceiverSlot));
             SerializeTrigger(writer);
@@ -163,6 +184,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "useammo":
                     UseRawAmmo = reader.GetBoolean();
                     break;
+                case "bypassclipcap":
+                    BypassClipCap = reader.GetBoolean();
+                    break;
                 case "bypassreservecap":
                 case "bypasscap":
                     BypassReserveCap = reader.GetBoolean();
@@ -189,12 +213,16 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private bool SlotMatchesWeapon()
         {
-            return ReceiverSlot switch
+            switch (ReceiverSlot)
             {
-                InventorySlot.GearStandard => CWC.Weapon.AmmoType == AmmoType.Standard,
-                InventorySlot.GearSpecial => CWC.Weapon.AmmoType == AmmoType.Special,
-                InventorySlot.None => true,
-                _ => false,
+                case InventorySlot.GearStandard:
+                case InventorySlot.GearSpecial:
+                case InventorySlot.GearClass:
+                    return CWC.Weapon.InventorySlot == ReceiverSlot;
+                case InventorySlot.None:
+                    return true;
+                default:
+                    return false;
             };
         }
 
@@ -207,6 +235,64 @@ namespace EWC.CustomWeapon.Properties.Effects
                 InventorySlot.GearClass => "Tool",
                 _ => "None",
             };
+        }
+
+        private static bool TryCreateHolder(BackpackItem bpItem, [MaybeNullWhen(false)] out IArchComp holder)
+        {
+            var item = bpItem.Instance;
+            if (item.TryCastOut<BulletWeapon>(out var gun))
+            {
+                holder = new EmptyHolder(gun);
+                return true;
+            }
+            else if (item.TryCastOut<SentryGunFirstPerson>(out var sentry))
+            {
+                if (CustomWeaponManager.TryGetSentry(sentry.Owner, out var sentryInfo))
+                    holder = sentryInfo.cgc?.Gun ?? new SentryGunComp(sentryInfo.sentry);
+                else
+                    holder = new EmptyHolder(null);
+                return true;
+            }
+            holder = null;
+            return false;
+        }
+
+        class EmptyHolder : IArchComp
+        {
+            private readonly bool _isSentry;
+            private readonly ItemEquippable? _item;
+
+            public EmptyHolder(ItemEquippable? item)
+            {
+                _isSentry = item == null;
+                _item = item;
+            }
+
+            public AmmoType AmmoType => _isSentry ? AmmoType.Class : _item!.AmmoType;
+
+            public int GetCurrentClip()
+            {
+                if (_isSentry) return 0;
+                return _item!.GetCurrentClip();
+            }
+
+            public int GetMaxClip()
+            {
+                if (_isSentry) return 0;
+                return _item!.GetMaxClip();
+            }
+
+            public void SetCurrentClip(int clip)
+            {
+                if (_isSentry) return;
+                _item!.SetCurrentClip(clip);
+            }
+
+            public CellSoundPlayer Sound => throw new NotImplementedException();
+            public ArchetypeDataBlock ArchetypeData { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+            public ItemEquippable Component => throw new NotImplementedException();
+            public WeaponType Type => throw new NotImplementedException();
+            public bool AllowBackstab => throw new NotImplementedException();
         }
     }
 }
