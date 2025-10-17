@@ -1,6 +1,6 @@
 # ExtraWeaponCustomization
 
-Adds additional weapon mechanics for rundown developers to use. These include:
+Adds additional weapon mechanics for rundown developers to use. These can be applied to guns, melees, and sentries. These include:
 
 #### Effects - Apply when a condition is triggered
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
@@ -22,25 +22,25 @@ Adds additional weapon mechanics for rundown developers to use. These include:
 - Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
 - Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
 - Shrapnel: Causes bullets to fire out from where bullets land. [Gun]
-- Speed Mod: Applies a modifier to the user's movement speed.
+- Speed Mod: Applies a modifier to the user's movement speed. [Player]
 - Spread Mod: Applies a spread modifier. [Gun]
 - Temp Properties: Temporarily adds another set of properties.
 
 #### Traits - Innate gun behavior modifications
 - Ammo Cap: Adjust the value used to calculate ammopack refills and starting ammo. [Gun]
 - Armor Pierce: Pierces armor or modifies direct hit damage dealt to armor.
-- Auto Aim: Automatically fire toward targets. [Gun]
-- Auto Trigger: Hold the trigger to fire. [Semi, Burst]
+- Auto Aim: Automatically fire toward targets. [Held Gun]
+- Auto Trigger: Hold the trigger to fire. [Held Gun]
 - Backstab Multi: Applies a multiplier to backstab damage.
 - Charge Exponent: Modifies the exponent applied to melee charge attacks. [Melee]
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
-- Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate.
+- Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate. [Held Gun]
 - Hitmarker Cooldown: Sets a cooldown on how frequently the weapon can generate hitmarkers.
-- Hold Burst: Releasing the trigger ends a burst early. [Burst]
+- Hold Burst: Releasing the trigger ends a burst early. [Held Gun]
 - Multi Shot: Fires additional bullets per shot at given offsets. [Gun]
 - Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
 - Projectile: Fires a projectile instead of a hitscan bullet. [Gun]
-- Reserve Clip: Combines reserve ammo with the magazine. [Gun]
+- Reserve Clip: Combines reserve ammo with the magazine. [Held Gun]
 - Silence: Modifies the stealth properties for firing. [Gun]
 - Thick Bullet: Gives bullets a bigger entity hitbox. [Gun]
 - Tumor Multi: Applies a multiplier to tumor damage.
