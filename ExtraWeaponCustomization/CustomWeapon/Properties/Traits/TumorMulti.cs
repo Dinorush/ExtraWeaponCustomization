@@ -6,13 +6,13 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class TumorMulti :
         Trait,
-        IGunProperty,
-        IMeleeProperty,
         IWeaponProperty<WeaponStatContext>
     {
         public float TumorDamageMulti { get; private set; } = 1f;
         public bool BypassCap { get; private set; } = false;
         public bool OverrideWeakspotMulti { get; private set; } = false;
+
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
 
         public void Invoke(WeaponStatContext context)
         {

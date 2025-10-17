@@ -6,13 +6,14 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class PierceMulti : 
         Trait,
-        IGunProperty,
         IWeaponProperty<WeaponHitDamageableContext>
     {
         private static readonly DamageType[] BulletType = new[] { DamageType.Bullet };
 
         public DamageType[] ModDamageType { get; private set; } = BulletType;
         public float PierceDamageMulti { get; private set; } = 1f;
+
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
         public void Invoke(WeaponHitDamageableContext context)
         {

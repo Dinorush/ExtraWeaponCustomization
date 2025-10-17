@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.CustomShot;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.CustomShot;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
@@ -12,7 +14,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class MultiShot :
         Trait,
-        IGunProperty,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponPreFireContext>,
@@ -30,8 +31,10 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool RunHitTriggers { get; private set; } = true;
 
         private static Ray s_ray;
-        private readonly static HitData s_hitData = new(Enums.DamageType.Bullet);
+        private readonly static HitData s_hitData = new(DamageType.Bullet);
         private static float s_initialShotMod = 1f;
+
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
         public override bool ShouldRegister(Type contextType)
         {
@@ -41,42 +44,46 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPreFireContext context)
         {
-            if (Clock.Time - CWC.Gun!.m_lastFireTime > CWC.Gun!.m_fireRecoilCooldown)
-                s_initialShotMod = 0.2f;
-            else
-                s_initialShotMod = 1f;
+            s_initialShotMod = 1f;
+            if (CWC.Owner.IsType(OwnerType.Local))
+            {
+                var gun = ((LocalGunComp)CWC.Weapon).Value;
+                if (Clock.Time - gun.m_lastFireTime > gun.m_fireRecoilCooldown)
+                    s_initialShotMod = 0.2f;
+            }
         }
 
         public void Invoke(WeaponSetupContext context)
         {
-            CWC.ShotComponent!.CancelNormalShot = true;
+            CGC.ShotComponent.CancelNormalShot = true;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CWC.ShotComponent!.CancelNormalShot = false;
+            CGC.ShotComponent.CancelNormalShot = false;
         }
 
         public void Invoke(WeaponPostFireContextSync context)
         {
             if (CWC.HasTrait<Projectile>()) return;
 
-            s_ray.origin = CWC.Weapon.MuzzleAlign.position;
-            s_ray.direction = UseAimDir || CWC.IsShotgun ? CWC.Weapon.MuzzleAlign.forward : ShotManager.VanillaFireDir;
+            bool isShotgun = CGC.Gun.IsShotgun;
+            s_ray.origin = CWC.Owner.FirePos;
+            s_ray.direction = UseAimDir || isShotgun ? CWC.Owner.FireDir : ShotManager.VanillaFireDir;
 
             int shotgunBullets = 1;
             int coneSize = 0;
             float segmentSize = 0;
-            if (CWC.IsShotgun && !ForceSingleBullet)
+            if (isShotgun && !ForceSingleBullet)
             {
-                shotgunBullets = CWC.ArchetypeData.ShotgunBulletCount;
-                coneSize = CWC.ArchetypeData.ShotgunConeSize;
+                shotgunBullets = CGC.Gun.ArchetypeData.ShotgunBulletCount;
+                coneSize = CGC.Gun.ArchetypeData.ShotgunConeSize;
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
             float spread = Spread;
             if (spread < 0f)
-                spread = CWC.IsShotgun ? CWC.ArchetypeData.ShotgunBulletSpread : 0f;
+                spread = isShotgun ? CGC.Gun.ArchetypeData.ShotgunBulletSpread : 0f;
 
             for (uint mod = 1; mod <= Repeat + 1; mod++)
             {
@@ -97,25 +104,26 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContext context)
         {
-            s_ray.origin = CWC.Weapon.Owner.FPSCamera.Position;
-            s_ray.direction = UseAimDir || CWC.IsShotgun ? CWC.Weapon.Owner.FPSCamera.CameraRayDir : ShotManager.VanillaFireDir;
+            bool isShotgun = CGC.Gun.IsShotgun;
+            s_ray.origin = CWC.Owner.FirePos;
+            s_ray.direction = UseAimDir || isShotgun ? CWC.Owner.FireDir : ShotManager.VanillaFireDir;
 
             int shotgunBullets = 1;
             float coneSize = 0;
             float segmentSize = 0;
-            var archData = CWC.Weapon.ArchetypeData;
-            if (CWC.IsShotgun && !ForceSingleBullet)
+            var archData = CGC.Gun.ArchetypeData;
+            if (isShotgun && !ForceSingleBullet)
             {
                 shotgunBullets = archData.ShotgunBulletCount;
                 coneSize = archData.ShotgunConeSize;
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
-            bool isADS = CWC.Weapon.FPItemHolder.ItemAimTrigger;
+            bool isADS = CGC.Gun.IsAiming;
             float spread = Spread;
             if (spread < 0f)
             {
-                if (CWC.IsShotgun)
+                if (isShotgun)
                     spread = archData.ShotgunBulletSpread;
                 else
                     spread = (isADS ? archData.AimSpread : archData.HipFireSpread) * s_initialShotMod;
@@ -124,7 +132,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             float aimMod = isADS ? AimOffsetMod : 1f;
             if (!IgnoreSpreadMod)
             {
-                float spreadMod = CWC.SpreadController!.Value;
+                float spreadMod = CGC.SpreadController.Value;
                 spread *= spreadMod;
                 coneSize *= spreadMod;
                 aimMod *= spreadMod;
@@ -149,22 +157,21 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private void Fire(float x, float y, float spread)
         {
-            ArchetypeDataBlock archData = CWC.ArchetypeData;
-            s_hitData.owner = CWC.Weapon.Owner;
-            s_hitData.damage = archData.GetDamageWithBoosterEffect(s_hitData.owner, CWC.Weapon.ItemDataBlock.inventorySlot);
+            ArchetypeDataBlock archData = CGC.Gun.ArchetypeData;
+            s_hitData.owner = CWC.Owner.Player;
+            s_hitData.shotInfo.Reset(s_hitData.damage, s_hitData.precisionMulti, s_hitData.staggerMulti, CWC);
+            s_hitData.damage = s_hitData.shotInfo.OrigDamage;
             s_hitData.damageFalloff = archData.DamageFalloff;
-            s_hitData.staggerMulti = archData.StaggerDamageMulti;
+            s_hitData.staggerMulti = s_hitData.shotInfo.OrigStagger;
             s_hitData.precisionMulti = archData.PrecisionDamageMulti;
-            s_hitData.maxRayDist = CWC.Gun!.MaxRayDist;
+            s_hitData.maxRayDist = CGC.Gun.MaxRayDist;
             s_hitData.angOffsetX = x;
             s_hitData.angOffsetY = y;
             s_hitData.randomSpread = spread;
-            s_hitData.shotInfo.Reset(s_hitData.damage, s_hitData.precisionMulti, s_hitData.staggerMulti, true);
             s_hitData.RayHit = default;
-            s_hitData.shotInfo.NewShot(CWC);
 
             ToggleRunTriggers(false);
-            CWC.ShotComponent!.FireSpread(s_ray, CWC.Weapon.MuzzleAlign.position, s_hitData);
+            CGC.ShotComponent.FireSpread(s_ray, CWC.Owner.MuzzleAlign.position, s_hitData);
             ToggleRunTriggers(true);
         }
 
@@ -176,12 +183,12 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private void FireVisual(float x, float y, float spread)
         {
-            s_hitData.owner = CWC.Weapon.Owner;
-            s_hitData.damage = CWC.ArchetypeData.Damage;
+            s_hitData.owner = CWC.Owner.Player;
+            s_hitData.damage = CGC.Gun.ArchetypeData.Damage;
             s_hitData.angOffsetX = x;
             s_hitData.angOffsetY = y;
             s_hitData.randomSpread = spread;
-            CWC.ShotComponent!.FireSpread(s_ray, CWC.Weapon.MuzzleAlign.position, s_hitData);
+            CGC.ShotComponent.FireSpread(s_ray, CWC.Owner.MuzzleAlign.position, s_hitData);
         }
 
         public override WeaponPropertyBase Clone()

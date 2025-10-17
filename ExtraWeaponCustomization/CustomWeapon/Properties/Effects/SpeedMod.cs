@@ -1,20 +1,17 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using MovementSpeedAPI;
-using System;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class SpeedMod :
-        TriggerModTimed,
-        IGunProperty,
-        IMeleeProperty
+        TriggerModTimed
     {
         private const string APIGroup = "EWC";
 
         private ISpeedModifier _speedModifier = null!;
 
-        public override bool ShouldRegister(Type contextType) => CWC.IsLocal && base.ShouldRegister(contextType);
+        protected override OwnerType RequiredOwnerType => OwnerType.Local;
 
         protected override void OnUpdate(float mod) => _speedModifier.Enable(mod);
         protected override void OnDisable() => _speedModifier.Disable();

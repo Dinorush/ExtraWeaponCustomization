@@ -14,7 +14,7 @@ namespace EWC.Patches.Gun
     [HarmonyPatch]
     internal static class WeaponRayPatches
     {
-        private static HitData s_hitData = new(DamageType.Bullet);
+        private readonly static HitData s_hitData = new(DamageType.Bullet);
 
         [HarmonyTargetMethod]
         private static MethodBase FindWeaponRayFunc(Harmony harmony)
@@ -30,31 +30,26 @@ namespace EWC.Patches.Gun
 
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static bool PreRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, int altRayCastMask, ref bool __result)
+        private static bool PreRayCallback(ref WeaponHitData weaponRayData, Vector3 originPos, ref bool __result)
         {
-            // Sentry filter
-            if (altRayCastMask != -1 || _cachedData == weaponRayData.Pointer) return true;
+            // Double cast filter
+            if (_cachedData == weaponRayData.Pointer) return true;
             _cachedData = weaponRayData.Pointer;
 
-            if (ShotManager.FiringWeapon == null) return true;
+            var cgc = ShotManager.ActiveFiringInfo.cgc;
+            if (cgc == null) return true;
 
-            var cwc = ShotManager.FiringWeapon.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return true;
-
-            s_hitData.Setup(weaponRayData, cwc);
-            cwc.Invoke(new WeaponPreRayContext(s_hitData, originPos));
-            if (cwc.IsLocal)
+            s_hitData.Setup(weaponRayData);
+            cgc.Invoke(new WeaponPreRayContext(s_hitData, originPos));
+            float mod = cgc.SpreadController.Value;
+            if (mod != 1f)
             {
-                float mod = cwc.SpreadController!.Value;
-                if (mod != 1f)
-                {
-                    s_hitData.randomSpread *= mod;
-                    s_hitData.angOffsetX *= mod;
-                    s_hitData.angOffsetY *= mod;
-                }
+                s_hitData.randomSpread *= mod;
+                s_hitData.angOffsetX *= mod;
+                s_hitData.angOffsetY *= mod;
             }
 
-            cwc.ShotComponent!.FireVanilla(s_hitData, originPos);
+            cgc.ShotComponent.FireVanilla(s_hitData, originPos);
             s_hitData.Apply();
             __result = false;
             return false;

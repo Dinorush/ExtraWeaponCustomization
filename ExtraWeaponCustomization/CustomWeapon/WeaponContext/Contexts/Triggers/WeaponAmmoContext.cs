@@ -1,5 +1,8 @@
-﻿namespace EWC.CustomWeapon.WeaponContext.Contexts
+﻿using EWC.CustomWeapon.WeaponContext.Attributes;
+
+namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
+    [RequireType(requiredOwnerType: Enums.OwnerType.Managed, validWeaponType: Enums.WeaponType.Gun | Enums.WeaponType.SentryHolder)]
     public sealed class WeaponAmmoContext : WeaponTriggerContext
     {
         public int Clip { get; }

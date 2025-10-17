@@ -11,23 +11,24 @@ namespace EWC.Patches.Gun
         [HarmonyPatch(typeof(ShotgunSynced), nameof(ShotgunSynced.Fire))]
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.Fire))]
         [HarmonyPatch(typeof(BulletWeaponSynced), nameof(BulletWeaponSynced.Fire))]
+        [HarmonyPriority(Priority.High)]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
         private static void Pre_Fire(BulletWeapon __instance)
         {
-            if (!__instance.Owner.Owner.IsBot)
-                ShotManager.FiringWeapon = __instance;
+            ShotManager.CacheFiringGun(__instance);
         }
 
         [HarmonyPatch(typeof(Shotgun), nameof(Shotgun.Fire))]
         [HarmonyPatch(typeof(ShotgunSynced), nameof(ShotgunSynced.Fire))]
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.Fire))]
         [HarmonyPatch(typeof(BulletWeaponSynced), nameof(BulletWeaponSynced.Fire))]
+        [HarmonyPriority(Priority.Low)]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
         private static void Post_Fire()
         {
-            ShotManager.FiringWeapon = null;
+            ShotManager.ClearFiringInfo();
         }
     }
 }

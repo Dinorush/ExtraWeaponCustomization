@@ -7,9 +7,7 @@ using System.Text.Json;
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class ShotModDebuff : 
-        TriggerModDebuff,
-        IGunProperty,
-        IMeleeProperty
+        TriggerModDebuff
     {
         public StatType StatType { get; private set; } = StatType.Damage;
         public DamageType[] DamageType { get; private set; } = DamageTypeConst.Any;

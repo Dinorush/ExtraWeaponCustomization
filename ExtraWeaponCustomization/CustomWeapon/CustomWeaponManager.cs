@@ -1,73 +1,72 @@
 ﻿using EWC.Attributes;
-using EWC.CustomWeapon.Properties;
-using EWC.CustomWeapon.Properties.Effects;
-using EWC.JSON;
+using EWC.CustomWeapon.ObjectWrappers;
+using EWC.Utils.Extensions;
 using Gear;
-using GTFO.API.Utilities;
-using MTFO.API;
 using Player;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
+using UnityEngine;
 
 namespace EWC.CustomWeapon
 {
     public sealed class CustomWeaponManager
     {
+        private struct ListenerInfo
+        {
+            public bool hasSpawned = false;
+            public PlayerAgent? owner = null;
+            public readonly Func<GameObject, CustomWeaponComponent>? addCWC = null;
+
+            public readonly bool IsReady() => hasSpawned && owner != null && IsValid();
+            public readonly bool IsValid() => addCWC != null;
+
+            public ListenerInfo(ItemEquippable item)
+            {
+                if (item.TryCast<MeleeWeaponFirstPerson>() != null)
+                {
+                    addCWC = (go) => go.AddComponent<CustomMeleeComponent>();
+                    hasSpawned = true;
+                }
+                else if (item.TryCast<BulletWeapon>() != null)
+                    addCWC = (go) => go.AddComponent<CustomGunComponent>();
+                else if (item.TryCast<SentryGunFirstPerson>() != null)
+                    addCWC = (go) => go.AddComponent<CustomWeaponComponent>();
+            }
+        }
+
         public static readonly CustomWeaponManager Current = new();
+        private static bool s_inLevel = false;
+        private static bool s_assetsLoaded = false;
 
-        private readonly Dictionary<string, HashSet<uint>> _fileToGuns = new();
-        private readonly Dictionary<string, HashSet<uint>> _fileToMelees = new();
-        // Sorted for clean printing. Accesses are infrequent.
-        private readonly SortedDictionary<uint, CustomWeaponData> _customGunData = new();
-        private readonly SortedDictionary<uint, CustomWeaponData> _customMeleeData = new();
-        private readonly List<ItemEquippable> _listenCWs = new();
-        private readonly List<ISyncProperty> _syncedProperties = new();
+        private readonly Dictionary<ObjectWrapper<ItemEquippable>, ListenerInfo> _weaponListeners = new();
+        private readonly Dictionary<IntPtr, (SentryGunInstance sentry,  CustomGunComponent? cgc)> _trackedSentries = new();
 
-        private readonly LiveEditListener _liveEditListener;
+        private static ObjectWrapper<ItemEquippable> TempWrapper => ObjectWrapper<ItemEquippable>.SharedInstance;
 
-        public string DEFINITION_PATH { get; private set; }
-
-        public static bool TryGetCustomGunData(uint id, [MaybeNullWhen(false)] out CustomWeaponData data)
+        [InvokeOnAssetLoad]
+        private static void OnAssetsLoaded()
         {
-            data = GetCustomGunData(id);
-            return data != null;
-        }
-        public static CustomWeaponData? GetCustomGunData(uint id) => Current._customGunData.GetValueOrDefault(id);
-
-        public static bool TryGetCustomMeleeData(uint id, [MaybeNullWhen(false)] out CustomWeaponData data)
-        {
-            data = GetCustomMeleeData(id);
-            return data != null;
-        }
-        public static CustomWeaponData? GetCustomMeleeData(uint id) => Current._customMeleeData.GetValueOrDefault(id);
-
-        public static bool TryGetSyncProperty<T>(ushort id, [MaybeNullWhen(false)] out T property) where T : ISyncProperty
-        {
-            property = GetSyncProperty<T>(id);
-            return property != null;
-        }
-        public static T? GetSyncProperty<T>(ushort id) where T : ISyncProperty
-        {
-            return id < Current._syncedProperties.Count && Current._syncedProperties[id] is T tProperty ? tProperty : default;
+            s_assetsLoaded = true;
         }
 
-        public void AddWeaponListener(ItemEquippable weapon)
+        [InvokeOnEnter]
+        private static void OnEnterLevel()
         {
-            // Prevent duplicates (not using IL2CPP list so don't trust Contains)
-            if (_listenCWs.Any(listener => listener.Pointer == weapon.Pointer)) return;
-
-            _listenCWs.Add(weapon);
+            s_inLevel = true;
+            Current.AddAllEquippedItems();
         }
 
-        public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, T context, bool gunsOnly = false) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (null, context), gunsOnly);
-        public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, Func<T>? func, bool gunsOnly = false) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (func, default(T)), gunsOnly);
-        private static void InvokeOnGear<T>(SNetwork.SNet_Player owner, (Func<T>? func, T? obj) pair, bool gunsOnly = false) where T : WeaponContext.IWeaponContext
+        [InvokeOnCleanup]
+        private static void OnCleanup()
+        {
+            s_inLevel = false;
+            Current.ResetCWCs(activate: false);
+        }
+
+        public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, T context) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (null, context));
+        public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, Func<T>? func) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (func, default(T)));
+        private static void InvokeOnGear<T>(SNetwork.SNet_Player owner, (Func<T>? func, T? obj) pair) where T : WeaponContext.IWeaponContext
         {
             if (!PlayerBackpackManager.TryGetBackpack(owner, out var backpack)) return;
 
@@ -83,126 +82,102 @@ namespace EWC.CustomWeapon
                 cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
             }
 
-            if (!gunsOnly && backpack.TryGetBackpackItem(InventorySlot.GearMelee, out BackpackItem melee))
+            if (backpack.TryGetBackpackItem(InventorySlot.GearMelee, out BackpackItem melee))
             {
                 CustomWeaponComponent? cwc = melee.Instance?.GetComponent<CustomWeaponComponent>();
                 cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
             }
-        }
 
-        private void OnReload()
-        {
-            RegisterSyncedProperties();
-            PrintCustomIDs();
-            ResetCWCs();
-        }
-
-        private void FileChanged(LiveEditEventArgs e)
-        {
-            EWCLogger.Warning($"LiveEdit File Changed: {e.FileName}");
-            LiveEdit.TryReadFileContent(e.FullPath, (content) =>
+            if (backpack.TryGetBackpackItem(InventorySlot.GearClass, out BackpackItem tool))
             {
-                ReadFileContent(e.FullPath, content);
-                OnReload();
-            });
-        }
-
-        private void FileDeleted(LiveEditEventArgs e)
-        {
-            EWCLogger.Warning($"LiveEdit File Removed: {e.FileName}");
-            if (!_fileToGuns.ContainsKey(e.FullPath))
-            {
-                PrintCustomIDs();
-                return;
+                CustomWeaponComponent? cwc = tool.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
             }
 
-            foreach (uint id in _fileToGuns[e.FullPath])
-                _customGunData.Remove(id);
-            _fileToGuns.Remove(e.FullPath);
-
-            foreach (uint id in _fileToMelees[e.FullPath])
-                _customMeleeData.Remove(id);
-            _fileToMelees.Remove(e.FullPath);
-
-            OnReload();
-        }
-
-        private void FileCreated(LiveEditEventArgs e)
-        {
-            EWCLogger.Warning($"LiveEdit File Created: {e.FileName}");
-            LiveEdit.TryReadFileContent(e.FullPath, (content) =>
+            if (owner.HasPlayerAgent && Current._trackedSentries.TryGetValue(owner.PlayerAgent.Pointer, out var sentryInfo))
             {
-                ReadFileContent(e.FullPath, content);
-                OnReload();
-            });
-        }
-
-        private void ReadFileContent(string file, string content)
-        {
-            if (!_fileToGuns.ContainsKey(file))
-            {
-                _fileToGuns[file] = new HashSet<uint>();
-                _fileToMelees[file] = new HashSet<uint>();
-            }
-
-            HashSet<uint> fileIDs = _fileToGuns[file];
-            foreach (uint id in fileIDs)
-                _customGunData.Remove(id);
-            fileIDs.Clear();
-
-            fileIDs = _fileToMelees[file];
-            foreach (uint id in fileIDs)
-                _customMeleeData.Remove(id);
-            fileIDs.Clear();
-
-            List<CustomWeaponData?>? dataList = null;
-            try
-            {
-                dataList = EWCJson.Deserialize<List<CustomWeaponData?>>(content);
-            }
-            catch (JsonException ex)
-            {
-                EWCLogger.Error("Error parsing custom weapon json " + file);
-                EWCLogger.Error(ex.Message);
-            }
-
-            if (dataList == null) return;
-
-            foreach (CustomWeaponData? data in dataList)
-            {
-                if (data != null)
-                {
-                    if (data.ArchetypeID != 0 && _customGunData.ContainsKey(data.ArchetypeID))
-                        EWCLogger.Warning("Duplicate archetype ID " + data.ArchetypeID + " found. Previous name: " + _customGunData[data.ArchetypeID].Name + ", new name: " + data.Name);
-                    if (data.MeleeArchetypeID != 0 && _customMeleeData.ContainsKey(data.MeleeArchetypeID))
-                        EWCLogger.Warning("Duplicate melee archetype ID " + data.MeleeArchetypeID + " found. Previous name: " + _customMeleeData[data.MeleeArchetypeID].Name + ", new name: " + data.Name);
-                    
-                    AddCustomWeaponData(data, file);
-                }
+                sentryInfo.cgc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
             }
         }
 
-        private void AddCustomWeaponData(CustomWeaponData? data, string file)
+        public static void ActivateSentry(SentryGunInstance sentry)
         {
-            if (data == null) return;
+            if (!s_inLevel) return;
 
-            if (data.ArchetypeID != 0)
+            if (CustomDataManager.TryGetCustomGunData(sentry.ArchetypeID, out var data))
             {
-                _fileToGuns[file].Add(data.ArchetypeID);
-                _customGunData[data.ArchetypeID] = data;
+                if (!sentry.TryGetComp<CustomGunComponent>(out var cgc))
+                    cgc = sentry.gameObject.AddComponent<CustomGunComponent>();
+                cgc.Register(data);
+                Current._trackedSentries.Add(sentry.Owner.Pointer, (sentry, cgc));
             }
+            else
+                Current._trackedSentries.Add(sentry.Owner.Pointer, (sentry, null));
+        }
 
-            if (data.MeleeArchetypeID != 0)
+        public static void RemoveSentry(SentryGunInstance sentry)
+        {
+            if (!s_inLevel) return;
+
+            Current._trackedSentries.Remove(sentry.Owner.Pointer);
+        }
+
+        public static bool TryGetSentry(PlayerAgent player, [MaybeNullWhen(false)] out (SentryGunInstance sentry, CustomGunComponent? cgc) sentryInfo) => Current._trackedSentries.TryGetValue(player.Pointer, out sentryInfo);
+
+
+        public static void AddSpawnedItem(ItemEquippable item)
+        {
+            if (!s_assetsLoaded || (item.ArchetypeData == null && item.MeleeArchetypeData == null)) return;
+
+            if (!TryGetInfo(item, out var info)) return;
+
+            info.hasSpawned = true;
+            Current._weaponListeners[TempWrapper] = info;
+            ActivateItem(item);
+        }
+
+        public static void RemoveSpawnedItem(ItemEquippable item)
+        {
+            Current._weaponListeners.Remove(TempWrapper.Set(item));
+        }
+
+        public static void AddEquippedItem(PlayerAgent owner, ItemEquippable item)
+        {
+            if (!TryGetInfo(item, out var info)) return;
+
+            info.owner = owner;
+            Current._weaponListeners[TempWrapper] = info;
+            ActivateItem(item);
+        }
+
+        private static bool TryGetInfo(ItemEquippable item, out ListenerInfo info)
+        {
+            var listeners = Current._weaponListeners;
+            if (!listeners.TryGetValue(TempWrapper.Set(item), out info))
+                listeners.Add(new(TempWrapper), info = new(item));
+
+            return info.IsValid();
+        }
+
+        private static void ActivateItem(ItemEquippable item)
+        {
+            if (!s_inLevel || !TryGetInfo(item, out var info)) return;
+
+            if (!info.IsReady()) return;
+
+            item.SetOwner(info.owner);
+            if (CustomDataManager.TryGetCustomData(item, out var data))
             {
-                _fileToMelees[file].Add(data.MeleeArchetypeID);
-                _customMeleeData[data.MeleeArchetypeID] = data;
+                if (!item.TryGetComp<CustomWeaponComponent>(out var cwc))
+                    cwc = info.addCWC!(item.gameObject);
+                cwc.Register(data);
             }
         }
 
-        [InvokeOnCleanup]
-        private static void OnCleanup()
+        public static void ReloadCWCs()
         {
-            Current.ResetCWCs(false);
+            if (s_inLevel)
+                Current.ResetCWCs();
         }
 
         private void ResetCWCs(bool activate = true)
@@ -210,123 +185,47 @@ namespace EWC.CustomWeapon
             // JFS - Reset crosshair modifier. Should be cleared by other stuff but doesn't hurt
             Dependencies.ACAPIWrapper.ResetCrosshairSpread();
 
-            // Resets CWCs by removing and re-adding all custom data.
-            // Not as efficient as implementing a reset function on each property,
-            // but that's a pain and this isn't gonna run often.
-            for (int i = _listenCWs.Count - 1; i >= 0; i--)
+            List<ObjectWrapper<ItemEquippable>> deletedItems = new();
+            var listeners = Current._weaponListeners;
+            foreach ((var wrapper, var info) in listeners)
             {
-                if (_listenCWs[i] != null)
+                if (wrapper.Object != null)
                 {
-                    CustomWeaponComponent? cwc = _listenCWs[i].GetComponent<CustomWeaponComponent>();
-                    cwc?.Clear();
+                    if (!info.IsValid()) continue;
 
-                    bool isGun = _listenCWs[i].TryCast<BulletWeapon>() != null;
-                    CustomWeaponData? data;
-                    if (isGun)
-                        data = GetCustomGunData(_listenCWs[i].ArchetypeID);
-                    else
-                        data = GetCustomMeleeData(_listenCWs[i].MeleeArchetypeData.persistentID);
+                    var item = wrapper.Object!;
+                    if (item.TryGetComp<CustomWeaponComponent>(out var cwc))
+                        cwc.Clear();
 
-                    if (data != null)
-                    {
-                        if (cwc == null)
-                            cwc = _listenCWs[i].gameObject.AddComponent<CustomWeaponComponent>();
-
-                        if (activate)
-                            cwc.Register(data);
-                    }
+                    if (activate)
+                        ActivateItem(item);
                 }
                 else
-                    _listenCWs.RemoveAt(i);
+                    deletedItems.Add(wrapper);
             }
+
+            foreach (var item in deletedItems)
+                listeners.Remove(item);
         }
 
-        [InvokeOnEnter]
-        private static void OnEnter()
+        private void AddAllEquippedItems()
         {
-            Current.ActivateCWCs();
-        }
-
-        private void ActivateCWCs()
-        {
-            for (int i = _listenCWs.Count - 1; i >= 0; i--)
+            foreach (var backpack in PlayerBackpackManager.Current.m_backpacks.Values)
             {
-                if (_listenCWs[i] != null)
-                    _listenCWs[i].GetComponent<CustomWeaponComponent>()?.Register();
-                else
-                    _listenCWs.RemoveAt(i);
-            }
-        }
-
-        private void RegisterSyncedProperties()
-        {
-            _syncedProperties.Clear();
-            foreach (CustomWeaponData data in _customGunData.Values)
-                RegisterSyncedProperties_Recurse(data.Properties);
-
-            foreach (CustomWeaponData data in _customMeleeData.Values)
-                RegisterSyncedProperties_Recurse(data.Properties);
-        }
-
-        private void RegisterSyncedProperties_Recurse(PropertyList list)
-        {
-            foreach (var property in list.Properties)
-            {
-                if (property is ISyncProperty syncProperty)
+                if (!backpack.Owner.HasPlayerAgent)
                 {
-                    syncProperty.SyncPropertyID = (ushort)_syncedProperties.Count;
-                    _syncedProperties.Add(syncProperty);
+                    EWCLogger.Error($"Tried to activate CWCs for {backpack.Owner.NickName} but they have no player agent!");
+                    continue;
                 }
-                if (property is IReferenceHolder refHolder)
-                    RegisterSyncedProperties_Recurse(refHolder.Properties);
+
+                var agent = backpack.Owner.PlayerAgent.Cast<PlayerAgent>();
+                foreach (var slot in CustomDataManager.ValidSlots)
+                {
+                    if (!backpack.TryGetBackpackItem(slot, out var bpItem)) continue;
+
+                    AddEquippedItem(agent, bpItem.Instance.Cast<ItemEquippable>());
+                }
             }
-        }
-
-        internal void CreateTemplate()
-        {
-            string path = Path.Combine(DEFINITION_PATH, "Template.json");
-            if (!Directory.Exists(DEFINITION_PATH))
-            {
-                EWCLogger.Log("No directory detected. Creating template.");
-                Directory.CreateDirectory(DEFINITION_PATH);
-            }
-
-            var file = File.CreateText(path);
-            file.WriteLine(EWCJson.Serialize(new List<CustomWeaponData>() { CustomWeaponTemplate.CreateTemplate() }));
-            file.Flush();
-            file.Close();
-        }
-
-        private void PrintCustomIDs()
-        {
-            StringBuilder builder = new("Found custom blocks for archetype IDs: ");
-            builder.AppendJoin(", ", _customGunData.Keys);
-            EWCLogger.Log(builder.ToString());
-            builder.Clear();
-            builder.Append("Found custom blocks for melee archetype IDs: ");
-            builder.AppendJoin(", ", _customMeleeData.Keys);
-            EWCLogger.Log(builder.ToString());
-        }
-
-        private CustomWeaponManager()
-        {
-            DEFINITION_PATH = Path.Combine(MTFOPathAPI.CustomPath, EntryPoint.MODNAME);
-            if (!Directory.Exists(DEFINITION_PATH))
-                CreateTemplate();
-            else
-                EWCLogger.Log("Directory detected.");
-
-            foreach (string confFile in Directory.EnumerateFiles(DEFINITION_PATH, "*.json", SearchOption.AllDirectories))
-            {
-                string content = File.ReadAllText(confFile);
-                ReadFileContent(confFile, content);
-            }
-            OnReload();
-
-            _liveEditListener = LiveEdit.CreateListener(DEFINITION_PATH, "*.json", true);
-            _liveEditListener.FileCreated += FileCreated;
-            _liveEditListener.FileChanged += FileChanged;
-            _liveEditListener.FileDeleted += FileDeleted;
         }
     }
 }

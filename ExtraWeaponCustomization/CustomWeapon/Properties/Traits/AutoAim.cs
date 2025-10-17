@@ -1,9 +1,11 @@
 ﻿using Agents;
 using Enemies;
+using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
@@ -17,10 +19,9 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class AutoAim : 
         Trait,
-        IGunProperty,
         ITriggerCallback,
         ITriggerEvent,
-        IWeaponProperty<WeaponOwnerSetContext>,
+        IWeaponProperty<WeaponCreatedContext>,
         IWeaponProperty<WeaponUnWieldContext>,
         IWeaponProperty<WeaponUpdateContext>,
         IWeaponProperty<WeaponClearContext>,
@@ -72,7 +73,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private float _lastUpdateTime;
         private HashSet<BaseDamageableWrapper>? _triggerTargets;
         private HashSet<ObjectWrapper<EnemyAgent>>? _triggerAgents;
-        private readonly TriggerEventHelper _eventHelper = new(CallbackMap);
+        private static readonly TriggerEventHelper _eventHelper = new(CallbackMap);
 
         private float _weakspotDetectionTick;
         private Dam_EnemyDamageLimb? _weakspotLimb;
@@ -89,9 +90,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         private static BaseDamageableWrapper TempDamWrapper => BaseDamageableWrapper.SharedInstance;
         private static ObjectWrapper<EnemyAgent> TempEnemyWrapper => ObjectWrapper<EnemyAgent>.SharedInstance;
 
+        protected override OwnerType RequiredOwnerType => OwnerType.Local;
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
         public override bool ShouldRegister(Type contextType)
         {
-            if (!CWC.IsLocal) return false;
             if (!RequireLock && (contextType == typeof(WeaponPreStartFireContext) || contextType == typeof(WeaponFireCancelContext))) return false;
             if ((!UseTrigger || Trigger == null) && contextType == typeof(WeaponTriggerContext)) return false;
             return base.ShouldRegister(contextType);
@@ -104,8 +107,9 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponFireCancelContext context)
         {
+            var gun = (LocalGunComp)CWC.Weapon;
             // We don't want to stop burst weapons from firing mid-burst, but we do want to stop fully automatic weapons.
-            if (CWC.GunFireMode == eWeaponFireMode.Burst && !CWC.GunArchetype!.BurstIsDone())
+            if (gun.FireMode == eWeaponFireMode.Burst && !gun.GunArchetype.BurstIsDone())
                 return;
 
             context.Allow &= UseAutoAim;
@@ -116,7 +120,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (_camera == null || HomingOnly) return;
 
             // Ignore pierced shots
-            if (context.Data.maxRayDist < CWC.Gun!.MaxRayDist) return;
+            if (context.Data.maxRayDist < CGC.Gun.MaxRayDist) return;
 
             if (!UseAutoAim) return;
 
@@ -136,10 +140,10 @@ namespace EWC.CustomWeapon.Properties.Traits
             context.Data.fireDir = (GetTargetPos() - _camera.Position).normalized;
         }
 
-        public void Invoke(WeaponOwnerSetContext context)
+        public void Invoke(WeaponCreatedContext context)
         {
             _reticle = AutoAimReticle.Reticle;
-            _camera = CWC.Weapon.Owner.FPSCamera;
+            _camera = CWC.Owner.Player.FPSCamera;
         }
 
         public void Invoke(WeaponUnWieldContext _) => OnDisable();
@@ -320,7 +324,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 );
         }
 
-        private bool HasAmmo => CWC.Gun!.GetCurrentClip() > 0 && CWC.Gun!.IsReloading == false;
+        private bool HasAmmo => CGC.Gun.GetCurrentClip() > 0 && !((LocalGunComp)CGC.Gun).Value.IsReloading;
         private bool CanLock => LockWhileEmpty || HasAmmo;
         private bool LockedTarget => _target != null && _progress == 1f;
         private bool AutoAimActive => (
@@ -376,7 +380,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 }
             }
             else
-                enemies = SearchUtil.GetEnemiesInRange(ray, Range, Angle, CWC.Weapon.Owner.CourseNode);
+                enemies = SearchUtil.GetEnemiesInRange(ray, Range, Angle, CWC.Owner.CourseNode);
 
             if (enemies.Count == 0) return null;
 
@@ -664,9 +668,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             for (int i = Trigger.Activate.Triggers.Count - 1; i >= 0; i--)
             {
                 TriggerName name = Trigger.Activate.Triggers[i].Name;
-                if (!ITrigger.PositionalTriggers.Contains(name))
+                if (!ITrigger.HitTriggers.Contains(name))
                 {
-                    EWCLogger.Warning($"{GetType().Name} has an invalid trigger {name}. Only the following are allowed: {string.Join(", ", ITrigger.PositionalTriggers)}");
+                    EWCLogger.Warning($"{GetType().Name} has an invalid trigger {name}. Only the following are allowed: {string.Join(", ", ITrigger.HitTriggers)}");
                     Trigger.Activate.Triggers.RemoveAt(i);
                     continue;
                 }

@@ -38,6 +38,8 @@
 		<Reference Include="$(PluginsFolder)\**\EndskApi.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\AccurateCrosshair.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\ExtraRecoilData.dll" Private="false" />
+		<Reference Include="$(PluginsFolder)\**\MeleeSwingCustomization.dll" Private="false" />
+		<Reference Include="$(PluginsFolder)\**\ExtraToolCustomization.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\MovementSpeedAPI.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\AmorLib.dll" Private="false" />
 	</ItemGroup>

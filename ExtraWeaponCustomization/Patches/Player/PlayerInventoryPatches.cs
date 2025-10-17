@@ -96,7 +96,18 @@ namespace EWC.Patches.Player
             if (!_allowReload) return;
 
             CustomWeaponComponent? cwc = __instance.m_wieldedItem?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null || !cwc.Weapon.IsReloading) return;
+            if (cwc == null || !__instance.m_wieldedItem!.IsReloading) return;
+
+            cwc.Invoke(StaticContext<WeaponReloadStartContext>.Instance);
+        }
+
+        [HarmonyPatch(typeof(PlayerInventoryBase), nameof(PlayerInventoryBase.TriggerReload))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void ReloadStartBotsCallback(PlayerInventoryBase __instance)
+        {
+            CustomWeaponComponent? cwc = __instance.m_wieldedItem?.GetComponent<CustomWeaponComponent>();
+            if (cwc == null || !__instance.m_wieldedItem!.IsReloading) return;
 
             cwc.Invoke(StaticContext<WeaponReloadStartContext>.Instance);
         }
@@ -115,6 +126,12 @@ namespace EWC.Patches.Player
             if (__instance.m_playerBackpack.TryGetBackpackItem(InventorySlot.GearSpecial, out BackpackItem special))
             {
                 CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(new WeaponPostAmmoInitContext(__instance, __instance.SpecialAmmo));
+            }
+
+            if (__instance.m_playerBackpack.TryGetBackpackItem(InventorySlot.GearClass, out BackpackItem tool))
+            {
+                CustomWeaponComponent? cwc = tool.Instance?.GetComponent<CustomWeaponComponent>();
                 cwc?.Invoke(new WeaponPostAmmoInitContext(__instance, __instance.SpecialAmmo));
             }
         }

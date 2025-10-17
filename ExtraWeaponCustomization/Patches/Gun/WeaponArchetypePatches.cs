@@ -4,26 +4,12 @@ using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using HarmonyLib;
-using Player;
 
 namespace EWC.Patches.Gun
 {
     [HarmonyPatch]
     internal static class WeaponArchetypePatches
     {
-        [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.SetOwner))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void SetupCallback(BulletWeaponArchetype __instance, PlayerAgent owner)
-        {
-            if (owner == null) return;
-
-            CustomWeaponComponent cwc = __instance.m_weapon.GetComponent<CustomWeaponComponent>();
-            if (cwc == null) return;
-
-            cwc.OwnerInit();
-        }
-
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStartFiring))]
         [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnStartFiring))]
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.OnStartFiring))]
@@ -31,7 +17,7 @@ namespace EWC.Patches.Gun
         [HarmonyPrefix]
         private static bool StartFireCallback(BulletWeaponArchetype __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
+            CustomGunComponent? cwc = __instance.m_weapon?.GetComponent<CustomGunComponent>();
             if (cwc == null) return true;
 
             cwc.CancelShot = false;
@@ -50,8 +36,7 @@ namespace EWC.Patches.Gun
         [HarmonyPostfix]
         private static void PostStartFireCallback(BulletWeaponArchetype __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
-
+            CustomGunComponent? cwc = __instance.m_weapon?.GetComponent<CustomGunComponent>();
             if (cwc == null) return;
 
             if (cwc.ResetShotIfCancel(__instance))
@@ -71,7 +56,7 @@ namespace EWC.Patches.Gun
         [HarmonyPrefix]
         private static bool PreFireCallback(BulletWeaponArchetype __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
+            CustomGunComponent? cwc = __instance.m_weapon?.GetComponent<CustomGunComponent>();
             if (cwc == null) return true;
             if (cwc.CancelShot) return false;
 
@@ -95,15 +80,15 @@ namespace EWC.Patches.Gun
         [HarmonyPostfix]
         private static void PostFireCallback(BulletWeaponArchetype __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
-            if (cwc == null || cwc.CancelShot) return;
+            CustomGunComponent? cgc = __instance.m_weapon?.GetComponent<CustomGunComponent>();
+            if (cgc == null || cgc.CancelShot) return;
 
-            cwc.NotifyShotFired();
-            ShotManager.CancelTracerFX(cwc);
-            ShotManager.RunVanillaShotEnd(cwc);
+            cgc.NotifyShotFired();
+            ShotManager.CancelTracerFX(cgc);
+            ShotManager.RunVanillaShotEnd();
 
-            cwc.Invoke(new WeaponAmmoContext(cwc.Gun!.m_clip, cwc.Gun.ClipSize));
-            cwc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
+            cgc.Invoke(new WeaponAmmoContext(__instance.m_weapon!.m_clip, __instance.m_weapon.ClipSize));
+            cgc.Invoke(StaticContext<WeaponPostFireContext>.Instance);
         }
 
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.PostFireCheck))]
@@ -111,7 +96,7 @@ namespace EWC.Patches.Gun
         [HarmonyPrefix]
         private static void PrePostFireCallback(BulletWeaponArchetype __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
+            CustomGunComponent? cwc = __instance.m_weapon?.GetComponent<CustomGunComponent>();
             if (cwc == null) return;
 
             cwc.ResetShotIfCancel(__instance); // Need reset stuff here so post fire check correctly stops firing
@@ -122,7 +107,7 @@ namespace EWC.Patches.Gun
         [HarmonyPostfix]
         private static void PostPostFireCallback(BulletWeaponArchetype __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
+            CustomGunComponent? cwc = __instance.m_weapon?.GetComponent<CustomGunComponent>();
             if (cwc == null) return;
             if (cwc.CancelShot)
             {
@@ -142,7 +127,7 @@ namespace EWC.Patches.Gun
         [HarmonyPostfix]
         private static void StopFiringCallback(BulletWeaponArchetype __instance)
         {
-            CustomWeaponComponent? cwc = __instance.m_weapon?.GetComponent<CustomWeaponComponent>();
+            CustomGunComponent? cwc = __instance.m_weapon?.GetComponent<CustomGunComponent>();
             if (cwc == null) return;
 
             cwc.Invoke(StaticContext<WeaponPostStopFiringContext>.Instance);

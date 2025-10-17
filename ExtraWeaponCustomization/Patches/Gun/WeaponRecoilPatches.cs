@@ -29,7 +29,7 @@ namespace EWC.Patches.Gun
         [HarmonyPatch(typeof(FPS_RecoilSystem), nameof(FPS_RecoilSystem.ApplyRecoil))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void PostApplyRecoilCallback(FPS_RecoilSystem __instance, bool resetSimilarity, RecoilDataBlock recoilData)
+        private static void PostApplyRecoilCallback(FPS_RecoilSystem __instance, RecoilDataBlock recoilData)
         {
             // Basically the same function ExtraRecoilData runs, but we have a different component dependency.
             // Needs to run after ExtraRecoilData since that overwrites existing recoil.

@@ -4,6 +4,7 @@ using EWC.CustomWeapon.Enums;
 using EWC.Utils.Extensions;
 using Gear;
 using Player;
+using System;
 using UnityEngine;
 using static Weapon;
 
@@ -47,7 +48,7 @@ namespace EWC.Utils
 
 #pragma warning disable CS8618
         // All used fields are set
-        public HitData(WeaponHitData hitData, CustomWeaponComponent? cwc, float additionalDist = 0) : this(DamageType.Bullet) => Setup(hitData, cwc, additionalDist);
+        public HitData(WeaponHitData hitData, float additionalDist = 0) : this(DamageType.Bullet) => Setup(hitData, additionalDist);
         public HitData(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData) : this(DamageType.Bullet) => Setup(melee, hitData);
         public HitData(HitData data)
         {
@@ -80,12 +81,12 @@ namespace EWC.Utils
         }
 #pragma warning restore CS8618
 
-        public void Setup(WeaponHitData hitData, CustomWeaponComponent? cwc, float additionalDist = 0)
+        public void Setup(WeaponHitData hitData, float additionalDist = 0)
         {
             _weaponHitData = hitData;
             _meleeWeapon = null;
 
-            shotInfo = ShotManager.GetVanillaShotInfo(hitData, cwc);
+            shotInfo = ShotManager.GetVanillaShotInfo(hitData);
             ResetDamage();
             damageFalloff = hitData.damageFalloff;
             randomSpread = hitData.randomSpread;
@@ -152,10 +153,12 @@ namespace EWC.Utils
             staggerMulti = shotInfo.OrigStagger;
         }
 
-        public float CalcFalloff(float additionalDist = 0)
+        public float CalcRawFalloff(float distance)
         {
-            return (RayHit.distance + additionalDist).Map(damageFalloff.x, damageFalloff.y, 1f, BulletWeapon.s_falloffMin);
+            return Math.Max(distance.Map(damageFalloff.x, damageFalloff.y, 1f, 0f), BulletWeapon.s_falloffMin);
         }
+
+        public float CalcFalloff(float additionalDist = 0) => CalcRawFalloff(RayHit.distance + additionalDist);
 
         private void UpdateDamageType()
         {

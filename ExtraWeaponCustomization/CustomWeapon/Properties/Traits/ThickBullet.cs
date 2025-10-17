@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Text.Json;
 
@@ -6,28 +7,23 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class ThickBullet : 
         Trait,
-        IGunProperty,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>
     {
         public float HitSize { get; private set; } = 0f;
         public float HitSizeFriendly { get; private set; } = 0f;
 
-        public override bool ShouldRegister(Type contextType)
-        {
-            if (!CWC.IsLocal) return false;
-
-            return base.ShouldRegister(contextType);
-        }
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
         public void Invoke(WeaponSetupContext context)
         {
-            CWC.ShotComponent!.ThickBullet = this;
+            CGC.ShotComponent.ThickBullet = this;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CWC.ShotComponent!.ThickBullet = null;
+            CGC.ShotComponent.ThickBullet = null;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

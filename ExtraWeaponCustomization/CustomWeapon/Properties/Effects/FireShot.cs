@@ -1,6 +1,8 @@
-﻿using EWC.CustomWeapon.CustomShot;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.CustomShot;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
@@ -16,8 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class FireShot :
         Effect,
         ITriggerCallbackBasicSync,
-        ITriggerCallbackDirSync,
-        IGunProperty
+        ITriggerCallbackDirSync
     {
         public ushort SyncID { get; set; }
 
@@ -36,6 +37,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private const float WallHitBuffer = 0.03f;
 
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
         public override void TriggerReset() {}
         public void TriggerResetSync() {}
 
@@ -48,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 hitContexts = new(5);
                 foreach (var context in contexts)
                 {
-                    if (context.triggerAmt < 1f || context.context is not WeaponHitContextBase hitContext) continue;
+                    if (context.triggerAmt < 1f || context.context is not IPositionContext hitContext) continue;
 
                     IDamageable? damBase = null;
                     Vector3 position = hitContext.Position;
@@ -78,11 +81,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (iterations == 0) return;
             }
 
+            var weapon = (IGunComp)CWC.Weapon;
             int shotgunBullets = 1;
             float coneSize = 0;
             float segmentSize = 0;
-            var archData = CWC.ArchetypeData;
-            if (CWC.IsShotgun && !ForceSingleBullet)
+            var archData = weapon.ArchetypeData;
+            if (weapon.IsShotgun && !ForceSingleBullet)
             {
                 shotgunBullets = archData.ShotgunBulletCount;
                 coneSize = archData.ShotgunConeSize;
@@ -92,13 +96,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             float spread = Spread;
             if (spread < 0f)
             {
-                if (CWC.IsShotgun)
+                if (weapon.IsShotgun)
                     spread = archData.ShotgunBulletSpread;
                 else
-                    spread = CWC.Weapon.FPItemHolder.ItemAimTrigger ? archData.AimSpread : archData.HipFireSpread;
+                    spread = weapon.IsAiming ? archData.AimSpread : archData.HipFireSpread;
             }
 
-            Ray ray = new(CWC.Weapon.Owner.FPSCamera.Position, UserUseAimDir ? ShotManager.VanillaFireDir : CWC.Weapon.Owner.FPSCamera.CameraRayDir);
+            Ray ray = new(CWC.Owner.FirePos, UserUseAimDir ? CWC.Owner.FireDir : ShotManager.VanillaFireDir);
             if (FireFrom != FireSetting.User)
             {
                 foreach (var (pos, dir, amount, shotInfo, baseDam) in hitContexts!)
@@ -130,19 +134,20 @@ namespace EWC.CustomWeapon.Properties.Effects
             int iterations = (int)Math.Round(triggerSum);
             Ray ray = new(position, direction);
 
+            var weapon = (IGunComp)CWC.Weapon;
             int shotgunBullets = 1;
             int coneSize = 0;
             float segmentSize = 0;
-            if (CWC.IsShotgun && !ForceSingleBullet)
+            if (weapon.IsShotgun && !ForceSingleBullet)
             {
-                shotgunBullets = CWC.ArchetypeData.ShotgunBulletCount;
-                coneSize = CWC.ArchetypeData.ShotgunConeSize;
+                shotgunBullets = weapon.ArchetypeData.ShotgunBulletCount;
+                coneSize = weapon.ArchetypeData.ShotgunConeSize;
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
             float spread = Spread;
             if (spread < 0f)
-                spread = CWC.IsShotgun ? CWC.ArchetypeData.ShotgunBulletSpread : 0f;
+                spread = weapon.IsShotgun ? weapon.ArchetypeData.ShotgunBulletSpread : 0f;
 
             for (int iter = 0; iter < iterations; iter++)
                 FirePerTrigger(ray, spread, shotgunBullets, segmentSize, coneSize, true);
@@ -150,15 +155,15 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void TriggerApplySync(float iterations)
         {
-            TriggerApplySync(CWC.Weapon.MuzzleAlign.position, CWC.Weapon.MuzzleAlign.forward, iterations);
+            TriggerApplySync(CWC.Owner.FirePos, CWC.Owner.FireDir, iterations);
         }
 
         private void FirePerTrigger(Ray ray, float spread, int shotgunBullets, float segmentSize, float coneSize, bool visual, ShotInfo? shotInfo = null, IntPtr ignoreEnt = default)
         {
             float spreadMod = 1f;
-            if (!IgnoreSpreadMod && CWC.IsLocal)
+            if (!IgnoreSpreadMod)
             {
-                spreadMod = CWC.SpreadController!.Value;
+                spreadMod = CGC.SpreadController.Value;
                 spread *= spreadMod;
                 coneSize *= spreadMod;
             }
@@ -188,23 +193,19 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void Fire(Ray ray, float x, float y, float spread, ShotInfo? orig, IntPtr ignoreEnt)
         {
-            ArchetypeDataBlock archData = CWC.ArchetypeData;
-            HitData hitData = new(Enums.DamageType.Bullet);
-            hitData.owner = CWC.Weapon.Owner;
-            hitData.damage = archData.GetDamageWithBoosterEffect(hitData.owner, CWC.Weapon.ItemDataBlock.inventorySlot);
+            ArchetypeDataBlock archData = CGC.Gun.ArchetypeData;
+            HitData hitData = new(DamageType.Bullet);
+            hitData.owner = CWC.Owner.Player;
+            hitData.shotInfo.Reset(archData.Damage, archData.PrecisionDamageMulti, archData.StaggerDamageMulti, CWC, orig, UseParentShotMod);
+            hitData.damage = hitData.shotInfo.OrigDamage;
             hitData.damageFalloff = archData.DamageFalloff;
-            hitData.staggerMulti = archData.StaggerDamageMulti;
+            hitData.staggerMulti = hitData.shotInfo.OrigStagger;
             hitData.precisionMulti = archData.PrecisionDamageMulti;
-            hitData.maxRayDist = CWC.Gun!.MaxRayDist;
+            hitData.maxRayDist = CGC.Gun.MaxRayDist;
             hitData.angOffsetX = x;
             hitData.angOffsetY = y;
             hitData.randomSpread = spread;
-            hitData.shotInfo.Reset(hitData.damage, hitData.precisionMulti, hitData.staggerMulti, true);
             hitData.RayHit = default;
-            if (orig != null)
-                hitData.shotInfo.PullMods(orig, UseParentShotMod);
-            else
-                hitData.shotInfo.NewShot(CWC);
 
             int friendlyMask = 0;
             if (DamageOwner)
@@ -213,7 +214,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 friendlyMask |= LayerUtil.MaskFriendly;
 
             ToggleRunTriggers(false);
-            CWC.ShotComponent!.FireSpread(ray, FireFrom != FireSetting.User ? ray.origin : CWC.Weapon.MuzzleAlign.position, hitData, friendlyMask, ignoreEnt);
+            CGC.ShotComponent.FireSpread(ray, FireFrom != FireSetting.User ? ray.origin : CWC.Owner.MuzzleAlign.position, hitData, friendlyMask, ignoreEnt);
             ToggleRunTriggers(true);
         }
 
@@ -225,16 +226,16 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void FireVisual(Ray ray, float x, float y, float spread)
         {
-            HitData hitData = new(Enums.DamageType.Bullet)
+            HitData hitData = new(DamageType.Bullet)
             {
-                owner = CWC.Weapon.Owner,
-                damage = CWC.ArchetypeData.Damage,
+                owner = CWC.Owner.Player,
+                damage = CGC.Gun.ArchetypeData.Damage,
                 fireDir = ray.direction,
                 angOffsetX = x,
                 angOffsetY = y,
                 randomSpread = spread
             };
-            CWC.ShotComponent!.FireSpread(ray, FireFrom != FireSetting.User ? ray.origin : CWC.Weapon.MuzzleAlign.position, hitData);
+            CGC.ShotComponent.FireSpread(ray, FireFrom != FireSetting.User ? ray.origin : CWC.Owner.MuzzleAlign.position, hitData);
         }
 
         public override WeaponPropertyBase Clone()

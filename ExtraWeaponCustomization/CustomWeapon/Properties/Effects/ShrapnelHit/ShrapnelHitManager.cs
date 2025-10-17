@@ -2,18 +2,19 @@
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
+using EWC.Attributes;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
+using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
+using EWC.Utils;
+using EWC.Utils.Extensions;
+using Il2CppSystem.Reflection;
 using Player;
 using SNetwork;
 using System;
-using EWC.Attributes;
-using EWC.Utils;
-using EWC.Utils.Extensions;
 using UnityEngine;
-using EWC.CustomWeapon.WeaponContext;
 
 namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 {
@@ -51,10 +52,10 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             if (enemy)
             {
                 limb = damageable.Cast<Dam_EnemyDamageLimb>();
-                if (!shrapnel.IgnoreBackstab)
+                if (!shrapnel.IgnoreBackstab && shrapnel.CWC.Weapon.AllowBackstab)
                 {
                     float mod = cc.Invoke(new WeaponBackstabContext()).Value;
-                    backstabMulti = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.RayHit.point - shrapnel.CWC.Weapon.Owner.FPSCamera.Position).Map(1f, 2f, 1f, mod);
+                    backstabMulti = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.RayHit.point - shrapnel.CWC.Owner.FirePos).Map(1f, 2f, 1f, mod);
                 }
             }
 
@@ -79,12 +80,13 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
             // 0.001f to account for rounding error
             damage = damage * falloff + 0.001f;
-            damage *= hitData.shotInfo.XpMod;
+            damage *= hitData.shotInfo.ExternalDamageMod * hitData.shotInfo.InnateDamageMod;
+            staggerMult *= hitData.shotInfo.InnateStaggerMod;
 
             Agent? agent = damageable.GetBaseAgent();
             if (hitData.damageType.HasFlag(DamageType.Player))
             {
-                if (agent == shrapnel.CWC.Weapon.Owner)
+                if (agent.Pointer == shrapnel.CWC.Owner.Player.Pointer)
                 {
                     if (!shrapnel.DamageOwner)
                         return false;
@@ -92,12 +94,13 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 else if (!shrapnel.DamageFriendly)
                     return false;
 
-                GuiManager.CrosshairLayer.PopFriendlyTarget();
+                if (shrapnel.CWC.Owner.Player.IsLocallyOwned)
+                    GuiManager.CrosshairLayer.PopFriendlyTarget();
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().Cast<Dam_PlayerDamageBase>();
                 damage *= playerBase.m_playerData.friendlyFireMulti * shrapnel.FriendlyDamageMulti;
                 cc.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 // Only damage and direction are used AFAIK, but again, just in case...
-                playerBase.BulletDamage(damage, shrapnel.CWC.Weapon.Owner, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
+                playerBase.BulletDamage(damage, shrapnel.CWC.Owner.Player, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
                 return true;
             }
             else if (hitData.damageType.HasFlag(DamageType.Lock)) // Lock damage; direction doesn't matter
@@ -105,7 +108,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 if (!shrapnel.DamageLocks)
                     return false;
                 cc.Invoke(new WeaponHitDamageableContext(damage, preContext));
-                damageable.BulletDamage(damage, shrapnel.CWC.Weapon.Owner, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
+                damageable.BulletDamage(damage, shrapnel.CWC.Owner.Player, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
                 return true;
             }
 
@@ -115,7 +118,8 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             Vector3 localPosition = hitData.hitPos - damBase.Owner.Position;
             ShrapnelHitData data = default;
             data.target.Set(damBase.Owner);
-            data.source.Set(shrapnel.CWC.Weapon.Owner);
+            data.source.Set(shrapnel.CWC.Owner.Player);
+            data.ownerType = (byte)shrapnel.CWC.Owner.Type;
             data.limbID = (byte)limb.m_limbID;
             data.damageLimb = shrapnel.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
@@ -138,21 +142,21 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             var hitContext = cc.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             bool willKill = damBase.WillDamageKill(precDamage);
-            HitTrackerManager.RegisterHit(shrapnel.CWC, hitContext);
-            if (willKill || cc.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result)
+            HitTrackerManager.RegisterHit(shrapnel.CWC.Owner, shrapnel.CWC, hitContext);
+            if (shrapnel.CWC.Owner.Player.IsLocallyOwned && (willKill || cc.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
                 limb.ShowHitIndicator(precDamage > damage, willKill, hitData.hitPos, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
             return true;
         }
 
-        internal static void Internal_ReceiveShrapnelDamage(EnemyAgent target, PlayerAgent? source, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
+        internal static void Internal_ReceiveShrapnelDamage(EnemyAgent target, PlayerAgent? source, OwnerType ownerType, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
             if (damBase.Health <= 0 || !damBase.Owner.Alive || damBase.IsImortal) return;
 
-            DamageAPI.FirePreShrapnelCallbacks(damage, target, limb, source);
+            DamageAPI.FirePreShrapnelCallbacks(damage, target, limb, source, ownerType);
 
             ES_HitreactType hitreact = staggerMult > 0 ? ES_HitreactType.Light : ES_HitreactType.None;
             bool tryForceHitreact = false;
@@ -176,7 +180,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
             Vector3 position = localPos + target.Position;
             ProcessReceivedShrapnelDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
-            DamageAPI.FirePostShrapnelCallbacks(damage, target, limb, source);
+            DamageAPI.FirePostShrapnelCallbacks(damage, target, limb, source, ownerType);
         }
 
         private static void ProcessReceivedShrapnelDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
@@ -213,6 +217,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
     {
         public pEnemyAgent target;
         public pPlayerAgent source;
+        public byte ownerType;
         public byte limbID;
         public bool damageLimb;
         public LowResVector3 localPosition;

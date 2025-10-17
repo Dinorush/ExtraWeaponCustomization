@@ -3,7 +3,7 @@ using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
@@ -14,8 +14,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class ShotModPerTarget : 
         TriggerMod,
-        IGunProperty,
-        IMeleeProperty,
         IWeaponProperty<WeaponStatContext>,
         IWeaponProperty<WeaponShotGroupInitContext>,
         IWeaponProperty<WeaponShotInitContext>
@@ -31,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public ShotModPerTarget()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(ITrigger.PositionalTriggers);
+            SetValidTriggers(ITrigger.HitTriggers);
         }
 
         public override bool ShouldRegister(Type contextType)

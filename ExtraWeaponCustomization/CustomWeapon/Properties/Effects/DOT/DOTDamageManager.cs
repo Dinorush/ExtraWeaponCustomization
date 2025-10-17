@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
         public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, float staggerMulti, bool bypassTumor, float backstabMulti, int ticks, ShotInfo shotInfo, DamageOverTime dotBase)
         {
-            if (!dotBase.Owner.IsLocallyOwned || damage <= 0) return;
+            if (damage <= 0) return;
 
             damage = damage * falloff + 0.001f; // Account for rounding errors
             Agent agent = damageable.GetBaseAgent();
@@ -92,6 +92,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             DOTData data = default;
             data.target.Set(damBase.Owner);
             data.source.Set(dotBase.Owner);
+            data.ownerType = (byte)dotBase.CWC.Owner.Type;
             data.limbID = (byte) limb.m_limbID;
             data.damageLimb = dotBase.DamageLimb;
             data.localPosition.Set(limb.DamageTargetPos - damBase.Owner.Position, 10f);
@@ -112,8 +113,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
 
             bool willKill = damBase.WillDamageKill(precDamage);
-            HitTrackerManager.RegisterHit(dotBase.CWC, hitContext);
-            if (willKill || dotBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result)
+            HitTrackerManager.RegisterHit(dotBase.CWC.Owner, dotBase.CWC, hitContext);
+            if (dotBase.Owner.IsLocallyOwned && (willKill || dotBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
                 limb.ShowHitIndicator(precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             shotInfo.AddHits(hitContext.DamageType, ticks);
@@ -145,13 +146,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             damBase.ReceiveFireDamage(data);
         }
 
-        internal static void Internal_ReceiveDOTEnemyDamage(EnemyAgent target, PlayerAgent? source, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
+        internal static void Internal_ReceiveDOTEnemyDamage(EnemyAgent target, PlayerAgent? source, OwnerType ownerType, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
             if (!target.Alive || damBase.IsImortal) return;
 
-            DamageAPI.FirePreDOTCallbacks(damage, target, limb, source);
+            DamageAPI.FirePreDOTCallbacks(damage, target, limb, source, ownerType);
             // DoT should only stagger if threshold is reached. Need the hitreact to not be None for the threshold to do anything, though.
             bool staggers = damage * staggerMult + damBase.m_damBuildToHitreact >= target.EnemyBalancingData.Health.DamageUntilHitreact;
             ES_HitreactType hitreact = staggers ? ES_HitreactType.Light : ES_HitreactType.None;
@@ -179,7 +180,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             ProcessReceivedDOTDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
             DamageSyncWrapper.RunDamageSync(target, damageLimb ? limbID : -1);
 
-            DamageAPI.FirePostDOTCallbacks(damage, target, limb, source);
+            DamageAPI.FirePostDOTCallbacks(damage, target, limb, source, ownerType);
         }
 
         private static void ProcessReceivedDOTDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
@@ -216,6 +217,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
     {
         public pEnemyAgent target;
         public pPlayerAgent source;
+        public byte ownerType;
         public byte limbID;
         public bool damageLimb;
         public LowResVector3 localPosition;

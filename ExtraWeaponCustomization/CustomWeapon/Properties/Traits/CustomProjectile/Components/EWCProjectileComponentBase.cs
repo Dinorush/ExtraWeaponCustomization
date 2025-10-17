@@ -1,6 +1,9 @@
 ﻿using EWC.API;
 using EWC.Attributes;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
+using EWC.CustomWeapon.WeaponContext;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using Il2CppInterop.Runtime.Attributes;
@@ -27,6 +30,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public readonly EWCProjectileHoming Homing;
         [HideFromIl2Cpp]
         public Projectile Settings { get; private set; }
+        [HideFromIl2Cpp]
+        public ContextController ContextController { get; private set; }
+        private static ContextController? s_currentController;
+        private static float s_lastControllerTime = 0f;
+        private static ushort s_lastControllerIndex = 0;
 
         private readonly DelayedCallback _inactiveCallback;
         private float _startLifetime;
@@ -47,12 +55,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected Vector3 _positionVisual;
         protected Vector3 _dirVisual;
 
+        private float _aliveTriggerTime;
+
         protected static Quaternion s_tempRot;
         private const int MaxCollisionCheck = 3;
         private const float MaxPhysicsInterval = 0.05f;
         private const float PhysicsIntervalLerpDelay = 1f;
 
-        public bool IsLocal { get; private set; }
+        public bool IsManaged { get; private set; }
         public ushort SyncID { get; private set; }
         public ushort PlayerIndex { get; private set; }
 
@@ -68,7 +78,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 
         [HideFromIl2Cpp]
-        public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isLocal, Vector3 position, Vector3 dir, HitData? hitData = null, IntPtr ignoreEnt = default)
+        public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isManaged, Vector3 position, Vector3 dir, HitData? hitData = null, IntPtr ignoreEnt = default)
         {
             if (enabled) return;
 
@@ -91,9 +101,31 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _fixedInfo.Set(projBase, position, dir);
 
-            IsLocal = isLocal;
+            _aliveTriggerTime = _startLifetime + Settings.AliveTriggerDelay;
+            IsManaged = isManaged;
 
             ProjectileAPI.FireProjectileSpawnedCallback(this);
+
+            if (isManaged)
+            {
+                var cgc = projBase.CGC;
+                if (cgc.HasTempProperties())
+                {
+                    // Properties can never change in the same frame, so we can batch shotguns.
+                    if (s_lastControllerTime != Clock.Time || playerIndex != s_lastControllerIndex)
+                    {
+                        s_currentController = new(cgc.GetContextController());
+                        s_lastControllerTime = Clock.Time;
+                        s_lastControllerIndex = playerIndex;
+                    }
+                    ContextController = s_currentController!;
+                }
+                else
+                {
+                    ContextController = cgc.GetContextController();
+                }
+            }
+            
             Hitbox.Init(projBase, position, dir, hitData, ignoreEnt, out var bounceHit);
             if (bounceHit != null)
                 _fixedInfo.BaseDir = Vector3.Reflect(_fixedInfo.BaseDir, bounceHit.Value.normal);
@@ -148,7 +180,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             else
                 interval = (time - _startLifetime) / PhysicsIntervalLerpDelay * MaxPhysicsInterval;
 
-            if (!IsLocal || _lastUpdatePhysicsTime + interval >= time) return false;
+            if (!IsManaged || _lastUpdatePhysicsTime + interval >= time) return false;
 
             float delta = time - _lastUpdatePhysicsTime;
             Vector3 dir = _fixedInfo.Dir;
@@ -185,7 +217,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         protected virtual void Update()
         {
-            if (Settings == null || (IsLocal && Settings.CWC.Weapon == null)) // JFS - if weapon is destroyed, this could possibly happen?
+            if (Settings == null || (IsManaged && Settings.CWC == null)) // JFS - if weapon is destroyed, this could possibly happen?
             {
                 Die();
                 return;
@@ -194,7 +226,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             bool didUpdatePhysics = UpdatePhysics();
             if (!enabled) return;
 
-            if (Time.time > _endLifetime)
+            var time = Time.time;
+            if (time > _endLifetime)
             {
                 Die();
                 return;
@@ -211,6 +244,24 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 var deltaMove = GetDeltaMove(_deltaInfo, delta);
                 _deltaInfo.Position += deltaMove;
             }
+
+            if (IsManaged && _aliveTriggerTime <= time)
+            {
+                _aliveTriggerTime = time + Settings.AliveTriggerInterval;
+                Settings.EventHelper.Invoke(
+                    ContextController,
+                    new WeaponReferencePosContext(
+                        Settings.ID,
+                        (uint) Projectile.Callback.Alive,
+                        Position,
+                        Dir,
+                        Vector3.zero,
+                        Hitbox.GetFalloff(),
+                        Hitbox.HitData.shotInfo
+                    )
+                );
+            }
+
             LerpVisualOffset();
         }
 
@@ -254,10 +305,22 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             if (!enabled) return;
 
+            Settings.EventHelper.Invoke(
+                ContextController,
+                new WeaponReferencePosContext(
+                    Settings.ID,
+                    (uint)Projectile.Callback.Destroyed,
+                    Position,
+                    Dir,
+                    -Dir,
+                    Hitbox.GetFalloff(),
+                    Hitbox.HitData.shotInfo
+                )
+            );
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
             _inactiveCallback.Start();
-            EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID, IsLocal);
+            EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID, IsManaged);
             Hitbox.Die();
             Homing.Die();
             ProjectileAPI.FireProjectileDestroyedCallback(this);

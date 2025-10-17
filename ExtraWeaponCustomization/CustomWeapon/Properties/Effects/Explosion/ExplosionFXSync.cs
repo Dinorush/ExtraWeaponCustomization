@@ -8,7 +8,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         protected override void Receive(ExplosionFXData packet)
         {
-            if (!CustomWeaponManager.TryGetSyncProperty<Explosive>(packet.propertyID, out var property)) return;
+            if (!CustomDataManager.TryGetSyncProperty<Explosive>(packet.propertyID, out var property)) return;
 
             ExplosionFXManager.Internal_ReceiveExplosionFX(
                 packet.position,

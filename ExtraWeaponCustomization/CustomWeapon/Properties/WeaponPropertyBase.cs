@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.ComponentWrapper;
+using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using System;
@@ -10,7 +12,17 @@ namespace EWC.CustomWeapon.Properties
     public abstract class WeaponPropertyBase : IWeaponProperty
     {
         private CustomWeaponComponent _cwc = null!;
-        public CustomWeaponComponent CWC { get => _cwc; set { _cwc = value; OnCWCSet(); } } // Set when added to CWC
+        public CustomWeaponComponent CWC // Set when added to CWC
+        {
+            get => _cwc;
+            set
+            { 
+                _cwc = value;
+                CGC = _cwc.Weapon.IsType(WeaponType.Gun) ? _cwc.Cast<CustomGunComponent>() : null!;
+                OnCWCSet(); 
+            }
+        }
+        public CustomGunComponent CGC { get; private set; } = null!;
 
         public uint ID { get; private set; } = 0;
         public PropertyRef Reference { get; protected set; }
@@ -21,11 +33,18 @@ namespace EWC.CustomWeapon.Properties
 
         public virtual bool ShouldRegister(Type contextType) => true;
 
-        public virtual bool ValidProperty()
-        {
-            return (CWC.IsGun && this is IGunProperty)
-                || (CWC.IsMelee && this is IMeleeProperty);
-        }
+        public virtual bool ValidProperty() =>
+            CWC.Owner.IsType(RequiredOwnerType) &&
+            CWC.Owner.IsAnyType(ValidOwnerType) &&
+            CWC.Weapon.IsType(RequiredWeaponType) &&
+            CWC.Weapon.IsAnyType(ValidWeaponType);
+
+        protected virtual OwnerType RequiredOwnerType => OwnerType.Any;
+        protected virtual OwnerType ValidOwnerType => OwnerType.Any;
+        protected virtual WeaponType RequiredWeaponType => WeaponType.Any;
+        protected virtual WeaponType ValidWeaponType => WeaponType.Any;
+
+        public string GetValidTypes() => $"Required Owner Types [{RequiredOwnerType}], Valid Owner Types [{ValidOwnerType}], Required Weapon Types [{RequiredWeaponType}], Valid Weapon Types [{ValidWeaponType}]";
 
         public virtual WeaponPropertyBase Clone()
         {

@@ -6,8 +6,6 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class ArmorPierce :
         Trait,
-        IGunProperty,
-        IMeleeProperty,
         IWeaponProperty<WeaponArmorContext>
     {
         public float Pierce { get; private set; } = 1f;

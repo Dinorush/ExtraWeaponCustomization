@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.WeaponContext;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
@@ -25,6 +26,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (_isActive)
                 cwc.Invoke(context);
+        }
+
+        public void Invoke(ContextController cc, WeaponReferenceContext context)
+        {
+            if (_isActive)
+                cc.Invoke(context);
         }
     }
 }

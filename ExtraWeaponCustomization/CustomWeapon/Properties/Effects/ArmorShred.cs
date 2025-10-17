@@ -5,13 +5,11 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class ArmorShred : 
-        TriggerModDebuff,
-        IGunProperty,
-        IMeleeProperty
+        TriggerModDebuff
     {
         public ArmorShred() : base()
         {
-            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.PositionalTriggers);
+            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.HitTriggers);
         }
 
         protected override DebuffModifierBase AddModifier(IDamageable damageable)

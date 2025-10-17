@@ -4,12 +4,12 @@ using AIGraph;
 using LevelGeneration;
 using System.Collections.Generic;
 using System;
+using EWC.CustomWeapon.Enums;
 
 namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class WallPierce : 
         Trait,
-        IGunProperty,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>
     {
@@ -17,21 +17,17 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public bool RequireOpenPath { get; private set; } = false;
 
-        public override bool ShouldRegister(Type contextType)
-        {
-            if (!CWC.IsLocal) return false;
-
-            return base.ShouldRegister(contextType);
-        }
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
         public void Invoke(WeaponSetupContext context)
         {
-            CWC.ShotComponent!.WallPierce = this;
+            CGC.ShotComponent.WallPierce = this;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CWC.ShotComponent!.WallPierce = null;
+            CGC.ShotComponent.WallPierce = null;
         }
 
         public bool IsTargetReachable(AIG_CourseNode? source, AIG_CourseNode? target)

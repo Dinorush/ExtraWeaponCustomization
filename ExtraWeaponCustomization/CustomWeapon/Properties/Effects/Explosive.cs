@@ -2,7 +2,7 @@
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.JSON;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -12,8 +12,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class Explosive : 
         Effect,
-        IGunProperty,
-        IMeleeProperty,
         ISyncProperty
     {
         public ushort SyncPropertyID { get; set; }
@@ -65,7 +63,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             foreach (TriggerContext tContext in triggerList)
             {
                 CacheBackstab = 0f;
-                if(tContext.context is WeaponHitContextBase hitContext)
+                if(tContext.context is IPositionContext hitContext)
                 {
                     Vector3 position = hitContext.Position;
                     if (hitContext is WeaponHitDamageableContextBase damContext)
@@ -78,12 +76,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                     else
                         position += hitContext.Normal * WallHitBuffer;
 
-                    ExplosionManager.DoExplosion(position, hitContext.Direction, hitContext.Normal, CWC.Weapon.Owner, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt, hitContext.ShotInfo.Orig);
+                    ExplosionManager.DoExplosion(position, hitContext.Direction, hitContext.Normal, CWC.Owner.Player, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt, hitContext.ShotInfo.Orig);
                 }
                 else
                 {
-                    Player.PlayerAgent owner = CWC.Weapon.Owner;
-                    ExplosionManager.DoExplosion(owner.FPSCamera.Position, owner.FPSCamera.CameraRayDir, owner.FPSCamera.CameraRayDir, owner, 1f, this, tContext.triggerAmt);
+                    var owner = CWC.Owner;
+                    ExplosionManager.DoExplosion(owner.FirePos, owner.FireDir, owner.FireDir, owner.Player, 1f, this, tContext.triggerAmt);
                 }
             }
         }

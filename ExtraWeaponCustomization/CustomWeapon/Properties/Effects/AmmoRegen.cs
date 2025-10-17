@@ -1,4 +1,6 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using Player;
@@ -12,7 +14,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class AmmoRegen :
         Effect,
-        IGunProperty,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
         IWeaponProperty<WeaponWieldContext>,
@@ -24,6 +25,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
         public bool UseRawAmmo { get; private set; } = false;
+        public bool BypassClipCap { get; private set; } = false;
         public bool BypassReserveCap { get; private set; } = false;
         public bool AllowReload { get; private set; } = true;
         public bool ActiveInHolster { get; private set; } = true;
@@ -39,12 +41,14 @@ namespace EWC.CustomWeapon.Properties.Effects
         private float _nextTickTime = 0f;
         private Coroutine? _updateRoutine;
 
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
+        protected override WeaponType ValidWeaponType => WeaponType.Gun | WeaponType.SentryHolder;
+
         public override bool ShouldRegister(Type contextType)
         {
-            if (contextType == typeof(WeaponSetupContext)) return ActiveInHolster && CWC.IsLocal;
-            if (contextType == typeof(WeaponClearContext)) return CWC.IsLocal;
+            if (contextType == typeof(WeaponSetupContext)) return ActiveInHolster;
             if (contextType == typeof(WeaponWieldContext) || contextType == typeof(WeaponUnWieldContext)) return !ActiveInHolster;
-            if (contextType == typeof(WeaponPreReloadContext)) return !AllowReload;
+            if (contextType == typeof(WeaponPreReloadContext)) return !AllowReload && CWC.Owner.IsType(OwnerType.Player) && CWC.Weapon.IsType(WeaponType.Gun);
 
             return base.ShouldRegister(contextType);
         }
@@ -78,12 +82,14 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private bool ResetCache()
         {
+            // No regen active while sentry is alive
+            if (CWC.Weapon.IsType(WeaponType.SentryHolder) && CustomWeaponManager.TryGetSentry(CWC.Owner.Player, out _)) return false;
+
             if (_ammoStorage == null || _slotAmmo == null)
             {
-                PlayerBackpack? backpack = PlayerBackpackManager.LocalBackpack;
-                if (backpack == null) return false;
+                if (!PlayerBackpackManager.TryGetBackpack(CWC.Owner.Player.Owner, out var backpack)) return false;
 
-                _ammoStorage = PlayerBackpackManager.LocalBackpack.AmmoStorage;
+                _ammoStorage = backpack.AmmoStorage;
                 if (_ammoStorage == null) return false;
 
                 _slotAmmo = _ammoStorage.GetInventorySlotAmmo(CWC.Weapon.AmmoType);
@@ -112,8 +118,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     continue;
                 }
 
-                int currClip = CWC.Weapon.GetCurrentClip();
-                int maxClip = CWC.Weapon.GetMaxClip();
+                var weapon = (IArchComp) CWC.Weapon;
+                int currClip = weapon.GetCurrentClip();
+                int maxClip = BypassClipCap ? int.MaxValue : weapon.GetMaxClip();
                 float currPack = _slotAmmo!.AmmoInPack;
                 float maxPack = _slotAmmo.AmmoMaxCap;
                 float costOfBullet = _slotAmmo!.CostOfBullet;
@@ -174,7 +181,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _clipBuffer -= (int)_clipBuffer;
                 _reserveBuffer -= (int)_reserveBuffer;
 
-                CWC.Weapon.SetCurrentClip(newClip);
+                weapon.SetCurrentClip(newClip);
 
                 if (UseRawAmmo)
                 {
@@ -218,6 +225,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
+            writer.WriteBoolean(nameof(BypassClipCap), BypassClipCap);
             writer.WriteBoolean(nameof(BypassReserveCap), BypassReserveCap);
             writer.WriteBoolean(nameof(AllowReload), AllowReload);
             writer.WriteBoolean(nameof(ActiveInHolster), ActiveInHolster);
@@ -252,6 +260,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "userawammo":
                 case "useammo":
                     UseRawAmmo = reader.GetBoolean();
+                    break;
+                case "bypassclipcap":
+                    BypassClipCap = reader.GetBoolean();
                     break;
                 case "bypassreservecap":
                 case "bypasscap":

@@ -10,7 +10,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class Accelerate :
         Effect,
-        IGunProperty,
         ITriggerCallbackBasicSync,
         IWeaponProperty<WeaponPreStartFireContext>,
         IWeaponProperty<WeaponPreFireContextSync>,
@@ -29,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             private set { _endFireRateMod = Math.Max(0.001f, value); }
         }
         public StackType FireRateStackLayer { get; private set; } = StackType.Multiply;
-        private float FireRateMod => EndFireRate > 0f ? EndFireRate / CWC.BaseFireRate : EndFireRateMod;
+        private float FireRateMod => EndFireRate > 0f ? EndFireRate / CGC.BaseFireRate : EndFireRateMod;
 
         public float EndShotMod { get; private set; } = 1f;
         public DamageType[] ModDamageType { get; private set; } = DamageTypeConst.Any;
@@ -59,6 +58,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         private float _resetProgress = 0f;
         private float _resetUpdateTime = 0f;
 
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
         public override bool ShouldRegister(Type contextType)
         {
             bool modifiesShot = EndShotMod != 1f || ModStackLayer == StackType.Override;
@@ -76,7 +77,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _lastUpdateTime = Clock.Time;
 
             float delta = Clock.Time - _lastUpdateTime;
-            float accelTime = Math.Min(1f / CWC.CurrentFireRate, delta);
+            float accelTime = Math.Min(1f / CGC.CurrentFireRate, delta);
 
             _progress = Math.Min(_progress + accelTime / AccelTime, 1f);
 

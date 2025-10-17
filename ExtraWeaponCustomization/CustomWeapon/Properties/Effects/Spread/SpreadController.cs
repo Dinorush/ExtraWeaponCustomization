@@ -12,13 +12,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Spread
         private Dictionary<SpreadMod, float>? _mods;
         private Dictionary<SpreadMod, float> Mods => _mods ??= new (3);
 
+        private readonly bool _isLocal;
         private bool _active = false;
         public bool Active
         { 
             get => _active;
             set
             {
-                if (_active == value) return;
+                if (_active == value || !_isLocal) return;
 
                 if (value)
                     ACAPIWrapper.UpdateCrosshairSpread(Value);
@@ -32,10 +33,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Spread
 
         private readonly StackMod _stackMod;
 
-        public SpreadController()
+        public SpreadController(bool local)
         {
             _stackMod = new(1f, 0f);
             _mods = null;
+            _isLocal = local;
         }
 
         public void Reset()

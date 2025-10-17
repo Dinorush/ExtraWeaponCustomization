@@ -1,13 +1,12 @@
 ﻿using Agents;
 using AmorLib.Utils;
+using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.CustomShot;
-using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Patches;
+using EWC.Patches.Gun;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using FX_EffectSystem;
-using Gear;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -21,10 +20,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         // Set on init
         private Projectile _settings;
-        private BulletWeapon _weapon;
-        private ContextController _contextController;
+        private IOwnerComp _owner;
         private readonly HashSet<IntPtr> _initialPlayers = new();
-        private HitData _hitData = new(Enums.DamageType.Bullet);
         private ShotInfo.Const _origInfo;
         private int _friendlyLayer;
         private WallPierce? _wallPierce;
@@ -33,6 +30,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private eDimensionIndex _dimensionIndex;
         private bool _runHitTriggers = true;
         private bool _enabled = false;
+        public HitData HitData { get; private set; } = new(Enums.DamageType.Bullet);
 
         // Variables
         private int _pierceCount = 1;
@@ -49,8 +47,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public const float MinCollisionSqrDist = MinCollisionDist * MinCollisionDist;
         public const float MinRicochetDist = 0.02f;
 
-        private static ContextController? s_currentController;
-        private static float s_lastControllerTime = 0f;
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
         private static float s_velMagnitude;
@@ -69,37 +65,25 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public void Init(Projectile projBase, Vector3 pos, Vector3 dir, HitData? hitData, IntPtr ignoreEnt, out RaycastHit? bounceHit)
         {
             bounceHit = null;
-            if (_enabled || !_base.IsLocal) return;
+            if (_enabled || !_base.IsManaged) return;
 
-            CustomWeaponComponent cwc = projBase.CWC;
+            CustomGunComponent cgc = projBase.CGC;
             _enabled = true;
             _settings = projBase;
-            _weapon = cwc.Gun!;
-            _dimensionIndex = _weapon.Owner.DimensionIndex;
+            _owner = cgc.Owner;
+            _dimensionIndex = _owner.DimensionIndex;
             _runHitTriggers = true;
             _startLifetime = Time.time;
 
-            if (cwc.HasTempProperties())
-            {
-                // Properties can never change in the same frame, so we can batch shotguns.
-                if (s_lastControllerTime != Clock.Time)
-                {
-                    s_currentController = new(_settings.CWC.GetContextController());
-                    s_lastControllerTime = Clock.Time;
-                }
-                _contextController = s_currentController!;
-            }
-            else
-            {
-                _contextController = cwc.GetContextController();
-                _runHitTriggers = cwc.RunHitTriggers;
-            }
+            // If it had temp properties, RunHitTriggers is permanently set on the copied context controller
+            if (!cgc.HasTempProperties())
+                _runHitTriggers = cgc.RunHitTriggers;
 
             s_ray.origin = pos;
             s_ray.direction = dir;
             _friendlyLayer = 0;
             _searchSettings = SearchSetting.ClosestHit | SearchSetting.IgnoreDupes;
-            IntPtr ownerPtr = _weapon.Owner.Pointer;
+            IntPtr ownerPtr = _owner.Player.Pointer;
             if (projBase.DamageOwner)
             {
                 _searchSettings |= SearchSetting.CheckOwner;
@@ -122,9 +106,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _wallPierce = _settings.WallPierce;
             _pierceCount = _settings.PierceLimit;
             _ricochetCount = _settings.RicochetCount;
-            _hitData = new(hitData!);
-            _baseFalloff = _hitData.falloff;
-            _origInfo = _hitData.shotInfo.State;
+            HitData = new(hitData!);
+            _baseFalloff = HitData.falloff;
+            _origInfo = HitData.shotInfo.State;
             if (ignoreEnt != IntPtr.Zero)
                 HitEnts.Add(ignoreEnt);
 
@@ -136,11 +120,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _base.Die();
         }
 
+        public float GetFalloff() => HitData.CalcRawFalloff(_distanceMoved);
+
         public void Die()
         {
-            if (_base.IsLocal)
+            if (_base.IsManaged)
             {
-                _settings.CWC.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, _hitData.shotInfo, _origInfo));
+                _settings.CWC.Invoke(new WeaponShotEndContext(Enums.DamageType.Bullet, HitData.shotInfo, _origInfo));
                 _initialPlayers.Clear();
                 HitEnts.Clear();
                 _hitEntCooldowns.Clear();
@@ -357,7 +343,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     return false;
             }
 
-            return _wallPierce?.IsTargetReachable(_weapon.Owner.CourseNode, agent?.CourseNode) != false;
+            return _wallPierce?.IsTargetReachable(_owner.CourseNode, agent?.CourseNode) != false;
         }
 
         private bool AlreadyHit(IDamageable? damageable)
@@ -385,20 +371,20 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private bool BulletHit(IDamageable? damageable)
         {
-            _hitData.ResetDamage();
-            _hitData.fireDir = (_settings.HitFromOwnerPos ? s_rayHit.point - _weapon.Owner.FPSCamera.Position : s_ray.direction).normalized;
-            _hitData.RayHit = s_rayHit;
-            _hitData.falloff = _hitData.CalcFalloff(_distanceMoved) * _baseFalloff;
+            HitData.ResetDamage();
+            HitData.fireDir = (_settings.HitFromOwnerPos ? s_rayHit.point - _owner.FirePos : s_ray.direction).normalized;
+            HitData.RayHit = s_rayHit;
+            HitData.falloff = HitData.CalcFalloff(_distanceMoved) * _baseFalloff;
 
             DoImpactFX(damageable);
 
             API.ProjectileAPI.FireProjectileHitCallback(_base, damageable);
 
             if (_settings.HitFuncOverride != null)
-                return _settings.HitFuncOverride(_hitData, _contextController);
+                return _settings.HitFuncOverride(HitData, _base.ContextController);
             
             ToggleRunTriggers(false);
-            WeaponPatches.ApplyEWCHit(_settings.CWC, _contextController, _hitData, out bool backstab);
+            WeaponPatches.ApplyEWCHit(_settings.CWC, _base.ContextController, HitData, out var backstab);
             ToggleRunTriggers(true);
 
             foreach (var statChange in _settings.StatChanges)
@@ -407,19 +393,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 switch (statChange.StatType)
                 {
                     case Enums.StatType.Damage:
-                        _hitData.damage *= mod;
+                        HitData.damage *= mod;
                         break;
                     case Enums.StatType.Precision:
-                        _hitData.precisionMulti *= mod;
+                        HitData.precisionMulti *= mod;
                         break;
                     case Enums.StatType.Stagger:
-                        _hitData.staggerMulti *= mod;
+                        HitData.staggerMulti *= mod;
                         break;
                 }
             }
 
-            float damage = _hitData.damage * _hitData.falloff;
-            damageable?.BulletDamage(damage, _hitData.owner, _hitData.hitPos, _hitData.fireDir, _hitData.RayHit.normal, backstab, _hitData.staggerMulti, _hitData.precisionMulti);
+            float damage = HitData.damage * HitData.falloff;
+            damageable?.BulletDamage(damage, HitData.owner, HitData.hitPos, HitData.fireDir, HitData.RayHit.normal, backstab, HitData.staggerMulti, HitData.precisionMulti);
             return true;
         }
 

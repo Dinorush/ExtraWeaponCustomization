@@ -3,7 +3,7 @@ using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils.Extensions;
 using LevelGeneration;
 using Player;
@@ -16,8 +16,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class Foam : 
         Effect,
-        IGunProperty,
-        IMeleeProperty,
         ISyncProperty
     {
         public ushort SyncPropertyID { get; set; }
@@ -45,13 +43,13 @@ namespace EWC.CustomWeapon.Properties.Effects
         public Foam()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.BulletLanded));
-            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.PositionalTriggers.Extend(TriggerName.BulletLanded, TriggerName.ChargeLanded));
+            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.HitTriggers.Extend(TriggerName.BulletLanded, TriggerName.ChargeLanded));
         }
 
         public override void TriggerReset() {}
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            PlayerAgent owner = CWC.Weapon.Owner;
+            PlayerAgent owner = CWC.Owner.Player;
             float strengthMod = IgnoreBooster ? 1f : AgentModifierManager.ApplyModifier(owner, AgentModifier.GlueStrength, 1f);
             foreach (TriggerContext tContext in triggerList)
             {

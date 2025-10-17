@@ -1,7 +1,7 @@
-﻿using EWC.CustomWeapon.CustomShot;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
-using Gear;
 using Player;
 using System;
 using System.Text.Json;
@@ -11,13 +11,13 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class EnforceFireRate :
         Trait,
-        IGunProperty,
+        IWeaponProperty<WeaponShotCooldownContext>,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
     {
         private int _lastSyncShotCount = 0;
-        private float _lastShotTime = 0f;
+        private float _nextShotTime = 0f;
         private float _shotBuffer = 0f;
         private float _fixedTime = 0f;
         private readonly static float FixedDelta;
@@ -27,65 +27,68 @@ namespace EWC.CustomWeapon.Properties.Traits
             FixedDelta = Time.fixedDeltaTime;
         }
 
+        protected override OwnerType ValidOwnerType => OwnerType.Local | OwnerType.Unmanaged;
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
+        public void Invoke(WeaponShotCooldownContext context)
+        {
+            _nextShotTime = context.NextShotTime;
+        }
+
         public void Invoke(WeaponPostStartFireContext context)
         {
-            _shotBuffer = 0;
-
             // If semi-auto or burst, calculate if they've continuously fired
             // based on whether this is the first frame since they could fire
-            if (CWC.GunFireMode != eWeaponFireMode.Auto)
+            var gun = (LocalGunComp) CWC.Weapon;
+            if (gun.FireMode != eWeaponFireMode.Auto)
             {
-                float intendedShotTime = CWC.GunArchetype!.m_nextBurstTimer;
-                float maxContinueTime = intendedShotTime + Clock.Delta;
+                float maxContinueTime = _nextShotTime + Clock.Delta;
                 if (Clock.Time <= maxContinueTime)
-                {
-                    _lastShotTime = intendedShotTime;
                     return;
-                }
             }
-            _lastShotTime = Clock.Time;
+            _shotBuffer = 0;
+            _nextShotTime = 0;
         }
 
         public void Invoke(WeaponPostFireContextSync context)
         {
-            var weapon = CWC.Gun!.Cast<BulletWeaponSynced>();
+            var weapon = ((SyncedGunComp)CWC.Weapon).Value;
             if (_lastSyncShotCount == 0)
             {
                 _lastSyncShotCount = weapon.m_shotsToFire;
-                _lastShotTime = Clock.Time;
                 _shotBuffer = 0;
                 return;
             }
 
-            _shotBuffer += Math.Max(0, (Clock.Time - _lastShotTime) * CWC.CurrentFireRate - 1f);
+            _shotBuffer += Math.Max(0, (Clock.Time - _nextShotTime) * CGC.CurrentFireRate);
             int extraShots = (int)_shotBuffer;
             weapon.m_shotsToFire = Math.Max(0, weapon.m_shotsToFire - extraShots);
             _lastSyncShotCount = weapon.m_shotsToFire;
-            _lastShotTime = Clock.Time;
             _shotBuffer -= extraShots;
         }
 
         public void Invoke(WeaponPostFireContext context)
         {
             // Acts as a lock against recursive calls and first shot
-            if (_lastShotTime == Clock.Time) return;
+            if (_nextShotTime == 0) return;
 
-            _shotBuffer += Math.Max(0, (Clock.Time - _lastShotTime) * CWC.CurrentFireRate - 1f);
-            int extraShots = GetShotsInBuffer(CWC.Gun!);
-            _lastShotTime = Clock.Time;
+            _shotBuffer += Math.Max(0, (Clock.Time - _nextShotTime) * CGC.CurrentFireRate);
+            int extraShots = GetShotsInBuffer();
+            _nextShotTime = 0;
 
             if (extraShots == 0) return;
 
             _fixedTime = Time.time - Time.fixedTime;
-            FPSCamera camera = CWC.Weapon.Owner.FPSCamera;
+            FPSCamera camera = CWC.Owner.Player.FPSCamera;
             FPS_RecoilSystem system = camera.m_recoilSystem;
+            var gun = (LocalGunComp)CWC.Weapon;
 
             float delta = Clock.Delta;
-            float shotDelay = 1f / CWC.CurrentFireRate;
+            float shotDelay = 1f / CGC.CurrentFireRate;
             shotDelay = Math.Min(shotDelay, delta);
             // Modify delta time so FPS_Update() moves the correct amount
             Clock.Delta = shotDelay;
-            CWC.ShotComponent!.CancelAllFX = true;
+            CGC.ShotComponent.CancelAllFX = true;
             for (int i = 0; i < extraShots; i++)
             {
                 // Update camera to where it should be
@@ -97,21 +100,22 @@ namespace EWC.CustomWeapon.Properties.Traits
                     camera.UpdateCameraRay();
                     _fixedTime -= FixedDelta;
                 }
-                CWC.GunArchetype!.OnFireShot();
+                gun.GunArchetype.OnFireShot();
             }
-            CWC.ShotComponent!.CancelAllFX = false;
+            CGC.ShotComponent.CancelAllFX = false;
 
             Clock.Delta = delta;
             _shotBuffer -= extraShots;
         }
 
-        private int GetShotsInBuffer(BulletWeapon weapon)
+        private int GetShotsInBuffer()
         {
-            int cap = weapon.GetCurrentClip();
+            var gun = (LocalGunComp)CWC.Weapon;
+            int cap = gun.GetCurrentClip();
             if (CWC.HasTrait<ReserveClip>())
-                cap += PlayerBackpackManager.GetBackpack(weapon.Owner.Owner).AmmoStorage.GetBulletsInPack(weapon.AmmoType);
+                cap += PlayerBackpackManager.GetBackpack(CWC.Owner.Player.Owner).AmmoStorage.GetBulletsInPack(CWC.Weapon.AmmoType);
 
-            if (CWC.TryGetBurstArchetype(out var arch))
+            if (gun.TryGetBurstArchetype(out var arch))
                 cap = Math.Min(cap, arch.m_burstCurrentCount);
           
             return Math.Min(cap, (int)_shotBuffer);

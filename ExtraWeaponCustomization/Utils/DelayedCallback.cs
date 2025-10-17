@@ -45,7 +45,7 @@ namespace EWC.Utils
         public void Start(bool checkEnd = false, bool refresh = true)
         {
             bool active = Active;
-            if (!refresh && Active) return;
+            if (!refresh && active) return;
 
             // Catch case where callback should have ended but coroutine hasn't ran yet.
             _endTime = Clock.Time + (_getDelay?.Invoke() ?? _delay);

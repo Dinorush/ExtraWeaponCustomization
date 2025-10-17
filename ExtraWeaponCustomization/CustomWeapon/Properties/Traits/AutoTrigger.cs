@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Text.Json;
 
@@ -6,27 +8,24 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class AutoTrigger : 
         Trait,
-        IGunProperty,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>
     {
         private bool _cachedTrigger;
 
-        public override bool ShouldRegister(Type contextType)
-        {
-            if (contextType == typeof(WeaponSetupContext) || contextType == typeof(WeaponClearContext)) return CWC.IsLocal;
-            return base.ShouldRegister(contextType);
-        }
+        protected override OwnerType RequiredOwnerType => OwnerType.Local;
+        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
         public void Invoke(WeaponSetupContext context)
         {
-            _cachedTrigger = CWC.GunArchetype!.m_triggerNeedsPress;
-            CWC.GunArchetype.m_triggerNeedsPress = false;
+            var gun = (LocalGunComp)CWC.Weapon;
+            _cachedTrigger = gun.GunArchetype.m_triggerNeedsPress;
+            gun.GunArchetype.m_triggerNeedsPress = false;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CWC.GunArchetype!.m_triggerNeedsPress = _cachedTrigger;
+            ((LocalGunComp)CWC.Weapon).GunArchetype.m_triggerNeedsPress = _cachedTrigger;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

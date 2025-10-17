@@ -1,7 +1,7 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
@@ -11,8 +11,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class ShotMod :
         TriggerMod,
-        IGunProperty,
-        IMeleeProperty,
         IWeaponProperty<WeaponStatContext>,
         IWeaponProperty<WeaponShotInitContext>,
         IWeaponProperty<WeaponShotGroupInitContext>

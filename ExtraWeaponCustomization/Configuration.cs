@@ -70,7 +70,7 @@ namespace EWC
             if (ForceCreateTemplate.Value)
             {
                 ForceCreateTemplate.Value = false;
-                CustomWeaponManager.Current.CreateTemplate();
+                CustomDataManager.Current.CreateTemplate();
                 configFile.Save();
             }
         }

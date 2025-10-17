@@ -1,19 +1,19 @@
 ﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
-using HarmonyLib;
+using EWC.Attributes;
+using EWC.CustomWeapon;
 using EWC.Dependencies;
 using GTFO.API;
-using EWC.CustomWeapon;
-using System.Runtime.CompilerServices;
+using HarmonyLib;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using EWC.Attributes;
+using System.Runtime.CompilerServices;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "3.7.11")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.0.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MSAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
@@ -26,6 +26,8 @@ namespace EWC;
 [BepInDependency(EECAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(FSFAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(ACAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(MSCWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(ETCWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 internal sealed class EntryPoint : BasePlugin
 {
     public const string MODNAME = "ExtraWeaponCustomization";
@@ -71,7 +73,7 @@ internal sealed class EntryPoint : BasePlugin
     private void AssetAPI_OnStartupAssetsLoaded()
     {
         InvokeCallbacks<InvokeOnAssetLoadAttribute>();
-        RuntimeHelpers.RunClassConstructor(typeof(CustomWeaponManager).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(CustomDataManager).TypeHandle);
     }
 
     private void CacheFrequentCallbacks()

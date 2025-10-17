@@ -9,8 +9,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class TempProperties :
         Effect,
-        IGunProperty,
-        IMeleeProperty,
         ITriggerCallbackBasicSync,
         IReferenceHolder
     {

@@ -3,9 +3,7 @@
 namespace EWC.CustomWeapon.Properties
 {
     public sealed class ReferenceProperty : 
-        WeaponPropertyBase,
-        IGunProperty,
-        IMeleeProperty
+        WeaponPropertyBase
     {
         public ReferenceProperty() { }
 

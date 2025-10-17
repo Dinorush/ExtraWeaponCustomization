@@ -1,15 +1,16 @@
-﻿using AK;
-using EWC.Attributes;
-using EWC.CustomWeapon.CustomShot;
+﻿using EWC.Attributes;
+using EWC.CustomWeapon.ComponentWrapper;
+using EWC.CustomWeapon.ComponentWrapper.OwnerComps;
+using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Properties;
-using EWC.CustomWeapon.Properties.Effects.Spread;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils;
-using GameData;
+using EWC.Utils.Extensions;
 using Gear;
 using Il2CppInterop.Runtime.Attributes;
 using Il2CppInterop.Runtime.Injection;
@@ -20,59 +21,12 @@ using UnityEngine;
 
 namespace EWC.CustomWeapon
 {
-    public sealed class CustomWeaponComponent : MonoBehaviour
+    public class CustomWeaponComponent : MonoBehaviour
     {
-        public readonly ItemEquippable Weapon;
-        public readonly BulletWeapon? Gun;
-        public readonly bool IsGun;
-        private ArchetypeDataBlock _archetypeData;
-        public ArchetypeDataBlock ArchetypeData
-        {
-            get => _archetypeData;
-            set
-            {
-                _archetypeData = value;
-                Weapon.ArchetypeData = value;
-            }
-        }
-        private BulletWeaponArchetype? _gunArchetype;
-        public BulletWeaponArchetype? GunArchetype
-        {
-            get => _gunArchetype;
-            set
-            {
-                Gun!.m_archeType = value;
-                _gunArchetype = value;
-                GunFireMode = Weapon.ArchetypeData.FireMode;
-                _burstArchetype = GunFireMode == eWeaponFireMode.Burst ? value!.Cast<BWA_Burst>() : null;
-            }
-        }
-        public eWeaponFireMode GunFireMode { get; private set; }
-        private BWA_Burst? _burstArchetype;
-        public readonly bool IsShotgun;
-        public readonly MeleeWeaponFirstPerson? Melee;
-        public readonly bool IsMelee;
-        public readonly CustomShotComponent? ShotComponent;
-        public readonly SpreadController? SpreadController;
+        public readonly IWeaponComp Weapon;
+        public readonly IOwnerComp Owner;
 
         private readonly PropertyController _propertyController;
-
-        public bool IsLocal { get; private set; } = true;
-        private bool OwnerSet => _ownerPtr != IntPtr.Zero;
-        private IntPtr _ownerPtr = IntPtr.Zero;
-
-        // To avoid patching an update function, we have to reset things back.
-        // We need this to keep track of cancels across multiple functions.
-        public bool CancelShot { get; set; }
-
-        // When canceling a shot, holds the next shot timer so we can reset back to it.
-        private float _lastShotTimer = 0f;
-        private float _lastBurstTimer = 0f;
-        private float _lastFireRate = 0f;
-
-        // Holds when the previous shot was fired.
-        // When canceling a shot that ends a burst/full-auto, we need to set cooldown based on the last shot.
-        private float _lastFireTime = 0f;
 
         // Used to prevent hit callbacks from firing. For some effects to prevent infinite recursion.
         private int _ignoreHitStack = 0;
@@ -100,48 +54,53 @@ namespace EWC.CustomWeapon
             }
         }
 
+        [HideFromIl2Cpp]
         public HashSet<uint> DebuffIDs { get; private set; } = DebuffGroup.DefaultGroupList;
 
         // Used to update delayed callbacks before invocations happen.
         private readonly LinkedList<DelayedCallback> _timeSensitiveCallbacks;
         private float _lastInvokeTime = 0f;
 
-        private bool _destroyed = false;
-        public float CurrentFireRate { get; private set; }
-        public float CurrentBurstDelay { get; private set; }
-        public float CurrentCooldownDelay { get; private set; }
-        public float BaseFireRate { get; private set; }
+        protected bool _destroyed = false;
 
-        private float _burstDelay;
-        private float _cooldownDelay;
-
-        public CustomWeaponComponent(IntPtr value) : base(value) {
-            ItemEquippable? item = GetComponent<ItemEquippable>();
-            if (item == null)
-                throw new ArgumentException("Parent Object", "Custom Weapon Component was added to an object without an ItemEquippable component.");
-            Weapon = item;
-            Gun = item.TryCast<BulletWeapon>();
-            Melee = item.TryCast<MeleeWeaponFirstPerson>();
-            IsGun = Gun != null;
-            IsShotgun = false;
-            IsMelee = !IsGun;
-            GunFireMode = eWeaponFireMode.Semi;
-            _archetypeData = Weapon.ArchetypeData;
-
-            if (IsGun)
+        public CustomWeaponComponent(IntPtr value) : base(value)
+        {
+            var item = GetComponent<ItemEquippable>();
+            if (item != null)
             {
-                GunArchetype = Gun!.m_archeType;
-                CurrentFireRate = _lastFireRate = BaseFireRate = 1f / Math.Max(GunArchetype!.ShotDelay(), CustomWeaponData.MinShotDelay);
-                CurrentBurstDelay = _burstDelay = GunArchetype.BurstDelay();
-                CurrentCooldownDelay = _cooldownDelay = GunArchetype.CooldownDelay();
-                IsLocal = Gun.TryCast<BulletWeaponSynced>() == null;
-                IsShotgun = IsLocal ? Weapon.TryCast<Shotgun>() != null : Weapon.TryCast<ShotgunSynced>() != null;
-                ShotComponent = new(this);
-                if (IsLocal)
-                    SpreadController = new();
+                var owner = item.Owner;
+                if (item.TryCastOut<MeleeWeaponFirstPerson>(out var melee))
+                {
+                    Weapon = new MeleeComp(melee);
+                    Owner = new LocalOwnerComp(owner, item.MuzzleAlign);
+                }
+                else if (item.TryCastOut<BulletWeaponSynced>(out var gunSynced))
+                {
+                    Weapon = new SyncedGunComp(gunSynced);
+                    Owner = new SyncedOwnerComp(owner, item.MuzzleAlign);
+                }
+                else if (item.TryCastOut<BulletWeapon>(out var gun))
+                {
+                    Weapon = new LocalGunComp(gun);
+                    Owner = new LocalOwnerComp(owner, item.MuzzleAlign);
+                }
+                else if (item.TryCastOut<SentryGunFirstPerson>(out var holder))
+                {
+                    Weapon = new SentryHolderComp(holder);
+                    Owner = new LocalOwnerComp(owner, item.MuzzleAlign);
+                }
+                else if (item.TryCastOut<SentryGunInstance>(out var sentry))
+                {
+                    Weapon = new SentryGunComp(sentry);
+                    Owner = new SentryOwnerComp(sentry);
+                }
+                else
+                    throw new ArgumentException("Custom Weapon Component was added to a non-melee/gun/sentry.");
             }
+            else
+                throw new ArgumentException("Custom Weapon Component was added to a non-melee/gun/sentry.");
 
-            _propertyController = new(IsGun, IsLocal);
+            _propertyController = new(Owner.Type, Weapon.Type);
             _timeSensitiveCallbacks = new();
             enabled = false;
         }
@@ -152,39 +111,24 @@ namespace EWC.CustomWeapon
             ClassInjector.RegisterTypeInIl2Cpp<CustomWeaponComponent>();
         }
 
-        public bool TryGetBurstArchetype([MaybeNullWhen(false)] out BWA_Burst burstArchetype)
+        public virtual void OnUnWield()
         {
-            burstArchetype = _burstArchetype;
-            return GunFireMode == eWeaponFireMode.Burst;
+            Invoke(StaticContext<WeaponUnWieldContext>.Instance);
         }
 
-        // Only runs on local player!
-        public void OwnerInit()
+        public virtual void OnWield()
         {
-            IntPtr ptr = GunArchetype!.m_owner.Pointer;
-            if (ptr == IntPtr.Zero || ptr == _ownerPtr || !enabled) return;
-
-            _ownerPtr = ptr;
-            InvokeAll(StaticContext<WeaponOwnerSetContext>.Instance);
+            Invoke(StaticContext<WeaponWieldContext>.Instance);
         }
 
         private void Update()
         {
-            if (OwnerSet)
-                Invoke(StaticContext<WeaponUpdateContext>.Instance);
+            Invoke(StaticContext<WeaponUpdateContext>.Instance);
         }
 
-        private void OnEnable()
-        {
-            if (OwnerSet)
-                Invoke(StaticContext<WeaponEnableContext>.Instance);
-        }
+        private void OnEnable() {}
 
-        private void OnDisable()
-        {
-            if (OwnerSet)
-                Invoke(StaticContext<WeaponDisableContext>.Instance);
-        }
+        private void OnDisable() {}
 
         private void OnDestroy()
         {
@@ -222,31 +166,29 @@ namespace EWC.CustomWeapon
 
             if (data == null)
             {
-                data = IsGun ? CustomWeaponManager.GetCustomGunData(Weapon.ArchetypeID) : CustomWeaponManager.GetCustomMeleeData(Weapon.MeleeArchetypeData.persistentID);
-                if (data == null) return;
+               if (!CustomDataManager.TryGetCustomData(Weapon, out data))
+                    return;
             }
 
             _propertyController.Init(this, data.Properties.Clone());
             DebuffIDs = data.DebuffIDs.IDs;
-            DebuffIDs.Add(0);
-            Invoke(StaticContext<WeaponInitContext>.Instance);
-            if (IsGun && GunArchetype!.m_owner != null)
-                OwnerInit();
+            DebuffIDs.Add(DebuffManager.DefaultGroup);
+            InvokeAll(StaticContext<WeaponCreatedContext>.Instance);
+            Invoke(new WeaponInitContext(Owner, Weapon));
         }
 
-        public void Clear()
+        public virtual void Clear()
         {
+            if (_destroyed)
+            {
+                foreach (var callback in _timeSensitiveCallbacks)
+                    callback.Cancel();
+                _timeSensitiveCallbacks.Clear();
+            }
             Invoke(StaticContext<WeaponClearContext>.Instance);
-            SpreadController?.Reset();
             _propertyController.Clear();
             DebuffIDs = DebuffGroup.DefaultGroupList;
-            _ownerPtr = IntPtr.Zero;
             enabled = false;
-            CurrentFireRate = BaseFireRate;
-            CurrentBurstDelay = _burstDelay;
-            CurrentCooldownDelay = _cooldownDelay;
-            if (!_destroyed)
-                Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 
         [HideFromIl2Cpp]
@@ -283,81 +225,6 @@ namespace EWC.CustomWeapon
             }
             else
                 callback.Start(checkEnd, refresh);
-        }
-
-        public void StoreCancelShot()
-        {
-            if (!CancelShot)
-            {
-                Invoke(StaticContext<WeaponFireCanceledContext>.Instance);
-                CancelShot = true;
-            }
-        }
-
-        public bool ResetShotIfCancel(BulletWeaponArchetype archetype)
-        {
-            if (CancelShot)
-            {
-                archetype.m_fireHeld = false;
-                archetype.m_nextShotTimer = _lastShotTimer;
-                archetype.m_nextBurstTimer = _lastBurstTimer;
-                CurrentFireRate = _lastFireRate;
-                Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
-                if (TryGetBurstArchetype(out var arch))
-                    arch!.m_burstCurrentCount = 0;
-                return true;
-            }
-            return false;
-        }
-
-        public void RefreshArchetypeCache()
-        {
-            if (IsGun)
-            {
-                BaseFireRate = 1f / Math.Max(GunArchetype!.ShotDelay(), CustomWeaponData.MinShotDelay);
-                _burstDelay = GunArchetype!.BurstDelay();
-                _cooldownDelay = GunArchetype!.CooldownDelay();
-                UpdateStoredFireRate();
-            }
-        }
-
-        public void RefreshSoundDelay()
-        {
-            Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
-        }
-
-        public void NotifyShotFired() => _lastFireTime = Clock.Time;
-
-        public void UpdateStoredFireRate()
-        {
-            _lastFireRate = CurrentFireRate;
-            _lastShotTimer = GunArchetype!.m_nextShotTimer;
-            _lastBurstTimer = GunArchetype!.m_nextBurstTimer;
-
-            float newFireRate = Invoke(new WeaponFireRateContext(BaseFireRate)).Value;
-
-            if (CurrentFireRate != newFireRate)
-            {
-                CurrentFireRate = Math.Clamp(newFireRate, 0.001f, CustomWeaponData.MaxFireRate);
-                CurrentBurstDelay = _burstDelay * BaseFireRate / CurrentFireRate;
-                CurrentCooldownDelay = _cooldownDelay * BaseFireRate / CurrentFireRate;
-                RefreshSoundDelay();
-            }
-        }
-
-        public void ModifyFireRate()
-        {
-            if (IsLocal)
-            {
-                GunArchetype!.m_nextShotTimer = _lastFireTime + 1f / CurrentFireRate;
-                if (GunArchetype.BurstIsDone())
-                    GunArchetype.m_nextBurstTimer = GunArchetype.HasCooldown ? _lastFireTime + CurrentCooldownDelay : Math.Max(_lastFireTime + CurrentBurstDelay, GunArchetype.m_nextShotTimer);
-                API.FireRateAPI.FireCooldownSetCallback(Gun!, 1f / CurrentFireRate, CurrentBurstDelay, CurrentCooldownDelay);
-            }
-            else
-            {
-                Gun!.m_lastFireTime = _lastFireTime + 1f / CurrentFireRate - ArchetypeData.ShotDelay;
-            }
         }
     }
 }

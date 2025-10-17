@@ -11,6 +11,7 @@ using System.Linq;
 using GTFuckingXP.Enums;
 using GTFuckingXP.Information.Level;
 using System.Runtime.CompilerServices;
+using EWC.CustomWeapon.Enums;
 
 namespace EWC.Dependencies
 {
@@ -28,11 +29,11 @@ namespace EWC.Dependencies
             HasEXP = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
         }
 
-        public static float GetAmmoMod() => HasEXP ? EXPGetAmmoMod() : 1f;
+        public static float GetAmmoMod(bool local) => local && HasEXP ? EXPGetAmmoMod() : 1f;
 
         public static float GetExplosionResistanceMod(PlayerAgent player) => HasEXP ? EXPGetExplosionResistanceMod(player) : 1f;
 
-        public static float GetDamageMod(bool isGun) => HasEXP && PlayerManager.HasLocalPlayerAgent() ? EXPGetDamageMod(isGun) : 1f;
+        public static float GetDamageMod(bool local, WeaponType type) => local && HasEXP && PlayerManager.HasLocalPlayerAgent() ? EXPGetDamageMod(type) : 1f;
 
         public static float GetHealthRegenMod(PlayerAgent player) => HasEXP ? EXPGetHealthRegenMod(player) : 1f;
 
@@ -46,7 +47,14 @@ namespace EWC.Dependencies
         private static float EXPGetAmmoMod() => CacheApiWrapper.GetActiveLevel().CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.AmmoEfficiency)?.Value ?? 1f;
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static float EXPGetDamageMod(bool isGun) => isGun ? CacheApiWrapper.GetActiveLevel().WeaponDamageMultiplier : CacheApiWrapper.GetActiveLevel().MeleeDamageMultiplier;
+        private static float EXPGetDamageMod(WeaponType type)
+        {
+            if (type.HasFlag(WeaponType.BulletWeapon))
+                return CacheApiWrapper.GetActiveLevel().WeaponDamageMultiplier;
+            else if (type.HasFlag(WeaponType.Melee))
+                return CacheApiWrapper.GetActiveLevel().MeleeDamageMultiplier;
+            return 1f;
+        }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static float EXPGetExplosionResistanceMod(PlayerAgent player)
@@ -94,10 +102,17 @@ namespace EWC.Dependencies
                 distribution.LastHitDealtBy = source;
                 distribution.lastHitType = LastHitType.ShootyWeapon;
 
-                if (CacheApi.TryGetInformation<List<Action<EnemyKillDistribution>>>(EnemyKillKey, out var callBackList, CacheKey, false))
+                try
                 {
-                    foreach (var callBack in callBackList)
-                        callBack.Invoke(distribution);
+                    if (CacheApi.TryGetInformation<List<Action<EnemyKillDistribution>>>(EnemyKillKey, out var callBackList, CacheKey, false))
+                    {
+                        foreach (var callBack in callBackList)
+                            callBack.Invoke(distribution);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    EWCLogger.Error($"Got error running EXP kill callbacks! {ex.Message}\n{ex.StackTrace}");
                 }
             }
         }

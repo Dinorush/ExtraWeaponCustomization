@@ -10,9 +10,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class HealthShotMod :
         Effect,
-        IGunProperty,
-        IMeleeProperty,
-        IWeaponProperty<WeaponOwnerSetContext>,
+        IWeaponProperty<WeaponCreatedContext>,
         IWeaponProperty<WeaponStatContext>,
         IWeaponProperty<WeaponShotInitContext>,
         IWeaponProperty<WeaponShotGroupInitContext>
@@ -43,9 +41,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         public override void TriggerReset() { }
         public override void TriggerApply(List<TriggerContext> contexts) { }
 
-        public void Invoke(WeaponOwnerSetContext context)
+        public void Invoke(WeaponCreatedContext context)
         {
-            _damBase = CWC.Weapon.Owner.Damage;
+            _damBase = CWC.Owner.Player.Damage;
         }
 
         public void Invoke(WeaponShotInitContext context)

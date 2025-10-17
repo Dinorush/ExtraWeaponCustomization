@@ -10,9 +10,7 @@ using System.Text.Json;
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class BioPing :
-        Effect,
-        IGunProperty,
-        IMeleeProperty
+        Effect
     {
         public float CooldownPerTarget { get; private set; } = 0f;
 
@@ -22,7 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public BioPing() : base()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.PositionalTriggers);
+            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.HitTriggers);
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)

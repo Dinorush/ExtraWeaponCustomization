@@ -16,6 +16,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             ShrapnelHitManager.Internal_ReceiveShrapnelDamage(
                 enemy,
                 player,
+                (Enums.OwnerType)packet.ownerType,
                 packet.limbID,
                 packet.damageLimb,
                 packet.localPosition.Get(10f),

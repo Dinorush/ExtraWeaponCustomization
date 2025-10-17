@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.Enums;
+﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using System.Collections.Generic;
@@ -19,7 +20,9 @@ namespace EWC.CustomWeapon.CustomShot
         public float OrigDamage { get; private set; }
         public float OrigPrecision { get; private set; }
         public float OrigStagger { get; private set; }
-        public float XpMod { get; private set; }
+        public float ExternalDamageMod { get; private set; }
+        public float InnateDamageMod { get; private set; }
+        public float InnateStaggerMod { get; private set; }
 
         public ShotInfoMod Mod { get; set; }
         public ShotInfoMod GroupMod { get; set; }
@@ -35,18 +38,36 @@ namespace EWC.CustomWeapon.CustomShot
             }
         }
 
-        public ShotInfo() : this(0, 0, 0, true) { }
-        public ShotInfo(float origDamage, float origPrecision, float origStagger, bool isGun)
+        public ShotInfo() : this(0, 0, 0, false, WeaponType.Any) { }
+        public ShotInfo(float origDamage, float origPrecision, float origStagger, bool local, WeaponType type)
         {
             ID = ShotManager.NextID;
             _hits = new(5);
 
             Mod = new();
+            InnateDamageMod = ShotManager.CurrentDamageMod;
+            InnateStaggerMod = ShotManager.CurrentStaggerMod;
+            ExternalDamageMod = ShotManager.CurrentExternalDamageMod;
             GroupMod = ShotManager.CurrentGroupMod;
-            OrigDamage = origDamage;
+            OrigDamage = origDamage * InnateDamageMod;
             OrigPrecision = origPrecision;
-            OrigStagger = origStagger;
-            XpMod = EXPAPIWrapper.GetDamageMod(isGun);
+            OrigStagger = origStagger * InnateStaggerMod;
+            _state = new(this);
+        }
+
+        public ShotInfo(CustomWeaponComponent cwc, bool isTagged = false)
+        {
+            ID = ShotManager.NextID;
+            _hits = new(5);
+
+            RefreshMods(cwc, isTagged);
+            if (!cwc.Weapon.Type.HasFlag(WeaponType.Melee))
+            {
+                var archData = ((IArchComp)cwc.Weapon).ArchetypeData;
+                OrigDamage = archData.Damage * InnateDamageMod;
+                OrigPrecision = archData.PrecisionDamageMulti;
+                OrigStagger = archData.StaggerDamageMulti * InnateStaggerMod;
+            }
             _state = new(this);
         }
 
@@ -61,7 +82,6 @@ namespace EWC.CustomWeapon.CustomShot
                 OrigDamage = 0;
                 OrigPrecision = 0;
                 OrigStagger = 0;
-                XpMod = copy.XpMod;
                 _state = new(this);
             }
             else
@@ -71,30 +91,22 @@ namespace EWC.CustomWeapon.CustomShot
                 OrigDamage = copy.OrigDamage;
                 OrigPrecision = copy.OrigPrecision;
                 OrigStagger = copy.OrigStagger;
-                XpMod = copy.XpMod;
                 _state = new(this);
             }
         }
 
-        public void Reset(float origDamage, float origPrecision, float origStagger, bool isGun)
+        public void Reset(float origDamage, float origPrecision, float origStagger, CustomWeaponComponent cwc, ShotInfo? parent = null, bool useParent = true)
         {
-            OrigDamage = origDamage;
-            OrigPrecision = origPrecision;
-            OrigStagger = origStagger;
-            XpMod = EXPAPIWrapper.GetDamageMod(isGun);
+            if (parent != null)
+                PullMods(parent, useParent);
+            else
+                RefreshMods(cwc);
 
-            GroupMod = ShotManager.CurrentGroupMod;
+            OrigDamage = origDamage * InnateDamageMod;
+            OrigPrecision = origPrecision * InnateStaggerMod;
+            OrigStagger = origStagger;
             ID = ShotManager.NextID;
             _hits.Clear();
-        }
-
-        public void NewShot(CustomWeaponComponent cwc)
-        {
-            Mod = new();
-            XpMod = EXPAPIWrapper.GetDamageMod(cwc.IsGun);
-            cwc.Invoke(new WeaponShotInitContext(Mod));
-            ShotManager.AdvanceGroupModIfOld(cwc);
-            GroupMod = ShotManager.CurrentGroupMod;
         }
 
         public void AddHit(DamageType type) => _hits.Add(type);
@@ -106,10 +118,26 @@ namespace EWC.CustomWeapon.CustomShot
 
         [MemberNotNull(nameof(Mod))]
         [MemberNotNull(nameof(GroupMod))]
-        public void PullMods(ShotInfo info, bool useOriginal = true)
+        private void PullMods(ShotInfo info, bool useOriginal = true)
         {
             Mod = useOriginal ? info.Mod : new(info.Mod);
             GroupMod = useOriginal ? info.GroupMod : new(info.GroupMod);
+            ExternalDamageMod = info.ExternalDamageMod;
+            InnateDamageMod = info.InnateDamageMod;
+            InnateStaggerMod = info.InnateStaggerMod;
+        }
+
+        [MemberNotNull(nameof(Mod))]
+        [MemberNotNull(nameof(GroupMod))]
+        private void RefreshMods(CustomWeaponComponent cwc, bool isTagged = false)
+        {
+            ShotManager.AdvanceGroupModIfOld(cwc, isTagged);
+            Mod = new();
+            GroupMod = ShotManager.CurrentGroupMod;
+            InnateDamageMod = ShotManager.CurrentDamageMod;
+            InnateStaggerMod = ShotManager.CurrentStaggerMod;
+            ExternalDamageMod = ShotManager.CurrentExternalDamageMod;
+            cwc.Invoke(new WeaponShotInitContext(Mod));
         }
 
         // Snapshot of ShotInfo to capture its current state
@@ -117,7 +145,9 @@ namespace EWC.CustomWeapon.CustomShot
         public class Const
         {
             public readonly ShotInfo Orig;
-            public readonly float XpMod;
+            public readonly float ExternalDamageMod;
+            public readonly float InnateDamageMod;
+            public readonly float InnateStaggerMod;
             public readonly uint ID;
             private readonly DamageType[] _hits;
             public readonly uint Hits;
@@ -128,7 +158,9 @@ namespace EWC.CustomWeapon.CustomShot
             public Const(ShotInfo info)
             {
                 Orig = info;
-                XpMod = info.XpMod;
+                ExternalDamageMod = info.ExternalDamageMod;
+                InnateDamageMod = info.InnateDamageMod;
+                InnateStaggerMod = info.InnateStaggerMod;
                 ID = info.ID;
                 _hits = info._hits.ToArray();
                 Hits = (uint)_hits.Length;

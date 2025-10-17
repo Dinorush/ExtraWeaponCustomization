@@ -5,7 +5,7 @@ using Enemies;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon.WeaponContext.Contexts.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using SNetwork;
@@ -19,8 +19,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class Noise :
         Effect,
-        IGunProperty,
-        IMeleeProperty,
         IWeaponProperty<WeaponStealthUpdateContext>,
         ITriggerCallbackDirSync
     {
@@ -53,6 +51,13 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
 
+        public override bool ValidProperty()
+        {
+            if (LocalSoundOnly && !CWC.Owner.IsType(Enums.OwnerType.Local))
+                return false;
+            return base.ValidProperty();
+        }
+
         public override bool ShouldRegister(Type contextType)
         {
             if (contextType == typeof(WeaponStealthUpdateContext)) return !LocalSoundOnly && !UseNoiseSystem && SNet.IsMaster;
@@ -64,7 +69,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             foreach (var trigger in triggerList)
             {
-                Vector3 position = !FollowUser && trigger.context is WeaponHitContextBase hitContext ? hitContext.Position : CWC.Weapon.Owner.EyePosition;
+                Vector3 position = !FollowUser && trigger.context is WeaponHitContextBase hitContext ? hitContext.Position : CWC.Owner.FirePos;
                 if (LocalSoundOnly)
                 {
                     PostSound(position);
@@ -133,7 +138,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             if (!SNet.IsMaster) return;
 
-            var node = CourseNodeUtil.GetCourseNode(position, CWC.Weapon.Owner.DimensionIndex);
+            var node = CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex);
             bool runAlert = AlertRadius > WakeUpRadius;
             bool runFakeAlert = FakeAlertRadius > AlertRadius && FakeAlertRadius > WakeUpRadius;
 
@@ -203,7 +208,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (!EnemyCanHear(position, node, enemy))
                     continue;
 
-                enemy.AI.m_locomotion.Hibernate.Heartbeat(0.5f, CWC.Weapon.Owner.Position);
+                enemy.AI.m_locomotion.Hibernate.Heartbeat(0.5f, CWC.Owner.FirePos);
             }
         }
 
@@ -244,8 +249,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 raycastFirstNode = false,
                 type = NM_NoiseType.Detectable
             };
-            noiseData.noiseMaker.Set(CWC.Weapon.Owner);
-            noiseData.node.Set(CourseNodeUtil.GetCourseNode(position, CWC.Weapon.Owner.DimensionIndex));
+            noiseData.noiseMaker.Set(CWC.Owner.Player);
+            noiseData.node.Set(CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex));
 
             if (SNet.IsMaster)
                 NoiseManager.ReceiveNoise(noiseData);
