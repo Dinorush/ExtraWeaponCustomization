@@ -6,6 +6,7 @@ using EWC.Attributes;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using Player;
@@ -25,7 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             _sync.Setup();
         }
 
-        public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, float staggerMulti, bool bypassTumor, float backstabMulti, int ticks, ShotInfo shotInfo, DamageOverTime dotBase)
+        public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, float staggerMulti, bool bypassTumor, float backstabMulti, float origBackstabMulti, int ticks, ShotInfo shotInfo, DamageOverTime dotBase)
         {
             if (damage <= 0) return;
 
@@ -40,7 +41,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     damageable.DamageTargetPos,
                     agent.Position - damageable.DamageTargetPos,
                     damageable.DamageTargetPos - agent.Position,
-                    backstabMulti,
+                    1f,
+                    1f,
                     falloff,
                     shotInfo,
                     DamageType.DOT
@@ -60,6 +62,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     damageable.DamageTargetPos,
                     Vector3.up,
                     Vector3.up,
+                    1f,
                     1f,
                     falloff,
                     shotInfo,
@@ -81,6 +84,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 agent.Position - limb.DamageTargetPos,
                 limb.DamageTargetPos - agent.Position,
                 backstabMulti,
+                origBackstabMulti,
                 falloff,
                 shotInfo,
                 DamageType.DOT
@@ -101,6 +105,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = dotBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
+            DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damageable, dotBase.CWC.DebuffIDs);
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMulti, 1f) : 1f;
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
 

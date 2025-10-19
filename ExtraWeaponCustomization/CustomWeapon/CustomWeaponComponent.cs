@@ -24,7 +24,7 @@ namespace EWC.CustomWeapon
     public class CustomWeaponComponent : MonoBehaviour
     {
         public readonly IWeaponComp Weapon;
-        public readonly IOwnerComp Owner;
+        public IOwnerComp Owner { get; private set; }
 
         private readonly PropertyController _propertyController;
 
@@ -190,6 +190,24 @@ namespace EWC.CustomWeapon
             _propertyController.Clear();
             DebuffIDs = DebuffGroup.DefaultGroupList;
             enabled = false;
+        }
+
+        public void ResetOwner()
+        {
+            var item = Weapon.Component;
+            var owner = item.Owner;
+            if (owner == null)
+            {
+                EWCLogger.Error($"Failed to reset owner for {Weapon.Component.name}, owner is null!");
+                return;
+            }
+
+            if (Owner.IsType(Enums.OwnerType.Local))
+                Owner = new LocalOwnerComp(owner, item.MuzzleAlign);
+            else if (Owner.IsType(Enums.OwnerType.Sentry))
+                Owner = new SentryOwnerComp(((SentryGunComp)Weapon).Value);
+            else
+                Owner = new SyncedOwnerComp(owner, item.MuzzleAlign);
         }
 
         [HideFromIl2Cpp]

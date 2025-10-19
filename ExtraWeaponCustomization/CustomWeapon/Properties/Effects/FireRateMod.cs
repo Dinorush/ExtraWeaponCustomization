@@ -37,6 +37,12 @@ namespace EWC.CustomWeapon.Properties.Effects
         public void TriggerResetSync()
         {
             _triggerStack.Clear();
+
+            if (ForceUpdate && CWC.Weapon.IsType(Enums.WeaponType.Gun))
+            {
+                CGC.UpdateStoredFireRate();
+                CGC.ModifyFireRate();
+            }
         }
 
         public void TriggerApplySync(float num)

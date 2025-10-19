@@ -28,14 +28,25 @@ namespace EWC.Patches.Enemy
         [HarmonyPrefix]
         private static void Pre_Damage(Dam_EnemyDamageLimb __instance)
         {
-            if (_cachedCC == null || __instance.m_armorDamageMulti >= 1f) return;
+            if (__instance.m_armorDamageMulti >= 1f) return;
 
             _cachedArmor = __instance.m_armorDamageMulti;
-            
-            var armorMulti = _cachedCC.Invoke(new WeaponArmorContext(_cachedArmor)).ArmorMulti;
-            if (armorMulti < 1f && DebuffManager.TryGetArmorShredDebuff(__instance.Cast<IDamageable>(), _cachedCWC!.DebuffIDs, out var armorEffect))
-                armorMulti = 1f - (1f - armorMulti) * Math.Clamp(armorEffect, 0, 1);
-            __instance.m_armorDamageMulti = armorMulti;
+            float armorMulti;
+            if (_cachedCC != null)
+            {
+                armorMulti = _cachedCC.Invoke(new WeaponArmorContext(_cachedArmor)).ArmorMulti;
+                DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, __instance.Cast<IDamageable>(), _cachedCWC!.DebuffIDs);
+            }
+            else
+            {
+                armorMulti = _cachedArmor;
+                DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, __instance.Cast<IDamageable>(), DebuffManager.DefaultGroupSet);
+            }
+
+            if (_cachedArmor == armorMulti)
+                _cachedArmor = -1;
+            else
+                __instance.m_armorDamageMulti = armorMulti;
         }
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.ShowHitIndicator))]
@@ -53,7 +64,6 @@ namespace EWC.Patches.Enemy
         [HarmonyPostfix]
         private static void Post_Damage(Dam_EnemyDamageLimb __instance)
         {
-            if (_cachedCC == null) return;
             _cachedCC = null;
             _cachedCWC = null;
             

@@ -16,6 +16,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
             foreach (var group in Groups.Values)
                 group.Reset();
             NeedRecompute = false;
+            OnReset();
         }
 
         protected bool GroupsMatch(HashSet<uint> groups)

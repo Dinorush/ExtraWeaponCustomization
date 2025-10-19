@@ -55,6 +55,7 @@ namespace EWC.CustomWeapon
 
         public override void Clear()
         {
+            base.Clear();
             CurrentAttackSpeed = 1f;
             if (!_destroyed)
                 SetMeleeAttackTimings();

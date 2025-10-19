@@ -6,6 +6,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
 {
     public sealed class ProjectileHomingSettings
     {
+        public bool UseSteadyStrength { get; private set; } = false;
+
         public float InitialHomingStrength { get; private set; } = 0f;
         public float InitialHomingDuration { get; private set; } = 0f;
 
@@ -33,6 +35,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         public void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
+            writer.WriteBoolean(nameof(UseSteadyStrength), UseSteadyStrength);
             writer.WriteNumber(nameof(InitialHomingStrength), InitialHomingStrength);
             writer.WriteNumber(nameof(InitialHomingDuration), InitialHomingDuration);
             writer.WriteNumber(nameof(HomingStrength), HomingStrength);
@@ -58,6 +61,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         {
             switch (propertyName)
             {
+                case "usesteadystrength":
+                case "steadystrength":
+                    UseSteadyStrength = reader.GetBoolean();
+                    break;
+
                 case "initialhomingstrength":
                 case "initialstrength":
                     InitialHomingStrength = reader.GetSingle();

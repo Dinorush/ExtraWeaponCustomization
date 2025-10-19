@@ -30,13 +30,15 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public uint Count { get; private set; } = 0;
         public uint ArchetypeID { get; private set; } = 0;
+        public float MaxRange { get; private set; } = 0;
+        public float MaxAngle { get; private set; } = 180;
         public float Damage { get; private set; } = 0;
         public Vector2 DamageFalloff { get; private set; } = new Vector2(100, 100);
         public float PrecisionDamageMulti { get; private set; } = 1f;
         public float StaggerDamageMulti { get; private set; } = 1f;
         public float FriendlyDamageMulti { get; private set; } = 1f;
         public int PierceLimit { get; private set; } = 1;
-        public float MaxRange { get; private set; } = 0;
+        public FireSetting FireFrom { get; private set; } = FireSetting.HitNormal;
         public ShrapnelFallback WallHandling { get; private set; } = ShrapnelFallback.Avoid;
         public float WallHandlingDist { get; private set; } = 1f;
         public bool IgnoreFalloff { get; private set; } = false;
@@ -52,6 +54,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool HitTriggerTarget { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
         public bool ApplyAttackCooldown { get; private set; } = true;
+        public bool ApplyOnUser { get; private set; } = false;
 
         private const float WallHitBuffer = 0.03f;
 
@@ -102,11 +105,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                 IntPtr ignoreBase = IntPtr.Zero;
                 float falloff = 1f;
                 Vector3 position;
+                Vector3 dir = Vector3.zero;
                 Vector3 normal = Vector3.zero;
-                if (tContext.context is IPositionContext hitContext)
+                if (!ApplyOnUser && tContext.context is IPositionContext hitContext)
                 {
                     info = hitContext.ShotInfo.Orig;
                     position = hitContext.Position;
+                    dir = hitContext.Direction;
                     falloff = hitContext.Falloff;
                     if (hitContext is WeaponHitDamageableContextBase damContext)
                     {
@@ -130,7 +135,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                 if (!CWC.HasTrait<Traits.Projectile>())
                     TriggerManager.SendInstance(this, position, normal, tContext.triggerAmt);
-                DoShrapnel(position, normal, amount, falloff, info, ignoreBase);
+                DoShrapnel(position, dir, normal, amount, falloff, info, ignoreBase);
             }
         }
 
@@ -148,11 +153,15 @@ namespace EWC.CustomWeapon.Properties.Effects
                 owner = CWC.Owner.Player,
                 damage = CGC.Gun.ArchetypeData.Damage
             };
-            var ray = new Ray(position, Vector3.zero);
+            var ray = new Ray(position, normal);
 
             for (int i = 0; i < amount; i++)
             {
-                ray.direction = UnityEngine.Random.onUnitSphere;
+                if (MaxAngle < 180 && ray.direction != Vector3.zero)
+                    CustomShotComponent.CalcRayDir(ref ray, 0, 0, MaxAngle);
+                else
+                    ray.direction = UnityEngine.Random.onUnitSphere;
+
                 if (normal != Vector3.zero && Vector3.Dot(ray.direction, normal) < 0)
                     ray.direction = -ray.direction;
                 hitData.fireDir = ray.direction;
@@ -160,9 +169,9 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
         }
 
-        private void DoShrapnel(Vector3 position, Vector3 normal, int amount, float falloff, ShotInfo? shotInfo = null, IntPtr ignoreEnt = default)
+        private void DoShrapnel(Vector3 position, Vector3 dir, Vector3 normal, int amount, float falloff, ShotInfo? shotInfo = null, IntPtr ignoreEnt = default)
         {
-            var ray = new Ray(position, Vector3.zero);
+            var ray = new Ray(position, normal);
 
             var inventorySlot = CWC.Weapon.InventorySlot;
             for (int i = 0; i < amount; i++)
@@ -178,9 +187,23 @@ namespace EWC.CustomWeapon.Properties.Effects
                 hitData.maxRayDist = MaxRange;
                 hitData.RayHit = default;
 
-                ray.direction = UnityEngine.Random.onUnitSphere;
+                if (MaxAngle < 180 && normal != Vector3.zero)
+                {
+                    if (FireFrom == FireSetting.HitReflect)
+                        ray.direction = Vector3.Reflect(dir, normal);
+
+                    CustomShotComponent.CalcRayDir(ref ray, 0, 0, MaxAngle);
+                }
+                else
+                    ray.direction = UnityEngine.Random.onUnitSphere;
+
                 if (normal != Vector3.zero && Vector3.Dot(ray.direction, normal) < 0)
-                    ray.direction = -ray.direction;
+                {
+                    if (FireFrom == FireSetting.HitReflect)
+                        ray.direction = Vector3.Reflect(ray.direction, normal);
+                    else
+                        ray.direction = -ray.direction;
+                }
 
                 switch (WallHandling)
                 {
@@ -273,6 +296,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(Count), Count);
             writer.WriteNumber(nameof(MaxRange), MaxRange);
+            writer.WriteNumber(nameof(MaxAngle), MaxAngle);
             writer.WriteNumber(nameof(ArchetypeID), ArchetypeID);
             writer.WriteNumber(nameof(Damage), Damage);
             SerializeFalloff(writer);
@@ -295,6 +319,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
             writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
+            writer.WriteBoolean(nameof(ApplyOnUser), ApplyOnUser);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -319,6 +344,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "maxrange":
                 case "range":
                     MaxRange = reader.GetSingle();
+                    break;
+                case "maxangle":
+                case "angle":
+                    MaxAngle = reader.GetSingle();
                     break;
                 case "archetypeid":
                 case "archetype":
@@ -353,6 +382,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "piercingdamagecountlimit":
                 case "pierce":
                     PierceLimit = reader.GetInt32();
+                    break;
+                case "firefrom":
+                    FireFrom = reader.GetString().ToEnum(FireSetting.HitNormal);
+                    if (FireFrom != FireSetting.HitNormal && FireFrom != FireSetting.HitReflect)
+                        FireFrom = FireSetting.HitNormal;
                     break;
                 case "wallhandling":
                     WallHandling = reader.GetString().ToEnum(ShrapnelFallback.None);
@@ -412,6 +446,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "applyattackcooldowns":
                 case "applyattackcooldown":
                     ApplyAttackCooldown = reader.GetBoolean();
+                    break;
+                case "applyonuser":
+                    ApplyOnUser = reader.GetBoolean();
                     break;
             }
         }

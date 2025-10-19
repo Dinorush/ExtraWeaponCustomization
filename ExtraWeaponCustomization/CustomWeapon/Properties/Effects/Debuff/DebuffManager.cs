@@ -2,6 +2,7 @@
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Structs;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
     public static class DebuffManager
     {
         private readonly static Dictionary<BaseDamageableWrapper, DebuffShotHolder[]> _shotMods = new();
-        private readonly static Dictionary<BaseDamageableWrapper, DebuffBasicHolder> _armorShreds = new();
+        private readonly static Dictionary<BaseDamageableWrapper, DebuffStackHolder> _armorShreds = new();
 
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
@@ -55,7 +56,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
             return false;
         }
 
-        public static DebuffModifierBase AddArmorShredDebuff(IDamageable damageable, float mod, uint group)
+        public static DebuffModifierBase AddArmorShredDebuff(IDamageable damageable, float mod, StackType layer, uint group)
         {
             if (!_armorShreds.TryGetValue(TempWrapper.Set(damageable), out var armorPierces))
             {
@@ -71,18 +72,34 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
                 _armorShreds.Add(new BaseDamageableWrapper(TempWrapper), armorPierces = new());
             }
 
-            return armorPierces.AddModifier(mod, group);
+            return armorPierces.AddModifier(mod, layer, group);
         }
 
         public static bool TryGetArmorShredDebuff(IDamageable damageable, HashSet<uint> groups, out float mod)
         {
             if (_armorShreds.TryGetValue(TempWrapper.Set(damageable), out var shotMods))
             {
-                mod = shotMods.GetMod(groups);
+                mod = Math.Max(0f, shotMods.GetMod(groups).Value - 1);
                 return true;
             }
-            mod = 1f;
+            mod = 0f;
             return false;
+        }
+
+        public static void ApplyArmorShredDebuff(ref float armorMulti, float mod)
+        {
+            if (armorMulti >= 1) // If armor was already pierced
+                armorMulti = Math.Max(armorMulti, mod);
+            else if (mod < 1) // If partial shred
+                armorMulti += (1f - armorMulti) * mod;
+            else // If shred exceeds armor
+                armorMulti = mod;
+        }
+
+        public static void GetAndApplyArmorShredDebuff(ref float armorMulti, IDamageable damageable, HashSet<uint> groups)
+        {
+            if (TryGetArmorShredDebuff(damageable, groups, out var mod))
+                ApplyArmorShredDebuff(ref armorMulti, mod);
         }
 
         public const uint DefaultGroup = 0u;

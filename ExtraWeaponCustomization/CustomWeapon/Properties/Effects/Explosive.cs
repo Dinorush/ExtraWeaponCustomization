@@ -35,6 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageLocks { get; private set; } = true;
         public bool HitClosestFirst { get; private set; } = false;
         public bool ApplyAttackCooldown { get; private set; } = true;
+        public bool ApplyOnUser { get; private set; } = false;
         public uint SoundID { get; private set; } = EVENTS.STICKYMINEEXPLODE;
         public bool EnableMineFX { get; private set; } = false;
         public Color GlowColor { get; private set; } = new(1, 0.2f, 0, 1);
@@ -63,7 +64,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             foreach (TriggerContext tContext in triggerList)
             {
                 CacheBackstab = 0f;
-                if(tContext.context is IPositionContext hitContext)
+                if(!ApplyOnUser && tContext.context is IPositionContext hitContext)
                 {
                     Vector3 position = hitContext.Position;
                     if (hitContext is WeaponHitDamageableContextBase damContext)
@@ -109,6 +110,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             writer.WriteBoolean(nameof(HitClosestFirst), HitClosestFirst);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
+            writer.WriteBoolean(nameof(ApplyOnUser), ApplyOnUser);
             SerializeTrigger(writer);
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WriteBoolean(nameof(EnableMineFX), EnableMineFX);
@@ -205,6 +207,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "applyattackcooldowns":
                 case "applyattackcooldown":
                     ApplyAttackCooldown = reader.GetBoolean();
+                    break;
+                case "applyonuser":
+                    ApplyOnUser = reader.GetBoolean();
                     break;
                 case "soundid":
                 case "sound":

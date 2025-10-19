@@ -13,7 +13,7 @@ using System.Runtime.CompilerServices;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.0.5")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.1.0")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MSAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
@@ -34,6 +34,7 @@ internal sealed class EntryPoint : BasePlugin
     public static bool Loaded { get; private set; } = false;
 
     private IEnumerable<MethodInfo> _cleanupCallbacks = null!;
+    private IEnumerable<MethodInfo> _checkpointCleanupCallbacks = null!;
     private IEnumerable<MethodInfo> _checkpointCallbacks = null!;
     private IEnumerable<MethodInfo> _enterCallbacks = null!;
     private IEnumerable<MethodInfo> _buildDoneCallbacks = null!;
@@ -53,6 +54,7 @@ internal sealed class EntryPoint : BasePlugin
         CacheFrequentCallbacks();
         InvokeCallbacks<InvokeOnLoadAttribute>();
 
+        Patches.SNet.SyncManagerPatches.OnCheckpointReload += RunFrequentCallback(_checkpointCleanupCallbacks);
         Patches.SNet.SyncManagerPatches.OnCheckpointReload += RunFrequentCallback(_checkpointCallbacks);
         LevelAPI.OnLevelCleanup += RunFrequentCallback(_cleanupCallbacks);
         LevelAPI.OnEnterLevel += RunFrequentCallback(_enterCallbacks);
@@ -87,9 +89,13 @@ internal sealed class EntryPoint : BasePlugin
 
         _cleanupCallbacks = from pair in cleanups select pair.Method;
 
-        _checkpointCallbacks = from pair in cleanups
+        _checkpointCleanupCallbacks = from pair in cleanups
                                where pair.Attribute.OnCheckpoint
                                select pair.Method;
+
+        _checkpointCallbacks = from method in methods
+                               where method.GetCustomAttribute<InvokeOnCheckpointAttribute>() != null
+                               select method;
 
         _enterCallbacks = from method in methods
                           where method.GetCustomAttribute<InvokeOnEnterAttribute>() != null

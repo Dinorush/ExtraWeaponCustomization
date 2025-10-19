@@ -15,6 +15,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Base
                 hitContext.Direction,
                 hitContext.Normal,
                 hitContext.Backstab,
+                hitContext.OrigBackstab,
                 hitContext.Falloff,
                 hitContext.ShotInfo,
                 hitContext.DamageType

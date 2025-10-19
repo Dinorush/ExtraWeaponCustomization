@@ -9,7 +9,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponArmorContext>
     {
         public float Pierce { get; private set; } = 1f;
-        public PierceType Type { get; private set; } = PierceType.Pierce;
+        public PierceType Type { get; private set; } = PierceType.OverPierce;
 
         public void Invoke(WeaponArmorContext context)
         {
@@ -18,6 +18,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 PierceType.Pierce => context.ArmorMulti + (1f - context.ArmorMulti) * Pierce,
                 PierceType.Multi => context.ArmorMulti * Pierce,
                 PierceType.Override => Pierce,
+                PierceType.OverPierce => Pierce < 1f ? context.ArmorMulti + (1f - context.ArmorMulti) * Pierce : Pierce,
                 _ => context.ArmorMulti
             };
         }
@@ -40,7 +41,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                     Pierce = reader.GetSingle();
                     break;
                 case "type":
-                    Type = reader.GetString().ToEnum(PierceType.Pierce);
+                    Type = reader.GetString().ToEnum(PierceType.OverPierce);
                     break;
             }
         }
@@ -49,7 +50,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             Pierce = 0,
             Multi = 1, Multiply = Multi,
-            Override = 2
+            Override = 2,
+            OverPierce = 3
         }
     }
 }

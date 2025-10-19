@@ -3,6 +3,7 @@ using AmorLib.Utils;
 using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Dependencies;
 using EWC.Patches.Gun;
 using EWC.Utils;
 using EWC.Utils.Extensions;
@@ -405,7 +406,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             float damage = HitData.damage * HitData.falloff;
-            damageable?.BulletDamage(damage, HitData.owner, HitData.hitPos, HitData.fireDir, HitData.RayHit.normal, backstab, HitData.staggerMulti, HitData.precisionMulti);
+            if (damageable != null)
+            {
+                // EXP sentry checks won't work on projectiles
+                if (_owner.IsType(Enums.OwnerType.Sentry) && _owner.Player.IsLocallyOwned)
+                    damage /= EXPAPIWrapper.GetDamageMod(true, Enums.WeaponType.BulletWeapon);
+
+                damageable?.BulletDamage(damage, HitData.owner, HitData.hitPos, HitData.fireDir, HitData.RayHit.normal, backstab, HitData.staggerMulti, HitData.precisionMulti);
+            }
             return true;
         }
 

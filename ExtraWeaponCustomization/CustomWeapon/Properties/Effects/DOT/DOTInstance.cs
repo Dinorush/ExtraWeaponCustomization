@@ -17,6 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private readonly float _staggerMulti;
         private readonly bool _bypassTumor;
         private readonly float _backstabMulti;
+        private readonly float _origBackstabMulti;
         private readonly float _falloff;
         private readonly float _tickDelay;
         private readonly ShotInfo _shotInfo;
@@ -26,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private readonly double _expoModifier;
         private readonly double _expoDivisor;
 
-        public DOTInstance(float totalDamage, float falloff, float precision, float stagger, bool bypassTumor, float backstab, ShotInfo info, DamageOverTime dotBase)
+        public DOTInstance(float totalDamage, float falloff, float precision, float stagger, bool bypassTumor, float backstab, float origBackstab, ShotInfo info, DamageOverTime dotBase)
         {
             DotBase = dotBase;
             _totalDamage = totalDamage;
@@ -34,6 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             _staggerMulti = stagger;
             _bypassTumor = bypassTumor;
             _backstabMulti = backstab;
+            _origBackstabMulti = origBackstab;
             _falloff = falloff;
             _tickDelay = 1f / dotBase.TickRate;
             _lastTickTime = Clock.Time;
@@ -94,7 +96,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             _lastTickTime += damageTicks * _tickDelay;
             _tick += damageTicks;
 
-            DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _precisionMulti, _staggerMulti, _bypassTumor, _backstabMulti, damageTicks, _shotInfo, DotBase);
+            DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _precisionMulti, _staggerMulti, _bypassTumor, _backstabMulti, _origBackstabMulti, damageTicks, _shotInfo, DotBase);
         }
     }
 }

@@ -121,8 +121,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             float falloff = IgnoreFalloff ? 1f : context.Falloff;
             float damage = TotalDamage * triggerAmt;
             float backstabMulti = 1f;
+            float origBackstabMulti = 1f;
             if (!IgnoreBackstab)
+            {
                 backstabMulti = context.Backstab;
+                origBackstabMulti = context.OrigBackstab;
+            }
 
             float precisionMulti = PrecisionDamageMulti;
             float staggerMulti = StaggerDamageMulti;
@@ -140,7 +144,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 staggerMulti = statContext.Stagger;
             }
 
-            DOTInstance newDot = new(damage, falloff, precisionMulti, staggerMulti, statContext.BypassTumorCap, backstabMulti, info, this);
+            DOTInstance newDot = new(damage, falloff, precisionMulti, staggerMulti, statContext.BypassTumorCap, backstabMulti, origBackstabMulti, info, this);
             if (StackLimit == 0)
                 _controller.AddDOT(ref newDot, context.Damageable);
             else

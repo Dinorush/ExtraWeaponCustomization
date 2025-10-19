@@ -1,5 +1,6 @@
 ﻿using Enemies;
 using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -89,7 +90,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                         damageMod *= damContext.Backstab;
 
                     if (!IgnoreArmor)
-                        damageMod *= limb.m_armorDamageMulti;
+                    {
+                        float armorMulti = limb.m_armorDamageMulti;
+                        DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damContext.Damageable, CWC.DebuffIDs);
+                        damageMod *= armorMulti;
+                    }
 
                     FoamActionManager.FoamDirect(limb.m_base.Owner, Amount * strengthMod * sizeMod * damageMod, this);
                 }

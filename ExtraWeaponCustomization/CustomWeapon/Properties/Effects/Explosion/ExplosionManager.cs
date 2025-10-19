@@ -9,6 +9,7 @@ using EWC.Attributes;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
@@ -111,6 +112,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             float staggerMult = eBase.StaggerDamageMulti;
 
             float backstabMulti = 1f;
+            float origBackstabMulti = 1f;
             bool enemy = damageable.IsEnemy();
             Dam_EnemyDamageLimb? limb = null;
             if (enemy)
@@ -123,7 +125,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     else
                     {
                         float mod = eBase.CWC.Invoke(new WeaponBackstabContext()).Value;
-                        backstabMulti = limb.ApplyDamageFromBehindBonus(1f, position, direction).Map(1f, 2f, 1f, mod);
+                        origBackstabMulti = limb.ApplyDamageFromBehindBonus(1f, position, direction);
+                        backstabMulti = origBackstabMulti.Map(1f, 2f, 1f, mod);
                     }
                 }
             }
@@ -136,6 +139,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 direction,
                 normal,
                 backstabMulti,
+                origBackstabMulti,
                 falloffMod * distFalloff,
                 info,
                 DamageType.Explosive
@@ -211,6 +215,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
+            DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damageable, eBase.CWC.DebuffIDs);
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMult, 1f) : 1f;
             
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
@@ -261,6 +266,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             Vector3 position = localPos + target.Position;
             ProcessReceivedExplosiveDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
+            DamageSyncWrapper.RunDamageSync(target, damageLimb ? limbID : -1);
             DamageAPI.FirePostExplosiveCallbacks(damage, target, limb, source, ownerType);
         }
 

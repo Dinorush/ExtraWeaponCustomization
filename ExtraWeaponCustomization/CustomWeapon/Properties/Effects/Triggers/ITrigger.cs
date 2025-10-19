@@ -23,6 +23,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         PreHit,
         Charge,
         Damage,
+        Backstab,
         Stagger,
         Kill,
         Miss,
@@ -43,7 +44,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
     public interface ITrigger
     {
-        public static readonly TriggerName[] HitTriggers = new TriggerName[] { TriggerName.Empty, TriggerName.PreHit, TriggerName.Hit, TriggerName.Charge, TriggerName.Damage, TriggerName.Stagger };
+        public static readonly TriggerName[] HitTriggers = new TriggerName[] { TriggerName.Empty, TriggerName.PreHit, TriggerName.Hit, TriggerName.Charge, TriggerName.Damage, TriggerName.Backstab, TriggerName.Stagger };
 
         TriggerName Name { get; }
         bool StoreZeroAmount => false;
@@ -93,6 +94,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageTypes()),
                 string miss when miss.Contains("miss") => new MissTrigger(name.ToDamageTypes()),
                 string charge when charge.Contains("charge") => new ChargeTrigger(name.ToDamageTypes()),
+                string backstab when backstab.Contains("backstab") => new BackstabTrigger(name.ToDamageTypes()),
                 string stagger when stagger.Contains("stagger") || stagger.Contains("stun") => new StaggerTrigger(name.ToDamageTypes()),
                 string damage when damage.Contains("damage") => new DamageTrigger(name.ToDamageTypes()),
                 string kill when kill.Contains("kill") => new HitTrackerTrigger<WeaponPostKillContext>(TriggerName.Kill, name.ToDamageTypes()),

@@ -55,17 +55,17 @@ namespace EWC.CustomWeapon.CustomShot
             hitData.fireDir = ray.direction;
             ShotManager.VanillaFireDir = ray.direction;
             if (!CancelNormalShot)
-                Fire(ray, _owner.MuzzleAlign.position, hitData, LayerUtil.MaskFriendly);
+                Fire(ray, _owner.MuzzleAlign.position, hitData);
         }
 
-        public void FireSpread(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default)
+        public void FireSpread(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default)
         {
             CalcRayDir(ref fireRay, hitData.angOffsetX, hitData.angOffsetY, hitData.randomSpread);
             hitData.fireDir = fireRay.direction;
             Fire(fireRay, fxPos, hitData, friendlyMask, ignoreEnt);
         }
 
-        public void Fire(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default)
+        public void Fire(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default)
         {
             if (!_owner.IsType(OwnerType.Managed))
             {
@@ -83,7 +83,7 @@ namespace EWC.CustomWeapon.CustomShot
             new ShotHitbox(this, hitData, fireRay, fxPos, friendlyMask, ignoreEnt);
         }
 
-        public void FireCustom(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = 0, IntPtr ignoreEnt = default, CustomShotSettings shotSettings = default)
+        public void FireCustom(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default, CustomShotSettings shotSettings = default)
         {
             if (!_owner.IsType(OwnerType.Managed))
             {
@@ -120,7 +120,7 @@ namespace EWC.CustomWeapon.CustomShot
             BulletWeapon.s_tracerPool.AquireEffect().Play(null, fxPos, Quaternion.LookRotation(fireRay.direction));
         }
 
-        public Vector3 CalcRayDir(Vector3 fireDir, float x, float y, float spread)
+        public static Vector3 CalcRayDir(Vector3 fireDir, float x, float y, float spread)
         {
             Vector3 right = Vector3.Cross(Vector3.up, fireDir).normalized;
             Vector3 up = Vector3.Cross(right, fireDir).normalized;
@@ -138,7 +138,7 @@ namespace EWC.CustomWeapon.CustomShot
             return fireDir;
         }
 
-        public void CalcRayDir(ref Ray ray, float x, float y, float spread)
+        public static void CalcRayDir(ref Ray ray, float x, float y, float spread)
         {
             ray.direction = CalcRayDir(ray.direction, x, y, spread);
         }
@@ -192,11 +192,19 @@ namespace EWC.CustomWeapon.CustomShot
                 _hitSize = 0;
                 _hitSizeFriendly = 0;
                 _friendlySetting = SearchSetting.None;
-                _friendlyMask = friendlyMask & (LayerUtil.MaskFriendly | LayerUtil.MaskOwner);
-                if ((_friendlyMask & LayerUtil.MaskFriendly) != 0)
+                if (friendlyMask == -1)
+                {
+                    _friendlyMask = LayerUtil.MaskFriendly;
                     _friendlySetting |= SearchSetting.CheckFriendly;
-                if ((_friendlyMask & LayerUtil.MaskOwner) != 0)
-                    _friendlySetting |= SearchSetting.CheckOwner;
+                }
+                else
+                {
+                    _friendlyMask = friendlyMask & (LayerUtil.MaskFriendly | LayerUtil.MaskOwner);
+                    if ((_friendlyMask & LayerUtil.MaskFriendly) != 0)
+                        _friendlySetting |= SearchSetting.CheckFriendly;
+                    if ((_friendlyMask & LayerUtil.MaskOwner) != 0)
+                        _friendlySetting |= SearchSetting.CheckOwner;
+                }
 
                 if (shotSettings.thickBullet != null)
                 {

@@ -14,7 +14,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         protected override DebuffModifierBase AddModifier(IDamageable damageable)
         {
-            return DebuffManager.AddArmorShredDebuff(damageable, 1f, DebuffID);
+            return DebuffManager.AddArmorShredDebuff(damageable, 1f, StackLayer, DebuffID);
         }
     }
 }

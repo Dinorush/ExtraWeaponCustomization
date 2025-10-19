@@ -40,6 +40,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
 
         protected override void OnReset()
         {
+            _mod.Reset();
             _needTypeStack = 0;
             _currentType = DamageType.Any;
         }

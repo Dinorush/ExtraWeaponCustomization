@@ -122,7 +122,7 @@ namespace EWC.Patches.Gun
                     }
                 }
 
-                cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab));
+                cc.Invoke(new WeaponPreHitDamageableContext(hitData, backstab, origBackstab));
 
                 WeaponStatContext damageContext = new(hitData, cwc.DebuffIDs);
                 cc.Invoke(damageContext);
@@ -137,6 +137,7 @@ namespace EWC.Patches.Gun
                         hitData,
                         bypassCap,
                         backstab,
+                        origBackstab,
                         limb!
                     );
 

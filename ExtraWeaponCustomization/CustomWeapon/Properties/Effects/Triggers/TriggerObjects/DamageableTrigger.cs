@@ -10,6 +10,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public class DamageableTrigger<TContext> : DamageTypeTrigger<TContext> where TContext : WeaponHitDamageableContextBase
     {
+        public float MinBackstabRequired { get; set; } = 0f;
+        public float MaxBackstabRequired { get; set; } = 1f;
         public float UniqueThreshold { get; private set; } = 0f;
         public float UniqueCap { get; private set; } = 0f;
         public bool UniqueConsumeOnTrigger { get; private set; } = true;
@@ -27,6 +29,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (!base.Invoke(context, out amount)) return false;
 
             TContext tContext = (TContext) context;
+            float backstabFrac = tContext.OrigBackstab - 1;
+            if (backstabFrac < MinBackstabRequired || backstabFrac > MaxBackstabRequired)
+            {
+                amount = 0;
+                return false;
+            }
+
             amount = InvokeInternal(tContext);
             if (amount == 0f) return false;
 
@@ -63,7 +72,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _uniqueCounts?.Clear();
         }
 
-        protected override bool CloneObject => UniqueThreshold > 0;
+        protected override bool CloneObject => _uniqueCounts != null;
 
         public override ITrigger Clone()
         {
@@ -79,6 +88,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             base.DeserializeProperty(property, ref reader);
             switch (property)
             {
+                case "minbackstabrequired":
+                case "minbackstab":
+                    MinBackstabRequired = reader.GetSingle();
+                    break;
+                case "maxbackstabrequired":
+                case "maxbackstab":
+                    MaxBackstabRequired = reader.GetSingle();
+                    break;
                 case "uniquethreshold":
                     UniqueThreshold = reader.GetSingle();
                     break;

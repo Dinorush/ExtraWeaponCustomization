@@ -6,7 +6,6 @@ using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using LevelGeneration;
-using Player;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -32,14 +31,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             get => _homingAgent;
             private set
             {
-                _homingAgent = value;
-                if (_homingAgent == null)
-                {
-                    _homingLimb = null;
-                    _homingTarget = null;
-                }
+                if (_homingAgent == value) return;
 
-                // Only local homing cares about finding new limbs to target
+                _homingAgent = value;
+                _homingLimb = null;
+                _homingTarget = null;
+
+                // Only managed homing cares about finding new limbs to target
                 if (_base.IsManaged && value != null)
                 {
                     ResetWeakspotList();
@@ -137,7 +135,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 strength = (float)(_settings.HomingStrength * Math.Pow(distMod, _settings.HomingDistExponent));
             }
 
-            dir = Vector3.Slerp(dir, diff.normalized, Math.Min(strength * deltaTime, 1f));
+            if (_settings.UseSteadyStrength)
+                dir = Vector3.RotateTowards(dir, diff, (float) (strength * Math.PI / 180d * deltaTime), 0f);
+            else
+                dir = Vector3.Slerp(dir, diff.normalized, Math.Min(strength * deltaTime, 1f));
         }
 
         public void Die()
@@ -221,7 +222,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _nextSearchTime = Time.time + Math.Max(Configuration.HomingTickDelay, _settings.SearchCooldown);
             _hadTarget = false;
             HomingAgent = null;
-            _weakspotList.Clear();
             Ray ray = new(s_position, s_dir);
             SearchUtil.DupeCheckSet = _base.Hitbox.HitEnts;
             List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings.SearchRange, _settings.SearchAngle, CourseNodeUtil.GetCourseNode(s_position, _dimensionIndex), SearchSetting.IgnoreDupes);
@@ -294,7 +294,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             for (int i = _weakspotList.Count - 1; i >= 0; i--)
             {
                 Dam_EnemyDamageLimb weakspot = _weakspotList[i];
-                if (weakspot == null || !weakspot.IsDestroyed)
+                if (weakspot == null || weakspot.IsDestroyed)
                 {
                     _weakspotList.RemoveAt(i);
                     continue;
@@ -305,16 +305,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 return;
             }
 
-            if (_weakspotList.Count > 0)
-            {
-                _homingLimb = _weakspotList[0];
-                _homingTarget = _homingLimb.transform;
-            }
-            else
-            {
-                _homingTarget = _homingAgent!.AimTarget;
-                _homingLimb = null;
-            }
+            _homingTarget = _homingAgent!.AimTarget;
+            _homingLimb = null;
         }
 
         private int WeakspotCompare(Dam_EnemyDamageLimb x, Dam_EnemyDamageLimb y)

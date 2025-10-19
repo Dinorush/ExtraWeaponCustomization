@@ -5,6 +5,7 @@ using EWC.API;
 using EWC.Attributes;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
@@ -47,6 +48,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
             var damageable = hitData.damageable;
             float backstabMulti = 1f;
+            float origBackstabMulti = 1f;
             bool enemy = hitData.damageType.HasFlag(DamageType.Enemy);
             Dam_EnemyDamageLimb? limb = null;
             if (enemy)
@@ -55,13 +57,14 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 if (!shrapnel.IgnoreBackstab && shrapnel.CWC.Weapon.AllowBackstab)
                 {
                     float mod = cc.Invoke(new WeaponBackstabContext()).Value;
-                    backstabMulti = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.RayHit.point - shrapnel.CWC.Owner.FirePos).Map(1f, 2f, 1f, mod);
+                    origBackstabMulti = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.RayHit.point - shrapnel.CWC.Owner.FirePos);
+                    backstabMulti = origBackstabMulti.Map(1f, 2f, 1f, mod);
                 }
             }
 
             var oldFalloff = hitData.falloff;
             hitData.falloff = falloff;
-            var preContext = new WeaponPreHitDamageableContext(hitData, backstabMulti);
+            var preContext = new WeaponPreHitDamageableContext(hitData, backstabMulti, origBackstabMulti);
             hitData.falloff = oldFalloff;
             cc.Invoke(preContext);
 
@@ -129,6 +132,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
             bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = shrapnel.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
+            DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damageable, shrapnel.CWC.DebuffIDs);
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMult, 1f) : 1f;
 
             float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
@@ -180,6 +184,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
             Vector3 position = localPos + target.Position;
             ProcessReceivedShrapnelDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
+            DamageSyncWrapper.RunDamageSync(target, damageLimb ? limbID : -1);
             DamageAPI.FirePostShrapnelCallbacks(damage, target, limb, source, ownerType);
         }
 

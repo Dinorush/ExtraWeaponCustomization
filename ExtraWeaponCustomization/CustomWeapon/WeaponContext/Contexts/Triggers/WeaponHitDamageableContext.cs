@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         }
 
         public WeaponHitDamageableContext(HitData data)
-            : base(data, 1f)
+            : base(data, 1f, 1f)
         {
             Damage = data.damage * Falloff * data.shotInfo.ExternalDamageMod;
             var damBase = Damageable.GetBaseDamagable().TryCast<Dam_SyncedDamageBase>();
@@ -31,8 +31,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                 DamageClamped = Math.Min(Damage, DamageableUtil.LockHealth);
         }
 
-        public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, Dam_EnemyDamageLimb limb)
-            : base(data, backstab)
+        public WeaponHitDamageableContext(HitData data, bool bypassTumor, float backstab, float origBackstab, Dam_EnemyDamageLimb limb)
+            : base(data, backstab, origBackstab)
         {
             Damage = data.damage * Falloff * data.shotInfo.ExternalDamageMod;
             Damage = limb.ApplyWeakspotAndArmorModifiers(Damage, data.precisionMulti);
