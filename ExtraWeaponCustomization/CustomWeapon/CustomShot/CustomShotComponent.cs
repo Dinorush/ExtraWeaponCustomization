@@ -122,7 +122,8 @@ namespace EWC.CustomWeapon.CustomShot
 
         public static Vector3 CalcRayDir(Vector3 fireDir, float x, float y, float spread)
         {
-            Vector3 right = Vector3.Cross(Vector3.up, fireDir).normalized;
+            Vector3 crossBase = Math.Abs(fireDir.y) > 0.99f ? Vector3.forward : Vector3.up;
+            Vector3 right = Vector3.Cross(crossBase, fireDir).normalized;
             Vector3 up = Vector3.Cross(right, fireDir).normalized;
             if (x != 0)
                 fireDir = Quaternion.AngleAxis(x, up) * fireDir;

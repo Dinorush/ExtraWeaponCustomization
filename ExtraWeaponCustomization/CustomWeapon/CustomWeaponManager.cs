@@ -67,7 +67,7 @@ namespace EWC.CustomWeapon
         [InvokeOnCheckpoint]
         private static void OnCheckpoint()
         {
-            Current.ResetCWCs(activate: true, reacquireOwners: true);
+            Current.ResetCWCs(activate: true);
         }
 
         public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, T context) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (null, context));
@@ -176,6 +176,8 @@ namespace EWC.CustomWeapon
             {
                 if (!item.TryGetComp<CustomWeaponComponent>(out var cwc))
                     cwc = info.addCWC!(item.gameObject);
+                else
+                    cwc.RefreshOwner();
                 cwc.Register(data);
             }
         }
@@ -186,7 +188,7 @@ namespace EWC.CustomWeapon
                 Current.ResetCWCs();
         }
 
-        private void ResetCWCs(bool activate = true, bool reacquireOwners = false)
+        private void ResetCWCs(bool activate = true)
         {
             // JFS - Reset crosshair modifier. Should be cleared by other stuff but doesn't hurt
             Dependencies.ACAPIWrapper.ResetCrosshairSpread();
@@ -201,11 +203,7 @@ namespace EWC.CustomWeapon
 
                     var item = wrapper.Object!;
                     if (item.TryGetComp<CustomWeaponComponent>(out var cwc))
-                    {
                         cwc.Clear();
-                        if (reacquireOwners)
-                            cwc.ResetOwner();
-                    }
 
                     if (activate)
                         ActivateItem(item);

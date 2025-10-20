@@ -192,15 +192,11 @@ namespace EWC.CustomWeapon
             enabled = false;
         }
 
-        public void ResetOwner()
+        public void RefreshOwner()
         {
             var item = Weapon.Component;
             var owner = item.Owner;
-            if (owner == null)
-            {
-                EWCLogger.Error($"Failed to reset owner for {Weapon.Component.name}, owner is null!");
-                return;
-            }
+            if (owner == null || owner.Owner == null) return;
 
             if (Owner.IsType(Enums.OwnerType.Local))
                 Owner = new LocalOwnerComp(owner, item.MuzzleAlign);

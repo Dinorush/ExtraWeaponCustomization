@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon;
+﻿using Agents;
+using EWC.CustomWeapon;
 using HarmonyLib;
 using Player;
 
