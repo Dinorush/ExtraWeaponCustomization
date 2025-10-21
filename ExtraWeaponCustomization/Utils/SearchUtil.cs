@@ -159,16 +159,9 @@ namespace EWC.Utils
         {
             var collidersIL = agent.GetComponentsInChildren<Collider>();
             List<Collider> colliders = new(collidersIL.Length);
-            AgentType type = agent.Type;
             foreach (var collider in collidersIL)
             {
-                if (type == AgentType.Enemy)
-                {
-                    Dam_EnemyDamageLimb? limb = collider.GetComponent<Dam_EnemyDamageLimb>();
-                    if (limb == null || limb.IsDestroyed) continue;
-                }
-                else if (type == AgentType.Player && collider.GetComponent<IDamageable>() == null)
-                    continue;
+                if (collider.GetComponent<IDamageable>() == null || !collider.enabled) continue;
 
                 if (BoundsInRange(ray, range, angle, collider.bounds))
                     colliders.Add(collider);

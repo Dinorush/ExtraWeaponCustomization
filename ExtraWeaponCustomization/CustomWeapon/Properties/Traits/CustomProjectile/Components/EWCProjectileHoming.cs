@@ -26,30 +26,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private float _homingStartTime;
         private float _initialHomingEndTime;
         private EnemyAgent? _homingAgent;
-        public EnemyAgent? HomingAgent
-        {
-            get => _homingAgent;
-            private set
-            {
-                if (_homingAgent == value) return;
 
-                _homingAgent = value;
-                _homingLimb = null;
-                _homingTarget = null;
-
-                // Only managed homing cares about finding new limbs to target
-                if (_base.IsManaged && value != null)
-                {
-                    ResetWeakspotList();
-                    UpdateHomingTarget();
-                    EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, HomingAgent, (byte)(_homingLimb != null ? _homingLimb.m_limbID : 0));
-                }
-            }
-        }
-
-        private Dam_EnemyDamageLimb? _homingLimb;
+        private byte _homingLimbID;
+        private Collider? _homingCollider;
         private Transform? _homingTarget;
-        private readonly List<Dam_EnemyDamageLimb> _weakspotList = new();
+        private readonly List<(Collider, byte)> _weakspotList = new();
         private bool _hadTarget;
         private float _nextSearchTime;
 
@@ -77,7 +58,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _initialHomingEndTime = _homingStartTime + _settings.InitialHomingDuration;
             _homingEnabled = _settings.HomingEnabled;
             _nextSearchTime = 0f;
-            HomingAgent = null;
+            ResetHomingAgent();
 
             if (!_base.IsManaged) return;
             _owner = projBase.CWC.Owner;
@@ -94,21 +75,18 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     AutoAim? autoAim = projBase.CWC.GetTrait<AutoAim>();
                     if (autoAim == null || !autoAim.UseAutoAim) return;
 
-                    (EnemyAgent? target, Dam_EnemyDamageLimb? limb) = autoAim.GetTargets();
-                    if (limb != null)
-                    {
-                        _homingLimb = limb;
-                        _homingTarget = limb.transform;
-                    }
-                    HomingAgent = target;
                     _homingEnabled = true;
+                    (EnemyAgent? target, Collider? collider, byte limbID) = autoAim.GetTargets();
+                    ReceiveHomingAgent(target, collider, limbID);
+                    ResetWeakspotList();
+                    SendHomingTarget();
                 }
                 else
                 {
                     if (_settings.SearchInitialMode == SearchMode.AimDir)
                         s_dir = _owner.FireDir;
                     FindHomingAgent();
-                    if (HomingAgent == null && _settings.SearchStopMode.HasFlag(StopSearchMode.Invalid))
+                    if (_homingAgent == null && _settings.SearchStopMode.HasFlag(StopSearchMode.Invalid))
                         _homingEnabled = false;
                 }
             }
@@ -125,7 +103,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         public void UpdateDir(Vector3 position, float deltaTime, ref Vector3 dir)
         {
-            if (!_homingEnabled || Time.time < _homingStartTime || HomingAgent == null) return;
+            if (!_homingEnabled || Time.time < _homingStartTime || _homingAgent == null) return;
 
             float strength = _settings.InitialHomingStrength;
             Vector3 diff = _homingTarget!.position - position;
@@ -151,15 +129,16 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             if (!_base.IsManaged)
             {
-                if (HomingAgent == null || !HomingAgent.Alive || HomingAgent.Damage.Health <= 0) return false;
-                if (_homingLimb != null && !_homingLimb.IsDestroyed) return true;
+                if (_homingAgent == null || !_homingAgent.Alive || _homingAgent.Damage.Health <= 0) return false;
+                if (_homingLimbID != 0 && !_homingCollider!.enabled) return true;
 
-                _homingTarget = GetHomingTarget(HomingAgent);
-                _homingLimb = null;
+                _homingTarget = GetHomingTarget(_homingAgent);
+                _homingCollider = null;
+                _homingLimbID = 0;
                 return true;
             }
 
-            if (HomingAgent == null || !HomingAgent.Alive || HomingAgent.Damage.Health <= 0)
+            if (_homingAgent == null || !_homingAgent.Alive || _homingAgent.Damage.Health <= 0)
             {
                 if (_hadTarget && _settings.SearchStopMode.HasFlag(StopSearchMode.Dead))
                 {
@@ -168,16 +147,16 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
 
                 FindHomingAgent();
-                if (HomingAgent == null && _settings.SearchStopMode.HasFlag(StopSearchMode.Invalid))
+                if (_homingAgent == null && _settings.SearchStopMode.HasFlag(StopSearchMode.Invalid))
                 {
                     _homingEnabled = false;
                     return false;
                 }
 
-                return HomingAgent != null;
+                return _homingAgent != null;
             }
 
-            if (HomingAgent != null)
+            if (_homingAgent != null)
             {
                 UpdateHomingTarget();
                 return true;
@@ -185,14 +164,58 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             return false;
         }
 
-        public void SetHomingAgent(EnemyAgent? agent, Dam_EnemyDamageLimb? limb)
+        public void SendHomingTarget() => EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, _homingAgent, _homingLimbID);
+
+        public void SetHomingAgent(EnemyAgent? agent)
         {
-            HomingAgent = agent;
-            if (agent != null)
+            if (agent == null)
             {
-                _homingLimb = limb;
-                _homingTarget = limb != null ? limb.transform : GetHomingTarget(agent);
+                ResetHomingAgent();
+                return;
             }
+
+            _homingAgent = agent;
+            ResetWeakspotList();
+            UpdateHomingTarget();
+            SendHomingTarget();
+        }
+
+        public void ReceiveHomingAgent(EnemyAgent? agent, byte limbID)
+        {
+            if (agent != null && limbID != 0)
+                ReceiveHomingAgent(agent, agent.Damage.DamageLimbs[limbID].GetComponent<Collider>(), limbID);
+            else
+                ReceiveHomingAgent(agent, null, 0);
+        }
+
+        public void ReceiveHomingAgent(EnemyAgent? agent, Collider? collider, byte limbID)
+        {
+            if (agent == null)
+            {
+                ResetHomingAgent();
+                return;
+            }
+
+            _homingAgent = agent;
+            _homingLimbID = limbID;
+            if (_homingLimbID != 0)
+            {
+                _homingCollider = collider;
+                _homingTarget = _homingCollider!.transform;
+            }
+            else
+            {
+                _homingCollider = null;
+                _homingTarget = GetHomingTarget(agent);
+            }
+        }
+
+        public void ResetHomingAgent()
+        {
+            _homingAgent = null;
+            _homingTarget = null;
+            _homingCollider = null;
+            _homingLimbID = 0;
         }
 
         public void UpdateOnPierce()
@@ -207,7 +230,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             FindHomingAgent();
-            if (HomingAgent == null)
+            if (_homingAgent == null)
                 EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, null, 0);
         }
 
@@ -215,13 +238,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             if (!_hadTarget && _nextSearchTime > Time.time)
             {
-                HomingAgent = null;
+                _homingAgent = null;
                 return;
             }
 
             _nextSearchTime = Time.time + Math.Max(Configuration.HomingTickDelay, _settings.SearchCooldown);
             _hadTarget = false;
-            HomingAgent = null;
+            ResetHomingAgent();
             Ray ray = new(s_position, s_dir);
             SearchUtil.DupeCheckSet = _base.Hitbox.HitEnts;
             List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings.SearchRange, _settings.SearchAngle, CourseNodeUtil.GetCourseNode(s_position, _dimensionIndex), SearchSetting.IgnoreDupes);
@@ -263,9 +286,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (target == null) return;
 
             _hadTarget = true;
-            HomingAgent = target;
-            byte limbID = (byte)(_homingLimb != null ? (byte)_homingLimb.m_limbID : 0);
-            EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, _homingAgent, limbID);
+            SetHomingAgent(target);
+            EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, _homingAgent, _homingLimbID);
         }
 
         private void ResetWeakspotList()
@@ -274,17 +296,18 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _weakspotList.Clear();
             foreach (Dam_EnemyDamageLimb limb in _homingAgent!.Damage.DamageLimbs)
-                if (!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot && limb.GetComponent<Collider>() != null)
-                    _weakspotList.Add(limb);
+                if (limb.m_type == eLimbDamageType.Weakspot && limb.TryGetComp<Collider>(out var collider) && collider.enabled)
+                    _weakspotList.Add((collider, (byte)limb.m_limbID));
         }
 
         private void UpdateHomingTarget()
         {
-            if (_homingLimb != null && !_homingLimb.IsDestroyed) return;
+            if (_homingLimbID != 0 && _homingCollider!.enabled) return;
 
             if (_settings.TargetMode != TargetingMode.Weakspot || _weakspotList.Count == 0)
             {
-                _homingLimb = null;
+                _homingLimbID = 0;
+                _homingCollider = null;
                 _homingTarget = GetHomingTarget(_homingAgent!);
                 return;
             }
@@ -293,26 +316,28 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _weakspotList.Reverse();
             for (int i = _weakspotList.Count - 1; i >= 0; i--)
             {
-                Dam_EnemyDamageLimb weakspot = _weakspotList[i];
-                if (weakspot == null || weakspot.IsDestroyed)
+                (Collider collider, byte limbID) = _weakspotList[i];
+                if (collider == null || !collider.enabled)
                 {
                     _weakspotList.RemoveAt(i);
                     continue;
                 }
 
-                _homingLimb = _weakspotList[i];
-                _homingTarget = _homingLimb.transform;
+                _homingLimbID = limbID;
+                _homingCollider = collider;
+                _homingTarget = collider.transform;
                 return;
             }
 
             _homingTarget = _homingAgent!.AimTarget;
-            _homingLimb = null;
+            _homingCollider = null;
+            _homingLimbID = 0;
         }
 
-        private int WeakspotCompare(Dam_EnemyDamageLimb x, Dam_EnemyDamageLimb y)
+        private int WeakspotCompare((Collider collider, byte _) x, (Collider collider, byte _) y)
         {
-            float angleX = Vector3.Angle(s_dir, x.DamageTargetPos - s_position);
-            float angleY = Vector3.Angle(s_dir, y.DamageTargetPos - s_position);
+            float angleX = Vector3.Angle(s_dir, x.collider.transform.position - s_position);
+            float angleY = Vector3.Angle(s_dir, y.collider.transform.position - s_position);
             if (angleX == angleY) return 0;
             return angleX < angleY ? -1 : 1;
         }

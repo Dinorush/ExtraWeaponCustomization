@@ -130,7 +130,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             data.staggerMult = staggerMult;
             data.setCooldowns = shrapnel.ApplyAttackCooldown;
 
-            bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
+            bool precHit = limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = shrapnel.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damageable, shrapnel.CWC.DebuffIDs);
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMult, 1f) : 1f;

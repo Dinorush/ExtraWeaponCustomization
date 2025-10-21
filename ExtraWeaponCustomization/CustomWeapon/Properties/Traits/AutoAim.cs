@@ -76,10 +76,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         private static readonly TriggerEventHelper _eventHelper = new(CallbackMap);
 
         private float _weakspotDetectionTick;
-        private Dam_EnemyDamageLimb? _weakspotLimb;
+        private Collider? _weakspotCollider;
+        private byte _weakspotLimbID;
         private Transform? _weakspotTarget;
         private readonly List<Collider> _bodyList = new();
-        private readonly List<(Collider collider, Dam_EnemyDamageLimb limb)> _weakspotList = new();
+        private readonly List<(Collider collider, byte limbID)> _weakspotList = new();
 
         private static Ray s_ray;
         private static RaycastHit s_raycastHit;
@@ -333,7 +334,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             );
         public bool UseAutoAim => LockedTarget && AutoAimActive;
 
-        public (EnemyAgent?, Dam_EnemyDamageLimb?) GetTargets() => (_target, _weakspotLimb);
+        public (EnemyAgent?, Collider?, byte) GetTargets() => (_target, _weakspotCollider, _weakspotLimbID);
 
         private bool CheckTargetValid()
         {
@@ -348,10 +349,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             foreach (var limb in _target.Damage.DamageLimbs)
             {
-                if (limb.IsDestroyed == true) continue;
-
-                var collider = limb.GetComponent<Collider>();
-                if (collider == null) continue;
+                if (!limb.TryGetComp<Collider>(out var collider) || !collider.enabled) continue;
 
                 Vector3 diff = collider.ClosestPoint(position) - position;
                 float sqrDist = diff.sqrMagnitude;
@@ -455,19 +453,17 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             _weakspotList.Clear();
             _bodyList.Clear();
-            _weakspotLimb = null;
+            _weakspotCollider = null;
+            _weakspotLimbID = 0;
             if (_target == null) return;
 
             _weakspotTarget = _target.AimTarget;
             foreach (var limb in _target.Damage.DamageLimbs)
             {
-                if (limb.m_health > 0)
+                if (limb.TryGetComp<Collider>(out var collider) && collider.enabled)
                 {
-                    Collider collider = limb.GetComponent<Collider>();
-                    if (collider == null) continue;
-
                     if (limb.m_type == eLimbDamageType.Weakspot)
-                        _weakspotList.Add((collider, limb));
+                        _weakspotList.Add((collider, (byte)limb.m_limbID));
                     else
                         _bodyList.Add(collider);
                 }
@@ -484,45 +480,51 @@ namespace EWC.CustomWeapon.Properties.Traits
                 return;
             }
 
-            if (_weakspotLimb != null && !_weakspotLimb.IsDestroyed && Clock.Time < _weakspotDetectionTick) return;
+            if (_weakspotLimbID != 0 && _weakspotCollider!.enabled && Clock.Time < _weakspotDetectionTick) return;
             _weakspotDetectionTick = Clock.Time + Configuration.AutoAimTickDelay;
 
             _weakspotList.Sort(WeakspotCompare);
             _weakspotList.Reverse();
-            _weakspotLimb = null;
+            _weakspotCollider = null;
+            _weakspotLimbID = 0;
 
             for (int i = _weakspotList.Count - 1; i >= 0; i--)
             {
-                Dam_EnemyDamageLimb weakspot = _weakspotList[i].limb;
-                if (weakspot == null || weakspot.IsDestroyed)
+                (Collider collider, byte limbID) = _weakspotList[i];
+                if (collider == null || !collider.enabled)
                 {
                     _weakspotList.RemoveAt(i);
                     continue;
                 }
-                Collider collider = _weakspotList[i].collider;
 
-                s_ray.direction = weakspot.transform.position - _camera!.Position;
+                s_ray.direction = collider.transform.position - _camera!.Position;
                 s_ray.origin = _camera.Position;
-                collider.Raycast(s_ray, out s_raycastHit, (weakspot.transform.position - _camera.Position).magnitude);
+                collider.Raycast(s_ray, out s_raycastHit, (collider.transform.position - _camera.Position).magnitude);
 
-                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)) && !Physics.Linecast(_camera.Position, weakspot.transform.position, LayerUtil.MaskWorldExcProj))
+                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)) && !Physics.Linecast(_camera.Position, collider.transform.position, LayerUtil.MaskWorldExcProj))
                 {
                     _weakspotTarget = collider.transform;
-                    _weakspotLimb = weakspot;
+                    _weakspotCollider = collider;
+                    _weakspotLimbID = limbID;
                     return;
                 }
             }
 
             if (_weakspotList.Count > 0)
             {
-                _weakspotLimb = _weakspotList[0].limb;
-                _weakspotTarget = _weakspotList[0].collider.transform;
+                _weakspotCollider = _weakspotList[0].collider;
+                _weakspotLimbID = _weakspotList[0].limbID;
+                _weakspotTarget = _weakspotCollider.transform;
             }
             else
+            {
                 _weakspotTarget = _target!.AimTarget;
+                _weakspotCollider = null;
+                _weakspotLimbID = 0;
+            }
         }
 
-        private int WeakspotCompare((Collider? collider, Dam_EnemyDamageLimb) x, (Collider? collider, Dam_EnemyDamageLimb) y)
+        private int WeakspotCompare((Collider? collider, byte) x, (Collider? collider, byte) y)
         {
             if (x.collider == null) return 1;
             if (y.collider == null) return -1;

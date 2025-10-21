@@ -110,7 +110,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
                 list.AddLast((id, enemy, limbID));
                 return;
             }
-            node.Value.comp.Homing.SetHomingAgent(enemy, limbID > 0 && enemy != null ? enemy.Damage.DamageLimbs[limbID] : null);
+            node.Value.comp.Homing.ReceiveHomingAgent(enemy, limbID);
         }
 
         public static void DoProjectileBounce(ushort playerIndex, ushort id, Vector3 pos, Vector3 dir)

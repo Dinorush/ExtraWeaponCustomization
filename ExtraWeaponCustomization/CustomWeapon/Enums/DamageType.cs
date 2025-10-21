@@ -112,7 +112,7 @@ namespace EWC.CustomWeapon.Enums
             return result;
         }
 
-        public static DamageType GetSubTypes(Dam_EnemyDamageLimb limb) => DamageType.Enemy | GetSubTypes(!limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot, limb.m_armorDamageMulti, limb.m_base.IsStuckInGlue);
+        public static DamageType GetSubTypes(Dam_EnemyDamageLimb limb) => DamageType.Enemy | GetSubTypes(limb.m_type == eLimbDamageType.Weakspot, limb.m_armorDamageMulti, limb.m_base.IsStuckInGlue);
 
         public static DamageType GetSubTypes(IDamageable damageable)
         {

@@ -103,7 +103,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             data.staggerMult = staggerMulti;
             data.setCooldowns = dotBase.ApplyAttackCooldown;
 
-            bool precHit = !limb.IsDestroyed && limb.m_type == eLimbDamageType.Weakspot;
+            bool precHit = limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = dotBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damageable, dotBase.CWC.DebuffIDs);
             float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMulti, 1f) : 1f;
