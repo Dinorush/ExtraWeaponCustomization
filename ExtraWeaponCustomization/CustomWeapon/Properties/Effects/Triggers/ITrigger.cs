@@ -61,7 +61,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (name == null) return null;
 
             var origName = name;
-            name = name.ToLowerInvariant().Replace(" ", null).Replace("on", null);
+            var nameWithOn = name.ToLowerInvariant().Replace(" ", null);
+            name = nameWithOn.Replace("on", null);
             return name switch
             {
                 "invalid" or "null" => null,
@@ -88,7 +89,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
                 "reference" => new ReferenceCallTrigger(),
                 "setup" or "init" or "drop" => new BasicTrigger<WeaponInitContext>(TriggerName.Init),
-                string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(perTarget),
+                string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(nameWithOn),
                 string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
                 string prehit when prehit.Contains("prehit") => new DamageableTrigger<WeaponPreHitDamageableContext>(TriggerName.PreHit, name.ToDamageTypes()),
                 string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageTypes()),

@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float CombineDecayTime { get; private set; } = 0f;
         public float CombineCap { get; private set; } = 0f;
         public StackType StackType { get; private set; } = StackType.Add;
-        public StackType OverrideStackType { get; private set; } = StackType.Override;
+        public StackType InnerStackType { get; private set; } = StackType.Override;
         public StackType StackLayer { get; private set; } = StackType.Multiply;
 
         public virtual bool UseZeroAmountTrigger => StackType == StackType.Override;
@@ -27,6 +27,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (Cap > 1f) return Math.Min(mod, Cap);
             return Math.Max(mod, Cap);
         }
+
+        private StackType CalculateStackType => StackType switch
+            {
+                StackType.Add or StackType.Mult => StackType,
+                _ => InnerStackType
+            };
 
         protected float CalculateMod(IEnumerable<TriggerInstance> count, bool clamped = true)
         {
@@ -42,7 +48,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             return clamped ? ClampToCap(result) : result;
         }
 
-        protected float CalculateMod(float num, bool clamped = true) => CalculateMod(StackType == StackType.Override ? OverrideStackType : StackType, num, clamped);
+        protected float CalculateMod(float num, bool clamped = true) => CalculateMod(CalculateStackType, num, clamped);
 
         protected float CalculateMod(StackType type, float num, bool clamped = true)
         {
@@ -69,6 +75,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             writer.WriteBoolean(nameof(CombineModifiers), CombineModifiers);
             writer.WriteNumber(nameof(CombineDecayTime), CombineDecayTime);
             writer.WriteString(nameof(StackType), StackType.ToString());
+            writer.WriteString(nameof(InnerStackType), InnerStackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
             SerializeTrigger(writer);
             writer.WriteEndObject();
@@ -107,7 +114,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "overridestacktype":
                 case "overridestack":
-                    OverrideStackType = reader.GetString().ToEnum(StackType.Invalid);
+                case "innerstacktype":
+                case "innerstack":
+                    InnerStackType = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 case "stacklayer":
                 case "layer":

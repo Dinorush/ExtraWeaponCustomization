@@ -32,7 +32,7 @@ namespace EWC.Patches.Gun
         {
             if (!__instance.TryGetComp<CustomGunComponent>(out var cgc)) return;
 
-            __result = cgc.Invoke(new WeaponReloadContext(__result)).Value;
+            __result /= cgc.Invoke(new WeaponReloadContext()).Value;
         }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetCurrentClip))]

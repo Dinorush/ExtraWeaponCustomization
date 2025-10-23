@@ -24,6 +24,7 @@ namespace EWC.CustomWeapon
     public class CustomWeaponComponent : MonoBehaviour
     {
         public readonly IWeaponComp Weapon;
+        [HideFromIl2Cpp]
         public IOwnerComp Owner { get; private set; }
 
         private readonly PropertyController _propertyController;

@@ -12,6 +12,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
         public LocalGunComp(BulletWeapon value) : base(value, value.TryCast<Shotgun>() != null)
         {
             _gunArchetype = value.m_archeType;
+            _burstArchetype = FireMode == eWeaponFireMode.Burst ? _gunArchetype!.Cast<BWA_Burst>() : null;
         }
 
         public BulletWeaponArchetype GunArchetype
