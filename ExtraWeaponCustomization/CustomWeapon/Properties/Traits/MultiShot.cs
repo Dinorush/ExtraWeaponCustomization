@@ -220,6 +220,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             switch (property)
             {
                 case "offsets":
+                case "offset":
                     List<float>? offsets = ReadOffsets(ref reader);
                     if (offsets == null) return;
                     if (offsets.Count % 2 != 0)

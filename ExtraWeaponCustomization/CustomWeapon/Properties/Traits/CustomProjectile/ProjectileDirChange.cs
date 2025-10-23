@@ -97,6 +97,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             switch (propertyName)
             {
                 case "offsets":
+                case "offset":
                     List<float>? offsets = ReadOffsets(ref reader);
                     if (offsets == null) return;
                     if (offsets.Count % 2 != 0)
