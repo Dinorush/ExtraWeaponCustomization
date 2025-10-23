@@ -1,4 +1,5 @@
-﻿using GameData;
+﻿using FX_EffectSystem;
+using GameData;
 
 namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
 {
@@ -16,7 +17,8 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
         public bool IsShotgun => _isShotgun;
         public abstract ArchetypeDataBlock ArchetypeData { get; set; }
         public abstract WeaponAudioDataBlock AudioData { get; set; }
-        public abstract Weapon.WeaponHitData VanillaHitData { get; set; }
+        public abstract Weapon.WeaponHitData VanillaHitData { get; }
+        public abstract FX_Pool TracerPool { get; }
         public abstract float MaxRayDist { get; set; }
         public abstract bool IsAiming { get; }
         public abstract int GetCurrentClip();
@@ -27,7 +29,8 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
 
     public interface IGunComp : IArchComp
     {
-        public Weapon.WeaponHitData VanillaHitData { get; set; }
+        public Weapon.WeaponHitData VanillaHitData { get; }
+        public FX_Pool TracerPool { get; }
         public WeaponAudioDataBlock AudioData { get; set; }
         public eWeaponFireMode FireMode { get; }
         public float MaxRayDist { get; set; }

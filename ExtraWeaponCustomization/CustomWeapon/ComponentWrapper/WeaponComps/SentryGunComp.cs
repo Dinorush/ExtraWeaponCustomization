@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.Dependencies;
+using FX_EffectSystem;
 using GameData;
 using Gear;
 using Player;
@@ -69,11 +70,8 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
             }
         }
 
-        public override Weapon.WeaponHitData VanillaHitData
-        {
-            get => SentryGunInstance_Firing_Bullets.s_weaponRayData;
-            set => SentryGunInstance_Firing_Bullets.s_weaponRayData = value;
-        }
+        public override Weapon.WeaponHitData VanillaHitData => SentryGunInstance_Firing_Bullets.s_weaponRayData;
+        public override FX_Pool TracerPool => SentryGunInstance_Firing_Bullets.s_tracerPool;
 
         public override float MaxRayDist
         {

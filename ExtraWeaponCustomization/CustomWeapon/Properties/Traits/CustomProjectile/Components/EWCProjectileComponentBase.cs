@@ -1,6 +1,5 @@
 ﻿using EWC.API;
 using EWC.Attributes;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -9,6 +8,7 @@ using EWC.Utils.Extensions;
 using Il2CppInterop.Runtime.Attributes;
 using Il2CppInterop.Runtime.Injection;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
@@ -60,10 +60,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         protected static Quaternion s_tempRot;
         private const int MaxCollisionCheck = 3;
         private const float MaxPhysicsInterval = 0.05f;
-        private const float PhysicsIntervalLerpDelay = 1f;
+        private const float PhysicsIntervalDelayUntilMax = 1f;
 
         public bool IsManaged { get; private set; }
         public ushort SyncID { get; private set; }
+        public ushort ShotIndex { get; private set; }
         public ushort PlayerIndex { get; private set; }
 
         [InvokeOnLoad]
@@ -78,7 +79,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 
         [HideFromIl2Cpp]
-        public virtual void Init(ushort playerIndex, ushort ID, Projectile projBase, bool isManaged, Vector3 position, Vector3 dir, HitData? hitData = null, IntPtr ignoreEnt = default)
+        public virtual void Init(ushort playerIndex, ushort shotIndex, ushort ID, Projectile projBase, bool isManaged, Vector3 position, Vector3 dir, HitData? hitData = null, IntPtr ignoreEnt = default)
         {
             if (enabled) return;
 
@@ -86,6 +87,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             SyncID = ID;
             PlayerIndex = playerIndex;
+            ShotIndex = shotIndex;
             Settings = projBase;
 
             gameObject.transform.localScale = Vector3.one * projBase.ModelScale;
@@ -99,7 +101,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _lastUpdatePhysicsTime = _startLifetime;
             _lerpProgress = 1f;
 
-            _fixedInfo.Set(projBase, position, dir);
+            _fixedInfo.Set(projBase, position, dir, shotIndex);
+            _deltaInfo.Set(projBase, position, dir, shotIndex);
 
             _aliveTriggerTime = _startLifetime + Settings.AliveTriggerDelay;
             IsManaged = isManaged;
@@ -128,10 +131,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             
             Hitbox.Init(projBase, position, dir, hitData, ignoreEnt, out var bounceHit);
             if (bounceHit != null)
+            {
                 _fixedInfo.BaseDir = Vector3.Reflect(_fixedInfo.BaseDir, bounceHit.Value.normal);
+                _deltaInfo.Copy(_fixedInfo);
+            }
 
             Homing.Init(projBase, position, _fixedInfo.BaseDir);
-            _deltaInfo.Copy(_fixedInfo);
         }
 
         public virtual void SetVisualPosition(Vector3 positionVisual, float lerpDist)
@@ -147,7 +152,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             gameObject.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
 
-        public void SetPosition(Vector3 pos, Vector3 dir)
+        public void ReceivePosition(Vector3 pos, Vector3 dir)
         {
             _deltaInfo.Position = pos;
             _deltaInfo.BaseDir = dir;
@@ -173,18 +178,22 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private bool UpdatePhysics()
         {
+            if (!IsManaged) return false;
+
             var time = Time.time;
             float interval;
-            if (time > _startLifetime + PhysicsIntervalLerpDelay)
+            if (time > _startLifetime + PhysicsIntervalDelayUntilMax)
                 interval = MaxPhysicsInterval;
             else
-                interval = (time - _startLifetime) / PhysicsIntervalLerpDelay * MaxPhysicsInterval;
+                interval = (time - _startLifetime) / PhysicsIntervalDelayUntilMax * MaxPhysicsInterval;
 
-            if (!IsManaged || _lastUpdatePhysicsTime + interval >= time) return false;
+            if (_lastUpdatePhysicsTime + interval >= time) return false;
 
             float delta = time - _lastUpdatePhysicsTime;
             Vector3 dir = _fixedInfo.Dir;
             Homing.Update(_fixedInfo.Position, delta, ref dir);
+            foreach (var dirChange in _fixedInfo.DirChanges)
+                dirChange.Update(ref dir);
             if (dir != _fixedInfo.Dir)
                 _fixedInfo.BaseDir = dir;
 
@@ -238,6 +247,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 float delta = Time.deltaTime;
                 Vector3 dir = _deltaInfo.Dir;
                 Homing.UpdateDir(_deltaInfo.Position, delta, ref dir);
+                foreach (var dirChange in _deltaInfo.DirChanges)
+                    dirChange.Update(ref dir);
                 if (dir != _deltaInfo.Dir)
                     _deltaInfo.BaseDir = dir;
 
@@ -363,11 +374,16 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             public Vector3 Velocity;
             public float AccelProgress;
             public float GravityVel;
+            public readonly List<ProjectileDirChange.State> DirChanges = new();
 
-            public void Set(Projectile settings, Vector3 position, Vector3 dir)
+            public void Set(Projectile settings, Vector3 position, Vector3 dir, ushort shotIndex)
             {
                 Settings = settings;
 
+                DirChanges.Clear();
+                DirChanges.EnsureCapacity(settings.DirChanges.Count);
+                foreach (var moveChange in settings.DirChanges)
+                    DirChanges.Add(moveChange.CreateState(dir, shotIndex));
                 AccelProgress = 0f;
                 Position = position;
                 BaseSpeed = settings.MaxSpeed > settings.MinSpeed ? Random.NextSingle().Lerp(settings.MinSpeed, settings.MaxSpeed) : settings.MinSpeed;
@@ -378,8 +394,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 Settings = info.Settings;
 
+                for (int i = 0; i < DirChanges.Count; i++)
+                    DirChanges[i].Copy(info.DirChanges[i]);
                 AccelProgress = info.AccelProgress;
-
                 Position = info.Position;
                 _dir = info._dir;
                 Velocity = info.Velocity;

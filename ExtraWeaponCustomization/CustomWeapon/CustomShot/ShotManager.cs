@@ -125,7 +125,7 @@ namespace EWC.CustomWeapon.CustomShot
             if (cgc.Gun.IsShotgun)
                 shots = cgc.Gun.ArchetypeData.ShotgunBulletCount;
 
-            var pool = cgc.Gun.IsType(WeaponType.BulletWeapon) ? BulletWeapon.s_tracerPool : SentryGunInstance_Firing_Bullets.s_tracerPool;
+            var pool = cgc.Gun.TracerPool;
 
             for (int i = 0; i < shots; i++)
             {

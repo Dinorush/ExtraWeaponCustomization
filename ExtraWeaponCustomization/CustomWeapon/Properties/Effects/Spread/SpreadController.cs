@@ -48,23 +48,23 @@ namespace EWC.CustomWeapon.Properties.Effects.Spread
                 ACAPIWrapper.ResetCrosshairSpread();
         }
 
-        public void ClearMod(SpreadMod spreadMod)
+        public void ClearMod(SpreadMod spreadMod, bool updateCrosshair = true)
         {
             Mods.Remove(spreadMod);
             Recompute();
 
-            if (Active)
+            if (updateCrosshair && Active)
                 ACAPIWrapper.UpdateCrosshairSpread(Value);
         }
 
-        public void SetMod(SpreadMod spreadMod, float newMod)
+        public void SetMod(SpreadMod spreadMod, float newMod, bool updateCrosshair = true)
         {
             if (Mods.TryGetValue(spreadMod, out float oldMod) && oldMod == newMod) return;
 
             Mods[spreadMod] = newMod;
             Recompute();
 
-            if (Active)
+            if (updateCrosshair && Active)
                 ACAPIWrapper.UpdateCrosshairSpread(Value);
         }
 

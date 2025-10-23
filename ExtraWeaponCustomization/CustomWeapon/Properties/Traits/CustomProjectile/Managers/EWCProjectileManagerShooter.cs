@@ -48,12 +48,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             return comp;
         }
 
-        public EWCProjectileComponentShooter CreateAndSendProjectile(Projectile projBase, Vector3 position, Vector3 fxPos, HitData hitData, IntPtr ignoreEnt = default)
+        public EWCProjectileComponentShooter CreateAndSendProjectile(Projectile projBase, ushort shotIndex, Vector3 position, Vector3 fxPos, HitData hitData, IntPtr ignoreEnt = default)
         {
             ushort index = (ushort) projBase.CWC.Owner.Player.PlayerSlotIndex;
             ProjectileDataShooter data = new()
             {
                 playerIndex = index,
+                shotIndex = shotIndex,
                 id = EWCProjectileManager.GetNextID(index),
                 propertyID = projBase.SyncPropertyID,
                 position = position
@@ -64,15 +65,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             s_shooterSync.Send(data);
             EWCProjectileComponentShooter comp = GetFromPool(projBase.ProjectileType);
             EWCProjectileManager.AddProjectile(index, data.id, comp);
-            comp.Init(index, data.id, projBase, true, position, hitData.fireDir, hitData, ignoreEnt);
+            comp.Init(index, shotIndex, data.id, projBase, true, position, hitData.fireDir, hitData, ignoreEnt);
             return comp;
         }
 
-        internal void Internal_ReceiveProjectile(ushort index, ushort id, Projectile projBase, Vector3 position, Vector3 fxPos, Vector3 dir)
+        internal void Internal_ReceiveProjectile(ushort index, ushort shotIndex, ushort id, Projectile projBase, Vector3 position, Vector3 fxPos, Vector3 dir)
         {
             EWCProjectileComponentShooter comp = GetFromPool(projBase.ProjectileType);
             EWCProjectileManager.AddProjectile(index, id, comp);
-            comp.Init(index, id, projBase, false, position, dir);
+            comp.Init(index, shotIndex, id, projBase, false, position, dir);
             if (projBase.VisualLerpDist > 0 && fxPos != Vector3.zero)
                 comp.SetVisualPosition(fxPos, projBase.VisualLerpDist);
             EWCProjectileManager.TryPullCachedTarget(index, id);
@@ -82,6 +83,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
     public struct ProjectileDataShooter
     {
         public ushort playerIndex;
+        public ushort shotIndex;
         public ushort id;
         public ushort propertyID;
         public Vector3 position;

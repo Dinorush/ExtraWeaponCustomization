@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
+using FX_EffectSystem;
 using GameData;
 using Gear;
 using Player;
@@ -38,11 +39,8 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
             }
         }
 
-        public override Weapon.WeaponHitData VanillaHitData
-        {
-            get => Weapon.s_weaponRayData;
-            set => Weapon.s_weaponRayData = value;
-        }
+        public override Weapon.WeaponHitData VanillaHitData => Weapon.s_weaponRayData;
+        public override FX_Pool TracerPool => BulletWeapon.s_tracerPool;
 
         public override float MaxRayDist
         {

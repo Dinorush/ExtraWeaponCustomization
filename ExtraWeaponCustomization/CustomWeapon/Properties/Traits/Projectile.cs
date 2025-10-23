@@ -62,6 +62,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float AliveTriggerDelay { get; private set; } = 0f;
         public float AliveTriggerInterval { get; private set; } = 1f;
 
+        public List<ProjectileDirChange> DirChanges { get; private set; } = new();
         public List<ProjectileStatChange> StatChanges { get; private set; } = new();
         public ProjectileHomingSettings HomingSettings { get; private set; } = new();
 
@@ -87,6 +88,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         private bool _useOverrides = false;
         private float _cachedRayDist;
+        private ushort _shotIndex = 0;
 
         private static RaycastHit s_rayHit;
         public readonly TriggerEventHelper EventHelper = new(CallbackMap);
@@ -115,7 +117,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 visualDist = s_rayHit.distance;
 
             Vector3 position = ray.origin + ray.direction * Math.Min(visualDist, 0.1f);
-            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, position, fxPos, hitData, ignoreEnt);
+            var comp = EWCProjectileManager.Shooter.CreateAndSendProjectile(this, _shotIndex++, position, fxPos, hitData, ignoreEnt);
             if (comp == null)
             {
                 EWCLogger.Error("Unable to create shooter projectile!");
@@ -171,6 +173,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(Lifetime), Lifetime);
             writer.WriteNumber(nameof(AliveTriggerDelay), AliveTriggerDelay);
             writer.WriteNumber(nameof(AliveTriggerInterval), AliveTriggerInterval);
+            writer.WritePropertyName(nameof(DirChanges));
+            ProjectileDirChange.SerializeList(DirChanges, writer);
             writer.WritePropertyName(nameof(StatChanges));
             ProjectileStatChange.SerializeList(StatChanges, writer);
             writer.WritePropertyName(nameof(HomingSettings));
@@ -302,6 +306,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                     AliveTriggerInterval = reader.GetSingle();
                     break;
 
+                case "dirchanges":
+                    DirChanges = ProjectileDirChange.DeserializeList(ref reader);
+                    break;
                 case "statchanges":
                     StatChanges = ProjectileStatChange.DeserializeList(ref reader);
                     break;

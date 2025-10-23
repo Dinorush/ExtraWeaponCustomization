@@ -45,6 +45,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
             EWCProjectileManager.Shooter.Internal_ReceiveProjectile(
                 packet.playerIndex,
+                packet.shotIndex,
                 packet.id,
                 property,
                 packet.position,

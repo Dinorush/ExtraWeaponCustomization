@@ -9,7 +9,6 @@ using EWC.Utils;
 using EWC.Utils.Extensions;
 using FX_EffectSystem;
 using Gear;
-using Player;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -51,7 +50,6 @@ namespace EWC.CustomWeapon.CustomShot
         public void FireVanilla(HitData hitData, Vector3 origin)
         {
             Ray ray = new(origin, CalcRayDir(hitData.fireDir, hitData.angOffsetX, hitData.angOffsetY, hitData.randomSpread));
-            Weapon.s_ray = ray;
             hitData.fireDir = ray.direction;
             ShotManager.VanillaFireDir = ray.direction;
             if (!CancelNormalShot)
@@ -117,26 +115,19 @@ namespace EWC.CustomWeapon.CustomShot
 
             FireShotAPI.FireShotFiredCallback(hitData, fireRay.origin, FX_Manager.EffectTargetPosition, _gun.Type);
             FX_Manager.PlayLocalVersion = false;
-            BulletWeapon.s_tracerPool.AquireEffect().Play(null, fxPos, Quaternion.LookRotation(fireRay.direction));
+            _gun.TracerPool.AquireEffect().Play(null, fxPos, Quaternion.LookRotation(fireRay.direction));
         }
 
         public static Vector3 CalcRayDir(Vector3 fireDir, float x, float y, float spread)
         {
-            Vector3 crossBase = Math.Abs(fireDir.y) > 0.99f ? Vector3.forward : Vector3.up;
-            Vector3 right = Vector3.Cross(crossBase, fireDir).normalized;
-            Vector3 up = Vector3.Cross(right, fireDir).normalized;
-            if (x != 0)
-                fireDir = Quaternion.AngleAxis(x, up) * fireDir;
-            if (y != 0)
-                fireDir = Quaternion.AngleAxis(y, right) * fireDir;
             if (spread != 0)
             {
-                Vector2 insideUnitCircle = UnityEngine.Random.insideUnitCircle;
-                insideUnitCircle *= spread;
-                fireDir = Quaternion.AngleAxis(insideUnitCircle.x, up) * fireDir;
-                fireDir = Quaternion.AngleAxis(insideUnitCircle.y, right) * fireDir;
+                Vector2 spreadVector = UnityEngine.Random.insideUnitCircle * spread;
+                x += spreadVector.x;
+                y += spreadVector.y;
             }
-            return fireDir;
+
+            return fireDir.RotateBy(x, y);
         }
 
         public static void CalcRayDir(ref Ray ray, float x, float y, float spread)
@@ -229,24 +220,25 @@ namespace EWC.CustomWeapon.CustomShot
                     fxPos = _ray.origin + _ray.direction * _hitData.maxRayDist;
 
                 FireShotAPI.FirePreShotFiredCallback(_hitData, _ray, _gun.Type);
-                Fire_Internal(ref fxPos, hitWall, wallRayHit);
+                if (!Fire_Internal(fxPos, hitWall, wallRayHit, out var fxTarget))
+                    fxPos = fxTarget;
                 FireShotAPI.FireShotFiredCallback(_hitData, _ray.origin, fxPos, _gun.Type);
                 if (!_parent.CancelAllFX)
                 {
                     FX_Manager.EffectTargetPosition = fxPos;
                     FX_Manager.PlayLocalVersion = false;
-                    BulletWeapon.s_tracerPool.AquireEffect().Play(null, _fxPos, Quaternion.LookRotation(_ray.direction));
+                    _gun.TracerPool.AquireEffect().Play(null, _fxPos, Quaternion.LookRotation(_ray.direction));
                 }
 
                 _parent._cgc.Invoke(new WeaponShotEndContext(_hitData.damageType.GetBaseType(), _hitData.shotInfo, _origInfo));
             }
 
-            public void Fire_Internal(ref Vector3 fxPos, bool hitWall, RaycastHit wallRayHit)
+            // Return false if bullet ended by hitting enemies, or true otherwise
+            public bool Fire_Internal(Vector3 endRayPos, bool hitWall, RaycastHit wallRayHit, out Vector3 fxTarget)
             {
-                CheckCollisionInitial(ref fxPos);
+                if (!CheckCollisionInitial(endRayPos, out fxTarget)) return false;
 
-                if (_pierceCount == 0) return;
-                float maxDist = (_ray.origin - fxPos).magnitude;
+                float maxDist = (_ray.origin - endRayPos).magnitude;
 
                 List<(IDamageable damageable, RaycastHit hit)> hits = new();
                 // Get enemy/lock hits
@@ -311,40 +303,53 @@ namespace EWC.CustomWeapon.CustomShot
                     if (agent != null && _wallPierce?.IsTargetReachable(_owner.CourseNode, agent.CourseNode) == false) continue;
 
                     float hitSize = agent?.Type == AgentType.Player ? _hitSizeFriendly : _hitSize;
-                    if (_wallPierce == null && !CheckLineOfSight(hit.collider, hit.point + hit.normal * hitSize, fxPos, hitSize, true)) continue;
+                    if (_wallPierce == null && !CheckLineOfSight(hit.collider, hit.point + hit.normal * hitSize, endRayPos, hitSize, true)) continue;
 
-                    if (hitSize != 0 && agent != null && CheckDirectHit(agent, ref s_rayHit))
+                    if (hitSize != 0)
                     {
-                        _hitData.RayHit = s_rayHit;
-                        fxPos = s_rayHit.point;
+                        if (CheckDirectHit(agent, ref s_rayHit))
+                        {
+                            _hitData.RayHit = s_rayHit;
+                            fxTarget = s_rayHit.point;
+                        }
+                        else
+                        {
+                            _hitData.RayHit = hit;
+                            fxTarget = _ray.origin + _ray.direction * hit.distance;
+                        }
                     }
                     else
+                    {
                         _hitData.RayHit = hit;
+                        fxTarget = hit.point;
+                    }
 
                     if (_hitFunc(_gun, _hitData))
                         _pierceCount--;
 
-                    if (_pierceCount <= 0) return;
+                    if (_pierceCount <= 0) return false;
                 }
 
                 if (_pierceCount > 0 && hitWall && !AlreadyHit(DamageableUtil.GetDamageableFromRayHit(wallRayHit)))
                 {
-                    fxPos = wallRayHit.point;
                     if (_wallPierce == null)
                     {
                         _hitData.RayHit = wallRayHit;
                         _hitFunc(_gun, _hitData);
                     }
                 }
+                return true;
             }
 
             // Check for targets within the initial sphere (if hitsize is big enough)
-            private void CheckCollisionInitial(ref Vector3 fxPos)
+            // Return false if bullet should end, or true otherwise
+            private bool CheckCollisionInitial(Vector3 endRayPos, out Vector3 fxTarget)
             {
-                if (_hitSize == 0 && _hitSizeFriendly == 0) return;
+                fxTarget = Vector3.zero;
+                if (_hitSize == 0 && _hitSizeFriendly == 0) return true;
 
                 Vector3 origin = _ray.origin;
-                List<(Agent agent, RaycastHit hit)> hits = new();
+                List<(Agent? agent, RaycastHit hit)> hits = new();
 
                 if (_hitSize > 0)
                 {
@@ -352,6 +357,10 @@ namespace EWC.CustomWeapon.CustomShot
                     hits.EnsureCapacity(enemies.Count);
                     foreach ((var enemy, var hit) in enemies)
                         hits.Add((enemy.Cast<Agent>(), hit));
+
+                    var lockHits = SearchUtil.GetLockHitsInRange(_ray, _hitSize, 180f);
+                    foreach (var hit in lockHits)
+                        hits.Add((null, hit));
                 }
                
                 if (_hitSizeFriendly > 0)
@@ -368,39 +377,37 @@ namespace EWC.CustomWeapon.CustomShot
                 {
                     _hitData.RayHit = hit;
                     if (AlreadyHit(_hitData.damageable)) continue;
-                    if (_wallPierce?.IsTargetReachable(_owner.CourseNode, agent.CourseNode) == false) continue;
+                    if (agent != null && _wallPierce?.IsTargetReachable(_owner.CourseNode, agent.CourseNode) == false) continue;
 
-                    float hitSize = agent.Type == AgentType.Player ? _hitSizeFriendly : _hitSize;
-                    if (_wallPierce == null && !CheckLineOfSight(hit.collider, origin, fxPos, hitSize)) continue;
+                    float hitSize = agent?.Type == AgentType.Player ? _hitSizeFriendly : _hitSize;
+                    if (_wallPierce == null && !CheckLineOfSight(hit.collider, origin, endRayPos, hitSize)) continue;
 
-                    if (CheckDirectHit(agent, ref s_rayHit))
+                    if (hitSize != 0)
                     {
-                        _hitData.RayHit = s_rayHit;
-                        fxPos = s_rayHit.point;
+                        if (CheckDirectHit(agent, ref s_rayHit))
+                        {
+                            _hitData.RayHit = s_rayHit;
+                            fxTarget = s_rayHit.point;
+                        }
+                        else
+                        {
+                            _hitData.RayHit = hit;
+                            fxTarget = _ray.origin + _ray.direction * hit.distance;
+                        }
+                    }
+                    else
+                    {
+                        _hitData.RayHit = hit;
+                        fxTarget = hit.point;
                     }
 
                     if (_hitFunc(_gun, _hitData))
                         _pierceCount--;
 
-                    if (_pierceCount <= 0) break;
+                    if (_pierceCount <= 0) return false;
                 }
 
-                if (_hitSize == 0) return;
-
-                List<RaycastHit> lockHits = SearchUtil.GetLockHitsInRange(_ray, _hitSize, 180f);
-                lockHits.Sort(SortUtil.Rayhit);
-
-                foreach (var hit in lockHits)
-                {
-                    _hitData.RayHit = hit;
-                    if (AlreadyHit(_hitData.damageable)) continue;
-                    if (_wallPierce == null && !CheckLineOfSight(hit.collider, origin, fxPos, _hitSize, true)) continue;
-
-                    if (_hitFunc(_gun, _hitData))
-                        _pierceCount--;
-
-                    if (_pierceCount <= 0) break;
-                }
+                return true;
             }
 
             // Naive LOS check to ensure that some point on the bullet line can see the enemy
@@ -435,7 +442,7 @@ namespace EWC.CustomWeapon.CustomShot
 
             private bool CheckDirectHit(Agent? agent, ref RaycastHit hit)
             {
-                if (agent == null) return false;
+                if (agent == null || agent.Type != AgentType.Enemy) return false;
 
                 RaycastHit bestHit = new() { distance = float.MaxValue };
 

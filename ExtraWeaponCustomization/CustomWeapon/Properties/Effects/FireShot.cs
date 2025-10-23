@@ -173,7 +173,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 for (int i = 0; i < Offsets.Count; i += 2)
                 {
                     float x = Offsets[i] * mod * spreadMod;
-                    float y = -Offsets[i + 1] * mod * spreadMod;
+                    float y = Offsets[i + 1] * mod * spreadMod;
                     if (visual)
                         FireVisual(ray, x, y, spread);
                     else

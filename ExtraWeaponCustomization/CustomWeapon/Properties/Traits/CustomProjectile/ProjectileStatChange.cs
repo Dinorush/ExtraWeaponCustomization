@@ -18,6 +18,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         {
             writer.WriteStartObject();
             writer.WriteNumber(nameof(EndFrac), EndFrac);
+            writer.WriteNumber(nameof(Exponent), Exponent);
             writer.WriteString(nameof(StatType), StatType.ToString());
             writer.WriteNumber(nameof(Delay), Delay);
             writer.WriteNumber(nameof(ChangeTime), ChangeTime);

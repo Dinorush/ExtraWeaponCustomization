@@ -407,5 +407,37 @@ namespace EWC.Utils
 
             return s_rayHitCache;
         }
+
+        public static bool RaycastFirst(Ray ray, out RaycastHit hit, float maxDist, int layerMask, Func<IDamageable, bool> filter, SearchSetting settings = SearchSetting.None)
+        {
+            if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Raycast(ray, out s_rayHit, maxDist, SightBlockLayer))
+                maxDist = s_rayHit.distance;
+
+            DamageUtil.IncrementSearchID();
+            var searchID = DamageUtil.SearchID;
+            float totalMoved = 0;
+            while (Physics.Raycast(ray, out hit, maxDist, layerMask))
+            {
+                float move = s_rayHit.distance + 0.1f;
+                IDamageable? damageable = hit.collider.GetComponent<IDamageable>();
+                if (damageable != null)
+                {
+                    var baseDam = damageable.GetBaseDamagable();
+                    if (baseDam.TempSearchID != searchID && (!settings.HasFlag(SearchSetting.IgnoreDupes) || DupeCheckSet?.Contains(baseDam.Pointer) != true))
+                    {
+                        hit.distance += totalMoved; // Reflect the true distance of the hit
+                        baseDam.TempSearchID = searchID;
+                        if (filter(damageable))
+                            return true;
+                    }
+                }
+
+                totalMoved += move;
+                ray.origin += ray.direction * move;
+                maxDist -= move;
+            }
+
+            return false;
+        }
     }
 }

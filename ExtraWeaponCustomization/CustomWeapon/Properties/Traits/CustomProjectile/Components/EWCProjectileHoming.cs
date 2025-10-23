@@ -247,40 +247,58 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             ResetHomingAgent();
             Ray ray = new(s_position, s_dir);
             SearchUtil.DupeCheckSet = _base.Hitbox.HitEnts;
-            List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings.SearchRange, _settings.SearchAngle, CourseNodeUtil.GetCourseNode(s_position, _dimensionIndex), SearchSetting.IgnoreDupes);
-
-            switch (_settings.TargetPriority)
-            {
-                case TargetingPriority.Angle:
-                    var angleList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetHomingTargetPos(enemy) - ray.origin)));
-                    angleList.Sort(SortUtil.FloatTuple);
-                    SortUtil.CopySortedList(angleList, enemies);
-                    break;
-                case TargetingPriority.Distance:
-                    var distList = enemies.ConvertAll(enemy => (enemy, (GetHomingTargetPos(enemy) - ray.origin).sqrMagnitude));
-                    distList.Sort(SortUtil.FloatTuple);
-                    SortUtil.CopySortedList(distList, enemies);
-                    break;
-                case TargetingPriority.Health:
-                    // Since we prefer higher HealthMax, need to invert angles so the reverse gets the right order
-                    var healthList = enemies.ConvertAll(enemy => (enemy, enemy.Damage.HealthMax, 180f - Vector3.Angle(ray.direction, GetHomingTargetPos(enemy) - ray.origin)));
-                    healthList.Sort(SortUtil.FloatTuple);
-                    healthList.Reverse();
-                    SortUtil.CopySortedList(healthList, enemies);
-                    break;
-                default:
-                    return;
-            };
-
             EnemyAgent? target = null;
-            foreach (var enemy in enemies)
+            if (_settings.SearchAngle > 0)
             {
-                if (!_settings.SearchIgnoreInvisibility && (enemy.RequireTagForDetection || _settings.SearchTagOnly) && !enemy.IsTagged) continue;
-                if (!_settings.SearchIgnoreWalls && Physics.Linecast(ray.origin, GetHomingTargetPos(enemy), LayerUtil.MaskWorldExcProj)) continue;
-                if (_settings.SearchIgnoreWalls && !IsTargetReachable(_owner!.CourseNode, enemy.CourseNode)) continue;
+                List<EnemyAgent> enemies = SearchUtil.GetEnemiesInRange(ray, _settings.SearchRange, _settings.SearchAngle, CourseNodeUtil.GetCourseNode(s_position, _dimensionIndex), SearchSetting.IgnoreDupes);
 
-                target = enemy;
-                break;
+                switch (_settings.TargetPriority)
+                {
+                    case TargetingPriority.Angle:
+                        var angleList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetHomingTargetPos(enemy) - ray.origin)));
+                        angleList.Sort(SortUtil.FloatTuple);
+                        SortUtil.CopySortedList(angleList, enemies);
+                        break;
+                    case TargetingPriority.Distance:
+                        var distList = enemies.ConvertAll(enemy => (enemy, (GetHomingTargetPos(enemy) - ray.origin).sqrMagnitude));
+                        distList.Sort(SortUtil.FloatTuple);
+                        SortUtil.CopySortedList(distList, enemies);
+                        break;
+                    case TargetingPriority.Health:
+                        // Since we prefer higher HealthMax, need to invert angles so the reverse gets the right order
+                        var healthList = enemies.ConvertAll(enemy => (enemy, enemy.Damage.HealthMax, 180f - Vector3.Angle(ray.direction, GetHomingTargetPos(enemy) - ray.origin)));
+                        healthList.Sort(SortUtil.FloatTuple);
+                        healthList.Reverse();
+                        SortUtil.CopySortedList(healthList, enemies);
+                        break;
+                    default:
+                        return;
+                }
+
+                foreach (var enemy in enemies)
+                {
+                    if (!EnemyIsVisible(enemy)) continue;
+                    if (!_settings.SearchIgnoreWalls && Physics.Linecast(ray.origin, GetHomingTargetPos(enemy), LayerUtil.MaskWorldExcProj)) continue;
+                    if (_settings.SearchIgnoreWalls && !IsTargetReachable(_owner!.CourseNode, enemy.CourseNode)) continue;
+
+                    target = enemy;
+                    break;
+                }
+            }
+            else
+            {
+                if (!SearchUtil.RaycastFirst(
+                    ray,
+                    out _,
+                    _settings.SearchRange,
+                    LayerUtil.MaskEnemy,
+                    (damageable) =>
+                        EnemyIsVisible(target = damageable.GetBaseAgent().Cast<EnemyAgent>())
+                        && (_settings.SearchIgnoreWalls || Physics.Linecast(ray.origin, GetHomingTargetPos(target), LayerUtil.MaskWorldExcProj))
+                        && (!_settings.SearchIgnoreWalls || IsTargetReachable(_owner!.CourseNode, target.CourseNode)),
+                    SearchSetting.IgnoreDupes
+                    ))
+                    return;
             }
 
             if (target == null) return;
@@ -289,6 +307,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             SetHomingAgent(target);
             EWCProjectileManager.DoProjectileTarget(_base.PlayerIndex, _base.SyncID, _homingAgent, _homingLimbID);
         }
+
+        private bool EnemyIsVisible(EnemyAgent enemy) => _settings.SearchIgnoreInvisibility || (!enemy.RequireTagForDetection && !_settings.SearchTagOnly) || enemy.IsTagged;
 
         private void ResetWeakspotList()
         {

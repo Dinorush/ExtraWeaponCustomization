@@ -106,7 +106,7 @@ namespace EWC.Utils
 
             ResetDamage();
             falloff = 1f;
-            fireDir = hitData.hitPos - hitData.sourcePos;
+            fireDir = (hitData.hitPos - hitData.sourcePos).normalized;
             hitPos = hitData.hitPos;
             // Don't need to use overriden null check since we only care about when damageComp isn't set at all
             damageable = hitData.damageComp ?? hitData.damageGO.GetComponent<IDamageable>();

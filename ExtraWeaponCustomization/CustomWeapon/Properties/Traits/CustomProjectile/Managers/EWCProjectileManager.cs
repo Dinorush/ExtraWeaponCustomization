@@ -123,7 +123,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         internal static void Internal_ReceiveProjectileBounce(ushort playerIndex, ushort id, Vector3 pos, Vector3 dir)
         {
             if (!TryGetNode(playerIndex, id, out var node)) return;
-            node.Value.comp.SetPosition(pos, dir);
+            node.Value.comp.ReceivePosition(pos, dir);
         }
     }
 

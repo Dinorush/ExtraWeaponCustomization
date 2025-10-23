@@ -33,9 +33,13 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool AimActive { get; private set; } = true;
         public float Angle { get; private set; } = 0f;
         public float Range { get; private set; } = 0f;
+        public bool RequireLOS { get; private set; } = true;
         public float LockTime { get; private set; } = 0f;
         public float LockDecayTime { get; private set; } = 0f;
         public bool StayOnTarget { get; private set; } = false;
+        public bool StayRequireLOS { get; private set; } = true;
+        public float StayAngle { get; private set; } = -1f;
+        public float StayRange { get; private set; } = -1f;
         public bool ResetOnNewTarget { get; private set; } = false;
         public bool RequireLock { get; private set; } = false;
         public bool LockWhileEmpty { get; private set; } = true;
@@ -276,7 +280,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             else if (_target != null && LockTime <= 0)
                 _progress = 1f;
 
-            _detectionTick = Time.time + Configuration.AutoAimTickDelay;
+            // If Angle is 0, performant enough to not need delay (just a raycast)
+            if (Angle > 0)
+                _detectionTick = Time.time + Configuration.AutoAimTickDelay;
         }
 
         private void UpdateAnimate()
@@ -340,20 +346,26 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (_target == null || !_target.Alive || _target.Damage.Health <= 0) return false;
             if (UseTrigger && !_triggerAgents!.Contains(TempEnemyWrapper.Set(_target))) return false;
-            if (!IgnoreInvisibility && (_target.RequireTagForDetection || TagOnly) && !_target.IsTagged) return false;
+            if (!EnemyIsVisible(_target)) return false;
 
+            float range = StayRange >= 0 ? StayRange : Range;
+            float angle = StayAngle >= 0 ? StayAngle : Angle;
             // Check if any part of the target is still valid
-            Vector3 position = _camera!.Position;
             Vector3 targetPos = GetTargetPos();
-            if (Physics.Linecast(position, targetPos, LayerUtil.MaskWorldExcProj)) return false;
+            s_ray.origin = _camera!.Position;
+            s_ray.direction = _camera!.CameraRayDir;
+            if (StayRequireLOS && Physics.Linecast(s_ray.origin, targetPos, LayerUtil.MaskWorldExcProj)) return false;
 
             foreach (var limb in _target.Damage.DamageLimbs)
             {
                 if (!limb.TryGetComp<Collider>(out var collider) || !collider.enabled) continue;
 
-                Vector3 diff = collider.ClosestPoint(position) - position;
+                if (angle == 0)
+                    return collider.Raycast(s_ray, out _, range);
+
+                Vector3 diff = collider.ClosestPoint(s_ray.origin) - s_ray.origin;
                 float sqrDist = diff.sqrMagnitude;
-                if (sqrDist < Range * Range && Vector3.Angle(_camera!.CameraRayDir, diff) < Angle)
+                if (sqrDist < range * range && Vector3.Angle(s_ray.direction, diff) < angle)
                     return true;
             }
             return false;
@@ -369,6 +381,22 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 if (_triggerAgents!.Count == 0) return null;
 
+                if (Angle == 0)
+                {
+                    SearchUtil.SightBlockLayer = LayerUtil.MaskWorld;
+                    EnemyAgent? enemy = null;
+                    if (SearchUtil.RaycastFirst(
+                        ray,
+                        out _,
+                        Range,
+                        LayerUtil.MaskEnemy, 
+                        (damageable) => EnemyIsVisible(enemy = damageable.GetBaseAgent().Cast<EnemyAgent>()) && _triggerAgents.Contains(TempEnemyWrapper.Set(enemy)),
+                        RequireLOS ? SearchSetting.CheckLOS : SearchSetting.None
+                        ))
+                        return enemy;
+                    return null;
+                }
+
                 enemies = new(_triggerAgents.Count);
                 foreach (var wrapper in _triggerAgents)
                 {
@@ -376,6 +404,21 @@ namespace EWC.CustomWeapon.Properties.Traits
                     if (SearchUtil.IsAgentInCone(ray, Range, Angle, agent, out _))
                         enemies.Add(agent);
                 }
+            }
+            else if (Angle == 0)
+            {
+                SearchUtil.SightBlockLayer = LayerUtil.MaskWorld;
+                EnemyAgent? enemy = null;
+                if (SearchUtil.RaycastFirst(
+                    ray,
+                    out _,
+                    Range,
+                    LayerUtil.MaskEnemy,
+                    (damageable) => EnemyIsVisible(enemy = damageable.GetBaseAgent().Cast<EnemyAgent>()),
+                    RequireLOS ? SearchSetting.CheckLOS : SearchSetting.None
+                    ))
+                    return enemy;
+                return null;
             }
             else
                 enemies = SearchUtil.GetEnemiesInRange(ray, Range, Angle, CWC.Owner.CourseNode);
@@ -414,21 +457,21 @@ namespace EWC.CustomWeapon.Properties.Traits
                 foreach ((EnemyAgent enemy, float angle) in angleList!)
                 {
                     if (angle >= targetAngle) return _target;
-                    if ((IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged)
-                     && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerUtil.MaskWorldExcProj))
+                    if (EnemyIsVisible(enemy) && (!RequireLOS || !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerUtil.MaskWorldExcProj)))
                         return enemy;
                 }
             }
             else
             {
                 foreach (var enemy in enemies)
-                    if ((IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged)
-                     && !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerUtil.MaskWorldExcProj))
+                    if (EnemyIsVisible(enemy) && (!RequireLOS || !Physics.Linecast(ray.origin, GetSearchTargetPos(enemy), LayerUtil.MaskWorldExcProj)))
                         return enemy;
             }
 
             return null;
         }
+
+        private bool EnemyIsVisible(EnemyAgent enemy) => IgnoreInvisibility || (!enemy.RequireTagForDetection && !TagOnly) || enemy.IsTagged;
 
         private Vector3 GetSearchTargetPos(EnemyAgent enemy)
         {
@@ -501,7 +544,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 s_ray.origin = _camera.Position;
                 collider.Raycast(s_ray, out s_raycastHit, (collider.transform.position - _camera.Position).magnitude);
 
-                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)) && !Physics.Linecast(_camera.Position, collider.transform.position, LayerUtil.MaskWorldExcProj))
+                if (!_bodyList.Any(collider => collider.Raycast(s_ray, out _, s_raycastHit.distance)) && (!StayRequireLOS || !Physics.Linecast(_camera.Position, collider.transform.position, LayerUtil.MaskWorldExcProj)))
                 {
                     _weakspotTarget = collider.transform;
                     _weakspotCollider = collider;
@@ -553,9 +596,13 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(AimActive), AimActive);
             writer.WriteNumber(nameof(Angle), Angle);
             writer.WriteNumber(nameof(Range), Range);
+            writer.WriteBoolean(nameof(RequireLOS), RequireLOS);
             writer.WriteNumber(nameof(LockTime), LockTime);
             writer.WriteNumber(nameof(LockDecayTime), LockDecayTime);
             writer.WriteBoolean(nameof(StayOnTarget), StayOnTarget);
+            writer.WriteBoolean(nameof(StayRequireLOS), StayRequireLOS);
+            writer.WriteNumber(nameof(StayAngle), StayAngle);
+            writer.WriteNumber(nameof(StayRange), StayRange);
             writer.WriteBoolean(nameof(ResetOnNewTarget), ResetOnNewTarget);
             writer.WriteBoolean(nameof(RequireLock), RequireLock);
             writer.WriteBoolean(nameof(LockWhileEmpty), LockWhileEmpty);
@@ -592,6 +639,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "range":
                     Range = reader.GetSingle();
                     break;
+                case "requirelos":
+                    RequireLOS = reader.GetBoolean();
+                    break;
                 case "locktime":
                     LockTime = reader.GetSingle();
                     break;
@@ -600,6 +650,15 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "stayontarget":
                     StayOnTarget = reader.GetBoolean();
+                    break;
+                case "stayrequirelos":
+                    StayRequireLOS = reader.GetBoolean();
+                    break;
+                case "stayangle":
+                    StayAngle = reader.GetSingle();
+                    break;
+                case "stayrange":
+                    StayRange = reader.GetSingle();
                     break;
                 case "resetonnewtarget":
                     ResetOnNewTarget = reader.GetBoolean();
