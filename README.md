@@ -18,6 +18,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Noise: Creates detectable noise where triggers occur.
 - Recoil Mod: Applies a recoil modifier. [Player]
 - Reference Trigger: Sends Apply and Reset triggers to other properties.
+- Reload Mod: Applies a reload speed modifier. [Gun]
 - Shot Mod: Applies a stat modifier to shots/melees.
 - Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
 - Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
