@@ -117,6 +117,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
             TriggerResetData data = default;
             data.source.SetPlayer(caller.CWC.Owner.Player.Owner);
+            data.isSentry = caller.CWC.Owner.IsType(Enums.OwnerType.Sentry);
             data.slot = PlayerAmmoStorage.GetSlotFromAmmoType(caller.CWC.Weapon.AmmoType);
             data.id = caller.SyncID;
             _resetSync.Send(data);
