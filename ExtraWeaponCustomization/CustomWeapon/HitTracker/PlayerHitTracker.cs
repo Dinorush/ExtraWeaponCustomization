@@ -8,8 +8,8 @@ namespace EWC.CustomWeapon.HitTracker
 {
     internal class PlayerHitTracker
     {
-        private readonly HitTracker _killTracker = new();
-        private readonly HitTracker _staggerTracker = new();
+        private readonly HitTracker _killTracker = new(onlyOnce: true);
+        private readonly HitTracker _staggerTracker = new(onlyOnce: false);
         private static ObjectWrapper<Agent> TempWrapper => ObjectWrapper<Agent>.SharedInstance;
         private static ObjectWrapper<CustomWeaponComponent> TempCWCWrapper => ObjectWrapper<CustomWeaponComponent>.SharedInstance;
 

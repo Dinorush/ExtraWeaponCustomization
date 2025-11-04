@@ -8,10 +8,16 @@ using System.Linq;
 
 namespace EWC.CustomWeapon.HitTracker
 {
-    internal class HitTracker
+    internal sealed class HitTracker
     {
         private readonly Dictionary<ObjectWrapper<Agent>, Dictionary<ObjectWrapper<CustomWeaponComponent>, (WeaponHitDamageableContext context, float time)>> _lastHits = new();
         private readonly Dictionary<ObjectWrapper<Agent>, bool> _shownHits = new();
+        private readonly bool _onlyOnce;
+
+        public HitTracker(bool onlyOnce)
+        {
+            _onlyOnce = onlyOnce;
+        }
 
         public void RegisterHit(ObjectWrapper<CustomWeaponComponent> cwc, WeaponHitDamageableContext hitContext, ObjectWrapper<Agent> enemy)
         {
@@ -21,6 +27,8 @@ namespace EWC.CustomWeapon.HitTracker
                     hitInfo[cwc] = (hitContext, Clock.Time);
                 else
                     hitInfo[new ObjectWrapper<CustomWeaponComponent>(cwc)] = (hitContext, Clock.Time);
+                if (_onlyOnce)
+                    _shownHits[enemy] = false;
             }
             else
             {
@@ -29,8 +37,8 @@ namespace EWC.CustomWeapon.HitTracker
                 {
                     [new ObjectWrapper<CustomWeaponComponent>(cwc)] = (hitContext, Clock.Time)
                 };
+                _shownHits[enemy] = false;
             }
-            _shownHits[enemy] = false;
         }
 
         public bool TryGetContexts(ObjectWrapper<Agent> enemy, [MaybeNullWhen(false)] out Dictionary<ObjectWrapper<CustomWeaponComponent>, (WeaponHitDamageableContext context, float time)> hitsDict, out IntPtr lastCWCPtr)
