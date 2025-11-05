@@ -50,7 +50,7 @@ namespace EWC.Patches.Gun
             }
 
             cgc.ShotComponent.FireVanilla(s_hitData, originPos);
-            s_hitData.Apply();
+            weaponRayData.maxRayDist = 0f;
             __result = false;
             return false;
         }
