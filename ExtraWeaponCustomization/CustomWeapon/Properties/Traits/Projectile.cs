@@ -59,11 +59,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool EnableTerrainHitFX { get; private set; } = true;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
-        public float AliveTriggerDelay { get; private set; } = 0f;
-        public float AliveTriggerInterval { get; private set; } = 1f;
         public uint FlyingSoundID { get; private set; } = 0u;
         public uint DestroyedSoundID { get; private set; } = 0u;
         public bool StopFlyingSoundOnDestroy { get; private set; } = false;
+        public float AliveTriggerDelay { get; private set; } = 0f;
+        public float AliveTriggerInterval { get; private set; } = 1f;
 
         public List<ProjectileDirChange> DirChanges { get; private set; } = new();
         public List<ProjectileStatChange> StatChanges { get; private set; } = new();
@@ -305,12 +305,6 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "lifetime":
                     Lifetime = reader.GetSingle();
                     break;
-                case "alivetriggerdelay":
-                    AliveTriggerDelay = reader.GetSingle();
-                    break;
-                case "alivetriggerinterval":
-                    AliveTriggerInterval = reader.GetSingle();
-                    break;
                 case "flyingsoundid":
                 case "flyingsound":
                     if (reader.TokenType == JsonTokenType.String)
@@ -327,6 +321,12 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "stopflyingsoundondestroy":
                     StopFlyingSoundOnDestroy = reader.GetBoolean();
+                    break;
+                case "alivetriggerdelay":
+                    AliveTriggerDelay = reader.GetSingle();
+                    break;
+                case "alivetriggerinterval":
+                    AliveTriggerInterval = reader.GetSingle();
                     break;
                 case "dirchanges":
                     DirChanges = ProjectileDirChange.DeserializeList(ref reader);
