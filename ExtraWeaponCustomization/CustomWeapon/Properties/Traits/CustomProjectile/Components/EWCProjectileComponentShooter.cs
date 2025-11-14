@@ -122,6 +122,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
         }
 
+        protected override CellSoundPlayer SoundPlayer => _projectile.m_soundPlayer;
+
         public override void SetVisualPosition(Vector3 positionVisual, float lerpDist)
         {
             base.SetVisualPosition(positionVisual, lerpDist);
@@ -133,7 +135,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             base.Update();
             if (!enabled) return;
 
-            _projectile.m_soundPlayer.UpdatePosition(_positionVisual);
             _projectile.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
 

@@ -39,6 +39,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private readonly DelayedCallback _inactiveCallback;
         private float _startLifetime;
         private float _endLifetime;
+        private bool _playingEndSound = false;
         protected float _inactiveLifetime = 0f;
 
         private readonly PhysicsInfo _fixedInfo = new();
@@ -84,6 +85,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (enabled) return;
 
             _inactiveCallback.Cancel();
+            _playingEndSound = false;
 
             SyncID = ID;
             PlayerIndex = playerIndex;
@@ -108,6 +110,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             IsManaged = isManaged;
 
             ProjectileAPI.FireProjectileSpawnedCallback(this);
+            if (Settings.FlyingSoundID != 0)
+                SoundPlayer.Post(Settings.FlyingSoundID, Position);
 
             if (isManaged)
             {
@@ -139,6 +143,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Homing.Init(projBase, position, _fixedInfo.BaseDir);
         }
 
+        protected virtual CellSoundPlayer SoundPlayer => throw new NotImplementedException("Base projectile component SoundPlayer called - child class should override!");
+
         public virtual void SetVisualPosition(Vector3 positionVisual, float lerpDist)
         {
             if (_deltaInfo.BaseVelocity.sqrMagnitude == 0) return;
@@ -150,6 +156,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _dirVisual = _deltaInfo.Position + _deltaInfo.BaseVelocity * _lerpTime - _positionVisual;
             s_tempRot.SetLookRotation(_dirVisual);
             gameObject.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
+            SoundPlayer.UpdatePosition(_positionVisual);
         }
 
         public void ReceivePosition(Vector3 pos, Vector3 dir)
@@ -274,6 +281,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             LerpVisualOffset();
+            SoundPlayer.UpdatePosition(_positionVisual);
         }
 
         [HideFromIl2Cpp]
@@ -331,14 +339,29 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
             _inactiveCallback.Start();
+            if (Settings.StopFlyingSoundOnDestroy)
+                SoundPlayer.Stop();
+            if (Settings.DestroyedSoundID != 0)
+            {
+                _playingEndSound = true;
+                SoundPlayer.PostWithDoneCallback(Settings.DestroyedSoundID, Position, OnEndSoundDone);
+            }
             EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID, IsManaged);
             Hitbox.Die();
             Homing.Die();
             ProjectileAPI.FireProjectileDestroyedCallback(this);
         }
 
+        private void OnEndSoundDone()
+        {
+            _playingEndSound = false;
+            Cleanup();
+        }
+
         protected virtual void Cleanup()
         {
+            if (_inactiveCallback.Active || _playingEndSound) return;
+
             gameObject.active = false;
         }
 

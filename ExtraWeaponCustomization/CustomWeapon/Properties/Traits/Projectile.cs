@@ -61,6 +61,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float Lifetime { get; private set; } = 20f;
         public float AliveTriggerDelay { get; private set; } = 0f;
         public float AliveTriggerInterval { get; private set; } = 1f;
+        public uint FlyingSoundID { get; private set; } = 0u;
+        public uint DestroyedSoundID { get; private set; } = 0u;
+        public bool StopFlyingSoundOnDestroy { get; private set; } = false;
 
         public List<ProjectileDirChange> DirChanges { get; private set; } = new();
         public List<ProjectileStatChange> StatChanges { get; private set; } = new();
@@ -171,6 +174,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(EnableTerrainHitFX), EnableTerrainHitFX);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
+            writer.WriteNumber(nameof(FlyingSoundID), FlyingSoundID);
+            writer.WriteNumber(nameof(DestroyedSoundID), DestroyedSoundID);
+            writer.WriteBoolean(nameof(StopFlyingSoundOnDestroy), StopFlyingSoundOnDestroy);
             writer.WriteNumber(nameof(AliveTriggerDelay), AliveTriggerDelay);
             writer.WriteNumber(nameof(AliveTriggerInterval), AliveTriggerInterval);
             writer.WritePropertyName(nameof(DirChanges));
@@ -305,7 +311,23 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "alivetriggerinterval":
                     AliveTriggerInterval = reader.GetSingle();
                     break;
-
+                case "flyingsoundid":
+                case "flyingsound":
+                    if (reader.TokenType == JsonTokenType.String)
+                        FlyingSoundID = AkSoundEngine.GetIDFromString(reader.GetString()!);
+                    else
+                        FlyingSoundID = reader.GetUInt32();
+                    break;
+                case "destroyedsoundid":
+                case "destroyedsound":
+                    if (reader.TokenType == JsonTokenType.String)
+                        DestroyedSoundID = AkSoundEngine.GetIDFromString(reader.GetString()!);
+                    else
+                        DestroyedSoundID = reader.GetUInt32();
+                    break;
+                case "stopflyingsoundondestroy":
+                    StopFlyingSoundOnDestroy = reader.GetBoolean();
+                    break;
                 case "dirchanges":
                     DirChanges = ProjectileDirChange.DeserializeList(ref reader);
                     break;
