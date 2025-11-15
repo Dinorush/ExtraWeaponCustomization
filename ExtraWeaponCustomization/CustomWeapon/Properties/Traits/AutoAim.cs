@@ -335,8 +335,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         private bool CanLock => LockWhileEmpty || HasAmmo;
         private bool LockedTarget => _target != null && _progress == 1f;
         private bool AutoAimActive => (
-               AimActive == InputMapper.GetButtonKeyMouse(InputAction.Aim, eFocusState.FPS)
-            || HipActive != InputMapper.GetButtonKeyMouse(InputAction.Aim, eFocusState.FPS)
+               AimActive == CWC.Owner.Player.FPItemHolder.ItemAimTrigger
+            || HipActive != CWC.Owner.Player.FPItemHolder.ItemAimTrigger
             );
         public bool UseAutoAim => LockedTarget && AutoAimActive;
 
