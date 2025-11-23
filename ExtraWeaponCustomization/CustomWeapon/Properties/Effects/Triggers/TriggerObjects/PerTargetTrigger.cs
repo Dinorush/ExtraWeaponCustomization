@@ -18,6 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public ITrigger Apply { get; private set; }
         public float Amount { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
+        public float Threshold { get; private set; } = 0f;
 
         public PerTargetTrigger()
         {
@@ -61,8 +62,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (Apply.Invoke(context, out _))
             {
                 var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
-                if (_targetAmounts.Remove(TempWrapper.Set(damageable), out amount))
+                if (_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out amount) && amount >= Threshold)
+                {
+                    _targetAmounts.Remove(TempWrapper);
                     return true;
+                }
             }
             
             return false;
@@ -100,6 +104,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "cap":
                     Cap = reader.GetSingle();
+                    break;
+                case "threshold":
+                    Threshold = reader.GetSingle();
                     break;
                 case "triggeramount":
                 case "amount":
