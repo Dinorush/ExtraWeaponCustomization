@@ -16,6 +16,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public TriggerName Name { get; } = TriggerName.PerTarget;
         public ITrigger Activate { get; private set; }
         public ITrigger Apply { get; private set; }
+        public ITrigger? Cancel { get; private set; }
         public float Amount { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
         public float Threshold { get; private set; } = 0f;
@@ -41,7 +42,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public bool Invoke(WeaponTriggerContext context, out float amount)
         {
             amount = 0f;
-            if (Activate.Invoke(context, out var triggerAmt))
+            if (context is not WeaponHitDamageableContextBase baseContext) return false;
+
+            if (Activate.Invoke(context, out var triggerAmt) && triggerAmt > 0)
             {
                 var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
                 if (!_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out var stored))
@@ -59,7 +62,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _targetAmounts[TempWrapper] = stored;
             }
 
-            if (Apply.Invoke(context, out _))
+            if (Apply.Invoke(context, out triggerAmt) && triggerAmt > 0)
             {
                 var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
                 if (_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out amount) && amount >= Threshold)
@@ -67,6 +70,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     _targetAmounts.Remove(TempWrapper);
                     return true;
                 }
+            }
+
+            if (Cancel?.Invoke(context, out triggerAmt) == true && triggerAmt > 0)
+            {
+                var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
+                _targetAmounts.Remove(TempWrapper.Set(damageable));
             }
             
             return false;
@@ -100,6 +109,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "apply":
                     Apply = EWCJson.Deserialize<ITrigger>(ref reader)!;
                     if (Apply == null || !ValidApplies.Contains(Apply.Name))
+                        throw new JsonException($"PerTarget Trigger requires a trigger of type [{string.Join(", ", ValidApplies)}]!");
+                    break;
+                case "cancel":
+                case "reset":
+                    Cancel = EWCJson.Deserialize<ITrigger>(ref reader)!;
+                    if (Cancel == null) break;
+                    if (!ValidActivates.Contains(Cancel.Name))
                         throw new JsonException($"PerTarget Trigger requires a trigger of type [{string.Join(", ", ValidApplies)}]!");
                     break;
                 case "cap":
