@@ -78,7 +78,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _targetAmounts.Remove(TempWrapper.Set(damageable));
             }
             
-            return false;
+            return _targetAmounts.Count > 0;
         }
 
         public void Reset()
