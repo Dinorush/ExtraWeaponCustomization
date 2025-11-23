@@ -6,13 +6,13 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
 - Ammo Mod: Modifies the magazine/reserve ammo counts.
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
-- Armor Shred: Applies a global armor reduction to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
+- Armor Shred: Applies a global armor reduction to shots/melees unique to each target. [Hit Triggers]
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
-- Damage Over Time: Applies a damage over time effect. [Prehit, Hit, Damage, Charge, Stagger]
+- Damage Over Time: Applies a damage over time effect. [Hit Triggers]
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
 - Fire Shot: Fires shots at offsets. [Gun]
-- Foam: Applies foam where bullets land. [Landed, Prehit, Hit, Damage, Charge, Stagger]
+- Foam: Applies foam where bullets land. [Landed, Hit Triggers]
 - Health Mod: Modifies the user's health.
 - Health Shot Mod: Applies a modifier to shots/melees depending on the user's current health.
 - Noise: Creates detectable noise where triggers occur.
@@ -20,11 +20,12 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Reference Trigger: Sends Apply and Reset triggers to other properties.
 - Reload Mod: Applies a reload speed modifier. [Gun]
 - Shot Mod: Applies a stat modifier to shots/melees.
-- Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
-- Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Prehit, Hit, Damage, Charge, Stagger]
+- Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Hit Triggers]
+- Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Hit Triggers]
 - Shrapnel: Causes bullets to fire out from where bullets land. [Gun]
 - Speed Mod: Applies a modifier to the user's movement speed. [Player]
 - Spread Mod: Applies a spread modifier. [Gun]
+- Stamina Mod: Modifies the user's stamina. [Player]
 - Temp Properties: Temporarily adds another set of properties.
 
 #### Traits - Innate gun behavior modifications
