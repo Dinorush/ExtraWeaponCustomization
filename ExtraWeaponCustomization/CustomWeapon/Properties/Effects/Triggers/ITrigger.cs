@@ -44,7 +44,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
     public interface ITrigger
     {
-        public static readonly TriggerName[] HitTriggers = new TriggerName[] { TriggerName.Empty, TriggerName.PreHit, TriggerName.Hit, TriggerName.Charge, TriggerName.Damage, TriggerName.Backstab, TriggerName.Stagger };
+        public static readonly TriggerName[] HitTriggers = new TriggerName[] { TriggerName.Empty, TriggerName.PreHit, TriggerName.Hit, TriggerName.Charge, TriggerName.Damage, TriggerName.Backstab, TriggerName.Stagger, TriggerName.PerTarget };
 
         TriggerName Name { get; }
         bool StoreZeroAmount => false;
