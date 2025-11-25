@@ -5,7 +5,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
 {
     internal sealed class HealSync : SyncedEventMasterOnly<HealData>
     {
-        public override string GUID => "EXPHEAL";
+        public override string GUID => "HEAL";
 
         protected override void Receive(HealData packet)
         {

@@ -2,7 +2,6 @@ using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Attributes;
-using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +13,7 @@ namespace EWC.CustomWeapon.WeaponContext
     {
         private static readonly Type[] s_contextTypes;
         private static readonly Dictionary<Type, Type> s_parentContextTypes = new();
-        private static Dictionary<(OwnerType, WeaponType), List<Type>> s_cachedContextTypes = new();
+        private static readonly Dictionary<(OwnerType, WeaponType), List<Type>> s_cachedContextTypes = new();
 
         static ContextController()
         {
@@ -216,114 +215,6 @@ namespace EWC.CustomWeapon.WeaponContext
                 if (_contextLists.TryGetValue(type, out var list) && _contextLists.TryGetValue(parentType, out var parentList))
                     list.ParentContextList = parentList;
             }
-        }
-
-        private void RegisterGunContexts()
-        {
-            // Only contexts that aren't direct descendants of WeaponTriggerContext need to have it passed directly,
-            // but why not micro-optimize?
-            var triggerList = RegisterContext<WeaponTriggerContext>();
-            RegisterContext<WeaponAimContext>(triggerList);
-            RegisterContext<WeaponAimEndContext>(triggerList);
-            RegisterContext<WeaponAmmoContext>(triggerList);
-            RegisterContext<WeaponPostKillContext>(triggerList);
-            RegisterContext<WeaponPostStaggerContext>(triggerList);
-            RegisterContext<WeaponPostFireContext>(triggerList);
-            RegisterContext<WeaponPreFireContext>(triggerList);
-            RegisterContext<WeaponHitContext>(triggerList);
-            RegisterContext<WeaponPreHitDamageableContext>(triggerList);
-            RegisterContext<WeaponHitDamageableContext>(triggerList);
-            RegisterContext<WeaponShotEndContext>(triggerList);
-            RegisterContext<WeaponDamageTakenContext>(triggerList);
-            RegisterContext<WeaponHealthContext>(triggerList);
-            RegisterContext<WeaponPostReloadContext>(triggerList);
-            RegisterContext<WeaponReloadStartContext>(triggerList);
-            RegisterContext<WeaponUnWieldContext>(triggerList);
-            RegisterContext<WeaponWieldContext>(triggerList);
-            RegisterContext<WeaponCrouchContext>(triggerList);
-            RegisterContext<WeaponCrouchEndContext>(triggerList);
-            RegisterContext<WeaponSprintContext>(triggerList);
-            RegisterContext<WeaponSprintEndContext>(triggerList);
-            RegisterContext<WeaponJumpContext>(triggerList);
-            RegisterContext<WeaponJumpEndContext>(triggerList);
-            RegisterContext<WeaponReferenceContext>(triggerList);
-            RegisterContext<WeaponInitContext>(triggerList);
-            RegisterContext<WeaponPostStartFireContext>(triggerList);
-            RegisterContext<WeaponPostStopFiringContext>(triggerList);
-
-            // Standard contexts
-            RegisterContext<WeaponArmorContext>();
-            RegisterContext<WeaponBackstabContext>();
-            RegisterContext<WeaponFireCanceledContext>();
-            RegisterContext<WeaponStatContext>();
-            RegisterContext<WeaponHitmarkerContext>();
-            RegisterContext<WeaponPostAmmoInitContext>();
-            RegisterContext<WeaponPreAmmoPackContext>();
-            RegisterContext<WeaponPostAmmoPackContext>();
-            RegisterContext<WeaponPreAmmoUIContext>();
-            RegisterContext<WeaponFireRateContext>();
-            RegisterContext<WeaponFireCancelContext>();
-            RegisterContext<WeaponPreStartFireContext>();
-            RegisterContext<WeaponPreRayContext>();
-            RegisterContext<WeaponPreReloadContext>();
-            RegisterContext<WeaponRecoilContext>();
-            RegisterContext<WeaponShotInitContext>();
-            RegisterContext<WeaponShotGroupInitContext>();
-            RegisterContext<WeaponStealthUpdateContext>();
-
-            // Component management contexts
-            RegisterContext<WeaponClearContext>();
-            RegisterContext<WeaponSetupContext>();
-            RegisterContext<WeaponUpdateContext>();
-        }
-
-        private void RegisterMeleeContexts()
-        {
-            var triggerList = RegisterContext<WeaponTriggerContext>();
-            RegisterContext<WeaponPostKillContext>(triggerList);
-            RegisterContext<WeaponPostStaggerContext>(triggerList);
-            RegisterContext<WeaponPostFireContext>(triggerList);
-            RegisterContext<WeaponPreFireContext>(triggerList);
-            RegisterContext<WeaponHitContext>(triggerList);
-            RegisterContext<WeaponPreHitDamageableContext>(triggerList);
-            RegisterContext<WeaponHitDamageableContext>(triggerList);
-            RegisterContext<WeaponShotEndContext>(triggerList);
-            RegisterContext<WeaponDamageTakenContext>(triggerList);
-            RegisterContext<WeaponHealthContext>(triggerList);
-            RegisterContext<WeaponWieldContext>(triggerList);
-            RegisterContext<WeaponUnWieldContext>(triggerList);
-            RegisterContext<WeaponCrouchContext>(triggerList);
-            RegisterContext<WeaponCrouchEndContext>(triggerList);
-            RegisterContext<WeaponSprintContext>(triggerList);
-            RegisterContext<WeaponSprintEndContext>(triggerList);
-            RegisterContext<WeaponJumpContext>(triggerList);
-            RegisterContext<WeaponJumpEndContext>(triggerList);
-            RegisterContext<WeaponReferenceContext>(triggerList);
-            RegisterContext<WeaponInitContext>(triggerList);
-
-            RegisterContext<WeaponArmorContext>();
-            RegisterContext<WeaponBackstabContext>();
-            RegisterContext<WeaponStatContext>();
-            RegisterContext<WeaponHitmarkerContext>();
-            RegisterContext<WeaponFireRateContext>();
-            RegisterContext<WeaponStealthUpdateContext>();
-            RegisterContext<WeaponShotInitContext>();
-            RegisterContext<WeaponShotGroupInitContext>();
-
-            RegisterContext<WeaponChargeContext>();
-
-            RegisterContext<WeaponClearContext>();
-            RegisterContext<WeaponSetupContext>();
-        }
-
-        private void RegisterSyncContexts()
-        {
-            RegisterContext<WeaponClearContext>();
-            RegisterContext<WeaponSetupContext>();
-            RegisterContext<WeaponStealthUpdateContext>();
-            RegisterContext<WeaponFireRateContext>();
-            RegisterContext<WeaponPreFireContextSync>();
-            RegisterContext<WeaponPostFireContextSync>();
         }
     }
 }

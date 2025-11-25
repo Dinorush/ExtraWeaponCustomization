@@ -19,6 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool CancelRegen { get; private set; } = false;
         public bool StopBleed { get; private set; } = false;
         public bool ApplyToTarget { get; private set; } = false;
+        public bool EnableDamageFX { get; private set; } = true;
 
         public override void TriggerReset() {}
 
@@ -68,6 +69,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(CancelRegen), CancelRegen);
             writer.WriteBoolean(nameof(StopBleed), StopBleed);
             writer.WriteBoolean(nameof(ApplyToTarget), ApplyToTarget);
+            writer.WriteBoolean(nameof(EnableDamageFX), EnableDamageFX);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -97,6 +99,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "applytotarget":
                     ApplyToTarget = reader.GetBoolean();
+                    break;
+                case "enabledamagefx":
+                    EnableDamageFX = reader.GetBoolean();
                     break;
                 default:
                     break;

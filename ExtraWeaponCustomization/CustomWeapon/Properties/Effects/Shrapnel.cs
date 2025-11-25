@@ -54,7 +54,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool HitTriggerTarget { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
         public bool ApplyAttackCooldown { get; private set; } = true;
-        public bool ApplyOnUser { get; private set; } = false;
+        public TriggerPosMode ApplyPositionMode { get; private set; } = TriggerPosMode.Relative;
 
         private const float WallHitBuffer = 0.03f;
 
@@ -107,7 +107,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 Vector3 position;
                 Vector3 dir = Vector3.zero;
                 Vector3 normal = Vector3.zero;
-                if (!ApplyOnUser && tContext.context is IPositionContext hitContext)
+                if (ApplyPositionMode != TriggerPosMode.User && tContext.context is IPositionContext hitContext)
                 {
                     info = hitContext.ShotInfo.Orig;
                     position = hitContext.Position;
@@ -119,7 +119,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                             ignoreBase = damContext.Damageable.GetBaseDamagable().Pointer;
 
                         Agent? agent = damContext.Damageable.GetBaseAgent();
-                        if (agent != null)
+                        if (ApplyPositionMode == TriggerPosMode.Relative && agent != null)
                             position = damContext.LocalPosition + agent.Position;
                     }
                     else
@@ -319,7 +319,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
             writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
-            writer.WriteBoolean(nameof(ApplyOnUser), ApplyOnUser);
+            writer.WriteString(nameof(ApplyPositionMode), ApplyPositionMode.ToString());
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -447,8 +447,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "applyattackcooldown":
                     ApplyAttackCooldown = reader.GetBoolean();
                     break;
+                case "applypositionmode":
+                    ApplyPositionMode = reader.GetString()!.ToEnum(TriggerPosMode.Relative);
+                    break;
                 case "applyonuser":
-                    ApplyOnUser = reader.GetBoolean();
+                    ApplyPositionMode = TriggerPosMode.User;
                     break;
             }
         }

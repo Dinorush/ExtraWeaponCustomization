@@ -4,6 +4,7 @@ using EWC.CustomWeapon.Properties.Effects.Hit.Explosion;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.JSON;
+using EWC.Utils.Extensions;
 using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
@@ -35,7 +36,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageLocks { get; private set; } = true;
         public bool HitClosestFirst { get; private set; } = false;
         public bool ApplyAttackCooldown { get; private set; } = true;
-        public bool ApplyOnUser { get; private set; } = false;
+        public TriggerPosMode ApplyPositionMode { get; private set; } = TriggerPosMode.Relative;
         public uint SoundID { get; private set; } = EVENTS.STICKYMINEEXPLODE;
         public bool EnableMineFX { get; private set; } = false;
         public Color GlowColor { get; private set; } = new(1, 0.2f, 0, 1);
@@ -64,14 +65,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             foreach (TriggerContext tContext in triggerList)
             {
                 CacheBackstab = 0f;
-                if(!ApplyOnUser && tContext.context is IPositionContext hitContext)
+                if(ApplyPositionMode != TriggerPosMode.User && tContext.context is IPositionContext hitContext)
                 {
                     Vector3 position = hitContext.Position;
                     if (hitContext is WeaponHitDamageableContextBase damContext)
                     {
                         CacheBackstab = damContext.Backstab;
                         Agents.Agent? agent = damContext.Damageable.GetBaseAgent();
-                        if (agent != null)
+                        if (ApplyPositionMode == TriggerPosMode.Relative && agent != null)
                             position = damContext.LocalPosition + agent.Position;
                     }
                     else
@@ -110,7 +111,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             writer.WriteBoolean(nameof(HitClosestFirst), HitClosestFirst);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
-            writer.WriteBoolean(nameof(ApplyOnUser), ApplyOnUser);
+            writer.WriteString(nameof(ApplyPositionMode), ApplyPositionMode.ToString());
             SerializeTrigger(writer);
             writer.WriteNumber(nameof(SoundID), SoundID);
             writer.WriteBoolean(nameof(EnableMineFX), EnableMineFX);
@@ -208,8 +209,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "applyattackcooldown":
                     ApplyAttackCooldown = reader.GetBoolean();
                     break;
+                case "applypositionmode":
+                    ApplyPositionMode = reader.GetString()!.ToEnum(TriggerPosMode.Relative);
+                    break;
                 case "applyonuser":
-                    ApplyOnUser = reader.GetBoolean();
+                    ApplyPositionMode = TriggerPosMode.User;
                     break;
                 case "soundid":
                 case "sound":

@@ -10,6 +10,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
     public static class HealManager
     {
         private readonly static HealSync _sync = new();
+        private readonly static HealFXSync _fxSync = new();
         private const float SingleVal = 1f / 65535f; // For fixing rounding errors
         private const float FLASH_CONVERSION = 6f;
 
@@ -17,6 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
         private static void Init()
         {
             _sync.Setup();
+            _fxSync.Setup();
         }
 
         public static void DoHeal(PlayerAgent player, float heal, float cap, HealthMod hBase)
@@ -31,7 +33,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
             data.heal.Set(heal, player.Damage.HealthMax);
             data.cap.Set(cap, player.Damage.HealthMax);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
-            ReceiveHealLocal(player, heal, cap);
         }
 
         internal static void Internal_ReceiveHeal(PlayerAgent player, float heal, float cap, bool cancelRegen)
@@ -54,18 +55,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
                 float origRegen = dam.m_nextRegen;
                 player.Damage.OnIncomingDamage(heal, heal, player);
                 dam.m_nextRegen = cancelRegen ? Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage * EXPAPIWrapper.GetHealthRegenMod(player) : origRegen;
+                _fxSync.Send(heal, player.Owner);
             }
         }
 
-        private static void ReceiveHealLocal(PlayerAgent player, float heal, float cap)
+        internal static void Internal_ReceiveHealDamage(float damage)
         {
-            if (heal >= 0f) return;
-
-            var damBase = player.Damage;
-            heal = Math.Min(-heal, damBase.Health - (cap - SingleVal));
-            if (heal <= 0) return;
-
-            player.FPSCamera.AddHitReact(heal / damBase.HealthMax * FLASH_CONVERSION, UnityEngine.Vector3.up, 0f);
+            var player = PlayerManager.GetLocalPlayerAgent();
+            player.FPSCamera.AddHitReact(damage / player.Damage.HealthMax * FLASH_CONVERSION, UnityEngine.Vector3.up, 0f);
         }
     }
 
@@ -75,5 +72,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
         public SFloat16 heal;
         public UFloat16 cap;
         public bool cancelRegen;
+        public bool playFX;
     }
 }
