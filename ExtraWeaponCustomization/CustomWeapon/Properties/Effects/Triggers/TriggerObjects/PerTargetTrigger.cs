@@ -80,6 +80,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                         amount = stored - Threshold;
                     else
                         amount = stored;
+
+                    if (amount == 0) return true;
+
                     _targetAmounts.Remove(TempWrapper);
                     return true;
                 }
