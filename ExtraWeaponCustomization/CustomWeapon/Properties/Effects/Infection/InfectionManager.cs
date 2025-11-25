@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Infection
 
         public static void DoInfectFX(PlayerAgent player, float infect, Vector3 pos, Vector3 dir)
         {
-            if (infect == 0) return;
+            if (infect == 0 || player.Owner.IsBot) return;
 
             InfectionFXData data = new() { isDirect = false };
             data.player.Set(player);
@@ -32,7 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Infection
 
         public static void DoDirectInfectFX(PlayerAgent player, float infect)
         {
-            if (infect == 0) return;
+            if (infect == 0 || player.Owner.IsBot) return;
 
             pPlayerAgent pPlayer = new();
             pPlayer.Set(player);
