@@ -15,6 +15,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Foam: Applies foam where bullets land. [Landed, Hit Triggers]
 - Health Mod: Modifies the user's health.
 - Health Shot Mod: Applies a modifier to shots/melees depending on the user's current health.
+- Infection Mod: Modifies the user's infection.
 - Noise: Creates detectable noise where triggers occur.
 - Recoil Mod: Applies a recoil modifier. [Player]
 - Reference Trigger: Sends Apply and Reset triggers to other properties.
