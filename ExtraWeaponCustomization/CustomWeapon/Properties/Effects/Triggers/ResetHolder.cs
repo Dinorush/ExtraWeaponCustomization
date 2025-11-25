@@ -21,7 +21,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public void ResetTriggers(bool resetAccumulated = true)
         {
             if (ApplyDelay > 0f)
+            {
+                _triggerSum = 0f;
                 StartDelayedCallback(_delayedApply!, checkEnd: true, refresh: false);
+            }
             else
                 DoReset(resetAccumulated);
         }
