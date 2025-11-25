@@ -72,6 +72,5 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
         public SFloat16 heal;
         public UFloat16 cap;
         public bool cancelRegen;
-        public bool playFX;
     }
 }
