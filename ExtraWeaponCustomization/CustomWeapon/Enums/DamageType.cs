@@ -19,11 +19,13 @@ namespace EWC.CustomWeapon.Enums
         Flesh = 1<<8,
         Foamed = 1<<9,
         Unfoamed = 1<<10,
-        Enemy = 1<<11,
-        Player = 1<<12,
-        Lock = 1<<13,
-        Dead = 1<<14,
-        Terrain = 1<<15 | Dead
+        Staggered = 1<<11,
+        Unstaggered = 1<<12,
+        Enemy = 1<<13,
+        Player = 1<<14,
+        Lock = 1<<15,
+        Dead = 1<<16,
+        Terrain = 1<<17 | Dead
     }
 
     public static class DamageTypeConst
@@ -67,6 +69,11 @@ namespace EWC.CustomWeapon.Enums
                 flag |= DamageType.Unfoamed;
             else if (name.Contains("foamed"))
                 flag |= DamageType.Foamed;
+
+            if (name.Contains("unstaggered"))
+                flag |= DamageType.Unstaggered;
+            else if (name.Contains("staggered"))
+                flag |= DamageType.Staggered;
 
             if (name.Contains("armor"))
                 flag |= DamageType.Armor;
@@ -112,7 +119,17 @@ namespace EWC.CustomWeapon.Enums
             return result;
         }
 
-        public static DamageType GetSubTypes(Dam_EnemyDamageLimb limb) => DamageType.Enemy | GetSubTypes(limb.m_type == eLimbDamageType.Weakspot, limb.m_armorDamageMulti, limb.m_base.IsStuckInGlue);
+        public static DamageType GetSubTypes(Dam_EnemyDamageLimb limb)
+        {
+            DamageType damageType = DamageType.Enemy;
+            damageType |= limb.m_type == eLimbDamageType.Weakspot ? DamageType.Weakspot : DamageType.Body;
+            damageType |= limb.m_armorDamageMulti < 1f ? DamageType.Armor : DamageType.Flesh;
+            damageType |= limb.m_base.IsStuckInGlue ? DamageType.Foamed : DamageType.Unfoamed;
+
+            var stateEnum = limb.m_base.Owner.Locomotion.CurrentStateEnum;
+            damageType |= stateEnum == Enemies.ES_StateEnum.Hitreact || stateEnum == Enemies.ES_StateEnum.HitReactFlyer ? DamageType.Staggered : DamageType.Unstaggered;
+            return damageType;
+        }
 
         public static DamageType GetSubTypes(IDamageable damageable)
         {
@@ -128,24 +145,13 @@ namespace EWC.CustomWeapon.Enums
             return agent.Type switch
             {
                 AgentType.Enemy => damageable!.GetBaseDamagable().GetHealthRel() > 0 ? GetSubTypes(damageable.Cast<Dam_EnemyDamageLimb>()) : DamageType.Dead,
-                AgentType.Player => DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Player,
+                AgentType.Player => DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Unstaggered | DamageType.Player,
                 _ => DamageType.Any
             };
-        }
-
-        public static DamageType GetSubTypes(bool precHit, float armorMulti, bool inGlue = false)
-        {
-            DamageType damageType = DamageType.Any;
-            damageType |= precHit ? DamageType.Weakspot : DamageType.Body;
-            damageType |= armorMulti < 1f ? DamageType.Armor : DamageType.Flesh;
-            damageType |= inGlue ? DamageType.Foamed : DamageType.Unfoamed;
-            return damageType;
         }
 
         public static DamageType WithSubTypes(this DamageType damageType, Dam_EnemyDamageLimb limb) => damageType | GetSubTypes(limb);
 
         public static DamageType WithSubTypes(this DamageType damageType, IDamageable damageable) => damageType | GetSubTypes(damageable);
-
-        public static DamageType WithSubTypes(this DamageType damageType, bool precHit, float armorMulti) => damageType | GetSubTypes(precHit, armorMulti);
     }
 }
