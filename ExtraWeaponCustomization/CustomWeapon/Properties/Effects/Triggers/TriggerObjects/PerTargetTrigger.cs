@@ -20,6 +20,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float Amount { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
         public float Threshold { get; private set; } = 0f;
+        public bool ActivateScaleWithFalloff { get; private set; } = false;
+        public bool ApplyAboveThreshold { get; private set; } = false;
+        public bool OverrideAmount { get; private set; } = false;
 
         public PerTargetTrigger()
         {
@@ -56,6 +59,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     _targetAmounts.Add(new(TempWrapper), stored = 0);
                 }
 
+                var addAmount = triggerAmt * Amount;
+                if (ActivateScaleWithFalloff)
+                    addAmount *= baseContext.Falloff;
+
                 stored += triggerAmt * Amount;
                 if (Cap > 0)
                     stored = Math.Min(stored, Cap);
@@ -65,8 +72,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (Apply.Invoke(context, out triggerAmt) && triggerAmt > 0)
             {
                 var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
-                if (_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out amount) && amount >= Threshold)
+                if (_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out var stored) && stored >= Threshold)
                 {
+                    if (OverrideAmount)
+                        amount = Amount;
+                    else if (ApplyAboveThreshold)
+                        amount = stored - Threshold;
+                    else
+                        amount = stored;
                     _targetAmounts.Remove(TempWrapper);
                     return true;
                 }
@@ -124,6 +137,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 case "threshold":
                     Threshold = reader.GetSingle();
                     break;
+                case "applyabovethreshold":
+                    ApplyAboveThreshold = reader.GetBoolean();
+                    break;
+                case "activatescalewithfalloff":
+                case "scalewithfalloff":
+                    ActivateScaleWithFalloff = reader.GetBoolean();
+                    break;
+                case "overrideamount":
+                case "applyoverrideamount":
+                case "applyamount":
+                    OverrideAmount = reader.GetBoolean();
+                    return;
                 case "triggeramount":
                 case "amount":
                     Amount = reader.GetSingle();
