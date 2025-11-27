@@ -127,7 +127,8 @@ namespace EWC.CustomWeapon.CustomShot
 
             var pool = cgc.Gun.TracerPool;
 
-            for (int i = 0; i < shots; i++)
+            // JFS - Should never over-cancel, but could maybe happen with DataSwap
+            for (int i = Math.Min(shots, pool.m_inUse.Count); i > 0; i--)
             {
                 if (!pool.m_inUse[^1].TryCastOut<FX_Effect>(out var effect)) return; // JFS - Shouldn't happen
 
