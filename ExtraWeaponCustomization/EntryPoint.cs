@@ -13,7 +13,7 @@ using System.Runtime.CompilerServices;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.4.1")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.4.2")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MSAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
@@ -54,8 +54,8 @@ internal sealed class EntryPoint : BasePlugin
         CacheFrequentCallbacks();
         InvokeCallbacks<InvokeOnLoadAttribute>();
 
-        Patches.SNet.SyncManagerPatches.OnCheckpointReload += RunFrequentCallback(_checkpointCleanupCallbacks);
-        Patches.SNet.SyncManagerPatches.OnCheckpointReload += RunFrequentCallback(_checkpointCallbacks);
+        Patches.Checkpoint.SyncManagerPatches.OnCheckpointReload += RunFrequentCallback(_checkpointCleanupCallbacks);
+        Patches.Checkpoint.SyncManagerPatches.OnCheckpointReload += RunFrequentCallback(_checkpointCallbacks);
         LevelAPI.OnLevelCleanup += RunFrequentCallback(_cleanupCallbacks);
         LevelAPI.OnEnterLevel += RunFrequentCallback(_enterCallbacks);
         LevelAPI.OnBuildDone += RunFrequentCallback(_buildDoneCallbacks);

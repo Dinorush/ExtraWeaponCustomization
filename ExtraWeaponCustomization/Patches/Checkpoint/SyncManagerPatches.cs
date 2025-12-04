@@ -2,7 +2,7 @@
 using SNetwork;
 using System;
 
-namespace EWC.Patches.SNet
+namespace EWC.Patches.Checkpoint
 {
     [HarmonyPatch]
     internal static class SyncManagerPatches

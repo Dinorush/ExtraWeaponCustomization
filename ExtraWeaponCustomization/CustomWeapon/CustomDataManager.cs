@@ -83,7 +83,7 @@ namespace EWC.CustomWeapon
         {
             RegisterSyncedProperties();
             PrintCustomIDs();
-            CustomWeaponManager.ReloadCWCs();
+            CustomWeaponManager.ResetCWCs();
         }
 
         private void FileChanged(LiveEditEventArgs e)

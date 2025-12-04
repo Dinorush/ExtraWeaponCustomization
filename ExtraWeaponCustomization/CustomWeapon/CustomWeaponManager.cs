@@ -61,13 +61,13 @@ namespace EWC.CustomWeapon
         private static void OnCleanup()
         {
             s_inLevel = false;
-            Current.ResetCWCs(activate: false);
+            ResetCWCs(activate: false);
         }
 
         [InvokeOnCheckpoint]
         private static void OnCheckpoint()
         {
-            Current.ResetCWCs(activate: true);
+            ResetCWCs(activate: true);
         }
 
         public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, T context) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (null, context));
@@ -182,14 +182,10 @@ namespace EWC.CustomWeapon
             }
         }
 
-        public static void ReloadCWCs()
+        public static void ResetCWCs(bool activate = true)
         {
-            if (s_inLevel)
-                Current.ResetCWCs();
-        }
+            if (!s_inLevel) return;
 
-        private void ResetCWCs(bool activate = true)
-        {
             // JFS - Reset crosshair modifier. Should be cleared by other stuff but doesn't hurt
             Dependencies.ACAPIWrapper.ResetCrosshairSpread();
 
