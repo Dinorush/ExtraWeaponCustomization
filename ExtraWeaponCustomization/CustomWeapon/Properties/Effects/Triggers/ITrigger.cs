@@ -89,6 +89,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
                 "reference" => new ReferenceCallTrigger(),
                 "setup" or "init" or "drop" => new BasicTrigger<WeaponInitContext>(TriggerName.Init),
+                string sync when sync.Contains("sync") => DetermineModSyncTrigger(origName, sync),
                 string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(nameWithOn),
                 string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
                 string prehit when prehit.Contains("prehit") => new DamageableTrigger<WeaponPreHitDamageableContext>(TriggerName.PreHit, name.ToDamageTypes()),
@@ -122,6 +123,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             ITrigger? apply = GetTrigger(name[(sep+2)..]);
             if (apply == null) return null;
             return new PerTargetTrigger(activate, apply);
+        }
+        private static ITrigger? DetermineModSyncTrigger(string origName, string name)
+        {
+            if (name == "modsync") return new ModSyncTrigger();
+
+            int sep = name.IndexOf("sync");
+            if (sep == -1) return null;
+            string id = origName[0..sep];
+            if (string.IsNullOrEmpty(id)) return null;
+            ITrigger? activate = GetTrigger(name[(sep+4)..]);
+            if (activate == null) return null;
+            return new ModSyncTrigger(activate, id);
         }
     }
 

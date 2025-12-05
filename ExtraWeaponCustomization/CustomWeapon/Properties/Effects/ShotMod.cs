@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
@@ -33,12 +34,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             return base.ShouldRegister(contextType);
         }
 
+        public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);
+
         public override void TriggerReset() => _triggerStack.Clear();
         public override void TriggerApply(List<TriggerContext> contexts)
         {
             if (!CalcWhenHit)
             {
-                float mod = CalculateMod(Sum(contexts));
+                float mod = CalculateMod(Count(contexts));
                 foreach (var tContext in contexts)
                 {
                     if (tContext.context is WeaponHitContextBase hitContext)

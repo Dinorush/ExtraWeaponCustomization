@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public virtual bool UseZeroAmountTrigger => StackType == StackType.Override;
 
+        public virtual bool IsPerTarget => false;
+
+        public abstract bool TryGetStacks(out float stacks, BaseDamageableWrapper? damageable = null);
+
         private float ClampToCap(float mod)
         {
             if (Cap > 1f) return Math.Min(mod, Cap);
@@ -34,17 +39,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _ => InnerStackType
             };
 
-        protected float CalculateMod(IEnumerable<TriggerInstance> count, bool clamped = true)
+        protected float CalculateMod(IEnumerable<TriggerInstance> contexts, bool clamped = true)
         {
-            if (!count.Any()) return 1f;
+            var count = Count(contexts);
+            if (count == 0f) return 1f;
 
-            float result = StackType switch
-            {
-                StackType.None => CalculateMod(count.First().triggerAmt),
-                StackType.Multiply or StackType.Add => CalculateMod(Sum(count)),
-                StackType.Max or StackType.Min => CalculateMod(Mod > 1f ? count.Max(x => x.triggerAmt) : count.Min(x => x.triggerAmt)),
-                _ => 1f
-            };
+            float result = CalculateMod(count);
             return clamped ? ClampToCap(result) : result;
         }
 
@@ -62,8 +62,31 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             return clamped ? ClampToCap(result) : result;
         }
 
-        protected static float Sum(IEnumerable<TriggerContext> contexts) => contexts.Sum(context => context.triggerAmt);
-        protected static float Sum(IEnumerable<TriggerInstance> contexts) => contexts.Sum(context => context.triggerAmt);
+        protected float Count(IEnumerable<TriggerInstance> contexts)
+        {
+            if (!contexts.Any()) return 0f;
+
+            return StackType switch
+            {
+                StackType.None => contexts.First().triggerAmt,
+                StackType.Multiply or StackType.Add => contexts.Sum(context => context.triggerAmt),
+                StackType.Max or StackType.Min => Mod > 1f ? contexts.Max(x => x.triggerAmt) : contexts.Min(x => x.triggerAmt),
+                _ => 0f
+            };
+        }
+
+        protected float Count(IEnumerable<TriggerContext> contexts)
+        {
+            if (!contexts.Any()) return 0f;
+
+            return StackType switch
+            {
+                StackType.None => contexts.First().triggerAmt,
+                StackType.Multiply or StackType.Add => contexts.Sum(context => context.triggerAmt),
+                StackType.Max or StackType.Min => Mod > 1f ? contexts.Max(x => x.triggerAmt) : contexts.Min(x => x.triggerAmt),
+                _ => 0f
+            };
+        }
 
         public override void Serialize(Utf8JsonWriter writer)
         {
@@ -155,7 +178,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _currentStacks = 0f;
             }
 
-            public void Add(List<TriggerContext> contexts) => Add(Sum(contexts));
+            public void Add(List<TriggerContext> contexts) => Add(_parent.Count(contexts));
             public void Add(float num)
             {
                 if (_parent.CombineModifiers)
@@ -176,22 +199,32 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _expireTimes.Enqueue(new TriggerInstance(num, endTime));
             }
 
-            public bool TryGetMod(out float mod)
+            public bool TryGetStacks(out float stacks)
             {
-                mod = 1f;
+                stacks = 0f;
                 if (_parent.CombineModifiers)
                 {
                     if (_currentStacks == 0f) return false;
                     RefreshStackMod();
-                    if (_currentStacks == 0f) return false;
-                    mod = _parent.CalculateMod(_currentStacks);
-                    return true;
+                    stacks = _currentStacks;
+                    return stacks != 0;
                 }
 
                 while (_expireTimes.TryPeek(out TriggerInstance ti) && ti.endTime < Clock.Time) _expireTimes.Dequeue();
 
                 if (_expireTimes.Count == 0) return false;
-                mod = _parent.CalculateMod(_expireTimes);
+                stacks = _parent.Count(_expireTimes);
+                return true;
+            }
+
+            public bool TryGetMod(out float mod)
+            {
+                if (!TryGetStacks(out var stacks))
+                {
+                    mod = 1f;
+                    return false;
+                }
+                mod = _parent.CalculateMod(stacks);
                 return true;
             }
 

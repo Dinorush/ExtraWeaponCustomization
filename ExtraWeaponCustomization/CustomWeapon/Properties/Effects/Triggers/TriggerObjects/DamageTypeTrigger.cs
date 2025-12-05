@@ -43,7 +43,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (!CloneObject) return this;
 
             Type type = GetType();
-            ITrigger copy = type.GetConstructor(new Type[] { typeof(DamageType[]) }) != null ? CopyUtil<ITrigger>.Clone(this, DamageTypes) : CopyUtil<ITrigger>.Clone(this, Name, DamageTypes);
+            ITrigger copy = type.GetConstructor(new Type[] { typeof(DamageType[]) }) != null ? CopyUtil.Clone(this, DamageTypes) : CopyUtil.Clone(this, Name, DamageTypes);
 
             var typeTrigger = (DamageTypeTrigger<TContext>)copy;
             typeTrigger.BlacklistType = BlacklistType;

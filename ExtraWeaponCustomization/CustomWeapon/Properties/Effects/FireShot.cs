@@ -197,10 +197,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             HitData hitData = new(DamageType.Bullet);
             hitData.owner = CWC.Owner.Player;
             hitData.shotInfo.Reset(archData.Damage, archData.PrecisionDamageMulti, archData.StaggerDamageMulti, CWC, orig, UseParentShotMod);
-            hitData.damage = hitData.shotInfo.OrigDamage;
+            hitData.ResetDamage();
             hitData.damageFalloff = archData.DamageFalloff;
-            hitData.staggerMulti = hitData.shotInfo.OrigStagger;
-            hitData.precisionMulti = archData.PrecisionDamageMulti;
             hitData.maxRayDist = CGC.Gun.MaxRayDist;
             hitData.angOffsetX = x;
             hitData.angOffsetY = y;

@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.ObjectWrappers;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -18,6 +19,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public FireRateMod() => _triggerStack = new(this);
 
+        public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);
+
         public override void TriggerReset()
         {
             _triggerStack.Clear();
@@ -27,7 +30,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
-            var num = Sum(contexts);
+            var num = Count(contexts);
             TriggerApplySync(num);
 
             if (CWC.Weapon.IsType(Enums.WeaponType.Gun))

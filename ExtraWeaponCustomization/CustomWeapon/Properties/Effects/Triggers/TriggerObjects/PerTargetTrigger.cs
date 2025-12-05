@@ -106,7 +106,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public ITrigger Clone()
         {
-            var copy = CopyUtil<PerTargetTrigger>.Clone(this);
+            var copy = CopyUtil.Clone(this);
             copy.Activate = Activate.Clone();
             copy.Apply = Apply.Clone();
             return copy;

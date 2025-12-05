@@ -151,7 +151,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             HitData hitData = new(DamageType.Shrapnel)
             {
                 owner = CWC.Owner.Player,
-                damage = CGC.Gun.ArchetypeData.Damage
+                damage = Damage
             };
             var ray = new Ray(position, normal);
 

@@ -48,7 +48,7 @@ namespace EWC.CustomWeapon.Properties
 
         public virtual WeaponPropertyBase Clone()
         {
-            var copy = CopyUtil<WeaponPropertyBase>.Clone(this);
+            var copy = CopyUtil.Clone(this);
             copy.Reference = new(copy);
             return copy;
         }

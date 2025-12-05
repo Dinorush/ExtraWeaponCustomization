@@ -5,6 +5,11 @@ using System.Reflection;
 
 namespace EWC.Utils
 {
+    public static class CopyUtil
+    {
+        public static T Clone<T>(T obj, params object?[]? args) where T : notnull => CopyUtil<T>.Clone(obj, args);
+    }
+
     public static class CopyUtil<T> where T : notnull
     {
         private static readonly Dictionary<Type, List<PropertyInfo>> _classProperties = new();

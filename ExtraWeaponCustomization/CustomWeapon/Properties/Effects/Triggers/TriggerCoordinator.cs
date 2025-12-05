@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public TriggerCoordinator Clone()
         {
-            var copy = CopyUtil<TriggerCoordinator>.Clone(this);
+            var copy = CopyUtil.Clone(this);
             copy.Activate = (ActivateHolder) Activate.Clone(copy);
             copy.Reset = (ResetHolder?) Reset?.Clone(copy);
             return copy;

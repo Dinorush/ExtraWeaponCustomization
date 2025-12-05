@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private readonly Dictionary<BaseDamageableWrapper, (TriggerStack stack, DebuffModifierBase modifier)> _storedDebuffs = new();
         private readonly Dictionary<BaseDamageableWrapper, (TriggerStack stack, DebuffModifierBase modifier)> _activeDebuffs = new();
-        private readonly static Dictionary<uint, Dictionary<BaseDamageableWrapper, (TriggerStack, DebuffModifierBase modifier)>> _globalStacks = new();
+        private readonly static Dictionary<uint, Dictionary<BaseDamageableWrapper, (TriggerStack, DebuffModifierBase modifier)>> s_globalStacks = new();
         private Coroutine? _updateRoutine;
 
         public TriggerModDebuff()
@@ -39,7 +39,26 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         [InvokeOnCleanup]
         private static void ClearGlobal()
         {
-            _globalStacks.Clear();
+            s_globalStacks.Clear();
+        }
+
+        public override bool IsPerTarget => true;
+
+        public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? damageable = null)
+        {
+            if (damageable == null)
+            {
+                stacks = 0f;
+                return false;
+            }
+
+            if (!_activeDebuffs.TryGetValue(damageable, out var debuff))
+            {
+                stacks = 0f;
+                return false;
+            }
+
+            return debuff.stack.TryGetStacks(out stacks);
         }
 
         protected abstract DebuffModifierBase AddModifier(IDamageable damageable);
@@ -137,8 +156,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 return (new((TriggerMod)Clone()), AddModifier(wrapper.Object!));
             }
 
-            if (!_globalStacks.TryGetValue(GlobalID, out var debuffDict))
-                _globalStacks.Add(GlobalID, debuffDict = new());
+            if (!s_globalStacks.TryGetValue(GlobalID, out var debuffDict))
+                s_globalStacks.Add(GlobalID, debuffDict = new());
 
             if (!debuffDict.TryGetValue(wrapper, out (TriggerStack stack, DebuffModifierBase mod) debuff))
             {

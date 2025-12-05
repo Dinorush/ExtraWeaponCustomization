@@ -1,4 +1,5 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
 using System.Collections;
@@ -21,6 +22,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _updateTimes = new();
             _triggerStack = new(this);
         }
+
+        public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);
 
         protected abstract void OnUpdate(float mod);
         protected abstract void OnDisable();

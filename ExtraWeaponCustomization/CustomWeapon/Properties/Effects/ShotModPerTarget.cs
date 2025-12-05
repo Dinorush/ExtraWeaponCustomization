@@ -41,6 +41,25 @@ namespace EWC.CustomWeapon.Properties.Effects
             return base.ShouldRegister(contextType);
         }
 
+        public override bool IsPerTarget => true;
+
+        public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? damageable = null)
+        {
+            if (damageable == null)
+            {
+                stacks = 0f;
+                return false;
+            }
+
+            if (!_triggerStacks.TryGetValue(damageable, out var stack))
+            {
+                stacks = 0f;
+                return false;
+            }
+
+            return stack.TryGetStacks(out stacks);
+        }
+
         public override void TriggerReset() => _triggerStacks.Clear();
         public override void TriggerApply(List<TriggerContext> contexts)
         {

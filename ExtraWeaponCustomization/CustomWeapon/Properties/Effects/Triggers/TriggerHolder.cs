@@ -61,7 +61,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public virtual TriggerHolder Clone(TriggerCoordinator parent)
         {
-            TriggerHolder copy = CopyUtil<TriggerHolder>.Clone(this, parent);
+            TriggerHolder copy = CopyUtil.Clone(this, parent);
             copy.Triggers = Triggers.ConvertAll(trigger => trigger.Clone());
             copy.Apply = Apply?.ConvertAll(trigger => trigger.Clone());
             copy.Cancel = Cancel?.ConvertAll(trigger => trigger.Clone());
