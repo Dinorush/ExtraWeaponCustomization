@@ -128,6 +128,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (name == "modsync") return new ModSyncTrigger();
 
+            origName = origName.Replace(" ", null);
             int sep = name.IndexOf("sync");
             if (sep == -1) return null;
             string id = origName[0..sep];
