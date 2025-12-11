@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.Utils.Extensions;
@@ -15,13 +16,14 @@ namespace EWC.Utils
         public float damage;
         public Vector2 damageFalloff;
         public float falloff = 1f;
+        public int pierceLimit = 0;
         public float precisionMulti;
         public float staggerMulti;
         public float maxRayDist;
         public float randomSpread;
         public float angOffsetX;
         public float angOffsetY;
-        public PlayerAgent owner;
+        public PlayerAgent? owner;
         public Vector3 fireDir;
         public Vector3 hitPos;
         public IDamageable? damageable;
@@ -57,6 +59,7 @@ namespace EWC.Utils
             shotInfo = data.shotInfo;
             damage = data.damage;
             falloff = data.falloff;
+            pierceLimit = data.pierceLimit;
             damageFalloff = data.damageFalloff;
             precisionMulti = data.precisionMulti;
             staggerMulti = data.staggerMulti;
@@ -159,6 +162,13 @@ namespace EWC.Utils
         }
 
         public float CalcFalloff(float additionalDist = 0) => CalcRawFalloff(RayHit.distance + additionalDist);
+
+        public int GetPierceOrFallback(IWeaponComp weapon)
+        {
+            if (pierceLimit == 0)
+                return weapon.ArchetypeData.PierceLimit();
+            return pierceLimit;
+        }
 
         private void UpdateDamageType()
         {

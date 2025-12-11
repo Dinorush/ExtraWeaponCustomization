@@ -1,8 +1,10 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects;
+using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Dependencies;
 using System.Collections.Generic;
 
-namespace EWC.CustomWeapon.Properties.Effects.Spread
+namespace EWC.CustomWeapon.CustomShot
 {
     // Since we need to know the crosshair size at all times, we can't calculate only at shot time
     // like other mod effects (e.g. FireRateMod). This manages merging spread mods together
@@ -12,20 +14,21 @@ namespace EWC.CustomWeapon.Properties.Effects.Spread
         private Dictionary<SpreadMod, float>? _mods;
         private Dictionary<SpreadMod, float> Mods => _mods ??= new (3);
 
-        private readonly bool _isLocal;
+        private readonly bool _modifyCrosshair;
         private bool _active = false;
         public bool Active
         { 
             get => _active;
             set
             {
-                if (_active == value || !_isLocal) return;
+                if (_active == value || !_modifyCrosshair) return;
+
+                _active = value;
 
                 if (value)
                     ACAPIWrapper.UpdateCrosshairSpread(Value);
                 else
                     ACAPIWrapper.ResetCrosshairSpread();
-                _active = value;
             }
         }
 
@@ -33,17 +36,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Spread
 
         private readonly StackMod _stackMod;
 
-        public SpreadController(bool local)
+        public SpreadController(OwnerType owner, WeaponType weapon)
         {
             _stackMod = new(1f, 0f);
             _mods = null;
-            _isLocal = local;
+            _modifyCrosshair = owner.HasFlag(OwnerType.Local) && weapon.HasFlag(WeaponType.Gun);
         }
 
         public void Reset()
         {
             _stackMod.Reset(1f, 0f);
             _mods = null;
+
             if (Active)
                 ACAPIWrapper.ResetCrosshairSpread();
         }

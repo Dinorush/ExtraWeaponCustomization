@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.ComponentWrapper
 
         public Transform MuzzleAlign { get; }
         public eDimensionIndex DimensionIndex => Player.DimensionIndex;
-        public abstract PlayerAgent Player { get; }
+        public abstract PlayerAgent? Player { get; }
         public abstract OwnerType Type { get; }
         public abstract AIG_CourseNode CourseNode { get; }
         public abstract Vector3 FirePos { get; }
@@ -28,7 +28,7 @@ namespace EWC.CustomWeapon.ComponentWrapper
     public interface IOwnerComp
     {
         public Transform MuzzleAlign { get; }
-        public PlayerAgent Player { get; }
+        public PlayerAgent? Player { get; }
         public OwnerType Type { get; }
         public bool IsType(OwnerType type) => Type.HasFlag(type);
         public bool IsAnyType(OwnerType type) => Type.HasAnyFlag(type);

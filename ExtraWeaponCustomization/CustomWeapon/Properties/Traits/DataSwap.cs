@@ -213,12 +213,25 @@ namespace EWC.CustomWeapon.Properties.Traits
                 oldArch = _cachedArchetype;
             }
 
-            PlayerAmmoStorage ammoStorage = PlayerBackpackManager.GetBackpack(CGC.Owner.Player.Owner).AmmoStorage;
-            InventorySlotAmmo slotAmmo = ammoStorage.GetInventorySlotAmmo(CGC.Weapon.AmmoType);
-
             int clip = CGC.Gun.GetCurrentClip();
-            float clipCost = CGC.Gun.GetCurrentClip() * slotAmmo.CostOfBullet;
             int clipSize = CGC.Gun.GetMaxClip();
+
+            bool hasOwner = CWC.Owner.Player != null;
+            PlayerAmmoStorage? ammoStorage;
+            InventorySlotAmmo? slotAmmo;
+            float clipCost;
+            if (hasOwner)
+            {
+                ammoStorage = PlayerBackpackManager.GetBackpack(CGC.Owner.Player!.Owner).AmmoStorage;
+                slotAmmo = ammoStorage.GetInventorySlotAmmo(CGC.Weapon.AmmoType);
+                clipCost = clip * slotAmmo.CostOfBullet;
+            }
+            else
+            {
+                ammoStorage = null;
+                slotAmmo = null;
+                clipCost = ((SentryGunComp)CWC.Weapon).CostOfBullet;
+            }
 
             var oldBlock = CGC.Gun.ArchetypeData;
             CGC.Gun.ArchetypeData = newBlock;
@@ -240,23 +253,24 @@ namespace EWC.CustomWeapon.Properties.Traits
                 slotAmmoClipSize = 0;
                 var sentryComp = (SentryGunComp)CWC.Weapon;
                 cost = sentryComp.CostOfBullet;
-                if (newBlock.FireMode != oldBlock.FireMode)
-                    ChangeSentryFireMode(sentryComp.Firing, newBlock);
-                if (newBlock.ShotgunBulletCount > 0)
-                    sentryComp.Firing.m_segmentSize = MathUtil.DegreeToRadian(360f / (newBlock.ShotgunBulletCount - 1f));
             }
 
-            slotAmmo.Setup(cost / EXPAPIWrapper.GetAmmoMod(CWC.Owner.IsType(OwnerType.Local)), slotAmmoClipSize);
+            if (hasOwner)
+            {
+                slotAmmo!.Setup(cost / EXPAPIWrapper.GetAmmoMod(CWC.Owner.IsType(OwnerType.Local)), slotAmmoClipSize);
+                cost = slotAmmo.CostOfBullet;
+            }
 
             if (KeepMagCost)
             {
                 float newBuffer = clipCost;
                 _costBuffer += newBuffer + 1e-10f; // Some small constant to avoid rounding errors
-                int newMag = Math.Min(newClipSize, (int) (_costBuffer / slotAmmo.CostOfBullet));
-                _costBuffer -= newMag * slotAmmo.CostOfBullet;
-                newBuffer -= newMag * slotAmmo.CostOfBullet;
+                int newMag = Math.Min(newClipSize, (int) (_costBuffer / cost));
+                _costBuffer -= newMag * cost;
+                newBuffer -= newMag * cost;
 
-                slotAmmo.AmmoInPack += newBuffer;
+                if (hasOwner)
+                    slotAmmo!.AmmoInPack += newBuffer;
                 CGC.Gun.SetCurrentClip(newMag);
             }
             else
@@ -266,12 +280,13 @@ namespace EWC.CustomWeapon.Properties.Traits
                 int newMag = Math.Min(newClipSize, (int)newMagFloat);
 
                 // Calculate the maximum amount of ammo we can give
-                float maxCost = slotAmmo.AmmoInPack + clipCost;
-                if (maxCost < newMag * slotAmmo.CostOfBullet)
-                    newMag = (int)(maxCost / slotAmmo.CostOfBullet);
+                float maxCost = clipCost + (hasOwner ? slotAmmo!.AmmoInPack : 0);
+                if (maxCost < newMag * cost)
+                    newMag = (int)(maxCost / cost);
 
                 _magBuffer = Math.Max(0, clip - newMag * clipSize / newClipSize);
-                slotAmmo.AmmoInPack += clipCost - newMag * slotAmmo.CostOfBullet;
+                if (hasOwner)
+                    slotAmmo!.AmmoInPack += clipCost - newMag * cost;
                 CGC.Gun.SetCurrentClip(newMag); 
             }
 
@@ -279,32 +294,11 @@ namespace EWC.CustomWeapon.Properties.Traits
                 newArch.m_clip = CGC.Gun.GetCurrentClip();
             if (localGun != null && GuiManager.CrosshairLayer.m_circleCrosshair.Visible)
                 GuiManager.CrosshairLayer.ShowSpreadCircle(localGun.Value.RecoilData.hipFireCrosshairSizeDefault);
-            ammoStorage.UpdateSlotAmmoUI(slotAmmo, CGC.Gun.GetCurrentClip());
-            ammoStorage.NeedsSync = true;
-        }
 
-        private void ChangeSentryFireMode(SentryGunInstance_Firing_Bullets firing, ArchetypeDataBlock newBlock)
-        {
-            firing.m_playerAutoSoundLoop = false;
-            switch (newBlock.FireMode)
+            if (hasOwner)
             {
-                case eWeaponFireMode.Semi:
-                    if (newBlock.ShotgunBulletCount > 0)
-                        firing.m_fireUpdateFunc = (Action<bool, bool>)firing.UpdateFireShotgunSemi;
-                    else
-                        firing.m_fireUpdateFunc = (Action<bool, bool>)firing.UpdateFireSemi;
-                    break;
-                case eWeaponFireMode.Auto:
-                    firing.m_fireUpdateFunc = (Action<bool, bool>) firing.UpdateFireAuto;
-                    firing.m_playerAutoSoundLoop = true;
-                    break;
-                case eWeaponFireMode.Burst:
-                    firing.m_fireUpdateFunc = (Action<bool, bool>) firing.UpdateFireBurst;
-                    break;
-                default:
-                    firing.m_fireUpdateFunc = (Action<bool, bool>) firing.UpdateFireAuto;
-                    firing.m_playerAutoSoundLoop = true;
-                    break;
+                ammoStorage!.UpdateSlotAmmoUI(slotAmmo, CGC.Gun.GetCurrentClip());
+                ammoStorage.NeedsSync = true;
             }
         }
 

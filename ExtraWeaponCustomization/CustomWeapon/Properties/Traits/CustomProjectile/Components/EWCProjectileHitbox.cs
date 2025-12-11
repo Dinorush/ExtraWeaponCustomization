@@ -68,24 +68,24 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             bounceHit = null;
             if (_enabled || !_base.IsManaged) return;
 
-            CustomGunComponent cgc = projBase.CGC;
+            CustomWeaponComponent cwc = projBase.CWC;
             _enabled = true;
             _settings = projBase;
-            _owner = cgc.Owner;
+            _owner = cwc.Owner;
             _dimensionIndex = _owner.DimensionIndex;
             _runHitTriggers = true;
             _startLifetime = Time.time;
 
             // If it had temp properties, RunHitTriggers is permanently set on the copied context controller
-            if (!cgc.HasTempProperties())
-                _runHitTriggers = cgc.RunHitTriggers;
+            if (!cwc.HasTempProperties())
+                _runHitTriggers = cwc.RunHitTriggers;
 
             s_ray.origin = pos;
             s_ray.direction = dir;
             _friendlyLayer = 0;
             _searchSettings = SearchSetting.ClosestHit | SearchSetting.IgnoreDupes;
-            IntPtr ownerPtr = _owner.Player.Pointer;
-            if (projBase.DamageOwner)
+            IntPtr ownerPtr = _owner.Player?.Pointer ?? IntPtr.Zero;
+            if (ownerPtr != IntPtr.Zero && projBase.DamageOwner)
             {
                 _searchSettings |= SearchSetting.CheckOwner;
                 _initialPlayers.Add(ownerPtr);
@@ -105,7 +105,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             _wallPierce = _settings.WallPierce;
-            _pierceCount = _settings.PierceLimit;
+            _pierceCount = hitData!.GetPierceOrFallback(cwc.Weapon);
             _ricochetCount = _settings.RicochetCount;
             HitData = new(hitData!);
             _baseFalloff = HitData.falloff;
@@ -409,7 +409,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (damageable != null)
             {
                 // EXP sentry checks won't work on projectiles
-                if (_owner.IsType(Enums.OwnerType.Sentry) && _owner.Player.IsLocallyOwned)
+                if (_owner.IsType(Enums.OwnerType.Sentry) && _owner.Player?.IsLocallyOwned == true)
                     damage /= EXPAPIWrapper.GetDamageMod(true, Enums.WeaponType.BulletWeapon);
 
                 damageable?.BulletDamage(damage, HitData.owner, HitData.hitPos, HitData.fireDir, HitData.RayHit.normal, backstab, HitData.staggerMulti, HitData.precisionMulti);

@@ -1,10 +1,7 @@
-﻿using GameData;
-
-namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
+﻿namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
 {
-    public interface IArchComp : IWeaponComp
+    public interface IAmmoComp : IWeaponComp
     {
-        public ArchetypeDataBlock ArchetypeData { get; set; }
         public int GetCurrentClip();
         public int GetMaxClip();
         public int GetMaxClip(out bool overflow)

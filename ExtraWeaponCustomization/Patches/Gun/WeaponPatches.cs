@@ -69,7 +69,7 @@ namespace EWC.Patches.Gun
             IDamageable? damBase = damageable != null ? damageable.GetBaseDamagable() : damageable;
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
 
-            CustomWeaponComponent? cwc = ShotManager.ActiveFiringInfo.cgc;
+            CustomWeaponComponent? cwc = ShotManager.ActiveFiringInfo.cwc;
             HitData data = new(weaponRayData, additionalDis);
             if (cwc == null)
             {

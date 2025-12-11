@@ -1,5 +1,4 @@
-﻿using FX_EffectSystem;
-using GameData;
+﻿using GameData;
 
 namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
 {
@@ -14,12 +13,8 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
         }
 
         public eWeaponFireMode FireMode { get; protected set; }
-        public bool IsShotgun => _isShotgun;
-        public abstract ArchetypeDataBlock ArchetypeData { get; set; }
+        public override bool IsShotgun => _isShotgun;
         public abstract WeaponAudioDataBlock AudioData { get; set; }
-        public abstract Weapon.WeaponHitData VanillaHitData { get; }
-        public abstract FX_Pool TracerPool { get; }
-        public abstract float MaxRayDist { get; set; }
         public abstract bool IsAiming { get; }
         public abstract int GetCurrentClip();
         public abstract int GetMaxClip();
@@ -27,14 +22,11 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
         public abstract float ModifyFireRate(float lastFireTime, float shotDelay, float burstDelay, float cooldownDelay);
     }
 
-    public interface IGunComp : IArchComp
+    public interface IGunComp : IAmmoComp
     {
-        public Weapon.WeaponHitData VanillaHitData { get; }
-        public FX_Pool TracerPool { get; }
         public WeaponAudioDataBlock AudioData { get; set; }
         public eWeaponFireMode FireMode { get; }
         public float MaxRayDist { get; set; }
-        public bool IsShotgun { get; }
         public bool IsAiming { get; }
         public float ModifyFireRate(float lastFireTime, float shotDelay, float burstDelay, float cooldownDelay);
     }

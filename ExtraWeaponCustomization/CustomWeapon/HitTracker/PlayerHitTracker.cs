@@ -19,7 +19,7 @@ namespace EWC.CustomWeapon.HitTracker
             if (enemy == null) return;
 
             // Tag the enemy to ensure KillIndicatorFix tracks hit correctly.
-            if (cwc.Owner.Player.IsLocallyOwned)
+            if (cwc.Owner.Player?.IsLocallyOwned == true)
                 KillAPIWrapper.TagEnemy(enemy, cwc.Weapon.Component.Cast<ItemEquippable>(), hitContext.LocalPosition);
 
             TempCWCWrapper.Set(cwc);

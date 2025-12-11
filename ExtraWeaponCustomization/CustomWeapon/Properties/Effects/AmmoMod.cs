@@ -3,6 +3,7 @@ using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils.Extensions;
+using FX_EffectSystem;
 using GameData;
 using Gear;
 using Player;
@@ -57,8 +58,10 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            PlayerBackpack backpack = PlayerBackpackManager.GetBackpack(CWC.Owner.Player.Owner);
-            IArchComp weapon;
+            if (HandleLevelSentry(triggerList)) return;
+
+            PlayerBackpack? backpack = PlayerBackpackManager.GetBackpack(CWC.Owner.Player!.Owner);
+            IAmmoComp weapon;
             if (!SlotMatchesWeapon() && backpack.TryGetBackpackItem(ReceiverSlot, out var bpItem))
             {
                 if (!TryCreateHolder(bpItem, out weapon!))
@@ -67,7 +70,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             else if (CWC.Weapon.IsType(WeaponType.Gun))
                 weapon = CGC.Gun;
             else if (CWC.Weapon.IsType(WeaponType.SentryHolder) && !CustomWeaponManager.TryGetSentry(CWC.Owner.Player, out _))
-                weapon = (IArchComp)CWC.Weapon;
+                weapon = (IAmmoComp)CWC.Weapon;
             else
                 return;
 
@@ -141,6 +144,42 @@ namespace EWC.CustomWeapon.Properties.Effects
             slotAmmo.OnBulletsUpdateCallback?.Invoke(slotAmmo.BulletsInPack);
             ammoStorage.NeedsSync = true;
             ammoStorage.UpdateSlotAmmoUI(slotAmmo, newClip);
+        }
+
+        private bool HandleLevelSentry(List<TriggerContext> triggerList)
+        {
+            if (!CWC.Weapon.IsType(WeaponType.Sentry) || CWC.Owner.Player != null) return false;
+
+            SentryGunComp sentry = (SentryGunComp)CWC.Weapon;
+            float triggers = triggerList.Sum(context => context.triggerAmt);
+            _clipBuffer += ClipChange * triggers;
+
+            float costOfBullet = sentry.ArchetypeData.CostOfBullet;
+            float min = UseRawAmmo ? costOfBullet : 1f;
+            if (Math.Abs(_clipBuffer) < min) return true;
+
+            // Ammo decrements after this callback if on kill/shot/hit, need to account for that.
+            // But if this weapon didn't get the kill (e.g. DOT kill), shouldn't do that.
+            int accountForShot = _bonusRound ? 1 : 0;
+
+            if (UseRawAmmo)
+                _clipBuffer /= costOfBullet;
+
+            int maxClip = sentry.GetMaxClip(out bool overflow);
+            if (BypassClipCap)
+                maxClip = int.MaxValue - accountForShot;
+            else if (overflow)
+                accountForShot = 0;
+
+            // Calculate the actual changes we can make to clip/ammo
+            int newClip = Math.Clamp(sentry.GetCurrentClip() + (int)_clipBuffer, accountForShot, maxClip + accountForShot);
+            _clipBuffer -= (int)_clipBuffer;
+            sentry.SetCurrentClip(newClip);
+
+            if (UseRawAmmo)
+                _clipBuffer *= costOfBullet;
+
+            return true;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -237,7 +276,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             };
         }
 
-        private static bool TryCreateHolder(BackpackItem bpItem, [MaybeNullWhen(false)] out IArchComp holder)
+        private static bool TryCreateHolder(BackpackItem bpItem, [MaybeNullWhen(false)] out IAmmoComp holder)
         {
             var item = bpItem.Instance;
             if (item.TryCastOut<BulletWeapon>(out var gun))
@@ -257,7 +296,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             return false;
         }
 
-        class EmptyHolder : IArchComp
+        class EmptyHolder : IAmmoComp
         {
             private readonly bool _isSentry;
             private readonly ItemEquippable? _item;
@@ -289,10 +328,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
 
             public CellSoundPlayer Sound => throw new NotImplementedException();
-            public ArchetypeDataBlock ArchetypeData { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
             public ItemEquippable Component => throw new NotImplementedException();
             public WeaponType Type => throw new NotImplementedException();
             public bool AllowBackstab => throw new NotImplementedException();
+            public ArchetypeDataBlock ArchetypeData { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+            public bool IsShotgun => throw new NotImplementedException();
+            public Weapon.WeaponHitData VanillaHitData => throw new NotImplementedException();
+            public FX_Pool TracerPool => throw new NotImplementedException();
+            public float MaxRayDist { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         }
     }
 }

@@ -10,6 +10,7 @@ using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
+using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
@@ -37,19 +38,19 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             _playerSync.Setup();
         }
 
-        public static void DoExplosion(Vector3 position, Vector3 direction, Vector3 normal, PlayerAgent source, float falloffMod, Explosive eBase, float triggerAmt, ShotInfo? triggerInfo = null)
+        public static void DoExplosion(Vector3 position, Vector3 direction, Vector3 normal, float falloffMod, Explosive eBase, float triggerAmt, ShotInfo? triggerInfo = null)
         {
             if (!eBase.CWC.Owner.IsType(OwnerType.Managed)) return;
 
             ExplosionFXManager.DoExplosionFX(position, normal != Vector3.zero ? normal : direction, eBase);
-            DoExplosionDamage(position, direction, source, falloffMod, eBase, triggerAmt, triggerInfo);
+            DoExplosionDamage(position, direction, falloffMod, eBase, triggerAmt, triggerInfo);
         }
 
-        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, PlayerAgent source, float falloffMod, Explosive explosiveBase, float triggerAmt, ShotInfo? triggerInfo)
+        internal static void DoExplosionDamage(Vector3 position, Vector3 direction, float falloffMod, Explosive explosiveBase, float triggerAmt, ShotInfo? triggerInfo)
         {
             if (explosiveBase.Radius == 0 || (explosiveBase.MaxDamage == 0 && explosiveBase.MinDamage == 0)) return;
 
-            AIG_CourseNode? node = CourseNodeUtil.GetCourseNode(position, source.DimensionIndex);
+            AIG_CourseNode? node = CourseNodeUtil.GetCourseNode(position, explosiveBase.CWC.Owner.DimensionIndex);
             if (node == null)
             {
                 EWCLogger.Error($"Unable to find node containing position [{position}] for an explosion.");
@@ -94,7 +95,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     (hit.point - position).normalized,
                     hit.normal,
                     hit.distance,
-                    source,
                     falloffMod,
                     shotInfo,
                     explosiveBase,
@@ -103,7 +103,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             explosiveBase.CWC.Invoke(new WeaponShotEndContext(DamageType.Explosive, shotInfo.State, oldInfo));
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 blastDir, Vector3 normal, float distance, PlayerAgent source, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 blastDir, Vector3 normal, float distance, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
         {
             float damage = distance.MapInverted(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;
@@ -163,10 +163,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             damage *= info.ExternalDamageMod * info.InnateDamageMod;
             staggerMult *= info.InnateStaggerMod;
 
+            PlayerAgent? source = eBase.CWC.Owner.Player;
             Agent? agent = damageable.GetBaseAgent();
             if (agent?.Type == AgentType.Player)
             {
-                if (agent == eBase.CWC.Owner.Player)
+                if (agent == source)
                 {
                     if (!eBase.DamageOwner)
                         return;
@@ -186,7 +187,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 playerData.damage = damage;
                 playerData.direction.Value = blastDir;
 
-                if (eBase.CWC.Owner.Player.IsLocallyOwned)
+                if (source?.IsLocallyOwned == true)
                     GuiManager.CrosshairLayer.PopFriendlyTarget();
                 _playerSync.Send(playerData);
                 return;
@@ -204,8 +205,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             Vector3 localPosition = position - damBase.Owner.Position;
             ExplosionDamageData data = default;
             data.target.Set(damBase.Owner);
-            data.ownerType = (byte) eBase.CWC.Owner.Type;
-            data.source.Set(source);
+            data.cwc.Set(eBase.CWC);
             data.limbID = (byte) limb.m_limbID;
             data.damageLimb = eBase.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
@@ -230,7 +230,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             bool willKill = damBase.WillDamageKill(precDamage);
             HitTrackerManager.RegisterHit(eBase.CWC.Owner, eBase.CWC, hitContext);
-            if (source.IsLocallyOwned && (willKill || eBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
+            if (source?.IsLocallyOwned == true && (willKill || eBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
                 limb.ShowHitIndicator(precDamage > damage, willKill, position, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
@@ -320,8 +320,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
     public struct ExplosionDamageData
     {
         public pEnemyAgent target;
-        public pPlayerAgent source;
-        public byte ownerType;
+        public pCWC cwc;
         public byte limbID;
         public bool damageLimb;
         public LowResVector3 localPosition;

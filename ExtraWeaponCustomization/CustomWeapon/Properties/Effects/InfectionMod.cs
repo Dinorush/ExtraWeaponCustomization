@@ -28,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 foreach (var tContext in contexts)
                 {
-                    PlayerAgent target;
+                    PlayerAgent? target;
                     if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(DamageType.Player))
                     {
                         target = damContext.Damageable.GetBaseAgent().Cast<PlayerAgent>();
@@ -37,13 +37,15 @@ namespace EWC.CustomWeapon.Properties.Effects
                     else
                     {
                         target = CWC.Owner.Player;
-                        DoInfection(target, tContext.triggerAmt);
+                        if (target != null)
+                            DoInfection(target, tContext.triggerAmt);
                     }
                 }
             }
             else
             {
-                DoInfection(CWC.Owner.Player, contexts.Sum(tContext => tContext.triggerAmt));
+                if (CWC.Owner.Player != null)
+                    DoInfection(CWC.Owner.Player, contexts.Sum(tContext => tContext.triggerAmt));
             }
         }
 
@@ -99,7 +101,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             float cap = CapRel >= 0f ? CapRel : Math.Sign(InfectionChangeRel);
             float infection = InfectionChangeRel * mod;
 
-            var damBase = CWC.Owner.Player.Damage;
+            var damBase = target.Damage;
             if (infection > 0)
             {
                 if (damBase.Infection >= cap) return 0f;

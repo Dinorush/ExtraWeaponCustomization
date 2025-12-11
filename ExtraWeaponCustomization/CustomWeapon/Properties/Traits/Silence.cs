@@ -54,10 +54,14 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
+        public override bool ValidProperty()
+        {
+            if (!SNet.IsMaster || CWC.Owner.Player == null || CWC.Owner.Player.Owner.IsBot) return false;
+            return base.ValidProperty();
+        }
+
         public override bool ShouldRegister(Type contextType)
         {
-            if (!SNet.IsMaster || CWC.Owner.Player.Owner.IsBot) return false;
-
             if (contextType == typeof(WeaponPreFireContext)
              || contextType == typeof(WeaponPreFireContextSync))
                 return CWC.Owner.IsType(OwnerType.Player);
@@ -80,13 +84,13 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPreFireContext context)
         {
-            s_cachedNoise = CWC.Owner.Player.Noise;
+            s_cachedNoise = CWC.Owner.Player!.Noise;
             s_cachedTimestamp = CWC.Owner.Player.m_noiseTimestamp;
         }
 
         public void Invoke(WeaponPreFireContextSync context)
         {
-            s_cachedNoise = CWC.Owner.Player.Noise;
+            s_cachedNoise = CWC.Owner.Player!.Noise;
             s_cachedTimestamp = CWC.Owner.Player.m_noiseTimestamp;
         }
 
@@ -130,7 +134,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             var owner = CWC.Owner;
             if (owner.IsType(OwnerType.Player))
             {
-                owner.Player.m_noise = s_cachedNoise;
+                owner.Player!.m_noise = s_cachedNoise;
                 owner.Player.m_noiseTimestamp = s_cachedTimestamp;
             }
 

@@ -50,7 +50,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         public EWCProjectileComponentShooter CreateAndSendProjectile(Projectile projBase, ushort shotIndex, Vector3 position, Vector3 fxPos, HitData hitData, IntPtr ignoreEnt = default)
         {
-            ushort index = (ushort) projBase.CWC.Owner.Player.PlayerSlotIndex;
+            ushort index = (ushort) (projBase.CWC.Owner.Player?.PlayerSlotIndex ?? 0);
             ProjectileDataShooter data = new()
             {
                 playerIndex = index,

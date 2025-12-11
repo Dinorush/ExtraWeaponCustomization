@@ -3,7 +3,7 @@
 namespace EWC.CustomWeapon.Enums
 {
     [Flags]
-    public enum WeaponType
+    public enum WeaponType : byte
     {
         Any = 0,
         SentryHolder = 1,

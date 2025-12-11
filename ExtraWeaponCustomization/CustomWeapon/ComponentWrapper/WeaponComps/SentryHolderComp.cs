@@ -5,7 +5,7 @@ using System;
 
 namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
 {
-    public class SentryHolderComp : WeaponComp<SentryGunFirstPerson>, IArchComp
+    public class SentryHolderComp : WeaponComp<SentryGunFirstPerson>, IAmmoComp
     {
         private ArchetypeDataBlock _archetypeData;
         public SentryHolderComp(SentryGunFirstPerson value) : base(value)
@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
         public override AmmoType AmmoType => Value.AmmoType;
         public override CellSoundPlayer Sound => Value.Sound;
 
-        public ArchetypeDataBlock ArchetypeData
+        public override ArchetypeDataBlock ArchetypeData
         {
             get => _archetypeData;
             set

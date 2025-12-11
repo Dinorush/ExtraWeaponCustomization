@@ -3,7 +3,6 @@ using System.Text.Json;
 using AIGraph;
 using LevelGeneration;
 using System.Collections.Generic;
-using System;
 using EWC.CustomWeapon.Enums;
 
 namespace EWC.CustomWeapon.Properties.Traits
@@ -18,16 +17,15 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool RequireOpenPath { get; private set; } = false;
 
         protected override OwnerType RequiredOwnerType => OwnerType.Managed;
-        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
         public void Invoke(WeaponSetupContext context)
         {
-            CGC.ShotComponent.WallPierce = this;
+            CWC.ShotComponent.WallPierce = this;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CGC.ShotComponent.WallPierce = null;
+            CWC.ShotComponent.WallPierce = null;
         }
 
         public bool IsTargetReachable(AIG_CourseNode? source, AIG_CourseNode? target)

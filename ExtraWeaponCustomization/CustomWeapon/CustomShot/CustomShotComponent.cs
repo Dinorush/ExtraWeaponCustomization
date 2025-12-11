@@ -1,7 +1,6 @@
 ﻿using Agents;
 using EWC.API;
 using EWC.CustomWeapon.ComponentWrapper;
-using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -17,15 +16,15 @@ namespace EWC.CustomWeapon.CustomShot
 {
     public sealed class CustomShotComponent
     {
-        private readonly IGunComp _gun;
+        private readonly IWeaponComp _gun;
         private readonly IOwnerComp _owner;
-        private readonly CustomGunComponent _cgc;
+        private readonly CustomWeaponComponent _cgc;
 
-        public CustomShotComponent(CustomGunComponent cwc)
+        public CustomShotComponent(CustomWeaponComponent cwc)
         {
             _cgc = cwc;
             _owner = cwc.Owner;
-            _gun = cwc.Gun;
+            _gun = cwc.Weapon;
         }
 
         private int _normalCancel = 0;
@@ -138,7 +137,7 @@ namespace EWC.CustomWeapon.CustomShot
         class ShotHitbox
         {
             private readonly CustomShotComponent _parent;
-            private readonly IGunComp _gun;
+            private readonly IWeaponComp _gun;
             private readonly IOwnerComp _owner;
             private readonly HashSet<IntPtr>? _hitEnts;
             private readonly HitData _hitData;
@@ -150,7 +149,7 @@ namespace EWC.CustomWeapon.CustomShot
             private readonly float _hitSizeFriendly;
             private readonly SearchSetting _friendlySetting;
             private readonly int _friendlyMask;
-            private readonly Func<IGunComp, HitData, bool> _hitFunc;
+            private readonly Func<IWeaponComp, HitData, bool> _hitFunc;
 
             private int _pierceCount;
 
@@ -158,7 +157,7 @@ namespace EWC.CustomWeapon.CustomShot
             private const float SightCheckMinSize = 0.5f;
 
             public ShotHitbox(CustomShotComponent parent, HitData hitData, Ray fireRay, Vector3 fxPos, int friendlyMask, IntPtr ignoreEnt)
-                : this(parent, hitData, fireRay, fxPos, friendlyMask, ignoreEnt, new(parent.ThickBullet, parent.WallPierce, pierceLimit: parent._gun.ArchetypeData.PierceLimit())) {}
+                : this(parent, hitData, fireRay, fxPos, friendlyMask, ignoreEnt, new(parent.ThickBullet, parent.WallPierce)) {}
 
             public ShotHitbox(CustomShotComponent parent, HitData hitData, Ray fireRay, Vector3 fxPos, int friendlyMask, IntPtr ignoreEnt, CustomShotSettings shotSettings)
             {
@@ -171,7 +170,7 @@ namespace EWC.CustomWeapon.CustomShot
                 _hitData = hitData;
                 _origInfo = _hitData.shotInfo.State;
 
-                _pierceCount = shotSettings.pierceLimit;
+                _pierceCount = hitData.GetPierceOrFallback(_gun);
 
                 if (_pierceCount > 1 || ignoreEnt != IntPtr.Zero)
                 {

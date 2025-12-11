@@ -6,12 +6,12 @@ using EWC.Attributes;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
+using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
 using EWC.Utils.Extensions;
-using Il2CppSystem.Reflection;
 using Player;
 using SNetwork;
 using System;
@@ -86,10 +86,11 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             damage *= hitData.shotInfo.ExternalDamageMod * hitData.shotInfo.InnateDamageMod;
             staggerMult *= hitData.shotInfo.InnateStaggerMod;
 
+            PlayerAgent? source = shrapnel.CWC.Owner.Player;
             Agent? agent = damageable.GetBaseAgent();
             if (hitData.damageType.HasFlag(DamageType.Player))
             {
-                if (agent.Pointer == shrapnel.CWC.Owner.Player.Pointer)
+                if (agent == source)
                 {
                     if (!shrapnel.DamageOwner)
                         return false;
@@ -97,13 +98,13 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 else if (!shrapnel.DamageFriendly)
                     return false;
 
-                if (shrapnel.CWC.Owner.Player.IsLocallyOwned)
+                if (source?.IsLocallyOwned == true)
                     GuiManager.CrosshairLayer.PopFriendlyTarget();
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().Cast<Dam_PlayerDamageBase>();
                 damage *= playerBase.m_playerData.friendlyFireMulti * shrapnel.FriendlyDamageMulti;
                 cc.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 // Only damage and direction are used AFAIK, but again, just in case...
-                playerBase.BulletDamage(damage, shrapnel.CWC.Owner.Player, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
+                playerBase.BulletDamage(damage, source, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
                 return true;
             }
             else if (hitData.damageType.HasFlag(DamageType.Lock)) // Lock damage; direction doesn't matter
@@ -111,7 +112,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 if (!shrapnel.DamageLocks)
                     return false;
                 cc.Invoke(new WeaponHitDamageableContext(damage, preContext));
-                damageable.BulletDamage(damage, shrapnel.CWC.Owner.Player, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
+                damageable.BulletDamage(damage, source, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
                 return true;
             }
 
@@ -121,8 +122,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             Vector3 localPosition = hitData.hitPos - damBase.Owner.Position;
             ShrapnelHitData data = default;
             data.target.Set(damBase.Owner);
-            data.source.Set(shrapnel.CWC.Owner.Player);
-            data.ownerType = (byte)shrapnel.CWC.Owner.Type;
+            data.cwc.Set(shrapnel.CWC);
             data.limbID = (byte)limb.m_limbID;
             data.damageLimb = shrapnel.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
@@ -147,7 +147,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
             bool willKill = damBase.WillDamageKill(precDamage);
             HitTrackerManager.RegisterHit(shrapnel.CWC.Owner, shrapnel.CWC, hitContext);
-            if (shrapnel.CWC.Owner.Player.IsLocallyOwned && (willKill || cc.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
+            if (source?.IsLocallyOwned == true && (willKill || cc.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
                 limb.ShowHitIndicator(precDamage > damage, willKill, hitData.hitPos, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
@@ -221,8 +221,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
     public struct ShrapnelHitData
     {
         public pEnemyAgent target;
-        public pPlayerAgent source;
-        public byte ownerType;
+        public pCWC cwc;
         public byte limbID;
         public bool damageLimb;
         public LowResVector3 localPosition;

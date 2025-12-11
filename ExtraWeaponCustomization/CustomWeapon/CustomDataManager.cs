@@ -36,8 +36,8 @@ namespace EWC.CustomWeapon
             if (weaponComp.IsType(Enums.WeaponType.Melee))
                 return TryGetCustomMeleeData(((MeleeComp)weaponComp).Value.MeleeArchetypeData.persistentID, out data);
             else if (weaponComp.IsType(Enums.WeaponType.SentryHolder))
-                return TryGetCustomGunData(((IArchComp)weaponComp).ArchetypeData.persistentID, out data) && !data.IgnoreHeldSentry;
-            return TryGetCustomGunData(((IArchComp)weaponComp).ArchetypeData.persistentID, out data);
+                return TryGetCustomGunData(((IAmmoComp)weaponComp).ArchetypeData.persistentID, out data) && !data.IgnoreHeldSentry;
+            return TryGetCustomGunData(((IAmmoComp)weaponComp).ArchetypeData.persistentID, out data);
         }
 
         public static bool TryGetCustomData(ItemEquippable item, [MaybeNullWhen(false)] out CustomWeaponData data)

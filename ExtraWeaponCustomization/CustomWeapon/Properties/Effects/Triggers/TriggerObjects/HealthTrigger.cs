@@ -29,6 +29,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             else if (context is WeaponInitContext initContext)
             {
                 var player = initContext.Owner.Player;
+                if (player == null)
+                {
+                    amount = 0f;
+                    return false;
+                }
                 amount = CalculateAmount(player.Damage.Health, player.Damage.HealthMax);
                 return true;
             }

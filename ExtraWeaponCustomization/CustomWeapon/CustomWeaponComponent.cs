@@ -2,6 +2,7 @@
 using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.ComponentWrapper.OwnerComps;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
@@ -26,6 +27,9 @@ namespace EWC.CustomWeapon
         public readonly IWeaponComp Weapon;
         [HideFromIl2Cpp]
         public IOwnerComp Owner { get; private set; }
+
+        public readonly CustomShotComponent ShotComponent;
+        public readonly SpreadController SpreadController;
 
         private readonly PropertyController _propertyController;
 
@@ -102,6 +106,8 @@ namespace EWC.CustomWeapon
                 throw new ArgumentException("Custom Weapon Component was added to a non-melee/gun/sentry.");
 
             _propertyController = new(Owner.Type, Weapon.Type);
+            ShotComponent = new(this);
+            SpreadController = new(Owner.Type, Weapon.Type);
             _timeSensitiveCallbacks = new();
             enabled = false;
         }
@@ -114,11 +120,13 @@ namespace EWC.CustomWeapon
 
         public virtual void OnUnWield()
         {
+            SpreadController.Active = false;
             Invoke(StaticContext<WeaponUnWieldContext>.Instance);
         }
 
         public virtual void OnWield()
         {
+            SpreadController.Active = true;
             Invoke(StaticContext<WeaponWieldContext>.Instance);
         }
 
@@ -176,7 +184,7 @@ namespace EWC.CustomWeapon
             DebuffIDs.Add(DebuffManager.DefaultGroup);
             InvokeAll(StaticContext<WeaponCreatedContext>.Instance);
             Invoke(new WeaponInitContext(Owner, Weapon));
-            TriggerManager.RunQueuedReceives(Weapon.InventorySlot, Weapon.IsType(Enums.WeaponType.Sentry));
+            TriggerManager.RunQueuedReceives(this);
         }
 
         public virtual void Clear()
@@ -189,6 +197,7 @@ namespace EWC.CustomWeapon
             }
             Invoke(StaticContext<WeaponClearContext>.Instance);
             _propertyController.Clear();
+            SpreadController.Reset();
             DebuffIDs = DebuffGroup.DefaultGroupList;
             enabled = false;
         }

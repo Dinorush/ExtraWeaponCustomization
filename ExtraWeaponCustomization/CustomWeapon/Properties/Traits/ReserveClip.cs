@@ -25,14 +25,14 @@ namespace EWC.CustomWeapon.Properties.Traits
             var gun = (LocalGunComp)CGC.Gun;
             if (!gun.TryGetBurstArchetype(out var arch)) return;
 
-            int bullets = gun.GetCurrentClip() + PlayerBackpackManager.GetBulletsInPack(gun.AmmoType, CWC.Owner.Player.Owner);
+            int bullets = gun.GetCurrentClip() + PlayerBackpackManager.GetBulletsInPack(gun.AmmoType, CWC.Owner.Player!.Owner);
             arch.m_burstCurrentCount = Math.Min(arch.m_burstMax, bullets);
         }
 
         public void Invoke(WeaponPostAmmoPackContext context)
         {
             var gun = (IBulletWeaponComp)CGC.Gun;
-            if (CWC.Owner.Player.Inventory.WieldedItem != gun.BulletWeapon)
+            if (CWC.Owner.Player!.Inventory.WieldedItem != gun.BulletWeapon)
             {
                 gun.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(gun.GetCurrentClip(), gun.AmmoType));
                 gun.BulletWeapon.m_wasOutOfAmmo = false;
@@ -43,12 +43,12 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContext context)
         {
-            CWC.Owner.Player.Inventory.DoReload();
+            CWC.Owner.Player!.Inventory.DoReload();
         }
 
         public void Invoke(WeaponWieldContext context)
         {
-            CWC.Owner.Player.Inventory.DoReload();
+            CWC.Owner.Player!.Inventory.DoReload();
         }
 
         public void Invoke(WeaponPreAmmoUIContext context)

@@ -13,8 +13,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         public DamageType[] ModDamageType { get; private set; } = BulletType;
         public float PierceDamageMulti { get; private set; } = 1f;
 
-        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
-
         public void Invoke(WeaponHitDamageableContext context)
         {
             if (context.DamageType.HasFlag(DamageType.Bullet))

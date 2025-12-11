@@ -1,6 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using System;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
@@ -14,16 +13,15 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float HitSizeFriendly { get; private set; } = 0f;
 
         protected override OwnerType RequiredOwnerType => OwnerType.Managed;
-        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
         public void Invoke(WeaponSetupContext context)
         {
-            CGC.ShotComponent.ThickBullet = this;
+            CWC.ShotComponent.ThickBullet = this;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CGC.ShotComponent.ThickBullet = null;
+            CWC.ShotComponent.ThickBullet = null;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

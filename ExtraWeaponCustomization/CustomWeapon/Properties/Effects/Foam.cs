@@ -50,7 +50,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public override void TriggerReset() {}
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            PlayerAgent owner = CWC.Owner.Player;
+            PlayerAgent? owner = CWC.Owner.Player;
             float strengthMod = IgnoreBooster ? 1f : AgentModifierManager.ApplyModifier(owner, AgentModifier.GlueStrength, 1f);
             foreach (TriggerContext tContext in triggerList)
             {

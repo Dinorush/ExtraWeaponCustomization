@@ -1,8 +1,6 @@
 ﻿using AK;
 using EWC.Attributes;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
-using EWC.CustomWeapon.CustomShot;
-using EWC.CustomWeapon.Properties.Effects.Spread;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using Gear;
@@ -13,8 +11,6 @@ namespace EWC.CustomWeapon
 {
     public sealed class CustomGunComponent : CustomWeaponComponent
     {
-        public readonly SpreadController SpreadController;
-        public readonly CustomShotComponent ShotComponent;
         public readonly IGunComp Gun;
 
         // To avoid patching an update function, we have to reset things back.
@@ -45,8 +41,6 @@ namespace EWC.CustomWeapon
             CurrentFireRate = _lastFireRate = BaseFireRate = 1f / Math.Max(archData.ShotDelay, CustomWeaponData.MinShotDelay);
             CurrentBurstDelay = _burstDelay = archData.BurstDelay;
             CurrentCooldownDelay = _cooldownDelay = archData.SpecialCooldownTime;
-            ShotComponent = new(this);
-            SpreadController = new(Owner.IsType(Enums.OwnerType.Local));
         }
 
         [InvokeOnLoad]
@@ -57,21 +51,13 @@ namespace EWC.CustomWeapon
 
         public override void OnWield()
         {
-            SpreadController.Active = true;
             RefreshSoundDelay();
             base.OnWield();
-        }
-
-        public override void OnUnWield()
-        {
-            SpreadController.Active = false;
-            base.OnUnWield();
         }
 
         public override void Clear()
         {
             base.Clear();
-            SpreadController.Reset();
             CurrentFireRate = BaseFireRate;
             CurrentBurstDelay = _burstDelay;
             CurrentCooldownDelay = _cooldownDelay;

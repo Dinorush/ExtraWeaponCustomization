@@ -9,10 +9,8 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public bool UpdateCrosshair { get; private set; } = true;
 
-        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
-
-        protected override void OnUpdate(float mod) => CGC.SpreadController.SetMod(this, mod, UpdateCrosshair);
-        protected override void OnDisable() => CGC.SpreadController.ClearMod(this, UpdateCrosshair);
+        protected override void OnUpdate(float mod) => CWC.SpreadController.SetMod(this, mod, UpdateCrosshair);
+        protected override void OnDisable() => CWC.SpreadController.ClearMod(this, UpdateCrosshair);
 
         public override void Serialize(Utf8JsonWriter writer)
         {

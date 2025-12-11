@@ -1,5 +1,4 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.CustomWeapon;
 using HarmonyLib;
 using static Weapon;
 using UnityEngine;
@@ -36,12 +35,12 @@ namespace EWC.Patches.Gun
             if (_cachedData == weaponRayData.Pointer) return true;
             _cachedData = weaponRayData.Pointer;
 
-            var cgc = ShotManager.ActiveFiringInfo.cgc;
-            if (cgc == null) return true;
+            var cwc = ShotManager.ActiveFiringInfo.cwc;
+            if (cwc == null) return true;
 
             s_hitData.Setup(weaponRayData);
-            cgc.Invoke(new WeaponPreRayContext(s_hitData, originPos));
-            float mod = cgc.SpreadController.Value;
+            cwc.Invoke(new WeaponPreRayContext(s_hitData, originPos));
+            float mod = cwc.SpreadController.Value;
             if (mod != 1f)
             {
                 s_hitData.randomSpread *= mod;
@@ -49,7 +48,7 @@ namespace EWC.Patches.Gun
                 s_hitData.angOffsetY *= mod;
             }
 
-            cgc.ShotComponent.FireVanilla(s_hitData, originPos);
+            cwc.ShotComponent.FireVanilla(s_hitData, originPos);
             weaponRayData.maxRayDist = 0f;
             __result = false;
             return false;

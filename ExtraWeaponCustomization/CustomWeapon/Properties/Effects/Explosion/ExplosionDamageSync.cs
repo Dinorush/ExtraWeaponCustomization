@@ -11,12 +11,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         protected override void Receive(ExplosionDamageData packet)
         {
             if (!packet.target.TryGet(out EnemyAgent target)) return;
-            packet.source.TryGet(out PlayerAgent? source);
+            packet.cwc.TryGetPlayer(out PlayerAgent? source);
 
             ExplosionManager.Internal_ReceiveExplosionDamage(
                 target,
                 source,
-                (Enums.OwnerType) packet.ownerType,
+                packet.cwc.ownerType,
                 packet.limbID,
                 packet.damageLimb,
                 packet.localPosition.Get(10f),

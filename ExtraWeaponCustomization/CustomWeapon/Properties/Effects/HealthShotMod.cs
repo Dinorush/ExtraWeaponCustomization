@@ -29,6 +29,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private Dam_PlayerDamageBase _damBase = null!;
 
+        public override bool ValidProperty()
+        {
+            if (CWC.Owner.IsType(OwnerType.Sentry) && CWC.Owner.Player == null) return false;
+            return base.ValidProperty();
+        }
+
         public override bool ShouldRegister(Type contextType)
         {
             if (contextType == typeof(WeaponShotGroupInitContext)) return !CalcWhenHit && StoreOnGroup;
@@ -43,7 +49,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public void Invoke(WeaponCreatedContext context)
         {
-            _damBase = CWC.Owner.Player.Damage;
+            _damBase = CWC.Owner.Player!.Damage;
         }
 
         public void Invoke(WeaponShotInitContext context)

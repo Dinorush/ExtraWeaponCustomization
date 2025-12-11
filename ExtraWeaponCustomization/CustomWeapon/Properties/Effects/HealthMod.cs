@@ -29,18 +29,20 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 foreach (var tContext in contexts)
                 {
-                    PlayerAgent target;
+                    PlayerAgent? target;
                     if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(DamageType.Player))
                         target = damContext.Damageable.GetBaseAgent().Cast<PlayerAgent>();
                     else
                         target = CWC.Owner.Player;
 
-                    DoHeal(target, tContext.triggerAmt);
+                    if (target != null)
+                        DoHeal(target, tContext.triggerAmt);
                 }
             }
             else
             {
-                DoHeal(CWC.Owner.Player, contexts.Sum(tContext => tContext.triggerAmt));
+                if (CWC.Owner.Player != null)
+                    DoHeal(CWC.Owner.Player, contexts.Sum(tContext => tContext.triggerAmt));
             }
         }
 

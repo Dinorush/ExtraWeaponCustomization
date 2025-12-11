@@ -54,7 +54,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (CostOfBullet > 0)
             {
-                AmmoCapRel = ((IArchComp)CWC.Weapon).ArchetypeData.CostOfBullet / CostOfBullet;
+                AmmoCapRel = ((IAmmoComp)CWC.Weapon).ArchetypeData.CostOfBullet / CostOfBullet;
                 CostOfBullet = 0;
             }
         }
@@ -63,7 +63,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             // Fix the starting ammo for the weapon.
             InventorySlotAmmo slot = context.SlotAmmo;
-            var weapon = (IArchComp)CWC.Weapon;
+            var weapon = (IAmmoComp)CWC.Weapon;
             slot.AmmoInPack = (weapon.GetCurrentClip() * slot.CostOfBullet + slot.AmmoInPack) * AmmoCapRel;
             weapon.SetCurrentClip(context.AmmoStorage.GetClipBulletsFromPack(0, slot.AmmoType));
         }

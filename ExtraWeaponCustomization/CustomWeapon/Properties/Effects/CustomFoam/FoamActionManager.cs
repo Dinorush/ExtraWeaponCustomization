@@ -35,7 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             _bubbleSync.Setup();
         }
 
-        public static void FoamEnemy(GameObject go, PlayerAgent source, Vector3 pos, float volumeMod, Foam property)
+        public static void FoamEnemy(GameObject go, PlayerAgent? source, Vector3 pos, float volumeMod, Foam property)
         {
             IGlueTarget component = go.GetComponent<IGlueTarget>();
             if (component == null || component.GlueTargetEnemyAgent == null) return;
@@ -62,7 +62,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             ProjectileManager.WantToSpawnGlueOnEnemyAgent(proj.SyncID, enemy, packet.limbID, packet.localPosition, proj.m_volumeDesc, proj.EffectMultiplier);
         }
 
-        public static void FoamDoor(GameObject go, PlayerAgent source, Vector3 pos, float volumeMod, Foam property)
+        public static void FoamDoor(GameObject go, PlayerAgent? source, Vector3 pos, float volumeMod, Foam property)
         {
             IGlueTarget component = go.GetComponent<IGlueTarget>();
             if (component == null) return;
@@ -84,7 +84,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             ProjectileManager.WantToSpawnGlueOnDoor(proj.SyncID, packet.door, packet.glueTarget, packet.localPosition, proj.m_volumeDesc);
         }
 
-        public static void FoamStatic(PlayerAgent source, Vector3 pos, float volumeMod, Foam property)
+        public static void FoamStatic(PlayerAgent? source, Vector3 pos, float volumeMod, Foam property)
         {
             FoamStaticData data = default;
             data.source.Set(source);
@@ -110,7 +110,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             return true;
         }
 
-        private static GlueGunProjectile SpawnNewFoam(PlayerAgent owner, float volumeMod, Foam property, uint syncID = 0)
+        private static GlueGunProjectile SpawnNewFoam(PlayerAgent? owner, float volumeMod, Foam property, uint syncID = 0)
         {
             // Glue code depends on glue having been instanced as a projectile first, but we skip that step, so need to make our own manually.
             // Except in the case where an enemy takes a portion of foam to fully foam.
@@ -129,7 +129,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
 
             projectile.m_expandSpeed = property.BubbleExpandSpeed * volumeMod;
 
-            projectile.m_owner = owner;
+            projectile.m_owner = owner ?? SNet.Master.PlayerAgent.Cast<PlayerAgent>();
             projectile.m_allowSplat = false;
 
             FoamManager.AddFoamBubble(projectile, property);
@@ -198,7 +198,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             FoamManager.ReceiveActivateSyncFoam(enemy.Damage, packet.syncData.amount.Get(MaxFoam), packet.syncData.time.Get(MaxTime), packet.animIndex, packet.fromHibernate);
         }
 
-        public static void FoamBubbleSync(PlayerAgent owner, uint syncID, float volumeMod, Foam property)
+        public static void FoamBubbleSync(PlayerAgent? owner, uint syncID, float volumeMod, Foam property)
         {
             // Only master should send syncs.
             if (!SNet.IsMaster) return;

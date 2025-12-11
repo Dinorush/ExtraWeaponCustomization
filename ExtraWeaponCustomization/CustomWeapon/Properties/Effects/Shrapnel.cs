@@ -1,5 +1,5 @@
 ﻿using Agents;
-using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.ShrapnelHit;
@@ -61,10 +61,6 @@ namespace EWC.CustomWeapon.Properties.Effects
         private CustomShotSettings _shotSettings;
         private int _friendlyMask = 0;
 
-        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
-        public override void TriggerReset() { }
-        public void TriggerResetSync() { }
-
         public Shrapnel()
         {
             _shotSettings = new(hitFunc: DoHit);
@@ -90,8 +86,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 PierceLimit = archBlock.PierceLimit();
             }
 
-            _shotSettings.pierceLimit = PierceLimit;
-            _shotSettings.projectile?.SetOverrides(DoProjectileHit, _shotSettings.wallPierce, PierceLimit);
+            _shotSettings.projectile?.SetOverrides(DoProjectileHit, _shotSettings.wallPierce);
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
@@ -146,11 +141,15 @@ namespace EWC.CustomWeapon.Properties.Effects
             DoShrapnelVisual(position, direction, amount);
         }
 
+        public override void TriggerReset() { }
+        public void TriggerResetSync() { }
+
         private void DoShrapnelVisual(Vector3 position, Vector3 normal, int amount)
         {
             HitData hitData = new(DamageType.Shrapnel)
             {
                 owner = CWC.Owner.Player,
+                pierceLimit = 1,
                 damage = Damage
             };
             var ray = new Ray(position, normal);
@@ -165,7 +164,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (normal != Vector3.zero && Vector3.Dot(ray.direction, normal) < 0)
                     ray.direction = -ray.direction;
                 hitData.fireDir = ray.direction;
-                CGC.ShotComponent.FireCustom(ray, ray.origin, hitData, shotSettings: _shotSettings);
+                CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, shotSettings: _shotSettings);
             }
         }
 
@@ -180,6 +179,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 hitData.owner = CWC.Owner.Player;
                 hitData.shotInfo.Reset(Damage, PrecisionDamageMulti, StaggerDamageMulti, CWC, shotInfo, UseParentShotMod);
                 hitData.falloff = IgnoreFalloff ? 1f : falloff;
+                hitData.pierceLimit = PierceLimit;
                 hitData.damage = hitData.shotInfo.OrigDamage;
                 hitData.damageFalloff = DamageFalloff;
                 hitData.staggerMulti = hitData.shotInfo.OrigStagger;
@@ -219,7 +219,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                             hitData.maxRayDist = bounceHit.distance;
                             hitData.fireDir = ray.direction;
                             ToggleRunTriggers(false);
-                            CGC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
+                            CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
                             ToggleRunTriggers(true);
                             ray.origin = bounceHit.point + bounceHit.normal * WallHitBuffer;
                             ray.direction = Vector3.Reflect(ray.direction, bounceHit.normal);
@@ -232,7 +232,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
                 hitData.fireDir = ray.direction;
                 ToggleRunTriggers(false);
-                CGC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
+                CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
                 ToggleRunTriggers(true);
             }
         }
@@ -253,7 +253,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 CWC.RunHitTriggers = enable;
         }
 
-        private bool DoHit(IGunComp _, HitData hitData) {
+        private bool DoHit(IWeaponComp _, HitData hitData) {
             hitData.ResetDamage();
 
             GameObject gameObject = hitData.RayHit.collider.gameObject;

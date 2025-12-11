@@ -22,7 +22,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         ITriggerCallbackAgentSync
     {
         public ushort SyncID { get; set; }
-        public PlayerAgent Owner => CWC.Owner.Player;
+        public PlayerAgent? Owner => CWC.Owner.Player;
 
         public float TotalDamage { get; private set; } = 0f;
         public float EndDamageFrac { get; private set; } = 1f;
@@ -63,8 +63,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> triggerList)
         {
-            if (Owner == null) return;
-
             foreach (TriggerContext tContext in triggerList)
             {
                 var hitContext = (WeaponHitDamageableContextBase)tContext.context;

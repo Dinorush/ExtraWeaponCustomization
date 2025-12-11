@@ -77,18 +77,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         private WallPierce? _wallPierceOverride = null;
         public WallPierce? WallPierce => _useOverrides ? _wallPierceOverride : CWC?.GetTrait<WallPierce>();
 
-        private int _pierceLimitOverride = 0;
-        public int PierceLimit
-        {
-            get
-            {
-                if (_useOverrides)
-                    return _pierceLimitOverride;
-                else 
-                    return CGC.Gun.ArchetypeData.PierceLimit();
-            }
-        }
-
         private bool _useOverrides = false;
         private float _cachedRayDist;
         private ushort _shotIndex = 0;
@@ -96,21 +84,19 @@ namespace EWC.CustomWeapon.Properties.Traits
         private static RaycastHit s_rayHit;
         public readonly TriggerEventHelper EventHelper = new(CallbackMap);
 
-        protected override WeaponType RequiredWeaponType => WeaponType.Gun;
-
         public int GetCallbackID(string callbackName) => EventHelper.GetCallbackID(callbackName);
 
         public void Invoke(WeaponSetupContext context)
         {
-            _cachedRayDist = CGC.Gun.MaxRayDist;
-            CGC.Gun.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
-            CGC.ShotComponent.Projectile = this;
+            _cachedRayDist = CWC.Weapon.MaxRayDist;
+            CWC.Weapon.MaxRayDist = 1f; // Non-zero so piercing weapons don't break
+            CWC.ShotComponent.Projectile = this;
         }
 
         public void Invoke(WeaponClearContext context)
         {
-            CGC.Gun.MaxRayDist = _cachedRayDist;
-            CGC.ShotComponent.Projectile = null;
+            CWC.Weapon.MaxRayDist = _cachedRayDist;
+            CWC.ShotComponent.Projectile = null;
         }
 
         public void Fire(Ray ray, Vector3 fxPos, HitData hitData, IntPtr ignoreEnt)
@@ -131,12 +117,11 @@ namespace EWC.CustomWeapon.Properties.Traits
                 comp.SetVisualPosition(fxPos, visualDist);
         }
 
-        internal void SetOverrides(Func<HitData, ContextController, bool>? hitFunc = null, WallPierce? wallPierce = null, int pierceLimit = 0)
+        internal void SetOverrides(Func<HitData, ContextController, bool>? hitFunc = null, WallPierce? wallPierce = null)
         {
             _useOverrides = true;
             _hitFuncOverride = hitFunc;
             _wallPierceOverride = wallPierce;
-            _pierceLimitOverride = pierceLimit;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

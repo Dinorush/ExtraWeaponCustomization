@@ -42,6 +42,9 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
             {
                 if (value == null) return;
 
+                if (value.FireMode != _archetypeData.FireMode)
+                    ChangeFireMode(value);
+
                 _archetypeData = value;
                 Value.ArchetypeData = value;
                 Firing.m_archetypeData = value;
@@ -49,6 +52,34 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
                 FireMode = value.FireMode;
                 CostOfBullet = _archetypeData.CostOfBullet * Math.Max(1, _archetypeData.ShotgunBulletCount) * Value.ItemDataBlock.ClassAmmoCostFactor;
                 _allowBackstab = ETCWrapper.CanDoBackDamage(value.persistentID);
+
+                if (IsShotgun)
+                    Firing.m_segmentSize = MathUtil.DegreeToRadian(360f / (value.ShotgunBulletCount - 1f));
+            }
+        }
+
+        private void ChangeFireMode(ArchetypeDataBlock newBlock)
+        {
+            Firing.m_playerAutoSoundLoop = false;
+            switch (newBlock.FireMode)
+            {
+                case eWeaponFireMode.Semi:
+                    if (IsShotgun && newBlock.ShotgunBulletCount > 0)
+                        Firing.m_fireUpdateFunc = (Action<bool, bool>)Firing.UpdateFireShotgunSemi;
+                    else
+                        Firing.m_fireUpdateFunc = (Action<bool, bool>)Firing.UpdateFireSemi;
+                    break;
+                case eWeaponFireMode.Auto:
+                    Firing.m_fireUpdateFunc = (Action<bool, bool>)Firing.UpdateFireAuto;
+                    Firing.m_playerAutoSoundLoop = true;
+                    break;
+                case eWeaponFireMode.Burst:
+                    Firing.m_fireUpdateFunc = (Action<bool, bool>)Firing.UpdateFireBurst;
+                    break;
+                default:
+                    Firing.m_fireUpdateFunc = (Action<bool, bool>)Firing.UpdateFireAuto;
+                    Firing.m_playerAutoSoundLoop = true;
+                    break;
             }
         }
 

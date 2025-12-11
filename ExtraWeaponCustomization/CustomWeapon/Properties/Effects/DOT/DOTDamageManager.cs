@@ -7,6 +7,7 @@ using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
+using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using Player;
@@ -95,8 +96,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             Dam_EnemyDamageBase damBase = limb.m_base;
             DOTData data = default;
             data.target.Set(damBase.Owner);
-            data.source.Set(dotBase.Owner);
-            data.ownerType = (byte)dotBase.CWC.Owner.Type;
+            data.cwc.Set(dotBase.CWC);
             data.limbID = (byte) limb.m_limbID;
             data.damageLimb = dotBase.DamageLimb;
             data.localPosition.Set(limb.DamageTargetPos - damBase.Owner.Position, 10f);
@@ -119,7 +119,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
             bool willKill = damBase.WillDamageKill(precDamage);
             HitTrackerManager.RegisterHit(dotBase.CWC.Owner, dotBase.CWC, hitContext);
-            if (dotBase.Owner.IsLocallyOwned && (willKill || dotBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
+            if (dotBase.Owner?.IsLocallyOwned == true && (willKill || dotBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
                 limb.ShowHitIndicator(precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             shotInfo.AddHits(hitContext.DamageType, ticks);
@@ -139,7 +139,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         }
 
         // Not using damBase.FireDamage to avoid invoking XP's bleed resistance
-        private static void SendPlayerDOTDamage(float damage, Dam_PlayerDamageBase damBase, Agent source)
+        private static void SendPlayerDOTDamage(float damage, Dam_PlayerDamageBase damBase, Agent? source)
         {
             pSmallDamageData data = default;
             data.damage.Set(damage, damBase.HealthMax);
@@ -221,8 +221,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
     public struct DOTData
     {
         public pEnemyAgent target;
-        public pPlayerAgent source;
-        public byte ownerType;
+        public pCWC cwc;
         public byte limbID;
         public bool damageLimb;
         public LowResVector3 localPosition;

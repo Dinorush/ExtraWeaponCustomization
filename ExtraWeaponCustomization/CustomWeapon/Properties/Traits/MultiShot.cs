@@ -4,6 +4,7 @@ using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
+using EWC.Utils.Extensions;
 using GameData;
 using System;
 using System.Collections.Generic;
@@ -162,6 +163,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_hitData.shotInfo.Reset(archData.Damage, archData.PrecisionDamageMulti, archData.StaggerDamageMulti, CWC);
             s_hitData.damage = s_hitData.shotInfo.OrigDamage;
             s_hitData.damageFalloff = archData.DamageFalloff;
+            s_hitData.pierceLimit = archData.PierceLimit();
             s_hitData.staggerMulti = s_hitData.shotInfo.OrigStagger;
             s_hitData.precisionMulti = archData.PrecisionDamageMulti;
             s_hitData.maxRayDist = CGC.Gun.MaxRayDist;

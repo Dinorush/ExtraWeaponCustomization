@@ -78,12 +78,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                     else
                         position += hitContext.Normal * WallHitBuffer;
 
-                    ExplosionManager.DoExplosion(position, hitContext.Direction, hitContext.Normal, CWC.Owner.Player, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt, hitContext.ShotInfo.Orig);
+                    ExplosionManager.DoExplosion(position, hitContext.Direction, hitContext.Normal, IgnoreFalloff ? 1f : hitContext.Falloff, this, tContext.triggerAmt, hitContext.ShotInfo.Orig);
                 }
                 else
                 {
                     var owner = CWC.Owner;
-                    ExplosionManager.DoExplosion(owner.FirePos, owner.FireDir, owner.FireDir, owner.Player, 1f, this, tContext.triggerAmt);
+                    ExplosionManager.DoExplosion(owner.FirePos, owner.FireDir, owner.FireDir, 1f, this, tContext.triggerAmt);
                 }
             }
         }

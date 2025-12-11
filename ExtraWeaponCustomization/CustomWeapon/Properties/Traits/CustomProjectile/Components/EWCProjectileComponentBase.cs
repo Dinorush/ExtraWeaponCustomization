@@ -115,13 +115,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (isManaged)
             {
-                var cgc = projBase.CGC;
-                if (cgc.HasTempProperties())
+                var cwc = projBase.CWC;
+                if (cwc.HasTempProperties())
                 {
                     // Properties can never change in the same frame, so we can batch shotguns.
                     if (s_lastControllerTime != Clock.Time || playerIndex != s_lastControllerIndex)
                     {
-                        s_currentController = new(cgc.GetContextController());
+                        s_currentController = new(cwc.GetContextController());
                         s_lastControllerTime = Clock.Time;
                         s_lastControllerIndex = playerIndex;
                     }
@@ -129,7 +129,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
                 else
                 {
-                    ContextController = cgc.GetContextController();
+                    ContextController = cwc.GetContextController();
                 }
             }
             

@@ -11,12 +11,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         protected override void Receive(DOTData packet)
         {
             if (!packet.target.TryGet(out EnemyAgent enemy)) return;
-            packet.source.TryGet(out PlayerAgent? player);
+            packet.cwc.TryGetPlayer(out PlayerAgent? player);
 
             DOTDamageManager.Internal_ReceiveDOTEnemyDamage(
                 enemy,
                 player,
-                (Enums.OwnerType)packet.ownerType,
+                packet.cwc.ownerType,
                 packet.limbID,
                 packet.damageLimb,
                 packet.localPosition.Get(10f),

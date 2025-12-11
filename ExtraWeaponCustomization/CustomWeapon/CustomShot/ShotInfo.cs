@@ -63,7 +63,7 @@ namespace EWC.CustomWeapon.CustomShot
             RefreshMods(cwc, isTagged);
             if (!cwc.Weapon.Type.HasFlag(WeaponType.Melee))
             {
-                var archData = ((IArchComp)cwc.Weapon).ArchetypeData;
+                var archData = ((IAmmoComp)cwc.Weapon).ArchetypeData;
                 OrigDamage = archData.Damage * InnateDamageMod;
                 OrigPrecision = archData.PrecisionDamageMulti;
                 OrigStagger = archData.StaggerDamageMulti * InnateStaggerMod;

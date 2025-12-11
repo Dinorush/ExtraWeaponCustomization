@@ -11,12 +11,12 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
         protected override void Receive(ShrapnelHitData packet)
         {
             if (!packet.target.TryGet(out EnemyAgent enemy)) return;
-            packet.source.TryGet(out PlayerAgent? player);
+            packet.cwc.TryGetPlayer(out PlayerAgent? player);
 
             ShrapnelHitManager.Internal_ReceiveShrapnelDamage(
                 enemy,
                 player,
-                (Enums.OwnerType)packet.ownerType,
+                packet.cwc.ownerType,
                 packet.limbID,
                 packet.damageLimb,
                 packet.localPosition.Get(10f),

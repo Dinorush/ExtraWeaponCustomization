@@ -7,8 +7,10 @@ using Player;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using UnityEngine;
+using static GameData.GD;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
@@ -83,11 +85,14 @@ namespace EWC.CustomWeapon.Properties.Effects
         private bool ResetCache()
         {
             // No regen active while sentry is alive
-            if (CWC.Weapon.IsType(WeaponType.SentryHolder) && CustomWeaponManager.TryGetSentry(CWC.Owner.Player, out _)) return false;
+            if (CWC.Weapon.IsType(WeaponType.SentryHolder) && CustomWeaponManager.TryGetSentry(CWC.Owner.Player!, out _)) return false;
+
+            // Level-spawned sentry has no storage
+            if (CWC.Weapon.IsType(WeaponType.Sentry) && CWC.Owner.Player == null) return true;
 
             if (_ammoStorage == null || _slotAmmo == null)
             {
-                if (!PlayerBackpackManager.TryGetBackpack(CWC.Owner.Player.Owner, out var backpack)) return false;
+                if (!PlayerBackpackManager.TryGetBackpack(CWC.Owner.Player!.Owner, out var backpack)) return false;
 
                 _ammoStorage = backpack.AmmoStorage;
                 if (_ammoStorage == null) return false;
@@ -117,8 +122,16 @@ namespace EWC.CustomWeapon.Properties.Effects
                     yield return new WaitForSeconds(_nextTickTime - time);
                     continue;
                 }
+                float delta = Math.Min(time - _nextTickTime, time - _lastTickTime);
+                _lastTickTime = time;
 
-                var weapon = (IArchComp) CWC.Weapon;
+                if (HandleLevelSentry(delta))
+                {
+                    yield return null;
+                    continue;
+                }
+
+                var weapon = (IAmmoComp) CWC.Weapon;
                 int currClip = weapon.GetCurrentClip();
                 int maxClip = BypassClipCap ? int.MaxValue : weapon.GetMaxClip();
                 float currPack = _slotAmmo!.AmmoInPack;
@@ -150,10 +163,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                     }
                 }
 
-                float delta = Math.Min(time - _nextTickTime, time - _lastTickTime);
                 _clipBuffer = addClip ? _clipBuffer + ClipRegen * delta : 0;
                 _reserveBuffer = addReserve ? _reserveBuffer + ReserveRegen * delta : 0;
-                _lastTickTime = time;
 
                 float min = UseRawAmmo ? costOfBullet : 1f;
                 if (Math.Abs(_clipBuffer) < min && Math.Abs(_reserveBuffer) < min)
@@ -204,6 +215,43 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _ammoStorage.UpdateSlotAmmoUI(_slotAmmo, newClip);
                 yield return null;
             }
+        }
+
+
+        private bool HandleLevelSentry(float delta)
+        {
+            if (!CWC.Weapon.IsType(WeaponType.Sentry) || CWC.Owner.Player != null) return false;
+
+            SentryGunComp sentry = (SentryGunComp)CWC.Weapon;
+            int currClip = sentry.GetCurrentClip();
+            int maxClip = BypassClipCap ? int.MaxValue : sentry.GetMaxClip();
+
+            bool addClip = true;
+            if (ResetWhileFull)
+            {
+                if (ClipRegen > 0)
+                    addClip = currClip < maxClip;
+                else if (ClipRegen < 0)
+                    addClip = currClip != 0;
+            }
+
+            _clipBuffer = addClip ? _clipBuffer + ClipRegen * delta : 0;
+
+            float costOfBullet = sentry.ArchetypeData.CostOfBullet;
+            float min = UseRawAmmo ? costOfBullet : 1f;
+            if (Math.Abs(_clipBuffer) < min) return true;
+
+            if (UseRawAmmo)
+                _clipBuffer /= costOfBullet;
+
+            int newClip = Math.Clamp(currClip + (int)_clipBuffer, 0, maxClip);
+            _clipBuffer -= (int)_clipBuffer;
+            sentry.SetCurrentClip(newClip);
+
+            if (UseRawAmmo)
+                _clipBuffer *= costOfBullet;
+
+            return true;
         }
 
         public override void TriggerApply(List<TriggerContext> _)

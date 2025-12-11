@@ -23,7 +23,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             float cap = Cap >= 0f ? Cap : Math.Sign(StaminaChange);
             float stamChange = -StaminaChange * contexts.Sum(tContext => tContext.triggerAmt);
 
-            var stam = CWC.Owner.Player.Stamina;
+            var stam = CWC.Owner.Player!.Stamina;
             if (stamChange > 0)
             {
                 if (stam.Stamina >= cap) return;

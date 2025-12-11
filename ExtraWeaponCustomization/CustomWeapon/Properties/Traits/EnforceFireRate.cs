@@ -79,7 +79,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (extraShots == 0) return;
 
             _fixedTime = Time.time - Time.fixedTime;
-            FPSCamera camera = CWC.Owner.Player.FPSCamera;
+            FPSCamera camera = CWC.Owner.Player!.FPSCamera;
             FPS_RecoilSystem system = camera.m_recoilSystem;
             var gun = (LocalGunComp)CWC.Weapon;
 
@@ -113,7 +113,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             var gun = (LocalGunComp)CWC.Weapon;
             int cap = gun.GetCurrentClip();
             if (CWC.HasTrait<ReserveClip>())
-                cap += PlayerBackpackManager.GetBackpack(CWC.Owner.Player.Owner).AmmoStorage.GetBulletsInPack(CWC.Weapon.AmmoType);
+                cap += PlayerBackpackManager.GetBackpack(CWC.Owner.Player!.Owner).AmmoStorage.GetBulletsInPack(CWC.Weapon.AmmoType);
 
             if (gun.TryGetBurstArchetype(out var arch))
                 cap = Math.Min(cap, arch.m_burstCurrentCount);

@@ -3,7 +3,7 @@
 namespace EWC.CustomWeapon.Enums
 {
     [Flags]
-    public enum OwnerType
+    public enum OwnerType : byte
     {
         Any = 0,
         Managed = 1,

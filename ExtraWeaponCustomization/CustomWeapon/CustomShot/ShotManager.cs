@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+﻿using EWC.CustomWeapon.ComponentWrapper;
+using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
@@ -22,7 +23,7 @@ namespace EWC.CustomWeapon.CustomShot
             public WeaponType type = WeaponType.BulletWeapon;
             public bool isTagged = false;
             public ArchetypeDataBlock? archBlock = null;
-            public CustomGunComponent? cgc = null;
+            public CustomWeaponComponent? cwc = null;
             public bool valid = false;
 
             public FiringInfo() { }
@@ -47,9 +48,9 @@ namespace EWC.CustomWeapon.CustomShot
         {
             if (vanillaData.Pointer != s_vanillaShotInfo.ptr)
             {
-                if (ActiveFiringInfo.cgc != null)
+                if (ActiveFiringInfo.cwc != null)
                 {
-                    s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(ActiveFiringInfo.cgc, ActiveFiringInfo.isTagged));
+                    s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(ActiveFiringInfo.cwc, ActiveFiringInfo.isTagged));
 
                     if (vanillaData.owner == null)
                     {
@@ -79,7 +80,7 @@ namespace EWC.CustomWeapon.CustomShot
                 type = WeaponType.BulletWeapon,
                 archBlock = weapon.ArchetypeData,
                 isTagged = false,
-                cgc = weapon.GetComponent<CustomGunComponent>(),
+                cwc = weapon.GetComponent<CustomGunComponent>(),
                 valid = weapon.ArchetypeData != null
             };
         }
@@ -93,7 +94,7 @@ namespace EWC.CustomWeapon.CustomShot
                 type = WeaponType.Sentry,
                 archBlock = sentry.ArchetypeData,
                 isTagged = isTagged,
-                cgc = sentry.GetComponent<CustomGunComponent>(),
+                cwc = sentry.GetComponent<CustomGunComponent>(),
                 valid = sentry.ArchetypeData != null
             };
         }
@@ -103,7 +104,7 @@ namespace EWC.CustomWeapon.CustomShot
             ActiveFiringInfo = default;
         }
 
-        public static bool BulletHit(IGunComp weapon, HitData data)
+        public static bool BulletHit(IWeaponComp weapon, HitData data)
         {
             var hitData = data.Apply(weapon.VanillaHitData);
             s_vanillaShotInfo = (hitData.Pointer, data.shotInfo);
@@ -153,7 +154,7 @@ namespace EWC.CustomWeapon.CustomShot
                 CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, AgentModifier.SentryGunDamage, 1f);
                 if (isTagged)
                 {
-                    ArchetypeDataBlock archBlock = ((IArchComp)cwc.Weapon).ArchetypeData;
+                    ArchetypeDataBlock archBlock = cwc.Weapon.ArchetypeData;
                     CurrentDamageMod *= archBlock.Sentry_DamageTagMulti;
                     CurrentStaggerMod *= archBlock.Sentry_StaggerDamageTagMulti;
                 }
@@ -168,7 +169,7 @@ namespace EWC.CustomWeapon.CustomShot
                 }
                 else if (weaponType.HasFlag(WeaponType.Melee))
                 {
-                    var syringeBuff = owner.MeleeBuffTimer > Clock.Time ? 3f : 1f;
+                    var syringeBuff = owner?.MeleeBuffTimer > Clock.Time ? 3f : 1f;
                     CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(true, weaponType) * syringeBuff;
                     CurrentDamageMod = 1f;
                 }

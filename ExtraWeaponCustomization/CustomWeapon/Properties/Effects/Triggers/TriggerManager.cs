@@ -1,12 +1,13 @@
 ﻿using Agents;
 using EWC.Attributes;
+using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Structs;
 using Player;
 using SNetwork;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
-using static SNetwork.SNetStructs;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
@@ -16,7 +17,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private readonly static TriggerDirSync _triggerDirSync = new();
         private readonly static TriggerAgentSync _triggerAgentSync = new();
         private readonly static TriggerResetSync _resetSync = new();
-        private readonly static Dictionary<(InventorySlot slot, bool isSentry), Queue<Action>> _queuedReceives = new();
+        private readonly static Dictionary<(OwnerType ownerType, InventorySlot slot), Queue<Action>> _queuedReceives = new();
         public const float MaxMod = 256f;
 
         [InvokeOnAssetLoad]
@@ -34,9 +35,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             _queuedReceives.Clear();
         }
 
-        internal static void RunQueuedReceives(InventorySlot slot, bool isSentry)
+        internal static void RunQueuedReceives(CustomWeaponComponent cwc)
         {
-            if (!_queuedReceives.TryGetValue((slot, isSentry), out var queue)) return;
+            if (!_queuedReceives.TryGetValue((cwc.Owner.Type, cwc.Weapon.InventorySlot), out var queue)) return;
 
             while (queue.TryDequeue(out var onProcess))
                 onProcess();
@@ -44,8 +45,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static void SendInstance(ITriggerCallbackBasicSync caller, float mod = 1f)
         {
-            if (caller.CWC.Owner.Player == null) return;
-
             _triggerSync.Send(PackInstance(caller, mod));
         }
 
@@ -62,9 +61,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         private static TriggerInstanceData PackInstance(ITriggerCallbackSync caller, float mod)
         {
             TriggerInstanceData data = default;
-            data.source.SetPlayer(caller.CWC.Owner.Player.Owner);
-            data.isSentry = caller.CWC.Owner.IsType(Enums.OwnerType.Sentry);
-            data.slot = PlayerAmmoStorage.GetSlotFromAmmoType(caller.CWC.Weapon.AmmoType);
+            data.cwc.Set(caller.CWC);
             data.mod.Set(mod, MaxMod);
             data.id = caller.SyncID;
             return data;
@@ -72,8 +69,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static void SendInstance(ITriggerCallbackDirSync caller, Vector3 position, Vector3 dir, float mod = 1f)
         {
-            if (caller.CWC.Owner.Player == null) return;
-
             TriggerDirInstanceData data = default;
             data.position = position;
             data.dir.Value = dir;
@@ -93,8 +88,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static void SendInstance(ITriggerCallbackAgentSync caller, Agent target, float mod = 1f)
         {
-            if (caller.CWC.Owner.Player == null) return;
-
             TriggerAgentInstanceData data = default;
             data.target.Set(target);
             data.instance = PackInstance(caller, mod);
@@ -113,12 +106,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public static void SendReset(ITriggerCallbackSync caller)
         {
-            if (caller.CWC.Owner.Player == null) return;
-
             TriggerResetData data = default;
-            data.source.SetPlayer(caller.CWC.Owner.Player.Owner);
-            data.isSentry = caller.CWC.Owner.IsType(Enums.OwnerType.Sentry);
-            data.slot = PlayerAmmoStorage.GetSlotFromAmmoType(caller.CWC.Weapon.AmmoType);
+            data.cwc.Set(caller.CWC);
             data.id = caller.SyncID;
             _resetSync.Send(data);
         }
@@ -135,38 +124,21 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private static bool TryGetTriggerSync(TriggerInstanceData data, [MaybeNullWhen(false)] out ITriggerCallbackSync callback)
         {
-            callback = null;
-            if (!data.source.TryGetPlayer(out var source)) return false;
-            return TryGetTriggerSync(source, data.isSentry, data.slot, data.id, out callback);
+            return TryGetTriggerSync(data.cwc, data.id, out callback);
         }
 
         private static bool TryGetTriggerSync(TriggerResetData data, [MaybeNullWhen(false)] out ITriggerCallbackSync callback)
         {
-            callback = null;
-            if (!data.source.TryGetPlayer(out var source)) return false;
-            return TryGetTriggerSync(source, data.isSentry, data.slot, data.id, out callback);
+            return TryGetTriggerSync(data.cwc, data.id, out callback);
         }
 
-        private static bool TryGetTriggerSync(SNet_Player source, bool isSentry, InventorySlot slot, ushort id, [MaybeNullWhen(false)] out ITriggerCallbackSync callback)
+        private static bool TryGetTriggerSync(pCWC packet, ushort id, [MaybeNullWhen(false)] out ITriggerCallbackSync callback)
         {
-            callback = null;
-            CustomWeaponComponent? cwc;
-            if (isSentry)
+            if (!packet.TryGet(out var cwc))
             {
-                if (!source.HasPlayerAgent) return false;
-                if (!CustomWeaponManager.TryGetSentry(source.PlayerAgent.Cast<PlayerAgent>(), out var info)) return false;
-
-                cwc = info.cgc;
+                callback = null;
+                return false;
             }
-            else
-            {
-                if (!PlayerBackpackManager.TryGetBackpack(source, out var backpack)) return false;
-                if (!backpack.TryGetBackpackItem(slot, out var item)) return false;
-
-                cwc = item.Instance.GetComponent<CustomWeaponComponent>();
-            }
-
-            if (cwc == null) return false;
 
             callback = cwc.GetTriggerSync(id);
             return true;
@@ -174,7 +146,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private static void QueueReceive(TriggerInstanceData instance, Action onProcess)
         {
-            (InventorySlot, bool) target = (instance.slot, instance.isSentry);
+            (OwnerType, InventorySlot) target = (instance.cwc.ownerType, instance.cwc.slot);
             if (!_queuedReceives.TryGetValue(target, out var queue))
                 _queuedReceives.Add(target, queue = new());
             queue.Enqueue(onProcess);
@@ -182,21 +154,19 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         private static void QueueReceive(TriggerResetData instance, Action onProcess)
         {
-            (InventorySlot, bool) target = (instance.slot, instance.isSentry);
+            (OwnerType, InventorySlot) target = (instance.cwc.ownerType, instance.cwc.slot);
             if (!_queuedReceives.TryGetValue(target, out var queue))
                 _queuedReceives.Add(target, queue = new());
             queue.Enqueue(onProcess);
         }
 
-        private static void LogFailMessage(TriggerInstanceData instance) => EWCLogger.Error($"Unable to get custom weapon for {(instance.source.TryGetPlayer(out var player) ? player.NickName : "No Player")} on slot {instance.slot} ({(instance.isSentry ? "Sentry" : "Not Sentry")}");
-        private static void LogFailMessage(TriggerResetData instance) => EWCLogger.Error($"Unable to get custom weapon for {(instance.source.TryGetPlayer(out var player) ? player.NickName : "No Player")} on slot {instance.slot} ({(instance.isSentry ? "Sentry" : "Not Sentry")}");
+        private static void LogFailMessage(TriggerInstanceData instance) => EWCLogger.Error($"Unable to get custom weapon for {(instance.cwc.TryGetPlayer(out var player) ? player.Owner.NickName : "No Player")} on slot {instance.cwc.slot} (Owner Type: {instance.cwc.ownerType})");
+        private static void LogFailMessage(TriggerResetData instance) => EWCLogger.Error($"Unable to get custom weapon for {(instance.cwc.TryGetPlayer(out var player) ? player.Owner.NickName : "No Player")} on slot {instance.cwc.slot} (Owner Type: {instance.cwc.ownerType})");
     }
 
     public struct TriggerInstanceData
     {
-        public pPlayer source;
-        public bool isSentry;
-        public InventorySlot slot;
+        public pCWC cwc;
         public UFloat16 mod;
         public ushort id;
     }
@@ -216,9 +186,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
     public struct TriggerResetData
     {
-        public pPlayer source;
-        public bool isSentry;
-        public InventorySlot slot;
+        public pCWC cwc;
         public ushort id;
     }
 }
