@@ -11,7 +11,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Damage Over Time: Applies a damage over time effect. [Hit Triggers]
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
-- Fire Shot: Fires shots at offsets. [Gun]
+- Fire Shot: Fires shots at offsets.
 - Foam: Applies foam where bullets land. [Landed, Hit Triggers]
 - Health Mod: Modifies the user's health.
 - Health Shot Mod: Applies a modifier to shots/melees depending on the user's current health.
@@ -23,9 +23,9 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Shot Mod: Applies a stat modifier to shots/melees.
 - Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Hit Triggers]
 - Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Hit Triggers]
-- Shrapnel: Causes bullets to fire out from where bullets land. [Gun]
+- Shrapnel: Causes bullets to fire out from where bullets land.
 - Speed Mod: Applies a modifier to the user's movement speed. [Player]
-- Spread Mod: Applies a spread modifier. [Gun]
+- Spread Mod: Applies a spread modifier.
 - Stamina Mod: Modifies the user's stamina. [Player]
 - Temp Properties: Temporarily adds another set of properties.
 
@@ -41,13 +41,13 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Hitmarker Cooldown: Sets a cooldown on how frequently the weapon can generate hitmarkers. [Player]
 - Hold Burst: Releasing the trigger ends a burst early. [Player]
 - Multi Shot: Fires additional bullets per shot at given offsets. [Gun]
-- Pierce Multi: Applies a damage multiplier with each enemy pierced. [Gun]
-- Projectile: Fires a projectile instead of a hitscan bullet. [Gun]
+- Pierce Multi: Applies a damage multiplier with each enemy pierced.
+- Projectile: Fires a projectile instead of a hitscan bullet.
 - Reserve Clip: Combines reserve ammo with the magazine. [Gun]
 - Silence: Modifies the stealth properties for firing. [Gun]
-- Thick Bullet: Gives bullets a bigger entity hitbox. [Gun]
+- Thick Bullet: Gives bullets a bigger entity hitbox.
 - Tumor Multi: Applies a multiplier to tumor damage.
-- Wall Pierce: Bullets can damage enemies through walls. [Gun]
+- Wall Pierce: Bullets can damage enemies through walls.
 
 Additional details for customizing/implementing these can be found on the wiki:
 
