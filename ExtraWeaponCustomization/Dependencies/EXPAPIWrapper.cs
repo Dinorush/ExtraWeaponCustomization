@@ -83,38 +83,6 @@ namespace EWC.Dependencies
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void EXPDidDamage(EnemyAgent enemy, PlayerAgent? source, float damage, bool willKill)
-        {
-            if (source == null) return;
-
-            var damageDistribution = CacheApi.GetInstance<Dictionary<IntPtr, EnemyKillDistribution>>(CacheKey);
-
-            if (!damageDistribution.TryGetValue(enemy.Pointer, out EnemyKillDistribution? distribution))
-            {
-                distribution = new EnemyKillDistribution(enemy);
-                damageDistribution[enemy.Pointer] = distribution;
-            }
-
-            distribution.AddDamageDealtByPlayerAgent(source, damage);
-
-            if (willKill)
-            {
-                distribution.LastHitDealtBy = source;
-                distribution.lastHitType = LastHitType.ShootyWeapon;
-
-                try
-                {
-                    if (CacheApi.TryGetInformation<List<Action<EnemyKillDistribution>>>(EnemyKillKey, out var callBackList, CacheKey, false))
-                    {
-                        foreach (var callBack in callBackList)
-                            callBack.Invoke(distribution);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    EWCLogger.Error($"Got error running EXP kill callbacks! {ex.Message}\n{ex.StackTrace}");
-                }
-            }
-        }
+        private static void EXPDidDamage(EnemyAgent enemy, PlayerAgent? source, float damage, bool willKill) => EnemyKillApi.RegisterDamage(enemy, source, damage, willKill);
     }
 }
