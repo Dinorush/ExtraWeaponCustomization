@@ -190,9 +190,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             var time = Time.time;
             float interval;
             if (time > _startLifetime + PhysicsIntervalDelayUntilMax)
-                interval = MaxPhysicsInterval;
+                interval = Settings.HitCheckCooldown;
             else
-                interval = (time - _startLifetime) / PhysicsIntervalDelayUntilMax * MaxPhysicsInterval;
+                interval = (time - _startLifetime) / PhysicsIntervalDelayUntilMax * Settings.HitCheckCooldown;
 
             if (_lastUpdatePhysicsTime + interval >= time) return false;
 
