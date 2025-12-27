@@ -13,10 +13,10 @@ using System.Runtime.CompilerServices;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.5.1")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.5.2")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
-[BepInDependency(MSAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency("Dinorush.ModifierAPI", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(AmorLibWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(KillAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(DamageSyncWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -26,7 +26,6 @@ namespace EWC;
 [BepInDependency(EECAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(FSFAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(ACAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
-[BepInDependency(MSCWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(ETCWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
 internal sealed class EntryPoint : BasePlugin
 {

@@ -27,14 +27,6 @@ namespace EWC.Patches.Melee
             __state.UpdateAttackSpeed();
         }
 
-        [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.ChangeState))]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void Post_MeleeChangeState(eMeleeWeaponState newState, CustomMeleeComponent? __state)
-        {
-            __state?.ModifyAttackSpeed(newState);
-        }
-
         [HarmonyPatch(typeof(MWS_AttackLight), nameof(MWS_AttackLight.Enter))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]

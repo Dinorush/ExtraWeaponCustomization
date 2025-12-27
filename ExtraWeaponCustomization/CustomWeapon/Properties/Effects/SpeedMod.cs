@@ -1,6 +1,6 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
-using MovementSpeedAPI;
+using ModifierAPI;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
@@ -9,7 +9,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         private const string APIGroup = "EWC";
 
-        private ISpeedModifier _speedModifier = null!;
+        private IStatModifier _speedModifier = null!;
 
         protected override OwnerType RequiredOwnerType => OwnerType.Local;
 
@@ -28,11 +28,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             return StackLayer switch
             {
-                StackType.Override => MovementSpeedAPI.StackLayer.Override,
-                StackType.Max or StackType.Min => Mod > 1 ? MovementSpeedAPI.StackLayer.Max : MovementSpeedAPI.StackLayer.Min,
-                StackType.Mult => MovementSpeedAPI.StackLayer.Multiply,
-                StackType.Add => MovementSpeedAPI.StackLayer.Add,
-                _ => MovementSpeedAPI.StackLayer.Multiply
+                StackType.Override => ModifierAPI.StackLayer.Override,
+                StackType.Max or StackType.Min => Mod > 1 ? ModifierAPI.StackLayer.Max : ModifierAPI.StackLayer.Min,
+                StackType.Mult => ModifierAPI.StackLayer.Multiply,
+                StackType.Add => ModifierAPI.StackLayer.Add,
+                _ => ModifierAPI.StackLayer.Multiply
             };
         }
     }
