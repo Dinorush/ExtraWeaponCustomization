@@ -11,6 +11,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 {
     public sealed class EnforceFireRate :
         Trait,
+        IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponShotCooldownContext>,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponPostFireContext>,
@@ -30,6 +31,12 @@ namespace EWC.CustomWeapon.Properties.Traits
         protected override OwnerType ValidOwnerType => OwnerType.Local | OwnerType.Unmanaged;
         protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
+        public void Invoke(WeaponSetupContext context)
+        {
+            _nextShotTime = 0;
+            _shotBuffer = 0;
+        }
+        
         public void Invoke(WeaponShotCooldownContext context)
         {
             _nextShotTime = context.NextShotTime;
@@ -39,7 +46,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             // If semi-auto or burst, calculate if they've continuously fired
             // based on whether this is the first frame since they could fire
-            var gun = (LocalGunComp) CWC.Weapon;
+            var gun = (LocalGunComp)CWC.Weapon;
             if (gun.FireMode != eWeaponFireMode.Auto)
             {
                 float maxContinueTime = _nextShotTime + Clock.Delta;
