@@ -26,7 +26,8 @@ namespace EWC.CustomWeapon.ComponentWrapper
         // Defaults to support shot effects on non-guns
         public virtual ArchetypeDataBlock ArchetypeData { get => throw new NotImplementedException($"WeaponComp does not support ArchetypeData - is this called on an invalid weapon?"); set => throw new NotImplementedException($"WeaponComp does not support ArchetypeData - is this called on an invalid weapon?"); }
         public virtual bool IsShotgun => false;
-        public virtual Weapon.WeaponHitData VanillaHitData => Weapon.s_weaponRayData;
+        public virtual bool IsAiming => false;
+        public virtual Weapon.WeaponHitData VanillaHitData => Weapon.s_weaponRayData ??= new();
         public virtual FX_Pool TracerPool => BulletWeapon.s_tracerPool;
         public virtual float MaxRayDist { get; set; } = 100f;
     }
@@ -45,6 +46,7 @@ namespace EWC.CustomWeapon.ComponentWrapper
         // Shot-related fields
         public ArchetypeDataBlock ArchetypeData { get; set; }
         public bool IsShotgun { get; }
+        public bool IsAiming { get; }
         public Weapon.WeaponHitData VanillaHitData { get; }
         public FX_Pool TracerPool { get; }
         public float MaxRayDist { get; set; }

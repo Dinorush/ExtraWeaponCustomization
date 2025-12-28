@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
-using EWC.Dependencies;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -105,6 +104,18 @@ namespace EWC.CustomWeapon.CustomShot
             OrigDamage = origDamage * InnateDamageMod;
             OrigPrecision = origPrecision * InnateStaggerMod;
             OrigStagger = origStagger;
+            ID = ShotManager.NextID;
+            _hits.Clear();
+        }
+
+        public void SetToPush()
+        {
+            InnateDamageMod = 1f;
+            InnateStaggerMod = 1f;
+            ExternalDamageMod = 1f;
+            OrigDamage = 1f;
+            OrigPrecision = 1f;
+            OrigStagger = 1f;
             ID = ShotManager.NextID;
             _hits.Clear();
         }

@@ -16,15 +16,15 @@ namespace EWC.CustomWeapon.CustomShot
 {
     public sealed class CustomShotComponent
     {
-        private readonly IWeaponComp _gun;
+        private readonly IWeaponComp _weapon;
         private readonly IOwnerComp _owner;
-        private readonly CustomWeaponComponent _cgc;
+        private readonly CustomWeaponComponent _cwc;
 
         public CustomShotComponent(CustomWeaponComponent cwc)
         {
-            _cgc = cwc;
+            _cwc = cwc;
             _owner = cwc.Owner;
-            _gun = cwc.Weapon;
+            _weapon = cwc.Weapon;
         }
 
         private int _normalCancel = 0;
@@ -100,7 +100,7 @@ namespace EWC.CustomWeapon.CustomShot
 
         private void FireVisual(Ray fireRay, Vector3 fxPos, HitData hitData)
         {
-            FireShotAPI.FirePreShotFiredCallback(hitData, fireRay, _gun.Type);
+            FireShotAPI.FirePreShotFiredCallback(hitData, fireRay, _weapon.Type);
 
             float dist = Math.Min(hitData.maxRayDist, 20f);
             if (Physics.Raycast(fireRay, out s_rayHit, dist, LayerUtil.MaskEntityAndWorld))
@@ -112,9 +112,9 @@ namespace EWC.CustomWeapon.CustomShot
             else
                 FX_Manager.EffectTargetPosition = fireRay.origin + fireRay.direction * dist;
 
-            FireShotAPI.FireShotFiredCallback(hitData, fireRay.origin, FX_Manager.EffectTargetPosition, _gun.Type);
+            FireShotAPI.FireShotFiredCallback(hitData, fireRay.origin, FX_Manager.EffectTargetPosition, _weapon.Type);
             FX_Manager.PlayLocalVersion = false;
-            _gun.TracerPool.AquireEffect().Play(null, fxPos, Quaternion.LookRotation(fireRay.direction));
+            _weapon.TracerPool.AquireEffect().Play(null, fxPos, Quaternion.LookRotation(fireRay.direction));
         }
 
         public static Vector3 CalcRayDir(Vector3 fireDir, float x, float y, float spread)
@@ -137,7 +137,7 @@ namespace EWC.CustomWeapon.CustomShot
         class ShotHitbox
         {
             private readonly CustomShotComponent _parent;
-            private readonly IWeaponComp _gun;
+            private readonly IWeaponComp _weapon;
             private readonly IOwnerComp _owner;
             private readonly HashSet<IntPtr>? _hitEnts;
             private readonly HitData _hitData;
@@ -162,7 +162,7 @@ namespace EWC.CustomWeapon.CustomShot
             public ShotHitbox(CustomShotComponent parent, HitData hitData, Ray fireRay, Vector3 fxPos, int friendlyMask, IntPtr ignoreEnt, CustomShotSettings shotSettings)
             {
                 _parent = parent;
-                _gun = _parent._gun;
+                _weapon = _parent._weapon;
                 _owner = _parent._owner;
 
                 _ray = fireRay;
@@ -170,7 +170,7 @@ namespace EWC.CustomWeapon.CustomShot
                 _hitData = hitData;
                 _origInfo = _hitData.shotInfo.State;
 
-                _pierceCount = hitData.GetPierceOrFallback(_gun);
+                _pierceCount = hitData.GetPierceOrFallback(_weapon);
 
                 if (_pierceCount > 1 || ignoreEnt != IntPtr.Zero)
                 {
@@ -218,18 +218,18 @@ namespace EWC.CustomWeapon.CustomShot
                 else
                     fxPos = _ray.origin + _ray.direction * _hitData.maxRayDist;
 
-                FireShotAPI.FirePreShotFiredCallback(_hitData, _ray, _gun.Type);
+                FireShotAPI.FirePreShotFiredCallback(_hitData, _ray, _weapon.Type);
                 if (!Fire_Internal(fxPos, hitWall, wallRayHit, out var fxTarget))
                     fxPos = fxTarget;
-                FireShotAPI.FireShotFiredCallback(_hitData, _ray.origin, fxPos, _gun.Type);
+                FireShotAPI.FireShotFiredCallback(_hitData, _ray.origin, fxPos, _weapon.Type);
                 if (!_parent.CancelAllFX)
                 {
                     FX_Manager.EffectTargetPosition = fxPos;
                     FX_Manager.PlayLocalVersion = false;
-                    _gun.TracerPool.AquireEffect().Play(null, _fxPos, Quaternion.LookRotation(_ray.direction));
+                    _weapon.TracerPool.AquireEffect().Play(null, _fxPos, Quaternion.LookRotation(_ray.direction));
                 }
 
-                _parent._cgc.Invoke(new WeaponShotEndContext(_hitData.damageType.GetBaseType(), _hitData.shotInfo, _origInfo));
+                _parent._cwc.Invoke(new WeaponShotEndContext(_hitData.damageType.GetBaseType(), _hitData.shotInfo, _origInfo));
             }
 
             // Return false if bullet ended by hitting enemies, or true otherwise
@@ -323,7 +323,7 @@ namespace EWC.CustomWeapon.CustomShot
                         fxTarget = hit.point;
                     }
 
-                    if (_hitFunc(_gun, _hitData))
+                    if (_hitFunc(_weapon, _hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return false;
@@ -334,7 +334,7 @@ namespace EWC.CustomWeapon.CustomShot
                     if (_wallPierce == null)
                     {
                         _hitData.RayHit = wallRayHit;
-                        _hitFunc(_gun, _hitData);
+                        _hitFunc(_weapon, _hitData);
                     }
                 }
                 return true;
@@ -400,7 +400,7 @@ namespace EWC.CustomWeapon.CustomShot
                         fxTarget = hit.point;
                     }
 
-                    if (_hitFunc(_gun, _hitData))
+                    if (_hitFunc(_weapon, _hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return false;

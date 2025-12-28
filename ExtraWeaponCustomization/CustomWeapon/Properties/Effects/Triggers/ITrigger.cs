@@ -17,6 +17,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         Reload,
         Unwield,
         Wield,
+        PrePush,
+        Push,
+        PushHit,
         BulletLanded,
         ChargeLanded,
         Hit,
@@ -44,7 +47,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
     public interface ITrigger
     {
-        public static readonly TriggerName[] HitTriggers = new TriggerName[] { TriggerName.Empty, TriggerName.PreHit, TriggerName.Hit, TriggerName.Charge, TriggerName.Damage, TriggerName.Backstab, TriggerName.Stagger, TriggerName.PerTarget };
+        public static readonly TriggerName[] HitTriggers = new TriggerName[] { TriggerName.Empty, TriggerName.PushHit, TriggerName.PreHit, TriggerName.Hit, TriggerName.Charge, TriggerName.Damage, TriggerName.Backstab, TriggerName.Stagger, TriggerName.PerTarget };
 
         TriggerName Name { get; }
         bool StoreZeroAmount => false;
@@ -71,6 +74,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "fire" or "shot" or "swing" => new BasicTrigger<WeaponPostFireContext>(TriggerName.Fire),
                 "startfiring" => new BasicTrigger<WeaponPostStartFireContext>(TriggerName.StartFiring),
                 "endfiring" or "stopfiring" => new BasicTrigger<WeaponPostStopFiringContext>(TriggerName.EndFiring),
+                "pushhit" => new BasicTrigger<WeaponPushHitContext>(TriggerName.PushHit),
+                "prepush" => new BasicTrigger<WeaponPrePushContext>(TriggerName.PrePush),
+                "push" => new BasicTrigger<WeaponPostPushContext>(TriggerName.Push),
                 "aim" or "zoomin" => new BasicTrigger<WeaponAimContext>(TriggerName.Aim),
                 "aimend" or "zoomout" => new BasicTrigger<WeaponAimEndContext>(TriggerName.AimEnd),
                 "reloadstart" or "startreload" => new BasicTrigger<WeaponReloadStartContext>(TriggerName.ReloadStart),

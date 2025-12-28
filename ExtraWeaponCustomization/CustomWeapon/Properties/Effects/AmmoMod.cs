@@ -333,6 +333,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             public bool AllowBackstab => throw new NotImplementedException();
             public ArchetypeDataBlock ArchetypeData { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
             public bool IsShotgun => throw new NotImplementedException();
+            public bool IsAiming => throw new NotImplementedException();
             public Weapon.WeaponHitData VanillaHitData => throw new NotImplementedException();
             public FX_Pool TracerPool => throw new NotImplementedException();
             public float MaxRayDist { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

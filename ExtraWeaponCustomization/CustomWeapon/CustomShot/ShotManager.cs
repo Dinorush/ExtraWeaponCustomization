@@ -20,7 +20,6 @@ namespace EWC.CustomWeapon.CustomShot
         {
             public PlayerAgent? owner = null;
             public InventorySlot slot = InventorySlot.None;
-            public WeaponType type = WeaponType.BulletWeapon;
             public bool isTagged = false;
             public ArchetypeDataBlock? archBlock = null;
             public CustomWeaponComponent? cwc = null;
@@ -77,11 +76,22 @@ namespace EWC.CustomWeapon.CustomShot
             {
                 owner = weapon.Owner,
                 slot = weapon.AmmoType.ToInventorySlot(),
-                type = WeaponType.BulletWeapon,
                 archBlock = weapon.ArchetypeData,
                 isTagged = false,
-                cwc = weapon.GetComponent<CustomGunComponent>(),
+                cwc = weapon.GetComponent<CustomWeaponComponent>(),
                 valid = weapon.ArchetypeData != null
+            };
+        }
+
+        public static void CacheFiringMelee(MeleeWeaponFirstPerson weapon)
+        {
+            ActiveFiringInfo = new()
+            {
+                owner = weapon.Owner,
+                slot = InventorySlot.GearMelee,
+                isTagged = false,
+                cwc = weapon.GetComponent<CustomWeaponComponent>(),
+                valid = true
             };
         }
 
@@ -91,10 +101,9 @@ namespace EWC.CustomWeapon.CustomShot
             {
                 owner = sentry.Owner,
                 slot = InventorySlot.GearClass,
-                type = WeaponType.Sentry,
                 archBlock = sentry.ArchetypeData,
                 isTagged = isTagged,
-                cwc = sentry.GetComponent<CustomGunComponent>(),
+                cwc = sentry.GetComponent<CustomWeaponComponent>(),
                 valid = sentry.ArchetypeData != null
             };
         }
@@ -113,8 +122,11 @@ namespace EWC.CustomWeapon.CustomShot
 
             if (weapon.IsType(WeaponType.BulletWeapon))
                 CacheFiringGun(((IBulletWeaponComp)weapon).BulletWeapon);
+            else if (weapon.IsType(WeaponType.Melee))
+                CacheFiringMelee(((MeleeComp)weapon).Value);
             else // Tagged set to false because the damage is already calculated
                 CacheFiringSentry(((SentryGunComp)weapon).Value, isTagged: false);
+
             var result = BulletWeapon.BulletHit(hitData, true);
             ActiveFiringInfo = oldInfo;
             return result;

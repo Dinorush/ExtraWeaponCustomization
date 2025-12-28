@@ -15,7 +15,6 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
         public eWeaponFireMode FireMode { get; protected set; }
         public override bool IsShotgun => _isShotgun;
         public abstract WeaponAudioDataBlock AudioData { get; set; }
-        public abstract bool IsAiming { get; }
         public abstract int GetCurrentClip();
         public abstract int GetMaxClip();
         public abstract void SetCurrentClip(int clip);
@@ -26,8 +25,6 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
     {
         public WeaponAudioDataBlock AudioData { get; set; }
         public eWeaponFireMode FireMode { get; }
-        public float MaxRayDist { get; set; }
-        public bool IsAiming { get; }
         public float ModifyFireRate(float lastFireTime, float shotDelay, float burstDelay, float cooldownDelay);
     }
 }

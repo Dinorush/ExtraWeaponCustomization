@@ -1,5 +1,4 @@
-﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
-using EWC.CustomWeapon.CustomShot;
+﻿using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
@@ -23,7 +22,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public ushort SyncID { get; set; }
 
         public readonly List<float> Offsets = new(2);
-        public uint ArchetypeID { get; set; } = 0;
+        public uint ArchetypeID { get; private set; } = 0;
         public uint Repeat { get; private set; } = 0;
         public float Spread { get; private set; } = 0;
         public bool IgnoreSpreadMod { get; private set; } = false;
@@ -38,7 +37,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private const float WallHitBuffer = 0.03f;
 
-
+        private ArchetypeDataBlock SafeArchetype => ArchetypeID != 0 ? _cachedArchetype! : CWC.Weapon.ArchetypeData;
         private ArchetypeDataBlock? _cachedArchetype;
 
         public override bool ValidProperty()
@@ -104,11 +103,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (iterations == 0) return;
             }
 
-            var weapon = (IGunComp)CWC.Weapon;
+            var weapon = CWC.Weapon;
             int shotgunBullets = 1;
             float coneSize = 0;
             float segmentSize = 0;
-            var archData = weapon.ArchetypeData;
+            var archData = SafeArchetype;
             if (weapon.IsShotgun && !ForceSingleBullet)
             {
                 shotgunBullets = archData.ShotgunBulletCount;
@@ -125,7 +124,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     spread = weapon.IsAiming ? archData.AimSpread : archData.HipFireSpread;
             }
 
-            Ray ray = new(CWC.Owner.FirePos, UserUseAimDir ? CWC.Owner.FireDir : ShotManager.VanillaFireDir);
+            Ray ray = new(CWC.Owner.FirePos, UserUseAimDir || weapon.IsType(WeaponType.Melee) ? CWC.Owner.FireDir : ShotManager.VanillaFireDir);
             if (FireFrom != FireSetting.User)
             {
                 foreach (var (pos, dir, amount, shotInfo, baseDam) in hitContexts!)
@@ -161,16 +160,17 @@ namespace EWC.CustomWeapon.Properties.Effects
             int shotgunBullets = 1;
             int coneSize = 0;
             float segmentSize = 0;
+            var archetype = SafeArchetype;
             if (weapon.IsShotgun && !ForceSingleBullet)
             {
-                shotgunBullets = weapon.ArchetypeData.ShotgunBulletCount;
-                coneSize = weapon.ArchetypeData.ShotgunConeSize;
+                shotgunBullets = archetype.ShotgunBulletCount;
+                coneSize = archetype.ShotgunConeSize;
                 segmentSize = Mathf.Deg2Rad * (360f / (shotgunBullets - 1));
             }
 
             float spread = Spread;
             if (spread < 0f)
-                spread = weapon.IsShotgun ? weapon.ArchetypeData.ShotgunBulletSpread : 0f;
+                spread = weapon.IsShotgun ? archetype.ShotgunBulletSpread : 0f;
 
             for (int iter = 0; iter < iterations; iter++)
                 FirePerTrigger(ray, spread, shotgunBullets, segmentSize, coneSize, true);
@@ -216,7 +216,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void Fire(Ray ray, float x, float y, float spread, ShotInfo? orig, IntPtr ignoreEnt)
         {
-            ArchetypeDataBlock archData = ArchetypeID != 0 ? _cachedArchetype! : CWC.Weapon.ArchetypeData;
+            ArchetypeDataBlock archData = SafeArchetype;
             HitData hitData = new(DamageType.Bullet);
             hitData.owner = CWC.Owner.Player;
             hitData.shotInfo.Reset(archData.Damage, archData.PrecisionDamageMulti, archData.StaggerDamageMulti, CWC, orig, UseParentShotMod);
@@ -248,7 +248,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void FireVisual(Ray ray, float x, float y, float spread)
         {
-            ArchetypeDataBlock archData = ArchetypeID != 0 ? _cachedArchetype! : CWC.Weapon.ArchetypeData;
+            ArchetypeDataBlock archData = SafeArchetype;
             HitData hitData = new(DamageType.Bullet)
             {
                 owner = CWC.Owner.Player,

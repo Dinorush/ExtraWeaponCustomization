@@ -47,7 +47,7 @@ namespace EWC.CustomWeapon.Structs
                 return false;
             }
 
-            if (ownerType == OwnerType.Sentry)
+            if (ownerType.HasFlag(OwnerType.Sentry))
             {
                 comp = supplier.Cast<SentryGunInstance>().GetComponent<CustomWeaponComponent>();
                 return comp != null;
