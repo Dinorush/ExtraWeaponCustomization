@@ -112,7 +112,7 @@ namespace EWC.Patches.Melee
                 if (HitData.damageType.HasFlag(DamageType.Dead) || !HitData.damageType.HasFlag(DamageType.Enemy)) return;
 
                 var damBase = HitData.damageable!.GetBaseDamagable().Cast<Dam_EnemyDamageBase>();
-                if (damBase.IsImortal || !damBase.Owner.EnemyBalancingData.CanBePushed) return;
+                if (damBase.IsImortal || !damBase.Owner.EnemyBalancingData.CanBePushed || damBase.IsStuckInGlue) return;
 
                 HitData.ResetDamage();
                 _cachedSwingCWC.Invoke(new WeaponPushHitContext(HitData));
