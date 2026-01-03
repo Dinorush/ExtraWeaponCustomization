@@ -39,6 +39,7 @@
 		<Reference Include="$(PluginsFolder)\**\AccurateCrosshair.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\ExtraRecoilData.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\ExtraToolCustomization.dll" Private="false" />
+		<Reference Include="$(PluginsFolder)\**\ExtraEnemyCustomization.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\ModifierAPI.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\AmorLib.dll" Private="false" />
 	</ItemGroup>

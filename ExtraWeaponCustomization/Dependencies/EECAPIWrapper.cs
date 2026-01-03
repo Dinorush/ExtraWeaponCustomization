@@ -1,45 +1,28 @@
 ﻿using BepInEx.Unity.IL2CPP;
+using EEC.CustomAbilities.Bleed;
 using Player;
-using System;
-using System.Linq;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace EWC.Dependencies
 {
     internal static class EECAPIWrapper
     {
         public const string PLUGIN_GUID = "GTFO.EECustomization";
-        public readonly static bool HasEEC = false;
 
-        public static Action<PlayerAgent> StopBleed { get; private set; } = (agent) => { };
+        public readonly static bool HasEEC = false;
 
         static EECAPIWrapper()
         {
-            if (IL2CPPChainloader.Instance.Plugins.TryGetValue(PLUGIN_GUID, out var info))
-            {
-                try
-                {
-                    var ddAsm = info?.Instance?.GetType()?.Assembly;
-                    if (ddAsm is null)
-                        throw new Exception("Assembly is Missing!");
-
-                    var types = ddAsm.GetTypes();
-                    var bleedManager = types.First(t => t.Name == "BleedManager");
-                    if (bleedManager is null)
-                        throw new Exception("Unable to find BleedManager Class");
-
-                    var method = bleedManager.GetMethod("StopBleed", BindingFlags.Static | BindingFlags.Public, new Type[] { typeof(PlayerAgent) });
-                    if (method is null)
-                        throw new Exception("Unable to find StopBleed method!");
-
-                    StopBleed = (Action<PlayerAgent>) method.CreateDelegate(typeof(Action<PlayerAgent>));
-                    HasEEC = true;
-                }
-                catch (Exception e)
-                {
-                    EWCLogger.Error($"Exception thrown while reading data from EEC:\n{e}");
-                }
-            }
+            HasEEC = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
         }
+
+        public static void StopBleed(PlayerAgent agent)
+        {
+            if (HasEEC)
+                StopBleed_Internal(agent);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void StopBleed_Internal(PlayerAgent agent) => BleedManager.StopBleed(agent);
     }
 }
