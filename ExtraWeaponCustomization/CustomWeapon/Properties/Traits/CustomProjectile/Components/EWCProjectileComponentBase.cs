@@ -50,6 +50,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public Vector3 Velocity => _deltaInfo.Velocity;
 
         private float _lastUpdatePhysicsTime;
+        private int _maxRicochetCheck;
         private float _lerpProgress;
         private float _lerpTime;
         private Vector3 _positionVisualDiff;
@@ -59,8 +60,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private float _aliveTriggerTime;
 
         protected static Quaternion s_tempRot;
-        private const int MaxCollisionCheck = 3;
-        private const float MaxPhysicsInterval = 0.05f;
+        private const int MinRicochetCheck = 5;
+        private const float DefaultPhysicsInterval = 0.05f;
         private const float PhysicsIntervalDelayUntilMax = 1f;
 
         public bool IsManaged { get; private set; }
@@ -101,6 +102,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _startLifetime = Time.time;
             _endLifetime = _startLifetime + projBase.Lifetime;
             _lastUpdatePhysicsTime = _startLifetime;
+            _maxRicochetCheck = (int) Math.Ceiling(MinRicochetCheck * Math.Max(DefaultPhysicsInterval, Settings.HitCheckCooldown) / DefaultPhysicsInterval);
             _lerpProgress = 1f;
 
             _fixedInfo.Set(projBase, position, dir, shotIndex);
@@ -205,17 +207,18 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _fixedInfo.BaseDir = dir;
 
             Vector3 deltaMove = GetDeltaMove(_fixedInfo, delta);
-            Vector3 collisionVel = deltaMove.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaMove : Dir * EWCProjectileHitbox.MinCollisionDist;
+            Vector3 collisionVel = deltaMove.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaMove : _fixedInfo.Dir * EWCProjectileHitbox.MinCollisionDist;
 
             bool needSync = false;
-            for (int i = 0; i < MaxCollisionCheck && Hitbox.Update(_fixedInfo.Position, collisionVel, out var bounce); i++)
+            int i = 0;
+            for (; i < _maxRicochetCheck && Hitbox.Update(_fixedInfo.Position, collisionVel, out var bounce); i++)
             {
-                float angleFactor = Math.Abs(Vector3.Dot(Dir, bounce.normal));
+                float angleFactor = Math.Abs(Vector3.Dot(_fixedInfo.Dir, bounce.normal));
                 _fixedInfo.BaseSpeed *= (1f - Settings.RicochetSpeedAngleFactor * (1f - angleFactor)).Lerp(1f, Settings.RicochetSpeedMod);
                 float remainingDist = collisionVel.magnitude - (bounce.point - _fixedInfo.Position).magnitude;
-                _fixedInfo.BaseDir = Vector3.Reflect(Dir, bounce.normal);
-                deltaMove = Vector3.Reflect(collisionVel, bounce.normal).normalized * remainingDist;
-                collisionVel = remainingDist > EWCProjectileHitbox.MinRicochetDist ? deltaMove : Dir * EWCProjectileHitbox.MinRicochetDist;
+                _fixedInfo.BaseDir = Vector3.Reflect(_fixedInfo.Dir, bounce.normal);
+                deltaMove = _fixedInfo.Dir * remainingDist;
+                collisionVel = remainingDist > EWCProjectileHitbox.MinRicochetDist ? deltaMove : _fixedInfo.Dir * EWCProjectileHitbox.MinRicochetDist;
                 _fixedInfo.Position = bounce.point;
                 needSync = true;
             }

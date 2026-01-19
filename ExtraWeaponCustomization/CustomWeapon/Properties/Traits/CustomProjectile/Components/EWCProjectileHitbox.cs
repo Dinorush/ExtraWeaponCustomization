@@ -11,6 +11,7 @@ using FX_EffectSystem;
 using Player;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
@@ -116,7 +117,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _distanceMoved = 0;
             _lastFixedTime = Time.fixedTime;
 
-            CheckCollisionInitialWorld(out bounceHit);
+            DoCollisionInitialWorld(out bounceHit);
             if (bounceHit != null && _ricochetCount-- <= 0)
                 _base.Die();
         }
@@ -147,11 +148,20 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             s_velMagnitude = Math.Max(velocityDelta.magnitude, MinCollisionDist);
 
             s_playerCheck.Clear();
-            CheckCollision(ref ricochet);
+            bool hitWall = false;
+            if (CheckCollisionWorld(ref ricochet))
+            {
+                hitWall = true;
+                velocityDelta = ricochet.Value.point - position;
+                s_velMagnitude = Math.Max(velocityDelta.magnitude, MinCollisionDist);
+            }
+
+            DoCollisionEntities(ref ricochet);
+
             if (_pierceCount <= 0) return false;
 
-            if (_wallPierce == null && Clock.Time >= _ignoreWallsTime)
-                CheckCollisionWorld(ref ricochet);
+            if (hitWall)
+                DoCollisionWorld(ref ricochet);
 
             if (ricochet != null && _ricochetCount-- <= 0)
                 _base.Die();
@@ -180,7 +190,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             return false;
         }
 
-        private void CheckCollision(ref RaycastHit? bounceHit)
+        private void DoCollisionEntities(ref RaycastHit? bounceHit)
         {
             SearchUtil.DupeCheckSet = HitEnts;
             if (_settings.HitSize == 0)
@@ -264,8 +274,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             s_hits.Clear();
         }
 
-        private void CheckCollisionWorld(ref RaycastHit? bounceHit)
+        private bool CheckCollisionWorld([NotNullWhen(true)] ref RaycastHit? bounceHit)
         {
+            if (_wallPierce != null || Clock.Time < _ignoreWallsTime) return false;
+
             bool hit;
             if (_settings.HitSizeWorld == 0)
                 hit = Physics.Raycast(s_ray, out s_rayHit, s_velMagnitude, LayerUtil.MaskWorld);
@@ -279,14 +291,23 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 }
             }
 
-            if (hit && BulletHit(null))
+            if (hit)
             {
                 s_rayHit.point += (s_ray.origin - s_rayHit.point) * _settings.HitSizeWorld;
                 bounceHit = s_rayHit;
             }
+            return hit;
         }
 
-        private void CheckCollisionInitialWorld(out RaycastHit? bounceHit)
+        private void DoCollisionWorld(ref RaycastHit? bounceHit)
+        {
+            if (bounceHit == null) return;
+
+            s_rayHit = bounceHit.Value;
+            BulletHit(null);
+        }
+
+        private void DoCollisionInitialWorld(out RaycastHit? bounceHit)
         {
             bounceHit = null;
             if (_settings.HitSizeWorld == 0) return;
