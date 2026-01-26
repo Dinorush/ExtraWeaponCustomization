@@ -17,6 +17,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Health Shot Mod: Applies a modifier to shots/melees depending on the user's current health.
 - Infection Mod: Modifies the user's infection.
 - Noise: Creates detectable noise where triggers occur.
+- Push: Pushes the user in a direction.
 - Recoil Mod: Applies a recoil modifier. [Player]
 - Reference Trigger: Sends Apply and Reset triggers to other properties.
 - Reload Mod: Applies a reload speed modifier. [Gun]
