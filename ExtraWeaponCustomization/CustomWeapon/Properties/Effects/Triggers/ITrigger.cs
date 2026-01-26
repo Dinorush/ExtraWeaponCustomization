@@ -94,7 +94,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "jump" => new BasicTrigger<WeaponJumpContext>(TriggerName.Jump),
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
                 "reference" => new ReferenceCallTrigger(),
-                "setup" or "init" or "drop" => new BasicTrigger<WeaponInitContext>(TriggerName.Init),
+                "setup" or "init" or "drop" => new InitTrigger(name),
                 string sync when sync.Contains("sync") => DetermineModSyncTrigger(origName, sync),
                 string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(nameWithOn),
                 string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
