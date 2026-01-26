@@ -22,9 +22,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         public List<float> Offset { get; private set; } = new(2) { 0, 0 };
         public float FrictionDelay { get; private set; } = 0.1f;
         public float RepeatFrictionDelay { get; private set; } = 0.1f;
-        public float FrictionScale { get; private set; } = 8f;
+        public float FrictionStrength { get; private set; } = 8f;
         public float ConstantFriction { get; private set; } = 1f;
-        public float AirFrictionScale { get; private set; } = 1f;
+        public float AirFrictionStrength { get; private set; } = 1f;
         public float AirConstantFriction { get; private set; } = 1f;
         public PushCap HorizontalCap { get; private set; } = new();
         public PushCap VerticalCap { get; private set; } = new();
@@ -100,9 +100,9 @@ namespace EWC.CustomWeapon.Properties.Effects
             EWCJson.Serialize(writer, nameof(Offset), Offset);
             writer.WriteNumber(nameof(FrictionDelay), FrictionDelay);
             writer.WriteNumber(nameof(RepeatFrictionDelay), RepeatFrictionDelay);
-            writer.WriteNumber(nameof(FrictionScale), FrictionScale);
+            writer.WriteNumber(nameof(FrictionStrength), FrictionStrength);
             writer.WriteNumber(nameof(ConstantFriction), ConstantFriction);
-            writer.WriteNumber(nameof(AirFrictionScale), AirFrictionScale);
+            writer.WriteNumber(nameof(AirFrictionStrength), AirFrictionStrength);
             writer.WriteNumber(nameof(AirConstantFriction), AirConstantFriction);
             writer.WriteNumber(nameof(VerticalScale), VerticalScale);
             writer.WriteBoolean(nameof(MaintainForce), MaintainForce);
@@ -134,14 +134,14 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "repeatfrictiondelay":
                     RepeatFrictionDelay = reader.GetSingle();
                     break;
-                case "frictionscale":
-                    FrictionScale = reader.GetSingle();
+                case "frictionstrength":
+                    FrictionStrength = reader.GetSingle();
                     break;
                 case "constantfriction":
                     ConstantFriction = reader.GetSingle();
                     break;
-                case "airfrictionscale":
-                    AirFrictionScale = reader.GetSingle();
+                case "airfrictionstrength":
+                    AirFrictionStrength = reader.GetSingle();
                     break;
                 case "airconstantfriction":
                     AirConstantFriction = reader.GetSingle();

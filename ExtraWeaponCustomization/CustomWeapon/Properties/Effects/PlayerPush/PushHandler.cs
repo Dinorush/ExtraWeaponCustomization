@@ -158,11 +158,11 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
                 {
                     case PlayerLocomotion.PLOC_State.Jump:
                     case PlayerLocomotion.PLOC_State.Fall:
-                        friction = _settings.AirFrictionScale;
+                        friction = _settings.AirFrictionStrength;
                         constFriction = _settings.AirConstantFriction;
                         break;
                     default:
-                        friction = _settings.FrictionScale;
+                        friction = _settings.FrictionStrength;
                         constFriction = _settings.ConstantFriction;
                         break;
                 }
