@@ -353,7 +353,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "archetype":
                 case "archid":
                 case "arch":
-                    ArchetypeID = reader.GetUInt32();
+                    ArchetypeID = EWCJson.Deserialize<uint>(ref reader);
                     break;
                 case "damage":
                     Damage = reader.GetSingle();

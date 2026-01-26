@@ -4,6 +4,7 @@ using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
+using EWC.JSON;
 using EWC.Utils;
 using GameData;
 using Gear;
@@ -415,7 +416,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "weaponaudio":
                 case "audioid":
                 case "audio":
-                    AudioID = reader.GetUInt32();
+                    AudioID = EWCJson.Deserialize<uint>(ref reader);
                     break;
                 case "duration":
                     Duration = reader.GetSingle();
@@ -424,7 +425,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "archetype":
                 case "archid":
                 case "arch":
-                    ArchetypeID = reader.GetUInt32();
+                    ArchetypeID = EWCJson.Deserialize<uint>(ref reader);
                     break;
                 case "endburst":
                     EndBurst = reader.GetBoolean();
