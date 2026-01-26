@@ -10,5 +10,18 @@ namespace EWC.Utils.Extensions
 
             return Enum.TryParse(value.Replace(" ", null), true, out T result) ? result : defaultValue;
         }
+
+        public static bool ContainsAny(this string input, params string[] args)
+        {
+            foreach (string value in args)
+            {
+                if (input.Contains(value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils.Extensions;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
@@ -94,7 +95,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "jump" => new BasicTrigger<WeaponJumpContext>(TriggerName.Jump),
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
                 "reference" => new ReferenceCallTrigger(),
-                "setup" or "init" or "drop" => new InitTrigger(name),
+                string init when init.ContainsAny("setup", "init", "drop") => new InitTrigger(name),
                 string sync when sync.Contains("sync") => DetermineModSyncTrigger(origName, sync),
                 string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(nameWithOn),
                 string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
@@ -105,7 +106,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 string backstab when backstab.Contains("backstab") => new BackstabTrigger(name.ToDamageTypes()),
                 string kill when kill.Contains("kill") => new HitTrackerTrigger<WeaponPostKillContext>(TriggerName.Kill, name.ToDamageTypes()),
                 string damage when damage.Contains("damage") => new DamageTrigger(name.ToDamageTypes()),
-                string stagger when stagger.Contains("stagger") || stagger.Contains("stun") => new StaggerTrigger(name.ToDamageTypes()),
+                string stagger when stagger.ContainsAny("stagger", "stun") => new StaggerTrigger(name.ToDamageTypes()),
                 _ => new ReferenceCallTrigger(origName)
             };
         }
