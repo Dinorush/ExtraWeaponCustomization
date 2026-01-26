@@ -14,9 +14,8 @@ namespace EWC.Patches.Enemy
         [HarmonyPostfix]
         private static void CachePropertyOnEnemySplitFoam(ProjectileManager __instance, uint syncID, GlueGunProjectile __result)
         {
-            if ((syncID & VanillaEnemyMergeIDMod) == 0) return;
+            if ((syncID & VanillaEnemyMergeIDMod) == 0 || !__instance.m_glueGunProjectiles.TryGetValue(syncID & ~VanillaEnemyMergeIDMod, out var parent)) return;
 
-            var parent = __instance.m_glueGunProjectiles[syncID & ~VanillaEnemyMergeIDMod];
             var property = FoamManager.GetProjProperty(parent);
             if (property != null)
                 FoamManager.AddFoamBubble(__result, property);
