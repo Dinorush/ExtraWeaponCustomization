@@ -34,6 +34,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = true;
         public bool DamageLocks { get; private set; } = true;
+        public bool HitFromExplosionPos { get; private set; } = false;
         public bool HitClosestFirst { get; private set; } = false;
         public bool ApplyAttackCooldown { get; private set; } = true;
         public TriggerPosMode ApplyPositionMode { get; private set; } = TriggerPosMode.Relative;
@@ -109,6 +110,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
+            writer.WriteBoolean(nameof(HitFromExplosionPos), HitFromExplosionPos);
             writer.WriteBoolean(nameof(HitClosestFirst), HitClosestFirst);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
             writer.WriteString(nameof(ApplyPositionMode), ApplyPositionMode.ToString());
@@ -200,6 +202,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "damagelocks":
                     DamageLocks = reader.GetBoolean();
+                    break;
+                case "hitfromexplosionposition":
+                case "hitfromexplosionpos":
+                    HitFromExplosionPos = reader.GetBoolean();
                     break;
                 case "hitclosestfirst":
                 case "closestfirst":

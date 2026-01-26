@@ -88,11 +88,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             var oldInfo = shotInfo.State;
             foreach (RaycastHit hit in hits)
             {
+                var blastDir = (hit.point - position).normalized;
+
                 SendExplosionDamage(
                     hit.collider.GetComponent<IDamageable>(),
                     hit.point,
-                    direction,
-                    (hit.point - position).normalized,
+                    explosiveBase.HitFromExplosionPos ? blastDir : direction,
+                    blastDir,
                     hit.normal,
                     hit.distance,
                     falloffMod,
