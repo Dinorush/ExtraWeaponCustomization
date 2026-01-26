@@ -29,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public PushCap HorizontalCap { get; private set; } = new();
         public PushCap VerticalCap { get; private set; } = new();
         public float VerticalScale { get; private set; } = 1f;
-        public bool MaintainForce { get; private set; } = false;
+        public bool NormalizeForce { get; private set; } = true;
         public bool ApplyToTarget { get; private set; } = false;
 
         public override void TriggerApply(List<TriggerContext> contexts)
@@ -70,7 +70,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (VerticalScale != 1)
             {
                 force.y *= VerticalScale;
-                if (MaintainForce)
+                if (NormalizeForce)
                     force = force.normalized;
             }
             force = force.RotateBy(Offset[0], Offset[1]);
@@ -105,7 +105,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(AirFrictionStrength), AirFrictionStrength);
             writer.WriteNumber(nameof(AirConstantFriction), AirConstantFriction);
             writer.WriteNumber(nameof(VerticalScale), VerticalScale);
-            writer.WriteBoolean(nameof(MaintainForce), MaintainForce);
+            writer.WriteBoolean(nameof(NormalizeForce), NormalizeForce);
             writer.WritePropertyName(nameof(HorizontalCap));
             HorizontalCap.Serialize(writer);
             writer.WritePropertyName(nameof(VerticalCap));
@@ -156,8 +156,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "vertical":
                     VerticalScale = reader.GetSingle();
                     break;
-                case "maintainforce":
-                    MaintainForce = reader.GetBoolean();
+                case "normalizeforce":
+                    NormalizeForce = reader.GetBoolean();
                     break;
                 case "applytotarget":
                     ApplyToTarget = reader.GetBoolean();
