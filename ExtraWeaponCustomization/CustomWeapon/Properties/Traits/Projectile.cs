@@ -21,9 +21,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>
     {
+        private readonly static System.Random Random = new();
         public ushort SyncPropertyID { get; set; }
 
         public ProjectileType ProjectileType { get; private set; } = ProjectileType.NotTargetingSmallFast;
+        public uint ItemID { get; private set; } = 0u;
         public float MinSpeed { get; private set; } = 0f;
         public float MaxSpeed { get; private set; } = 0f;
         public float AccelScale { get; private set; } = 1f;
@@ -102,6 +104,15 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Fire(Ray ray, Vector3 fxPos, HitData hitData, IntPtr ignoreEnt)
         {
+            if (ItemID != 0)
+            {
+                Player.pItemData data = default;
+                data.itemID_gearCRC = ItemID;
+                float speed = MaxSpeed > MinSpeed ? Random.NextSingle().Lerp(MinSpeed, MaxSpeed) : MinSpeed;
+                ItemReplicationManager.ThrowItem(data, null, ItemMode.Instance, ray.origin, Quaternion.LookRotation(ray.direction), ray.direction * speed, ray.origin, CWC.Owner.CourseNode, CWC.Owner.Player);
+                return;
+            }
+
             float visualDist = VisualLerpDist > 0.1f ? VisualLerpDist : 0.1f;
             if (Physics.Raycast(ray, out s_rayHit, visualDist, LayerUtil.MaskEntityAndWorld3P))
                 visualDist = s_rayHit.distance;
@@ -130,6 +141,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteString(nameof(ProjectileType), ProjectileType.ToString());
+            writer.WriteNumber(nameof(ItemID), ItemID);
             writer.WriteNumber(nameof(MinSpeed), MinSpeed);
             writer.WriteNumber(nameof(MaxSpeed), MaxSpeed);
             writer.WriteNumber(nameof(AccelScale), AccelScale);
@@ -185,6 +197,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                     ProjectileType = reader.GetString().ToEnum(ProjectileType.NotTargetingSmallFast);
                     if (ProjectileType == ProjectileType.GlueFlying || ProjectileType == ProjectileType.GlueLanded)
                         ProjectileType = ProjectileType.NotTargetingSmallFast;
+                    break;
+                case "itemid":
+                case "item":
+                    ItemID = EWCJson.Deserialize<uint>(ref reader);
                     break;
                 case "minspeed":
                 case "speed":
