@@ -26,8 +26,6 @@ namespace EWC.CustomWeapon
         private readonly SortedDictionary<uint, CustomWeaponData> _customMeleeData = new();
         private readonly List<ISyncProperty> _syncedProperties = new();
 
-        private readonly LiveEditListener _liveEditListener;
-
         public string DEFINITION_PATH { get; private set; }
         public static readonly InventorySlot[] ValidSlots = new InventorySlot[] { InventorySlot.GearStandard, InventorySlot.GearSpecial, InventorySlot.GearClass, InventorySlot.GearMelee };
 
@@ -246,17 +244,25 @@ namespace EWC.CustomWeapon
             else
                 EWCLogger.Log("Directory detected.");
 
-            foreach (string confFile in Directory.EnumerateFiles(DEFINITION_PATH, "*.json", SearchOption.AllDirectories))
+            ReadDirectory(DEFINITION_PATH);
+        }
+
+        internal void ReadDirectory(string directory, bool liveEdit = true)
+        {
+            foreach (string confFile in Directory.EnumerateFiles(directory, "*.json", SearchOption.AllDirectories))
             {
                 string content = File.ReadAllText(confFile);
                 ReadFileContent(confFile, content);
             }
             OnReload();
 
-            _liveEditListener = LiveEdit.CreateListener(DEFINITION_PATH, "*.json", true);
-            _liveEditListener.FileCreated += FileCreated;
-            _liveEditListener.FileChanged += FileChanged;
-            _liveEditListener.FileDeleted += FileDeleted;
+            if (liveEdit)
+            {
+                var liveEditListener = LiveEdit.CreateListener(directory, "*.json", true);
+                liveEditListener.FileCreated += FileCreated;
+                liveEditListener.FileChanged += FileChanged;
+                liveEditListener.FileDeleted += FileDeleted;
+            }
         }
     }
 }
