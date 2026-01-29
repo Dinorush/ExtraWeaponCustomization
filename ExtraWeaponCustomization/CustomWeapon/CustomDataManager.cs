@@ -126,7 +126,7 @@ namespace EWC.CustomWeapon
             });
         }
 
-        private void ReadFileContent(string file, string content)
+        internal void ReadFileContent(string file, string content)
         {
             if (!_fileToGuns.ContainsKey(file))
             {
