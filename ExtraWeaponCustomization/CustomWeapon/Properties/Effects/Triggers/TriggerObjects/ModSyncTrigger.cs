@@ -76,7 +76,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 if (property is TriggerMod mod)
                 {
-                    if (mod.IsPerTarget && ValidActivates.Contains(Name))
+                    if (!mod.IsPerTarget || ValidActivates.Contains(Name))
                         _syncedMod = mod;
                     else
                         EWCLogger.Error($"Cannot sync with {mod.GetType().Name} since trigger {Name} is not a hit trigger!");
