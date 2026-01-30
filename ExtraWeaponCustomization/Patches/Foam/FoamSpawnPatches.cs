@@ -14,8 +14,9 @@ namespace EWC.Patches.Enemy
         [HarmonyPostfix]
         private static void CachePropertyOnEnemySplitFoam(ProjectileManager __instance, uint syncID, GlueGunProjectile __result)
         {
-            if ((syncID & VanillaEnemyMergeIDMod) == 0 || !__instance.m_glueGunProjectiles.TryGetValue(syncID & ~VanillaEnemyMergeIDMod, out var parent)) return;
+            if ((syncID & VanillaEnemyMergeIDMod) == 0 || !__instance.m_glueGunProjectiles.ContainsKey(syncID & ~VanillaEnemyMergeIDMod)) return;
 
+            var parent = __instance.m_glueGunProjectiles[syncID & ~VanillaEnemyMergeIDMod];
             var property = FoamManager.GetProjProperty(parent);
             if (property != null)
                 FoamManager.AddFoamBubble(__result, property);
@@ -32,8 +33,9 @@ namespace EWC.Patches.Enemy
         [HarmonyPostfix]
         private static void FixSyncIDOverflow(ProjectileManager __instance, ref uint __result)
         {
+            // Make __result & merge mod == 0, preventing the above patch from thinking normal foam is enemy foam
             if ((__result & VanillaEnemyMergeIDMod) > 0)
-                __instance.m_nextID += VanillaEnemyMergeIDMod;
+                __result = __instance.m_nextID += VanillaEnemyMergeIDMod;
         }
     }
 }
