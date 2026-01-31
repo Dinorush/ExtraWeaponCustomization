@@ -134,6 +134,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             _useOverrides = true;
             _hitFuncOverride = hitFunc;
             _wallPierceOverride = wallPierce;
+            VisualLerpDist = 0f;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

@@ -154,6 +154,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _lerpProgress = 0f;
             _lerpTime = lerpDist / _deltaInfo.BaseVelocity.magnitude;
             _positionVisual = positionVisual;
+
+            if (_lerpTime < 1e-6f)
+            {
+                _dirVisual = _deltaInfo.Dir;
+                _lerpProgress = 1f;
+                return;
+            }
+
             _positionVisualDiff = _positionVisual - _deltaInfo.Position;
             _dirVisual = _deltaInfo.Position + _deltaInfo.BaseVelocity * _lerpTime - _positionVisual;
             s_tempRot.SetLookRotation(_dirVisual);

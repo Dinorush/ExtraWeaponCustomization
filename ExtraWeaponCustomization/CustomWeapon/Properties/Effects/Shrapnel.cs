@@ -187,10 +187,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                 hitData.maxRayDist = MaxRange;
                 hitData.RayHit = default;
 
-                if (MaxAngle < 180 && normal != Vector3.zero)
+                if (MaxAngle < 180 && (normal != Vector3.zero || FireFrom == FireSetting.HitPos))
                 {
                     if (FireFrom == FireSetting.HitReflect)
                         ray.direction = Vector3.Reflect(dir, normal);
+                    else if (FireFrom == FireSetting.HitPos)
+                        ray.direction = dir;
 
                     CustomShotComponent.CalcRayDir(ref ray, 0, 0, MaxAngle);
                 }
@@ -201,7 +203,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 {
                     if (FireFrom == FireSetting.HitReflect)
                         ray.direction = Vector3.Reflect(ray.direction, normal);
-                    else
+                    else if (FireFrom == FireSetting.HitNormal)
                         ray.direction = -ray.direction;
                 }
 
@@ -385,7 +387,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "firefrom":
                     FireFrom = reader.GetString().ToEnum(FireSetting.HitNormal);
-                    if (FireFrom != FireSetting.HitNormal && FireFrom != FireSetting.HitReflect)
+                    if (FireFrom == FireSetting.User)
                         FireFrom = FireSetting.HitNormal;
                     break;
                 case "wallhandling":
