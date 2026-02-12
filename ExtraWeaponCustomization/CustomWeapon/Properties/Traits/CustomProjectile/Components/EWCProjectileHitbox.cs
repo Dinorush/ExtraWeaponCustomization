@@ -163,8 +163,24 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (hitWall)
                 DoCollisionWorld(ref ricochet);
 
-            if (ricochet != null && _ricochetCount-- <= 0)
-                _base.Die();
+            if (ricochet != null)
+            {
+                if (_ricochetCount-- <= 0)
+                    _base.Die();
+                else
+                {
+                    if (_settings.RicochetIgnorePlayers)
+                    {
+                        _friendlyLayer &= ~(LayerUtil.MaskFriendly | LayerUtil.MaskOwner);
+                        _searchSettings &= ~(SearchSetting.CheckFriendly | SearchSetting.CheckOwner);
+                    }
+                    if (_settings.RicochetResetHits)
+                    {
+                        HitEnts.Clear();
+                        _hitEntCooldowns.Clear();
+                    }
+                }
+            }
 
             if (!_enabled) return false; // Die on wall hit
 

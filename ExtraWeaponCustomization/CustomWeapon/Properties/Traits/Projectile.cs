@@ -57,6 +57,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         public int RicochetCount { get; private set; } = 0;
         public float RicochetSpeedMod { get; private set; } = 1f;
         public float RicochetSpeedAngleFactor { get; private set; } = 0f;
+        public bool RicochetIgnorePlayers { get; private set; } = false;
+        public bool RicochetResetHits { get; private set; } = false;
         public bool RicochetOnHit { get; private set; } = false;
         public bool EnableTerrainHitFX { get; private set; } = true;
         public float HitCheckCooldown { get; private set; } = 0.05f;
@@ -169,6 +171,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(RicochetCount), RicochetCount);
             writer.WriteNumber(nameof(RicochetSpeedMod), RicochetSpeedMod);
             writer.WriteNumber(nameof(RicochetSpeedAngleFactor), RicochetSpeedAngleFactor);
+            writer.WriteBoolean(nameof(RicochetIgnorePlayers), RicochetIgnorePlayers);
+            writer.WriteBoolean(nameof(RicochetResetHits), RicochetResetHits);
             writer.WriteBoolean(nameof(RicochetOnHit), RicochetOnHit);
             writer.WriteBoolean(nameof(EnableTerrainHitFX), EnableTerrainHitFX);
             writer.WriteNumber(nameof(HitCheckCooldown), HitCheckCooldown);
@@ -293,6 +297,12 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "ricochetspeedanglefactor":
                     RicochetSpeedAngleFactor = reader.GetSingle();
+                    break;
+                case "ricochetignoreplayers":
+                    RicochetIgnorePlayers = reader.GetBoolean();
+                    break;
+                case "ricochetresethits":
+                    RicochetResetHits = reader.GetBoolean();
                     break;
                 case "ricochetonhit":
                     RicochetOnHit = reader.GetBoolean();
