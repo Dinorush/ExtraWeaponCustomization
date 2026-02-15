@@ -106,11 +106,13 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
             private readonly Push _settings;
             private readonly PlayerLocomotion _locomotion;
             private readonly PlayerCharacterController _controller;
+            private readonly PLOC_Fall _fall;
 
             public PushInstance(Push settings)
             {
                 _locomotion = Current._player.Locomotion;
                 _controller = Current._player.PlayerCharacterController;
+                _fall = _locomotion.GetState((int)PlayerLocomotion.PLOC_State.Fall).Cast<PLOC_Fall>();
                 _settings = settings;
 
                 _frictionStartTime = Clock.Time + settings.FrictionDelay;
@@ -123,19 +125,15 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
                 ApplyVerticalForce(force.y);
                 force.y = 0;
 
-                Vector3 horizontal;
+                Vector3 velocity = Vector3.zero;
                 if (_settings.HorizontalCap.IncludeVelocity)
                 {
-                    horizontal = Current._totalForce + _locomotion.HorizontalVelocity + _locomotion.VerticalVelocity;
-                    horizontal.y = 0;
+                    velocity = Current._totalForce - _force + _locomotion.HorizontalVelocity + _locomotion.VerticalVelocity;
+                    velocity.y = 0;
                 }
-                else
-                {
-                    horizontal = _force;
-                }
-                
+
                 Vector3 oldForce = _force;
-                _force = _settings.HorizontalCap.AddAndCap(horizontal, force);
+                _force = _settings.HorizontalCap.AddAndCap(oldForce, force, velocity);
                 return _force - oldForce;
             }
 
@@ -167,10 +165,11 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
                         break;
                 }
 
+                var dir = _force.normalized;
                 friction *= Clock.FixedDelta;
                 constFriction *= Clock.FixedDelta;
                 _force *= 1 - friction;
-                _force -= _force.normalized * constFriction;
+                _force -= dir * constFriction;
                 return _force.sqrMagnitude <= constFriction * constFriction + 0.01f;
             }
 
@@ -178,19 +177,27 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
             {
                 if (force == 0) return;
 
+                var currVertical = _locomotion.VerticalVelocity;
                 switch (_locomotion.m_currentStateEnum)
                 {
                     case PlayerLocomotion.PLOC_State.Jump:
+                        currVertical.y = _settings.VerticalCap.AddAndCap(currVertical.y, force);
+                        break;
                     case PlayerLocomotion.PLOC_State.Fall:
+                        _fall.m_enterTime = Clock.Time;
+                        currVertical.y = _settings.VerticalCap.AddAndCap(currVertical.y, force);
+                        if (currVertical.y > 0)
+                            _locomotion.ChangeState(PlayerLocomotion.PLOC_State.Jump, true);
                         break;
                     default:
-                        if (force < 0)
+                        if (force <= 0)
+                            return;
+                        currVertical.y = _settings.VerticalCap.AddAndCap(0, force);
+                        if (currVertical.y <= 0)
                             return;
                         _locomotion.ChangeState(PlayerLocomotion.PLOC_State.Jump, true);
                         break;
                 }
-                var currVertical = _locomotion.VerticalVelocity;
-                currVertical.y = _settings.VerticalCap.AddAndCap(currVertical.y, force);
                 _locomotion.VerticalVelocity = currVertical;
             }
         }

@@ -13,24 +13,35 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
 
         private const float CapSteerStrength = 0.25f;
 
-        public Vector3 AddAndCap(Vector3 current, Vector3 force)
+        public Vector3 AddAndCap(Vector3 current, Vector3 force, Vector3 velocity)
         {
             var forceDir = force.normalized;
             float forceMag = force.magnitude;
             var parallelMag = Vector3.Dot(current, forceDir);
-            float targetParallelMag = forceMag + parallelMag;
+            var velParallelMag = Vector3.Dot(velocity, forceDir);
+            float targetParallelMag = forceMag + parallelMag + velParallelMag;
 
             if (SoftCap > 0 && targetParallelMag > SoftCap)
             {
                 float softForce = Math.Min(targetParallelMag - SoftCap, forceMag);
                 forceMag -= (1 - SoftCapMod) * softForce;
-                targetParallelMag = forceMag + parallelMag;
+                targetParallelMag = forceMag + parallelMag + velParallelMag;
             }
 
             if (Cap > 0 && targetParallelMag > Cap)
             {
-                float newMag = Math.Max(parallelMag, Cap);
-                float leftover = targetParallelMag - newMag;
+                float newMag;
+                float leftover;
+                if (parallelMag + velParallelMag >= Cap)
+                {
+                    newMag = parallelMag;
+                    leftover = forceMag;
+                }
+                else
+                {
+                    newMag = Math.Min(parallelMag + forceMag, Cap - velParallelMag);
+                    leftover = parallelMag + forceMag - newMag;
+                }
 
                 var perpendicular = current - forceDir * parallelMag;
                 float perpMag = perpendicular.magnitude;
