@@ -3,6 +3,7 @@ using CharacterDestruction;
 using Enemies;
 using EWC.API;
 using EWC.Attributes;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
@@ -147,8 +148,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
             bool willKill = damBase.WillDamageKill(precDamage);
             HitTrackerManager.RegisterHit(shrapnel.CWC.Owner, shrapnel.CWC, hitContext);
-            if (source?.IsLocallyOwned == true && (willKill || cc.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
-                limb.ShowHitIndicator(precDamage > damage, willKill, hitData.hitPos, armorMulti < 1f || damBase.IsImortal);
+            ShotManager.DoHitmarker(shrapnel.CWC, cc, limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
             return true;

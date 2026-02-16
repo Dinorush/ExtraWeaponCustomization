@@ -20,6 +20,14 @@ namespace EWC.Patches.Enemy
             _cachedCC = cc;
         }
 
+        public static void ShowHitmarker(ContextController cc, Dam_EnemyDamageLimb limb, bool crit, bool willKill, UnityEngine.Vector3 hitPos, bool armor)
+        {
+            var oldCC = _cachedCC;
+            _cachedCC = cc;
+            limb.ShowHitIndicator(crit, willKill, hitPos, armor);
+            _cachedCC = oldCC;
+        }
+
         public static bool CachedBypassTumorCap { get; set; } = false;
 
         [HarmonyPatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.BulletDamage))]

@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
@@ -150,6 +151,13 @@ namespace EWC.CustomWeapon.CustomShot
 
                 effect.ReturnToPool();
             }
+        }
+
+        public static void DoHitmarker(CustomWeaponComponent cwc, ContextController cc, Dam_EnemyDamageLimb limb, bool crit, bool willKill, Vector3 hitPos, bool armor)
+        {
+            if (cwc.Owner.Player?.IsLocallyOwned != true) return;
+
+            Patches.Enemy.EnemyLimbPatches.ShowHitmarker(cc, limb, crit, willKill, hitPos, armor);
         }
 
         public static void AdvanceGroupMod(CustomWeaponComponent cwc, bool isTagged = false)

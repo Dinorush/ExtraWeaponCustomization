@@ -232,8 +232,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             bool willKill = damBase.WillDamageKill(precDamage);
             HitTrackerManager.RegisterHit(eBase.CWC.Owner, eBase.CWC, hitContext);
-            if (source?.IsLocallyOwned == true && (willKill || eBase.CWC.Invoke(new WeaponHitmarkerContext(damBase.Owner)).Result))
-                limb.ShowHitIndicator(precDamage > damage, willKill, position, armorMulti < 1f || damBase.IsImortal);
+            ShotManager.DoHitmarker(eBase.CWC, eBase.CWC.GetContextController(), limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
