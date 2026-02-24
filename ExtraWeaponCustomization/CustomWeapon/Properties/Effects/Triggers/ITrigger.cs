@@ -42,6 +42,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         Jump,
         JumpEnd,
         PerTarget,
+        Key,
         Reference,
         Init
     }
@@ -66,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
             var origName = name;
             var nameWithOn = name.ToLowerInvariant().Replace(" ", null);
-            name = nameWithOn.Replace("on", null);
+            name = nameWithOn.StartsWith("on") ? nameWithOn[2..] : nameWithOn;
             return name switch
             {
                 "invalid" or "null" => null,
@@ -95,9 +96,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "jump" => new BasicTrigger<WeaponJumpContext>(TriggerName.Jump),
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
                 "reference" => new ReferenceCallTrigger(),
+                string key when key.StartsWith("key") => DetermineKeyTrigger(name),
                 string init when init.ContainsAny("setup", "init", "drop") => new InitTrigger(name),
                 string sync when sync.Contains("sync") => DetermineModSyncTrigger(origName, sync),
-                string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(nameWithOn),
+                string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(name),
                 string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
                 string prehit when prehit.Contains("prehit") => new DamageableTrigger<WeaponPreHitDamageableContext>(TriggerName.PreHit, name.ToDamageTypes()),
                 string hit when hit.Contains("hit") => new DamageableTrigger<WeaponHitDamageableContext>(TriggerName.Hit, name.ToDamageTypes()),
@@ -131,6 +133,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (apply == null) return null;
             return new PerTargetTrigger(activate, apply);
         }
+
         private static ITrigger? DetermineModSyncTrigger(string origName, string name)
         {
             if (name == "modsync") return new ModSyncTrigger();
@@ -143,6 +146,55 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             ITrigger? activate = GetTrigger(name[(sep+4)..]);
             if (activate == null) return null;
             return new ModSyncTrigger(activate, id);
+        }
+
+        private static ITrigger? DetermineKeyTrigger(string name)
+        {
+            name = name[3..];
+            if (name.Length == 0) return null;
+
+            bool onDown = true;
+            int downIndex;
+
+            if ((downIndex = name.IndexOf("down")) > -1)
+            {
+                if (downIndex == 0)
+                    name = name[4..];
+                else
+                    name = name[..^4];
+            }
+
+            if ((downIndex = name.IndexOf("up")) > -1)
+            {
+                onDown = false;
+                if (downIndex == 0)
+                    name = name[2..];
+                else
+                    name = name[..^2];
+            }
+
+            if (name.Length == 0) return null;
+
+            UnityEngine.KeyCode key;
+            if (name.StartsWith("config"))
+            {
+                if (name.Length == 6) return null;
+
+                key = name[6] switch
+                {
+                    '1' => Configuration.Keybind1,
+                    '2' => Configuration.Keybind2,
+                    '3' => Configuration.Keybind3,
+                    '4' => Configuration.Keybind4,
+                    _ => UnityEngine.KeyCode.None
+                };
+            }
+            else
+                key = name.ToEnum(UnityEngine.KeyCode.None);
+
+            if (key == UnityEngine.KeyCode.None) return null;
+
+            return new KeyTrigger(key, onDown);
         }
     }
 

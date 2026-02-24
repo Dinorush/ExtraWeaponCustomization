@@ -18,6 +18,7 @@ using Il2CppInterop.Runtime.Injection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using UnityEngine;
 
 namespace EWC.CustomWeapon
@@ -65,6 +66,7 @@ namespace EWC.CustomWeapon
         // Used to update delayed callbacks before invocations happen.
         private readonly LinkedList<DelayedCallback> _timeSensitiveCallbacks;
         private float _lastInvokeTime = 0f;
+        private readonly Dictionary<KeyCode, bool> _keyWatchers;
 
         protected bool _destroyed = false;
 
@@ -109,6 +111,7 @@ namespace EWC.CustomWeapon
             ShotComponent = new(this);
             SpreadController = new(Owner.Type, Weapon.Type);
             _timeSensitiveCallbacks = new();
+            _keyWatchers = new();
             enabled = false;
         }
 
@@ -121,6 +124,7 @@ namespace EWC.CustomWeapon
         public virtual void OnUnWield()
         {
             SpreadController.Active = false;
+            ResetKeyWatchers();
             Invoke(StaticContext<WeaponUnWieldContext>.Instance);
         }
 
@@ -133,6 +137,23 @@ namespace EWC.CustomWeapon
         private void Update()
         {
             Invoke(StaticContext<WeaponUpdateContext>.Instance);
+
+            if (_keyWatchers.Count > 0)
+            {
+                if (FocusStateManager.CurrentState == eFocusState.FPS)
+                {
+                    foreach ((KeyCode key, bool down) in _keyWatchers.ToArray())
+                    {
+                        if (down != Input.GetKey(key))
+                        {
+                            _keyWatchers[key] = !down;
+                            Invoke(new WeaponKeyContext(key, !down));
+                        }
+                    }
+                }
+                else
+                    ResetKeyWatchers();
+            }
         }
 
         private void OnEnable() {}
@@ -143,6 +164,20 @@ namespace EWC.CustomWeapon
         {
             _destroyed = true;
             Clear();
+        }
+
+        private void ResetKeyWatchers()
+        {
+            if (_keyWatchers.Count == 0) return;
+
+            foreach ((KeyCode key, bool down) in _keyWatchers.ToArray())
+            {
+                if (down)
+                {
+                    _keyWatchers[key] = false;
+                    Invoke(new WeaponKeyContext(key, false));
+                }
+            }
         }
 
         [HideFromIl2Cpp]
@@ -199,6 +234,7 @@ namespace EWC.CustomWeapon
             _propertyController.Clear();
             SpreadController.Reset();
             DebuffIDs = DebuffGroup.DefaultGroupList;
+            _keyWatchers.Clear();
             enabled = false;
         }
 
@@ -238,6 +274,8 @@ namespace EWC.CustomWeapon
         [HideFromIl2Cpp]
         public ContextController GetContextController() => _propertyController.GetContextController();
         public bool HasTempProperties() => _propertyController.HasTempProperties();
+
+        public void RegisterKeyWatcher(KeyCode key) => _keyWatchers.TryAdd(key, false);
 
         // Starts a delayed callback. Its end will be checked on Invoke prior to actually running the Invoke.
         [HideFromIl2Cpp]
