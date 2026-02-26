@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.ComponentWrapper
         }
 
         public Transform MuzzleAlign { get; }
-        public eDimensionIndex DimensionIndex => Player.DimensionIndex;
+        public abstract eDimensionIndex DimensionIndex { get; }
         public abstract PlayerAgent? Player { get; }
         public abstract OwnerType Type { get; }
         public abstract AIG_CourseNode CourseNode { get; }

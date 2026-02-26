@@ -17,6 +17,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.OwnerComps
                 _type |= OwnerType.Unmanaged;
         }
 
+        public override eDimensionIndex DimensionIndex => CourseNode.m_dimension.DimensionIndex;
         public override PlayerAgent Player => Value.Owner;
         public override OwnerType Type => _type;
         public override AIG_CourseNode CourseNode => Value.CourseNode;

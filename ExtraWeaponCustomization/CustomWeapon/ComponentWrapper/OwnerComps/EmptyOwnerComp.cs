@@ -9,6 +9,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.OwnerComps
     {
         public EmptyOwnerComp() : base(PlayerManager.GetLocalPlayerAgent(), Globals.Global.Current.transform) { }
 
+        public override eDimensionIndex DimensionIndex => Value.DimensionIndex;
         public override PlayerAgent Player => Value;
         public override OwnerType Type => OwnerType.Any;
         public override AIG_CourseNode CourseNode => AIG_CourseNode.s_allNodes[0];

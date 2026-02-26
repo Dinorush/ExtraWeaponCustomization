@@ -110,15 +110,16 @@ namespace EWC.CustomWeapon
         {
             if (!s_inLevel) return;
 
+            CustomGunComponent? cgc = null;
             if (CustomDataManager.TryGetCustomGunData(sentry.ArchetypeID, out var data))
             {
-                if (!sentry.TryGetComp<CustomGunComponent>(out var cgc))
+                if (!sentry.TryGetComp(out cgc))
                     cgc = sentry.gameObject.AddComponent<CustomGunComponent>();
-                cgc.Register(data);
-                Current._trackedSentries.Add(sentry.Owner.Pointer, (sentry, cgc));
+                cgc!.Register(data);
             }
-            else
-                Current._trackedSentries.Add(sentry.Owner.Pointer, (sentry, null));
+            
+            if (sentry.Owner != null)
+                Current._trackedSentries.Add(sentry.Owner.Pointer, (sentry, cgc));
         }
 
         public static void RemoveSentry(SentryGunInstance sentry)
@@ -228,6 +229,13 @@ namespace EWC.CustomWeapon
                     if (!backpack.TryGetBackpackItem(slot, out var bpItem)) continue;
 
                     AddEquippedItem(agent, bpItem.Instance.Cast<ItemEquippable>());
+                }
+
+                var heldItem = agent.Inventory.WieldedItem;
+                if (heldItem != null)
+                {
+                    if (heldItem.TryGetComp<CustomWeaponComponent>(out var cwc))
+                        cwc.OnWield();
                 }
             }
         }
