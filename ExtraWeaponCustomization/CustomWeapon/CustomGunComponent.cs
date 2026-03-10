@@ -159,7 +159,6 @@ namespace EWC.CustomWeapon
                 _currentChargeSpeed = Math.Max(newChargeSpeed, 0.001f);
                 CurrentChargeMod = 1f / _currentChargeSpeed;
                 Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime * CurrentChargeMod;
-                EWCLogger.Log($"Updated charge time to {_baseChargeTime * CurrentChargeMod} (speed = {_currentChargeSpeed})");
                 // JFS - Should only run locally.
                 if (forceUpdateTime)
                 {
