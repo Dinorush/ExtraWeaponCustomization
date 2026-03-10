@@ -20,28 +20,32 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
-            float cap = Cap >= 0f ? Cap : Math.Sign(StaminaChange);
-            float stamChange = -StaminaChange * contexts.Sum(tContext => tContext.triggerAmt);
+            float cap = Cap >= 0f ? Cap : (StaminaChange > 0 ? 1 : 0);
+            float stamChange = StaminaChange * contexts.Sum(tContext => tContext.triggerAmt);
 
             var stam = CWC.Owner.Player!.Stamina;
+            // Have to write this myself since vanilla UseStamina can't give stamina
             if (stamChange > 0)
             {
+                if (DramaManager.InActionState)
+                    cap = Math.Min(cap, stam.PlayerData.StaminaMaximumCapWhenInCombat);
+
                 if (stam.Stamina >= cap) return;
-                stamChange = Math.Min(stamChange, cap - stam.Stamina);
+
+                stam.Stamina = Math.Min(cap, stam.Stamina + stamChange);
             }
             else
             {
+                if (!DramaManager.InActionState)
+                    cap = Math.Max(cap, stam.PlayerData.StaminaMinimumCapWhenNotInCombat);
+
                 if (stam.Stamina <= cap) return;
-                stamChange = Math.Max(stamChange, cap - stam.Stamina);
+
+                stam.Stamina = Math.Max(cap, stam.Stamina + stamChange);
             }
 
-            stam.UseStamina(new()
-                {
-                    baseStaminaCostInCombat = -stamChange,
-                    baseStaminaCostOutOfCombat = -stamChange,
-                    resetRestingTimerInCombat = CancelRegen,
-                    resetRestingTimerOutOfCombat = CancelRegen
-                });
+            if (CancelRegen)
+                stam.m_lastExertion = Clock.Time;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
