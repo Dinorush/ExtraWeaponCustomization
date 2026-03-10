@@ -204,7 +204,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             _triggerAgents!.Clear();
         }
 
-        public int GetCallbackID(string callbackName) => _eventHelper.GetCallbackID(callbackName);
+        public uint GetCallbackID(string callbackName) => _eventHelper.GetCallbackID(callbackName);
 
         public void OnDisable()
         {
@@ -741,11 +741,11 @@ namespace EWC.CustomWeapon.Properties.Traits
                 Trigger = null;
         }
 
-        private static int CallbackMap(string callback) => callback switch
+        private static uint CallbackMap(string callback) => callback switch
         {
-            "locked" => (int)Callback.Locked,
-            "unlocked" => (int)Callback.Unlocked,
-            "newlock" => (int)Callback.NewLock,
+            "locked" => (uint)Callback.Locked,
+            "unlocked" => (uint)Callback.Unlocked,
+            "newlock" => (uint)Callback.NewLock,
             _ => 0
         };
 

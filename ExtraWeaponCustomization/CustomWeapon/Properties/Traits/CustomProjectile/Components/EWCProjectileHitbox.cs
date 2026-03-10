@@ -123,6 +123,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 
         public float GetFalloff() => HitData.CalcRawFalloff(_distanceMoved);
+        public float GetMoveDist() => _distanceMoved;
 
         public void Die()
         {
@@ -144,6 +145,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (!_enabled) return false;
 
             s_ray.origin = position;
+            if (_settings.MaxRange > 0 && _distanceMoved + velocityDelta.magnitude >= _settings.MaxRange)
+            {
+                float finalDist = _settings.MaxRange - _distanceMoved;
+                if (finalDist <= 0) return false;
+                velocityDelta = velocityDelta.normalized * finalDist;
+            }
             s_ray.direction = velocityDelta;
             s_velMagnitude = Math.Max(velocityDelta.magnitude, MinCollisionDist);
 

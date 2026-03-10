@@ -221,8 +221,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             int i = 0;
             for (; i < _maxRicochetCheck && Hitbox.Update(_fixedInfo.Position, collisionVel, out var bounce); i++)
             {
+                // Compute speed loss based on ricochet angle
                 float angleFactor = Math.Abs(Vector3.Dot(_fixedInfo.Dir, bounce.normal));
                 _fixedInfo.BaseSpeed *= (1f - Settings.RicochetSpeedAngleFactor * (1f - angleFactor)).Lerp(1f, Settings.RicochetSpeedMod);
+
+                // Compute remaining collision detection distance and update direction from bounce
                 float remainingDist = collisionVel.magnitude - (bounce.point - _fixedInfo.Position).magnitude;
                 _fixedInfo.BaseDir = Vector3.Reflect(_fixedInfo.Dir, bounce.normal);
                 deltaMove = _fixedInfo.Dir * remainingDist;
@@ -254,9 +257,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (!enabled) return;
 
             var time = Time.time;
-            if (time > _endLifetime)
+            if (time > _endLifetime || (IsManaged && Settings.MaxRange > 0 && Hitbox.GetMoveDist() >= Settings.MaxRange))
             {
-                Die();
+                TimeOut();
                 return;
             }
 
@@ -331,22 +334,42 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             return deltaMove;
         }
 
+        private void TimeOut()
+        {
+            if (IsManaged)
+                Settings.EventHelper.Invoke(
+                    ContextController,
+                    new WeaponReferencePosContext(
+                        Settings.ID,
+                        (uint)Projectile.Callback.TimeOut,
+                        Position,
+                        Dir,
+                        -Dir,
+                        Hitbox.GetFalloff(),
+                        Hitbox.HitData.shotInfo
+                    )
+                );
+
+            Die();
+        }
+
         public virtual void Die()
         {
             if (!enabled) return;
 
-            Settings.EventHelper.Invoke(
-                ContextController,
-                new WeaponReferencePosContext(
-                    Settings.ID,
-                    (uint)Projectile.Callback.Destroyed,
-                    Position,
-                    Dir,
-                    -Dir,
-                    Hitbox.GetFalloff(),
-                    Hitbox.HitData.shotInfo
-                )
-            );
+            if (IsManaged)
+                Settings.EventHelper.Invoke(
+                    ContextController,
+                    new WeaponReferencePosContext(
+                        Settings.ID,
+                        (uint)Projectile.Callback.Destroyed,
+                        Position,
+                        Dir,
+                        -Dir,
+                        Hitbox.GetFalloff(),
+                        Hitbox.HitData.shotInfo
+                    )
+                );
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
             _inactiveCallback.Start();

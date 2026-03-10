@@ -6,16 +6,16 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public interface ITriggerEvent
     {
-        public int GetCallbackID(string callbackName);
+        public uint GetCallbackID(string callbackName);
     }
 
     public class TriggerEventHelper
     {
         private bool _isActive = false;
-        private readonly Func<string, int>? _callbackMap;
-        public TriggerEventHelper(Func<string, int>? callbackMap = null) => _callbackMap = callbackMap;
+        private readonly Func<string, uint>? _callbackMap;
+        public TriggerEventHelper(Func<string, uint>? callbackMap = null) => _callbackMap = callbackMap;
 
-        public int GetCallbackID(string callbackName)
+        public uint GetCallbackID(string callbackName)
         {
             _isActive = true;
             callbackName = callbackName.Replace(" ", null).ToLowerInvariant();

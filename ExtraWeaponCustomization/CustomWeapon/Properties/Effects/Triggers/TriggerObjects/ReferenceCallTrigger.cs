@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public uint ID { get; private set; } = 0u;
         public string Callback { get; private set; } = string.Empty;
 
-        private int _callbackID = 0;
+        private uint _callbackID = 0;
 
         public ReferenceCallTrigger(string id) => ID = WeaponPropertyBase.StringIDToInt(id);
         public ReferenceCallTrigger(uint id) => ID = id;

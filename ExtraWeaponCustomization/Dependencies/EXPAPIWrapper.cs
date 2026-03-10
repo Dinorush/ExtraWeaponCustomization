@@ -1,12 +1,8 @@
 ﻿using BepInEx.Unity.IL2CPP;
 using EndskApi.Api;
-using EndskApi.Enums.EnemyKill;
-using EndskApi.Information.EnemyKill;
 using GTFuckingXP.Extensions;
 using Enemies;
 using Player;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using GTFuckingXP.Enums;
 using GTFuckingXP.Information.Level;
@@ -18,9 +14,6 @@ namespace EWC.Dependencies
     internal static class EXPAPIWrapper
     {
         public const string PLUGIN_GUID = "Endskill.GTFuckingXP";
-        // Need to work with existing cache since we need to add mix the existing behavior with DoT and Explosive damage
-        private const string CacheKey = "EndskApi";
-        private const string EnemyKillKey = "EnemyKillCallbacks";
 
         public readonly static bool HasEXP;
 

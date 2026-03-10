@@ -64,6 +64,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public float HitCheckCooldown { get; private set; } = 0.05f;
         public float VisualLerpDist { get; private set; } = 5f;
         public float Lifetime { get; private set; } = 20f;
+        public float MaxRange { get; private set; } = 0f;
         public uint FlyingSoundID { get; private set; } = 0u;
         public uint DestroyedSoundID { get; private set; } = 0u;
         public bool StopFlyingSoundOnDestroy { get; private set; } = false;
@@ -89,7 +90,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private static RaycastHit s_rayHit;
         public readonly TriggerEventHelper EventHelper = new(CallbackMap);
 
-        public int GetCallbackID(string callbackName) => EventHelper.GetCallbackID(callbackName);
+        public uint GetCallbackID(string callbackName) => EventHelper.GetCallbackID(callbackName);
 
         public void Invoke(WeaponSetupContext context)
         {
@@ -178,6 +179,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteNumber(nameof(HitCheckCooldown), HitCheckCooldown);
             writer.WriteNumber(nameof(VisualLerpDist), VisualLerpDist);
             writer.WriteNumber(nameof(Lifetime), Lifetime);
+            writer.WriteNumber(nameof(MaxRange), MaxRange);
             writer.WriteNumber(nameof(FlyingSoundID), FlyingSoundID);
             writer.WriteNumber(nameof(DestroyedSoundID), DestroyedSoundID);
             writer.WriteBoolean(nameof(StopFlyingSoundOnDestroy), StopFlyingSoundOnDestroy);
@@ -322,6 +324,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "lifetime":
                     Lifetime = reader.GetSingle();
                     break;
+                case "maxrange":
+                case "range":
+                    MaxRange = reader.GetSingle();
+                    break;
                 case "flyingsoundid":
                 case "flyingsound":
                     if (reader.TokenType == JsonTokenType.String)
@@ -360,17 +366,19 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
         }
 
-        private static int CallbackMap(string callback) => callback switch
+        private static uint CallbackMap(string callback) => callback switch
         {
-            "alive" => (int)Callback.Alive,
-            "destroyed" => (int)Callback.Destroyed,
+            "alive" => (uint)Callback.Alive,
+            "destroyed" => (uint)Callback.Destroyed,
+            "timeout" => (uint)Callback.TimeOut,
             _ => 0
         };
 
         public enum Callback
         {
             Alive,
-            Destroyed
+            Destroyed,
+            TimeOut
         }
     }
 }
