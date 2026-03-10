@@ -191,7 +191,7 @@ namespace EWC.CustomWeapon.CustomShot
                 {
                     var syringeBuff = owner?.MeleeBuffTimer > Clock.Time ? 3f : 1f;
                     CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(true, weaponType) * syringeBuff;
-                    CurrentDamageMod = 1f;
+                    CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, AgentModifier.MeleeDamage, 1f);
                 }
                 else
                 {
