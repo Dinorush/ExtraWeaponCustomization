@@ -1,5 +1,4 @@
-﻿using GameData;
-using Gear;
+﻿using Gear;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -15,19 +14,6 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
             _gunArchetype = value.m_archeType;
             _burstArchetype = FireMode == eWeaponFireMode.Burst ? _gunArchetype!.Cast<BWA_Burst>() : null;
         }
-
-        public override ArchetypeDataBlock ArchetypeData
-        {
-            get => base.ArchetypeData;
-            set
-            {
-                var oldBlock = ArchetypeData;
-                base.ArchetypeData = value;
-                OnArchetypeChanged?.Invoke(oldBlock, value);
-            }
-        }
-
-        public Action<ArchetypeDataBlock, ArchetypeDataBlock>? OnArchetypeChanged { get; set; }
 
         public BulletWeaponArchetype GunArchetype
         {

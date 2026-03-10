@@ -241,7 +241,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 CopyArchetypeVars(newArch, oldArch!);
                 localGun!.GunArchetype = newArch;
             }
-            CGC.RefreshArchetypeCache();
+            CGC.RefreshArchetypeCache(oldBlock);
             ResetERDComponent();
 
             int newClipSize = CGC.Gun.GetMaxClip();

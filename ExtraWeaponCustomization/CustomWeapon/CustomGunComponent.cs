@@ -49,9 +49,6 @@ namespace EWC.CustomWeapon
             CurrentCooldownDelay = _cooldownDelay = archData.SpecialCooldownTime;
             CurrentChargeMod = 1f;
             _baseChargeTime = archData.SpecialChargetupTime;
-
-            if (Owner.IsType(Enums.OwnerType.Local))
-                ((LocalGunComp)Gun).OnArchetypeChanged = OnArchetypeChanged;
         }
 
         [InvokeOnLoad]
@@ -93,20 +90,14 @@ namespace EWC.CustomWeapon
             }
         }
 
-        private void OnArchetypeChanged(ArchetypeDataBlock oldBlock, ArchetypeDataBlock newBlock)
-        {
-            oldBlock.SpecialChargetupTime = _baseChargeTime;
-            _baseChargeTime = newBlock.SpecialChargetupTime;
-            if (SpreadController.Active) // HACK - detect when equipped
-                newBlock.SpecialChargetupTime = _baseChargeTime * CurrentChargeMod;
-        }
-
         public override void Clear()
         {
             base.Clear();
             CurrentFireRate = BaseFireRate;
             CurrentBurstDelay = _burstDelay;
             CurrentCooldownDelay = _cooldownDelay;
+            CurrentChargeMod = 1f;
+            _currentChargeSpeed = 1f;
             if (!_destroyed)
                 Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
@@ -136,12 +127,20 @@ namespace EWC.CustomWeapon
             return false;
         }
 
-        public void RefreshArchetypeCache()
+        public void RefreshArchetypeCache(ArchetypeDataBlock oldBlock)
         {
             var archData = Gun.ArchetypeData;
             BaseFireRate = 1f / Math.Max(archData.ShotDelay, CustomWeaponData.MinShotDelay);
             _burstDelay = archData.BurstDelay;
             _cooldownDelay = archData.SpecialCooldownTime;
+
+            if (Owner.IsType(Enums.OwnerType.Local))
+            {
+                oldBlock.SpecialChargetupTime = _baseChargeTime;
+                _baseChargeTime = archData.SpecialChargetupTime;
+                if (SpreadController.Active) // HACK - detect when equipped
+                    archData.SpecialChargetupTime = _baseChargeTime * CurrentChargeMod;
+            }
             UpdateStoredFireRate();
         }
 
