@@ -4,12 +4,24 @@ using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using Gear;
 using HarmonyLib;
+using System;
 
 namespace EWC.Patches.Gun
 {
     [HarmonyPatch]
     internal static class WeaponArchetypePatches
     {
+        [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.OnStopChargeup))]
+        [HarmonyWrapSafe]
+        [HarmonyPrefix]
+        private static void ChargeEndCallback(BulletWeaponArchetype __instance)
+        {
+            CustomGunComponent? cgc = __instance.m_weapon?.GetComponent<CustomGunComponent>();
+            if (cgc == null) return;
+
+            cgc.Invoke(new WeaponChargeEndContext(Math.Min(1f, 1f - (__instance.m_chargeupTimer - Clock.Time) / __instance.ChargeupDelay())));
+        }
+
         [HarmonyPatch(typeof(BWA_Burst), nameof(BWA_Burst.OnStartFiring))]
         [HarmonyPatch(typeof(BWA_Auto), nameof(BWA_Auto.OnStartFiring))]
         [HarmonyPatch(typeof(BulletWeaponArchetype), nameof(BulletWeaponArchetype.OnStartFiring))]
@@ -25,6 +37,9 @@ namespace EWC.Patches.Gun
             cwc.UpdateStoredFireRate(); // Need to update prior to firing to predict weapon sound delay
             if (!allow)
                 cwc.StoreCancelShot();
+
+            if (__instance.HasChargeup)
+                cwc.Invoke(new WeaponChargeEndContext(1f));
 
             return allow;
         }

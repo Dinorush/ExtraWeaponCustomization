@@ -1,8 +1,8 @@
 ﻿using EWC.CustomWeapon;
-using HarmonyLib;
 using EWC.CustomWeapon.WeaponContext;
-using Player;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using HarmonyLib;
+using Player;
 
 namespace EWC.Patches.Player
 {
@@ -81,8 +81,12 @@ namespace EWC.Patches.Player
         [HarmonyPostfix]
         private static void ExitFall(PLOC_Fall __instance)
         {
-            CustomWeaponManager.InvokeOnGear(__instance.m_owner.Owner, StaticContext<WeaponJumpEndContext>.Instance);
-            _inJump = false;
+            var owner = __instance.m_owner;
+            if (owner.Locomotion.m_currentStateEnum != PlayerLocomotion.PLOC_State.Jump)
+            {
+                CustomWeaponManager.InvokeOnGear(owner.Owner, StaticContext<WeaponJumpEndContext>.Instance);
+                _inJump = false;
+            }
         }
     }
 }

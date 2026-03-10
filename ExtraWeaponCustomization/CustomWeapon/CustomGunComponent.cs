@@ -3,6 +3,7 @@ using EWC.Attributes;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using GameData;
 using Gear;
 using Il2CppInterop.Runtime.Injection;
 using System;
@@ -26,9 +27,14 @@ namespace EWC.CustomWeapon
         // When canceling a shot that ends a burst/full-auto, we need to set cooldown based on the last shot.
         private float _lastFireTime = 0f;
 
+        private float _currentChargeSpeed = 1f;
+        private float _baseChargeTime;
+        private float _startChargeTime = 0f;
+
         public float CurrentFireRate { get; private set; }
         public float CurrentBurstDelay { get; private set; }
         public float CurrentCooldownDelay { get; private set; }
+        public float CurrentChargeMod { get; private set; }
         public float BaseFireRate { get; private set; }
 
         private float _burstDelay;
@@ -41,6 +47,11 @@ namespace EWC.CustomWeapon
             CurrentFireRate = _lastFireRate = BaseFireRate = 1f / Math.Max(archData.ShotDelay, CustomWeaponData.MinShotDelay);
             CurrentBurstDelay = _burstDelay = archData.BurstDelay;
             CurrentCooldownDelay = _cooldownDelay = archData.SpecialCooldownTime;
+            CurrentChargeMod = 1f;
+            _baseChargeTime = archData.SpecialChargetupTime;
+
+            if (Owner.IsType(Enums.OwnerType.Local))
+                ((LocalGunComp)Gun).OnArchetypeChanged = OnArchetypeChanged;
         }
 
         [InvokeOnLoad]
@@ -53,6 +64,41 @@ namespace EWC.CustomWeapon
         {
             RefreshSoundDelay();
             base.OnWield();
+            
+            if (Owner.IsType(Enums.OwnerType.Local))
+                Gun.ArchetypeData.SpecialChargetupTime *= CurrentChargeMod;
+        }
+
+        public override void OnUnWield()
+        {
+            base.OnUnWield();
+            if (Owner.IsType(Enums.OwnerType.Local))
+                Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime;
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (Owner.IsType(Enums.OwnerType.Local))
+            {
+                var arch = ((LocalGunComp)Gun).GunArchetype;
+                if (!arch.m_inChargeup)
+                    _startChargeTime = 0f;
+                else if (_startChargeTime == 0f)
+                {
+                    _startChargeTime = Clock.Time;
+                    Invoke(StaticContext<WeaponChargeStartContext>.Instance);
+                }
+            }
+        }
+
+        private void OnArchetypeChanged(ArchetypeDataBlock oldBlock, ArchetypeDataBlock newBlock)
+        {
+            oldBlock.SpecialChargetupTime = _baseChargeTime;
+            _baseChargeTime = newBlock.SpecialChargetupTime;
+            if (SpreadController.Active) // HACK - detect when equipped
+                newBlock.SpecialChargetupTime = _baseChargeTime * CurrentChargeMod;
         }
 
         public override void Clear()
@@ -105,6 +151,25 @@ namespace EWC.CustomWeapon
         }
 
         public void NotifyShotFired() => _lastFireTime = Clock.Time;
+
+        public void UpdateChargeTime(bool forceUpdateTime = false)
+        {
+            float newChargeSpeed = Math.Max(0.001f, Invoke(new WeaponChargeSpeedContext()).Value);
+            if (newChargeSpeed != _currentChargeSpeed)
+            {
+                _currentChargeSpeed = Math.Max(newChargeSpeed, 0.001f);
+                CurrentChargeMod = 1f / _currentChargeSpeed;
+                Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime * CurrentChargeMod;
+                EWCLogger.Log($"Updated charge time to {_baseChargeTime * CurrentChargeMod} (speed = {_currentChargeSpeed})");
+                // JFS - Should only run locally.
+                if (forceUpdateTime)
+                {
+                    var arch = ((LocalGunComp)Gun).GunArchetype;
+                    if (arch.m_inChargeup)
+                        arch.m_chargeupTimer = _startChargeTime + _baseChargeTime * CurrentChargeMod;
+                }
+            }
+        }
 
         public void UpdateStoredFireRate(bool isTagged = false)
         {

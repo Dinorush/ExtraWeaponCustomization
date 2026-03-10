@@ -134,7 +134,7 @@ namespace EWC.CustomWeapon
             Invoke(StaticContext<WeaponWieldContext>.Instance);
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             Invoke(StaticContext<WeaponUpdateContext>.Instance);
 

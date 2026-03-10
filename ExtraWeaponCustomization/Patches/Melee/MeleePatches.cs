@@ -15,18 +15,35 @@ namespace EWC.Patches.Melee
     [HarmonyPatch]
     internal static class MeleePatches
     {
-        public readonly static HitData HitData = new(CustomWeapon.Enums.DamageType.Bullet);
+        public readonly static HitData HitData = new(DamageType.Bullet);
         private static CustomWeaponComponent? _cachedSwingCWC = null;
         public static float CachedCharge { get; private set; } = 0f;
 
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.ChangeState))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static void Pre_MeleeChangeState(MeleeWeaponFirstPerson __instance, out CustomMeleeComponent? __state)
+        private static void Pre_MeleeChangeState(MeleeWeaponFirstPerson __instance, eMeleeWeaponState newState)
         {
-            if (!__instance.TryGetComp<CustomMeleeComponent>(out __state)) return;
+            if (!__instance.TryGetComp<CustomMeleeComponent>(out var cmc)) return;
 
-            __state.UpdateAttackSpeed();
+            cmc.UpdateAttackSpeed();
+
+            switch (newState)
+            {
+                case eMeleeWeaponState.AttackChargeUpRight:
+                case eMeleeWeaponState.AttackChargeUpLeft:
+                    cmc.Invoke(StaticContext<WeaponChargeStartContext>.Instance);
+                    return;
+            }
+
+            switch (__instance.CurrentStateName)
+            {
+                case eMeleeWeaponState.AttackChargeUpRight:
+                case eMeleeWeaponState.AttackChargeUpLeft:
+                    var chargeUp = __instance.CurrentState.Cast<MWS_ChargeUp>();
+                    cmc.Invoke(new WeaponChargeEndContext(Math.Min(chargeUp.m_elapsed / chargeUp.m_maxDamageTime, 1f)));
+                    return;
+            }
         }
 
         [HarmonyPatch(typeof(MWS_Push), nameof(MWS_Push.Enter))]

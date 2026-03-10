@@ -148,7 +148,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         public void Invoke(WeaponCreatedContext context)
         {
             _reticle = AutoAimReticle.Reticle;
-            _camera = CWC.Owner.Player.FPSCamera;
+            _camera = CWC.Owner.Player!.FPSCamera;
         }
 
         public void Invoke(WeaponUnWieldContext _) => OnDisable();
@@ -335,7 +335,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         private bool CanLock => LockWhileEmpty || HasAmmo;
         private bool LockedTarget => _target != null && _progress == 1f;
         private bool AutoAimActive => (
-               AimActive == CWC.Owner.Player.FPItemHolder.ItemAimTrigger
+               AimActive == CWC.Owner.Player!.FPItemHolder.ItemAimTrigger
             || HipActive != CWC.Owner.Player.FPItemHolder.ItemAimTrigger
             );
         public bool UseAutoAim => LockedTarget && AutoAimActive;
