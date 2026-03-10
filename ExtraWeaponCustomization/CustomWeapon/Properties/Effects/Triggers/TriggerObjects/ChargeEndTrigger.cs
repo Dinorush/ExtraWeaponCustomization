@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float Amount { get; private set; } = 1f;
         public float Min { get; private set; } = 0f;
         public float Max { get; private set; } = 1f;
-        public float Exponent { get; private set; } = 1f;
+        public float Exponent { get; private set; } = 3f;
         public float MinRequired { get; private set; } = 0f;
         public float MaxRequired { get; private set; } = 1f;
 
