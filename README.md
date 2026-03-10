@@ -8,11 +8,13 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
 - Armor Shred: Applies a global armor reduction to shots/melees unique to each target. [Hit Triggers]
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
+- Charge Speed Mod: Applies a charge speed modifier. [Gun]
 - Damage Over Time: Applies a damage over time effect. [Hit Triggers]
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
 - Fire Shot: Fires shots at offsets.
 - Foam: Applies foam where bullets land. [Landed, Hit Triggers]
+- Force Fire: Forces the weapon to fire. [Player]
 - Health Mod: Modifies the user's health.
 - Health Shot Mod: Applies a modifier to shots/melees depending on the user's current health.
 - Infection Mod: Modifies the user's infection.
