@@ -12,6 +12,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         Effect,
         ITriggerCallbackBasicSync,
         IWeaponProperty<WeaponPreStartFireContext>,
+        IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPreFireContextSync>,
         IWeaponProperty<WeaponFireCanceledContext>,
         IWeaponProperty<WeaponFireRateContext>,
@@ -99,13 +100,18 @@ namespace EWC.CustomWeapon.Properties.Effects
             UpdateProgress();
         }
 
+        public void Invoke(WeaponPostFireContext context)
+        {
+            _resetProgress = _progress;
+            _resetUpdateTime = _lastUpdateTime;
+        }
+
         // Runs on every shot fired. Don't need to do a full UpdateProgress since we know the player is
         // holding down the trigger if there are consecutive calls to this without UpdateProgress.
         public void Invoke(WeaponFireRateContext context)
         {
             // Update acceleration progress
             _progress = Math.Min(_progress + (Clock.Time - _lastUpdateTime) / AccelTime, 1f);
-
             _lastUpdateTime = Clock.Time;
 
             // Apply accelerated fire rate
