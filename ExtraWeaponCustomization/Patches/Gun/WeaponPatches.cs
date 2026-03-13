@@ -1,4 +1,5 @@
 ﻿using Agents;
+using EWC.Attributes;
 using EWC.CustomWeapon;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
@@ -17,6 +18,24 @@ namespace EWC.Patches.Gun
     [HarmonyPatch]
     internal static class WeaponPatches
     {
+        [InvokeOnCleanup]
+        private static void OnCleanup() => _heldWeapon = null;
+
+        private static CustomGunComponent? _heldWeapon;
+        public static void FastSetLocalCGC(CustomGunComponent gun)
+        {
+            if (!gun.Owner.IsType(OwnerType.Local)) return;
+
+            _heldWeapon = gun;
+        }
+
+        public static void FastClearLocalCGC(CustomGunComponent gun)
+        {
+            if (!gun.Owner.IsType(OwnerType.Local) || _heldWeapon != gun) return;
+
+            _heldWeapon = null;
+        }
+
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnGearSpawnComplete))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
@@ -33,6 +52,16 @@ namespace EWC.Patches.Gun
             if (!__instance.TryGetComp<CustomGunComponent>(out var cgc)) return;
 
             __result /= cgc.Invoke(new WeaponReloadContext()).Value;
+        }
+
+        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.RunAllowed), MethodType.Getter)]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void PostGetRunAllowed(ref bool __result)
+        {
+            if (_heldWeapon == null) return;
+
+            __result = _heldWeapon.Invoke(new WeaponSwapContext(__result)).Allow;
         }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetCurrentClip))]

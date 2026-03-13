@@ -8,7 +8,8 @@ namespace EWC.CustomWeapon.Properties.Traits
     public sealed class HoldBurst :
         Trait,
         IWeaponProperty<WeaponPostStartFireContext>,
-        IWeaponProperty<WeaponFireCancelContext>
+        IWeaponProperty<WeaponFireCancelContext>,
+        IWeaponProperty<WeaponSwapContext>
     {
         public int ShotsUntilCancel { get; private set; } = 1;
 
@@ -33,6 +34,13 @@ namespace EWC.CustomWeapon.Properties.Traits
                 arch.m_burstCurrentCount = 0;
                 context.Allow = false;
             }
+        }
+
+        public void Invoke(WeaponSwapContext context)
+        {
+            if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
+
+            context.Allow = context.Allow || _burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
