@@ -169,10 +169,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             SoundPlayer.UpdatePosition(_positionVisual);
         }
 
-        public void ReceivePosition(Vector3 pos, Vector3 dir)
+        public void ReceivePosition(Vector3 pos, Vector3 baseVelocity)
         {
             _deltaInfo.Position = pos;
-            _deltaInfo.BaseDir = dir;
+            _deltaInfo.BaseDir = baseVelocity.normalized;
+            _deltaInfo.BaseSpeed = baseVelocity.magnitude;
         }
 
         private void LerpVisualOffset()
@@ -241,7 +242,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _lastUpdatePhysicsTime = time;
 
             if (needSync)
-                EWCProjectileManager.DoProjectileBounce(PlayerIndex, SyncID, Position, Dir);
+                EWCProjectileManager.DoProjectileBounce(PlayerIndex, SyncID, Position, _deltaInfo.BaseVelocity);
             return true;
         }
 

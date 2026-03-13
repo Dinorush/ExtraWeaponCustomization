@@ -31,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         protected override void Receive(ProjectileDataBounce packet)
         {
-            EWCProjectileManager.Internal_ReceiveProjectileBounce(packet.playerIndex, packet.id, packet.position, packet.dir.Value);
+            EWCProjectileManager.Internal_ReceiveProjectileBounce(packet.playerIndex, packet.id, packet.position, packet.baseVelocity);
         }
     }
 

@@ -61,16 +61,13 @@ namespace EWC.CustomWeapon
         {
             RefreshSoundDelay();
             base.OnWield();
-            
-            if (Owner.IsType(Enums.OwnerType.Local))
-                Gun.ArchetypeData.SpecialChargetupTime *= CurrentChargeMod;
+            Gun.ArchetypeData.SpecialChargetupTime *= CurrentChargeMod;
         }
 
         public override void OnUnWield()
         {
             base.OnUnWield();
-            if (Owner.IsType(Enums.OwnerType.Local))
-                Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime;
+            Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime;
         }
 
         protected override void Update()
@@ -96,6 +93,7 @@ namespace EWC.CustomWeapon
             CurrentFireRate = BaseFireRate;
             CurrentBurstDelay = _burstDelay;
             CurrentCooldownDelay = _cooldownDelay;
+            Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime;
             CurrentChargeMod = 1f;
             _currentChargeSpeed = 1f;
             if (!_destroyed)

@@ -113,17 +113,22 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
             node.Value.comp.Homing.ReceiveHomingAgent(enemy, limbID);
         }
 
-        public static void DoProjectileBounce(ushort playerIndex, ushort id, Vector3 pos, Vector3 dir)
+        public static void DoProjectileBounce(ushort playerIndex, ushort id, Vector3 pos, Vector3 baseVel)
         {
-            ProjectileDataBounce data = new() { playerIndex = playerIndex, id = id, position = pos };
-            data.dir.Value = dir;
+            ProjectileDataBounce data = new()
+            {
+                playerIndex = playerIndex,
+                id = id,
+                position = pos,
+                baseVelocity = baseVel
+            };
             _bounceSync.Send(data);
         }
 
-        internal static void Internal_ReceiveProjectileBounce(ushort playerIndex, ushort id, Vector3 pos, Vector3 dir)
+        internal static void Internal_ReceiveProjectileBounce(ushort playerIndex, ushort id, Vector3 pos, Vector3 baseVel)
         {
             if (!TryGetNode(playerIndex, id, out var node)) return;
-            node.Value.comp.ReceivePosition(pos, dir);
+            node.Value.comp.ReceivePosition(pos, baseVel);
         }
     }
 
@@ -146,6 +151,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         public ushort playerIndex;
         public ushort id;
         public Vector3 position;
-        public LowResVector3_Normalized dir;
+        public Vector3 baseVelocity;
     }
 }
