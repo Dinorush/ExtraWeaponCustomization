@@ -46,9 +46,18 @@ namespace EWC.Utils
         {
             bool active = Active;
             if (!refresh && active) return;
+            
+            // Early catch - don't run a coroutine if delay is 0
+            float delay = _getDelay?.Invoke() ?? _delay;
+            if (delay == 0)
+            {
+                _onStart?.Invoke();
+                _onEnd?.Invoke();
+                return;
+            }
 
-            // Catch case where callback should have ended but coroutine hasn't ran yet.
-            _endTime = Clock.Time + (_getDelay?.Invoke() ?? _delay);
+            _endTime = Clock.Time + delay;
+            // Catch case where callback should have ended but coroutine hasn't finished yet.
             if (checkEnd && !active && _routine != null)
             {
                 _onEnd?.Invoke();
@@ -65,8 +74,9 @@ namespace EWC.Utils
         public IEnumerator Update()
         {
             _onStart?.Invoke();
-            while (_endTime > Clock.Time)
-                yield return new WaitForSeconds(_endTime - Clock.Time);
+            float remainingTime;
+            while ((remainingTime = _endTime - Clock.Time) > 0)
+                yield return new WaitForSeconds(remainingTime);
             _routine = null;
             _onEnd?.Invoke();
         }
