@@ -172,8 +172,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public void ReceivePosition(Vector3 pos, Vector3 baseVelocity)
         {
             _deltaInfo.Position = pos;
-            _deltaInfo.BaseDir = baseVelocity.normalized;
             _deltaInfo.BaseSpeed = baseVelocity.magnitude;
+            _deltaInfo.BaseDir = baseVelocity.normalized;
         }
 
         private void LerpVisualOffset()
@@ -354,7 +354,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Die();
         }
 
-        public virtual void Die()
+        public void Die()
         {
             if (!enabled) return;
 
@@ -373,7 +373,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 );
             gameObject.transform.localScale = Vector3.zero;
             enabled = false;
-            _inactiveCallback.Start();
             if (Settings.StopFlyingSoundOnDestroy)
                 SoundPlayer.Stop();
             if (Settings.DestroyedSoundID != 0)
@@ -381,11 +380,16 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _playingEndSound = true;
                 SoundPlayer.PostWithDoneCallback(Settings.DestroyedSoundID, Position, OnEndSoundDone);
             }
+            _inactiveCallback.Start();
+
             EWCProjectileManager.DoProjectileDestroy(PlayerIndex, SyncID, IsManaged);
             Hitbox.Die();
             Homing.Die();
             ProjectileAPI.FireProjectileDestroyedCallback(this);
+            OnDie();
         }
+
+        protected virtual void OnDie() { }
 
         private void OnEndSoundDone()
         {
@@ -393,12 +397,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Cleanup();
         }
 
-        protected virtual void Cleanup()
+        private void Cleanup()
         {
             if (_inactiveCallback.Active || _playingEndSound) return;
 
             gameObject.active = false;
+            OnCleanup();
         }
+
+        protected virtual void OnCleanup() { }
 
         class PhysicsInfo
         {

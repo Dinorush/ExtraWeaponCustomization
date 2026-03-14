@@ -138,9 +138,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _projectile.transform.SetPositionAndRotation(_positionVisual, s_tempRot);
         }
 
-        public override void Die()
+        protected override void OnDie()
         {
-            base.Die();
             foreach (var effect in _projectile.m_effectsToStopEmittingOnImpact)
                 effect.Stop();
             foreach (var go in _projectile.m_toDestroyOnImpact)
@@ -158,9 +157,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
         }
 
-        protected override void Cleanup()
+        protected override void OnCleanup()
         {
-            base.Cleanup();
             EWCProjectileManager.Shooter.ReturnToPool(this);
         }
     }
