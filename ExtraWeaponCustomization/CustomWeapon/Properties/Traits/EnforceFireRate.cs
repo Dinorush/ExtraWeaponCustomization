@@ -67,7 +67,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 return;
             }
 
-            _shotBuffer += Math.Max(0, (Clock.Time - _nextShotTime) * CGC.CurrentFireRate);
+            _shotBuffer += (Clock.Time - _nextShotTime) * CGC.CurrentFireRate;
             int extraShots = (int)_shotBuffer;
             weapon.m_shotsToFire = Math.Max(0, weapon.m_shotsToFire - extraShots);
             _lastSyncShotCount = weapon.m_shotsToFire;
@@ -79,7 +79,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             // Acts as a lock against recursive calls and first shot
             if (_nextShotTime == 0) return;
 
-            _shotBuffer += Math.Max(0, (Clock.Time - _nextShotTime) * CGC.CurrentFireRate);
+            _shotBuffer += (Clock.Time - _nextShotTime) * CGC.CurrentFireRate;
             int extraShots = GetShotsInBuffer();
             _nextShotTime = 0;
 

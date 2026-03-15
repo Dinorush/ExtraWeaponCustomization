@@ -9,6 +9,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>,
+        IWeaponProperty<WeaponSprintContext>,
         IWeaponProperty<WeaponSwapContext>
     {
         public int ShotsUntilCancel { get; private set; } = 1;
@@ -33,6 +34,17 @@ namespace EWC.CustomWeapon.Properties.Traits
             {
                 arch.m_burstCurrentCount = 0;
                 context.Allow = false;
+            }
+        }
+
+        public void Invoke(WeaponSprintContext context)
+        {
+            if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
+
+            if (arch.m_firing)
+            {
+                arch.m_burstCurrentCount = 0;
+                arch.PostFireCheck();
             }
         }
 
