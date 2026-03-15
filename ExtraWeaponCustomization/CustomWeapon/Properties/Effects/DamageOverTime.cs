@@ -46,6 +46,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             private set { _tickRate = Math.Max(0.01f, value); }
         }
         public bool ApplyAttackCooldown { get; private set; } = false;
+        public float HitmarkerCooldown { get; private set; } = 0f;
         public Color GlowColor { get; private set; } = Color.black;
         public float GlowIntensity { get; private set; } = 1f;
         public float GlowRange { get; private set; } = 0f;
@@ -53,12 +54,36 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private readonly DOTController _controller = new();
         private readonly Dictionary<BaseDamageableWrapper, Queue<DOTInstance>> _lastDOTs = new();
+        private readonly Dictionary<BaseDamageableWrapper, float> _hitmarkerCooldowns = new();
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
         public DamageOverTime()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
             SetValidTriggers(DamageType.DOT, ITrigger.HitTriggers);
+        }
+
+        public bool ShouldDoHitmarker(IDamageable damageable)
+        {
+            if (HitmarkerCooldown <= 0f) return true;
+
+            var time = Clock.Time;
+            if (_hitmarkerCooldowns.TryGetValue(TempWrapper.Set(damageable), out var endTime))
+            {
+                if (time < endTime)
+                    return false;
+                else
+                    _hitmarkerCooldowns[TempWrapper] = time + HitmarkerCooldown;
+            }
+            else
+            {
+                var wrappers = _hitmarkerCooldowns.Keys.ToArray();
+                foreach (var wrapper in wrappers)
+                    if (!wrapper.Alive)
+                        _hitmarkerCooldowns.Remove(wrapper);
+                _hitmarkerCooldowns[new(TempWrapper)] = time + HitmarkerCooldown;
+            }
+            return true;
         }
 
         public override void TriggerApply(List<TriggerContext> triggerList)
@@ -218,6 +243,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(UseParentShotMod), UseParentShotMod);
             writer.WriteBoolean(nameof(CalcShotModsPerTick), CalcShotModsPerTick);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
+            writer.WriteNumber(nameof(HitmarkerCooldown), HitmarkerCooldown);
             EWCJson.Serialize(writer, nameof(GlowColor), GlowColor);
             writer.WriteNumber(nameof(GlowIntensity), GlowIntensity);
             writer.WriteNumber(nameof(GlowRange), GlowRange);
@@ -301,6 +327,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "applyattackcooldowns":
                 case "applyattackcooldown":
                     ApplyAttackCooldown = reader.GetBoolean();
+                    break;
+                case "hitmarkercooldown":
+                    HitmarkerCooldown = reader.GetSingle();
                     break;
                 case "glowcolor":
                     GlowColor = EWCJson.Deserialize<Color>(ref reader);

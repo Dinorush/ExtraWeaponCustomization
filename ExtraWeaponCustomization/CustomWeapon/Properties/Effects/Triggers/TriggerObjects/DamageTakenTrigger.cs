@@ -13,10 +13,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public override bool Invoke(WeaponTriggerContext context, out float amount)
         {
-            amount = 0f;
-            if (context is WeaponDamageTakenContext damageContext)
+            if (base.Invoke(context, out amount))
             {
-                amount = Cap > 0f ? Math.Min(Cap, Amount * damageContext.Damage) : Amount * damageContext.Damage;
+                float damage = ((WeaponDamageTakenContext)context).Damage;
+                amount = Cap > 0f ? Math.Min(Cap, amount * damage) : Amount * damage;
                 return true;
             }
             return false;

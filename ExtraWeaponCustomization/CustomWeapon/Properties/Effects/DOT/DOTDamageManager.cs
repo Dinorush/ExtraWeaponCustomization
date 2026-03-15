@@ -123,7 +123,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
             bool willKill = damBase.WillDamageKill(precDamage);
             HitTrackerManager.RegisterHit(dotBase.CWC.Owner, dotBase.CWC, hitContext);
-            ShotManager.DoHitmarker(dotBase.CWC, dotBase.CWC.GetContextController(), limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
+            if (dotBase.ShouldDoHitmarker(damageable))
+                ShotManager.DoHitmarker(dotBase.CWC, dotBase.CWC.GetContextController(), limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             shotInfo.AddHits(hitContext.DamageType, ticks);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
