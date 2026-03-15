@@ -6,6 +6,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
 - Ammo Mod: Modifies the magazine/reserve ammo counts.
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
+- Armor Mod: Applies a damage reduction modifier.
 - Armor Shred: Applies a global armor reduction to shots/melees unique to each target. [Hit Triggers]
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
 - Charge Speed Mod: Applies a charge speed modifier. [Gun]
