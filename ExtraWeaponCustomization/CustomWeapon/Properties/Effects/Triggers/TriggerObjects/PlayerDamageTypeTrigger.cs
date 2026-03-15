@@ -7,7 +7,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     public class PlayerDamageTypeTrigger : ITrigger
     {
         public PlayerDamageType[] DamageTypes { get; }
-        public TriggerName Name { get; private set; }
+        public TriggerName Name { get; }
         public float Amount { get; private set; } = 1f;
 
         public PlayerDamageTypeTrigger(TriggerName name, params PlayerDamageType[] types)

@@ -82,7 +82,7 @@ namespace EWC.Patches.Player
         [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.Hitreact))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
-        private static bool Pre_Hitreact(Dam_PlayerDamageLocal __instance, ref float damage)
+        private static bool Pre_Hitreact(ref float damage)
         {
             if (_currentDamage < 0) return true;
 
