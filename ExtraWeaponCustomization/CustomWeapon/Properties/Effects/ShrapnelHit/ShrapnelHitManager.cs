@@ -1,4 +1,5 @@
 ﻿using Agents;
+using AK;
 using CharacterDestruction;
 using Enemies;
 using EWC.API;
@@ -13,6 +14,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Utils;
 using EWC.Utils.Extensions;
+using GameEvent;
 using Player;
 using SNetwork;
 using System;
@@ -23,11 +25,13 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
     public static class ShrapnelHitManager
     {
         private readonly static ShrapnelHitSync _sync = new();
+        private readonly static ShrapnelHitPlayerSync _playerSync = new();
 
         [InvokeOnAssetLoad]
         private static void Init()
         {
             _sync.Setup();
+            _playerSync.Setup();
         }
 
         public static bool DoHit(Shrapnel shrapnel, HitData hitData, ContextController cc, bool calcFalloff = true)
@@ -105,7 +109,12 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 damage *= playerBase.m_playerData.friendlyFireMulti * shrapnel.FriendlyDamageMulti;
                 cc.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 // Only damage and direction are used AFAIK, but again, just in case...
-                playerBase.BulletDamage(damage, source, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);
+
+                ShrapnelHitPlayerData playerData = new() { damage = damage };
+                playerData.target.Set(playerBase.Owner);
+                playerData.cwc.Set(shrapnel.CWC);
+                playerData.dir.Value = hitData.fireDir;
+                _playerSync.Send(playerData);
                 return true;
             }
             else if (hitData.damageType.HasFlag(DamageType.Lock)) // Lock damage; direction doesn't matter
@@ -152,6 +161,21 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
 
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
             return true;
+        }
+
+        internal static void Internal_ReceiveShrapnelDamagePlayer(PlayerAgent target, PlayerAgent? source, OwnerType ownerType, float damage, Vector3 direction)
+        {
+            ShotManager.ReceivePlayerDamage(target, damage, PlayerDamageType.Shrapnel, direction);
+
+            if (target.IsLocallyOwned)
+            {
+                target.Sound.Post(EVENTS.BULLETHITPLAYERSYNC);
+                if (ownerType.HasFlag(OwnerType.Sentry) || source == null || source.Pointer != target.Pointer)
+                {
+                    PlayerDialogManager.WantToStartDialog(152u, target.CharacterID);
+                    GameEventManager.PostEvent(eGameEvent.player_take_friendly_fire, target, damage);
+                }
+            }
         }
 
         internal static void Internal_ReceiveShrapnelDamage(EnemyAgent target, PlayerAgent? source, OwnerType ownerType, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
@@ -229,5 +253,13 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
         public float damage;
         public float staggerMult;
         public bool setCooldowns;
+    }
+
+    public struct ShrapnelHitPlayerData
+    {
+        public pPlayerAgent target;
+        public pCWC cwc;
+        public float damage;
+        public LowResVector3_Normalized dir;
     }
 }

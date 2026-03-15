@@ -19,12 +19,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 {
     public static class DOTDamageManager
     {
-        private readonly static DOTEnemyDamageSync _sync = new();
+        private readonly static DOTDamageEnemySync _sync = new();
+        private readonly static DOTDamagePlayerSync _playerSync = new();
 
         [InvokeOnAssetLoad]
         private static void Init()
         {
             _sync.Setup();
+            _playerSync.Setup();
         }
 
         public static void DoDOTDamage(IDamageable damageable, float damage, float falloff, float precisionMulti, float staggerMulti, bool bypassTumor, float backstabMulti, float origBackstabMulti, int ticks, ShotInfo shotInfo, DamageOverTime dotBase)
@@ -51,9 +53,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
                 if (!ApplyShotMod(ref damage, ref precisionMulti, ref staggerMulti, prePlayerContext, dotBase)) return;
                 dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, prePlayerContext));
-                // Don't really need custom damage behavior, but BulletDamage triggers FF dialogue.
-                SendPlayerDOTDamage(damage, playerBase, dotBase.Owner);
                 shotInfo.AddHits(prePlayerContext.DamageType, ticks);
+
+                DOTPlayerData playerData = new() { damage = damage };
+                playerData.target.Set(playerBase.Owner);
+                _playerSync.Send(playerData);
                 return;
             }
             else if (agent == null) // Lock damage; direction and damage function don't matter
@@ -137,20 +141,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             return damage > 0;
         }
 
-        // Not using damBase.FireDamage to avoid invoking XP's bleed resistance
-        private static void SendPlayerDOTDamage(float damage, Dam_PlayerDamageBase damBase, Agent? source)
+        public static void Internal_ReceiveDOTDamagePlayer(PlayerAgent target, float damage)
         {
-            pSmallDamageData data = default;
-            data.damage.Set(damage, damBase.HealthMax);
-            data.source.Set(source);
-            if (SNet.IsMaster)
-                damBase.m_fireDamagePacket.Send(data, SNet_ChannelType.GameNonCritical);
-            else
-                damBase.m_fireDamagePacket.Send(data, SNet_ChannelType.GameNonCritical, SNet.Master);
-            damBase.ReceiveFireDamage(data);
+            ShotManager.ReceivePlayerDamage(target, damage, PlayerDamageType.DOT, Vector3.zero, cameraShake: false);
         }
 
-        internal static void Internal_ReceiveDOTEnemyDamage(EnemyAgent target, PlayerAgent? source, OwnerType ownerType, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
+        internal static void Internal_ReceiveDOTDamageEnemy(EnemyAgent target, PlayerAgent? source, OwnerType ownerType, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
@@ -227,5 +223,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         public float damage;
         public float staggerMult;
         public bool setCooldowns;
+    }
+
+    public struct DOTPlayerData
+    {
+        public pPlayerAgent target;
+        public float damage;
     }
 }

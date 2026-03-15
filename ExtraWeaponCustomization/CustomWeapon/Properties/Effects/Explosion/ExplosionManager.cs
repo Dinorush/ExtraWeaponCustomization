@@ -185,7 +185,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
                 ExplosionDamagePlayerData playerData = default;
                 playerData.target.Set(playerBase.Owner);
-                playerData.source.Set(source);
+                playerData.cwc.Set(eBase.CWC);
                 playerData.damage = damage;
                 playerData.direction.Value = blastDir;
 
@@ -300,22 +300,20 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             }
         }
 
-        internal static void Internal_ReceiveExplosionDamagePlayer(PlayerAgent target, PlayerAgent? source, float damage, Vector3 direction)
+        internal static void Internal_ReceiveExplosionDamagePlayer(PlayerAgent target, PlayerAgent? source, OwnerType ownerType, float damage, Vector3 direction)
         {
-            var damBase = target.Damage;
+            ShotManager.ReceivePlayerDamage(target, damage, PlayerDamageType.Explosive | PlayerDamageType.Player, direction);
+
             if (target.IsLocallyOwned)
             {
                 target.Sound.Post(EVENTS.BULLETHITPLAYERSYNC);
-                if (source == null || source.Pointer != target.Pointer)
+                if (ownerType.HasFlag(OwnerType.Sentry) || source == null || source.Pointer != target.Pointer)
                 {
                     PlayerDialogManager.WantToStartDialog(152u, target.CharacterID);
                     GameEventManager.PostEvent(eGameEvent.player_take_friendly_fire, target, damage);
                 }
-                damBase.Cast<Dam_PlayerDamageLocal>().Hitreact(damage, direction);
             }
-            damBase.OnIncomingDamage(damage, damage, source);
         }
-
     }
 
     public struct ExplosionDamageData
@@ -334,7 +332,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
     public struct ExplosionDamagePlayerData
     {
         public pPlayerAgent target;
-        public pPlayerAgent source;
+        public pCWC cwc;
         public float damage;
         public LowResVector3_Normalized direction;
     }

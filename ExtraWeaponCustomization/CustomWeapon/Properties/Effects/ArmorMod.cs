@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.ObjectWrappers;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
@@ -6,78 +7,74 @@ using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
-    public class FireRateMod :
+    public sealed class ArmorMod :
         TriggerMod,
         ITriggerCallbackBasicSync,
-        IWeaponProperty<WeaponFireRateContext>
+        IWeaponProperty<WeaponPlayerArmorContext>
     {
         public ushort SyncID { get; set; }
 
-        public bool ForceUpdate { get; private set; } = false;
+        public PlayerDamageType[] DamageType { get; private set; } = PlayerDamageTypeConst.Any;
+        public bool Immune { get; private set; } = false;
 
         private readonly TriggerStack _triggerStack;
 
-        public FireRateMod() => _triggerStack = new(this);
+        protected override OwnerType RequiredOwnerType => OwnerType.Player;
 
-        public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);
-
-        public override void TriggerReset()
-        {
-            TriggerResetSync();
-
-            if (CWC.Weapon.IsType(Enums.WeaponType.Gun))
-                TriggerManager.SendReset(this);
-        }
+        public ArmorMod() => _triggerStack = new(this);
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
             var num = Count(contexts);
             TriggerApplySync(num);
-
-            if (CWC.Weapon.IsType(Enums.WeaponType.Gun))
-                TriggerManager.SendInstance(this, num);
-        }
-
-        public void TriggerResetSync()
-        {
-            _triggerStack.Clear();
-
-            if (ForceUpdate && CWC.Weapon.IsType(Enums.WeaponType.Gun))
-            {
-                CGC.UpdateStoredFireRate();
-                CGC.ModifyFireRate();
-            }
+            TriggerManager.SendInstance(this, num);
         }
 
         public void TriggerApplySync(float num)
         {
             _triggerStack.Add(num);
-
-            if (ForceUpdate && CWC.Weapon.IsType(Enums.WeaponType.Gun))
-            {
-                CGC.UpdateStoredFireRate();
-                CGC.ModifyFireRate();
-            }
         }
 
-        public void Invoke(WeaponFireRateContext context)
+        public override void TriggerReset()
         {
-            if (_triggerStack.TryGetMod(out float mod))
-                context.AddMod(mod, StackLayer);
+            TriggerResetSync();
+            TriggerManager.SendReset(this);
         }
 
+        public void TriggerResetSync()
+        {
+            _triggerStack.Clear();
+        }
+
+        public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);
+
+        public void Invoke(WeaponPlayerArmorContext context)
+        {
+            if (!context.DamageType.HasFlagIn(DamageType)) return;
+
+            if (Immune)
+            {
+                context.Immune = true;
+                return;
+            }
+            
+            if (!_triggerStack.TryGetMod(out float mod)) return;
+
+            context.AddMod(mod, StackLayer);
+        }
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(Mod), Mod);
+            writer.WriteBoolean(nameof(Immune), Immune);
+            writer.WriteString(nameof(DamageType), DamageType[0].ToString());
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteBoolean(nameof(CombineModifiers), CombineModifiers);
             writer.WriteNumber(nameof(CombineDecayTime), CombineDecayTime);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
-            writer.WriteBoolean(nameof(ForceUpdate), ForceUpdate);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -87,8 +84,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             base.DeserializeProperty(property, ref reader);
             switch (property)
             {
-                case "forceupdate":
-                    ForceUpdate = reader.GetBoolean();
+                case "moddamagetype":
+                case "damagetype":
+                    DamageType = reader.GetString().ToPlayerDamageTypes();
+                    break;
+                case "immune":
+                case "immunity":
+                    Immune = reader.GetBoolean();
                     break;
             }
         }

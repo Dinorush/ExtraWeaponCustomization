@@ -89,5 +89,25 @@ namespace EWC.CustomWeapon.Structs
             comp = supplier.Cast<PlayerSync>().m_agent;
             return true;
         }
+
+        public bool TryGetSource([MaybeNullWhen(false)] out PlayerAgent comp)
+        {
+            if (!TryGetSupplier(out var supplier))
+            {
+                comp = null;
+                return false;
+            }
+
+            if (ownerType.HasFlag(OwnerType.Player))
+            {
+                comp = supplier.Cast<PlayerSync>().m_agent;
+                return true;
+            }
+            else
+            {
+                comp = supplier.Cast<SentryGunInstance>().Owner;
+                return true;
+            }
+        }
     }
 }

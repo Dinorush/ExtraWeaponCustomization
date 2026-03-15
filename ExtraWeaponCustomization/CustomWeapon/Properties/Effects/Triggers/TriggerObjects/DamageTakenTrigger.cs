@@ -1,18 +1,17 @@
-﻿using EWC.CustomWeapon.WeaponContext.Contexts;
+﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
-    public sealed class DamageTakenTrigger : ITrigger
+    public sealed class DamageTakenTrigger : PlayerDamageTypeTrigger
     {
-        public TriggerName Name { get; } = TriggerName.DamageTaken;
-        public float Amount { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
 
-        public DamageTakenTrigger() {}
+        public DamageTakenTrigger(PlayerDamageType[] damageTypes) : base(TriggerName.DamageTaken, damageTypes) { }
 
-        public bool Invoke(WeaponTriggerContext context, out float amount)
+        public override bool Invoke(WeaponTriggerContext context, out float amount)
         {
             amount = 0f;
             if (context is WeaponDamageTakenContext damageContext)
@@ -23,18 +22,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             return false;
         }
 
-        public void Reset() { }
-
-        public ITrigger Clone() => this;
-
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
+            base.DeserializeProperty(property, ref reader);
             switch (property)
             {
-                case "triggeramount":
-                case "amount":
-                    Amount = reader.GetSingle();
-                    break;
                 case "cap":
                     Cap = reader.GetSingle();
                     break;

@@ -152,6 +152,15 @@ namespace EWC.CustomWeapon.CustomShot
                 effect.ReturnToPool();
             }
         }
+        
+        public static void ReceivePlayerDamage(PlayerAgent target, float damage, PlayerDamageType damageType, Vector3 dir, bool cameraShake = true)
+        {
+            Patches.Player.PlayerDamagePatches.SetPlayerDamageType(damageType);
+            var damBase = target.Damage;
+            damBase.OnIncomingDamage(damage, damage);
+            if (target.IsLocallyOwned)
+                damBase.Cast<Dam_PlayerDamageLocal>().Hitreact(damage, dir, cameraShake);
+        }
 
         public static void DoHitmarker(CustomWeaponComponent cwc, ContextController cc, Dam_EnemyDamageLimb limb, bool crit, bool willKill, Vector3 hitPos, bool armor)
         {

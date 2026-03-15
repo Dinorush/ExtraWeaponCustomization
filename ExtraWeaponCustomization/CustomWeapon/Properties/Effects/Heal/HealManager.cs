@@ -1,5 +1,6 @@
 ﻿using Agents;
 using EWC.Attributes;
+using EWC.CustomWeapon.CustomShot;
 using EWC.Dependencies;
 using Player;
 using SNetwork;
@@ -54,7 +55,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
                 if (heal <= 0) return;
 
                 float origRegen = dam.m_nextRegen;
-                player.Damage.OnIncomingDamage(heal, heal, player);
+                ShotManager.ReceivePlayerDamage(player, heal, Enums.PlayerDamageType.Heal, UnityEngine.Vector3.zero, cameraShake: false);
                 dam.m_nextRegen = cancelRegen ? Clock.Time + player.PlayerData.healthRegenStartDelayAfterDamage * EXPAPIWrapper.GetHealthRegenMod(player) : origRegen;
                 if (showDamageFX)
                     _fxSync.Send(heal, player.Owner);

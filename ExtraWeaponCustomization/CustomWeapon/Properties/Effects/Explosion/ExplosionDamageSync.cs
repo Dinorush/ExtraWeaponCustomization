@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         protected override void Receive(ExplosionDamageData packet)
         {
             if (!packet.target.TryGet(out EnemyAgent target)) return;
-            packet.cwc.TryGetPlayer(out PlayerAgent? source);
+            packet.cwc.TryGetSource(out PlayerAgent? source);
 
             ExplosionManager.Internal_ReceiveExplosionDamage(
                 target,
@@ -34,12 +34,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         protected override void Receive(ExplosionDamagePlayerData packet)
         {
-            if (!packet.target.TryGet(out PlayerAgent target)) return;
-            packet.source.TryGet(out PlayerAgent source);
+            if (!packet.target.TryGet(out var target)) return;
+            packet.cwc.TryGetSource(out var source);
 
             ExplosionManager.Internal_ReceiveExplosionDamagePlayer(
                 target,
                 source,
+                packet.cwc.ownerType,
                 packet.damage,
                 packet.direction.Value
                 );

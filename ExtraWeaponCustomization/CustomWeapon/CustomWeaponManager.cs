@@ -70,40 +70,40 @@ namespace EWC.CustomWeapon
             ResetCWCs(activate: true);
         }
 
-        public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, T context) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (null, context));
-        public static void InvokeOnGear<T>(SNetwork.SNet_Player owner, Func<T>? func) where T : WeaponContext.IWeaponContext => InvokeOnGear(owner, (func, default(T)));
-        private static void InvokeOnGear<T>(SNetwork.SNet_Player owner, (Func<T>? func, T? obj) pair) where T : WeaponContext.IWeaponContext
+        public static T InvokeOnGear<T>(SNetwork.SNet_Player owner, T context) where T : WeaponContext.IWeaponContext
         {
-            if (!PlayerBackpackManager.TryGetBackpack(owner, out var backpack)) return;
+            if (!PlayerBackpackManager.TryGetBackpack(owner, out var backpack)) return context;
 
             if (backpack.TryGetBackpackItem(InventorySlot.GearStandard, out BackpackItem primary))
             {
                 CustomWeaponComponent? cwc = primary.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
+                cwc?.Invoke(context);
             }
 
             if (backpack.TryGetBackpackItem(InventorySlot.GearSpecial, out BackpackItem special))
             {
                 CustomWeaponComponent? cwc = special.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
+                cwc?.Invoke(context);
             }
 
             if (backpack.TryGetBackpackItem(InventorySlot.GearMelee, out BackpackItem melee))
             {
                 CustomWeaponComponent? cwc = melee.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
+                cwc?.Invoke(context);
             }
 
             if (backpack.TryGetBackpackItem(InventorySlot.GearClass, out BackpackItem tool))
             {
                 CustomWeaponComponent? cwc = tool.Instance?.GetComponent<CustomWeaponComponent>();
-                cwc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
+                cwc?.Invoke(context);
             }
 
             if (owner.HasPlayerAgent && Current._trackedSentries.TryGetValue(owner.PlayerAgent.Pointer, out var sentryInfo))
             {
-                sentryInfo.cgc?.Invoke(pair.func != null ? pair.func() : pair.obj!);
+                sentryInfo.cgc?.Invoke(context);
             }
+
+            return context;
         }
 
         public static void ActivateSentry(SentryGunInstance sentry)

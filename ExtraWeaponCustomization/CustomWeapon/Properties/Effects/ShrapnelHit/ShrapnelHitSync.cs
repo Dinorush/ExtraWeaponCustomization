@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
         protected override void Receive(ShrapnelHitData packet)
         {
             if (!packet.target.TryGet(out EnemyAgent enemy)) return;
-            packet.cwc.TryGetPlayer(out PlayerAgent? player);
+            packet.cwc.TryGetSource(out PlayerAgent? player);
 
             ShrapnelHitManager.Internal_ReceiveShrapnelDamage(
                 enemy,
@@ -26,5 +26,26 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 packet.setCooldowns
                 );
         }
+    }
+
+    internal sealed class ShrapnelHitPlayerSync : SyncedEvent<ShrapnelHitPlayerData>
+    {
+        public override string GUID => "SHPHITP";
+
+        protected override void Receive(ShrapnelHitPlayerData packet)
+        {
+            if (!packet.target.TryGet(out PlayerAgent target)) return;
+            packet.cwc.TryGetSource(out PlayerAgent? player);
+
+            ShrapnelHitManager.Internal_ReceiveShrapnelDamagePlayer(
+                target,
+                player,
+                packet.cwc.ownerType,
+                packet.damage,
+                packet.dir.Value
+                );
+        }
+
+        protected override void ReceiveLocal(ShrapnelHitPlayerData packet) => Receive(packet);
     }
 }
