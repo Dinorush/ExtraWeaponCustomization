@@ -327,7 +327,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (bounceHit == null) return;
 
             s_rayHit = bounceHit.Value;
-            BulletHit(null);
+            BulletHit(DamageableUtil.GetDamageableFromRayHit(s_rayHit), true);
         }
 
         private void DoCollisionInitialWorld(out RaycastHit? bounceHit)
@@ -351,7 +351,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (s_rayHit.distance == float.MaxValue) return;
 
-            if (BulletHit(null))
+            if (BulletHit(DamageableUtil.GetDamageableFromRayHit(s_rayHit), true))
                 bounceHit = s_rayHit;
         }
 
@@ -366,7 +366,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (damageable.GetBaseAgent() != null)
                 _ignoreWallsTime = Clock.Time + _settings.HitIgnoreWallsDuration;
 
-            if (!BulletHit(damageable)) return;
+            if (!BulletHit(damageable, false)) return;
 
             if (--_pierceCount <= 0)
                 _base.Die();
@@ -399,8 +399,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private void DoImpactFX(IDamageable? damageable)
         {
-            if (damageable == null && !_settings.EnableTerrainHitFX) return;
-
             GameObject gameObject = s_rayHit.collider.gameObject;
             var colliderMaterial = gameObject.GetComponent<ColliderMaterial>();
             bool isDecalsAllowed = (LayerUtil.MaskDecalValid & gameObject.gameObject.layer) == 0;
@@ -414,14 +412,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             FX_Manager.PlayEffect(false, impactFX, null, s_rayHit.point, Quaternion.LookRotation(s_rayHit.normal), isDecalsAllowed);
         }
 
-        private bool BulletHit(IDamageable? damageable)
+        private bool BulletHit(IDamageable? damageable, bool terrain)
         {
             HitData.ResetDamage();
             HitData.fireDir = (_settings.HitFromOwnerPos ? s_rayHit.point - _owner.FirePos : s_ray.direction).normalized;
             HitData.RayHit = s_rayHit;
             HitData.falloff = HitData.CalcFalloff(_distanceMoved) * _baseFalloff;
 
-            DoImpactFX(damageable);
+            if (!terrain || _settings.EnableTerrainHitFX)
+                DoImpactFX(damageable);
 
             API.ProjectileAPI.FireProjectileHitCallback(_base, damageable);
 

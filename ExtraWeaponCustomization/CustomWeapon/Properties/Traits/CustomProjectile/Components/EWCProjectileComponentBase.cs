@@ -219,15 +219,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Vector3 collisionVel = deltaMove.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaMove : _fixedInfo.Dir * EWCProjectileHitbox.MinCollisionDist;
 
             bool needSync = false;
-            int i = 0;
-            for (; i < _maxRicochetCheck && Hitbox.Update(_fixedInfo.Position, collisionVel, out var bounce); i++)
+            for (int i = 0; i < _maxRicochetCheck && Hitbox.Update(_fixedInfo.Position, collisionVel, out var bounce); i++)
             {
                 // Compute speed loss based on ricochet angle
                 float angleFactor = Math.Abs(Vector3.Dot(_fixedInfo.Dir, bounce.normal));
-                _fixedInfo.BaseSpeed *= (1f - Settings.RicochetSpeedAngleFactor * (1f - angleFactor)).Lerp(1f, Settings.RicochetSpeedMod);
+                float speedMod = (1f - Settings.RicochetSpeedAngleFactor * (1f - angleFactor)).Lerp(1f, Settings.RicochetSpeedMod);
+                _fixedInfo.BaseSpeed *= speedMod;
 
                 // Compute remaining collision detection distance and update direction from bounce
-                float remainingDist = collisionVel.magnitude - (bounce.point - _fixedInfo.Position).magnitude;
+                float remainingDist = (collisionVel.magnitude - (bounce.point - _fixedInfo.Position).magnitude) * speedMod;
                 _fixedInfo.BaseDir = Vector3.Reflect(_fixedInfo.Dir, bounce.normal);
                 deltaMove = _fixedInfo.Dir * remainingDist;
                 collisionVel = remainingDist > EWCProjectileHitbox.MinRicochetDist ? deltaMove : _fixedInfo.Dir * EWCProjectileHitbox.MinRicochetDist;
