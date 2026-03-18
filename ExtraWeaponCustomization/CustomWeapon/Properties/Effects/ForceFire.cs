@@ -1,4 +1,5 @@
-﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
+﻿using EWC.API;
+using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using Gear;
@@ -25,12 +26,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             if ((held && fpItemHolder.ItemIsBusy) || bwa.m_clip <= 0f) return;
 
-            if (RequiredState.HasFlag(WeaponState.Ready))
-            {
-                if (bwa.m_firing) return;
-                var time = Clock.Time;
-                if (time < bwa.m_nextShotTimer || time < bwa.m_nextBurstTimer) return;
-            }
+            var time = Clock.Time;
+            bool inCooldown = time < bwa.m_nextShotTimer || time < bwa.m_nextBurstTimer;
+            if (RequiredState.HasFlag(WeaponState.Ready) && (bwa.m_firing || inCooldown)) return;
+
+            if (inCooldown)
+                FireRateAPI.FireCooldownInterruptCallback(bwa.m_weapon);
 
             if (bwa.m_firing)
             {
