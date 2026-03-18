@@ -110,7 +110,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 string miss when miss.Contains("miss") => new MissTrigger(name.ToDamageTypes()),
                 string charge when charge.Contains("charge") => new ChargeTrigger(name.ToDamageTypes()),
                 string backstab when backstab.Contains("backstab") => new BackstabTrigger(name.ToDamageTypes()),
-                string kill when kill.Contains("kill") => new HitTrackerTrigger<WeaponPostKillContext>(TriggerName.Kill, name.ToDamageTypes()),
+                string kill when kill.Contains("kill") => new KillTrigger(name.ToDamageTypes()),
                 string damage when damage.Contains("damage") => new DamageTrigger(name.ToDamageTypes()),
                 string stagger when stagger.ContainsAny("stagger", "stun") => new StaggerTrigger(name.ToDamageTypes()),
                 _ => new ReferenceCallTrigger(origName)
