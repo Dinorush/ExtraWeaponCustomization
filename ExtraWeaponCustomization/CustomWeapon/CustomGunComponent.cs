@@ -189,9 +189,10 @@ namespace EWC.CustomWeapon
             }
 
             float newFireRate = Invoke(new WeaponFireRateContext(fireRate)).Value;
+            newFireRate = Math.Clamp(newFireRate, 0.001f, CustomWeaponData.MaxFireRate);
             if (CurrentFireRate != newFireRate)
             {
-                CurrentFireRate = Math.Clamp(newFireRate, 0.001f, CustomWeaponData.MaxFireRate);
+                CurrentFireRate = newFireRate;
                 CurrentBurstDelay = _burstDelay * fireRate / CurrentFireRate;
                 CurrentCooldownDelay = _cooldownDelay * fireRate / CurrentFireRate;
                 RefreshSoundDelay();

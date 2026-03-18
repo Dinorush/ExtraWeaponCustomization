@@ -386,7 +386,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 foreach (AIG_CoursePortal portal in current.m_portals)
                 {
                     iLG_Door_Core? door = portal.m_door;
-                    if (_wallPierce?.RequireOpenPath == true && door != null && door.DoorType != eLG_DoorType.Security && door.DoorType != eLG_DoorType.Apex)
+                    if (_wallPierce?.RequireOpenPath != true && door != null && door.DoorType != eLG_DoorType.Security && door.DoorType != eLG_DoorType.Apex)
                         door = null;
                     if (door != null && door.LastStatus != eDoorStatus.Open && door.LastStatus != eDoorStatus.Opening && door.LastStatus != eDoorStatus.Destroyed)
                         continue;
