@@ -27,6 +27,7 @@ namespace EWC.Patches.Player
 
         [HarmonyPatch(typeof(PLOC_Run), nameof(PLOC_Run.Enter))]
         [HarmonyWrapSafe]
+        [HarmonyAfter("RunAndGun")]
         [HarmonyPostfix]
         private static void EnterSprint(PLOC_Run __instance)
         {

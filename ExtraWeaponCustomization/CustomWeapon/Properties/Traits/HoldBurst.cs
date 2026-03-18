@@ -39,7 +39,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponSprintContext context)
         {
-            if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
+            if (!CGC.Owner.Player!.Locomotion.IsRunning || !((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
 
             if (arch.m_firing)
             {
