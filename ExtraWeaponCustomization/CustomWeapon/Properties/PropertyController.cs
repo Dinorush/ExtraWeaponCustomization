@@ -33,12 +33,22 @@ namespace EWC.CustomWeapon.Properties
 
         // Does not go through the standard invoke checks/pipeline like context controller.
         // Should ONLY use for contexts ran once as a part of initialization, e.g. when the weapon owner is set.
-        public TContext InvokeAll<TContext>(TContext context) where TContext : IWeaponContext
+        public TContext InvokeAll<TContext>(TContext context, bool includeTriggers = true) where TContext : IWeaponContext
         {
+            WeaponTriggerContext? triggerContext = null;
+            bool isTrigger = false;
+            if (includeTriggers)
+            {
+                triggerContext = context as WeaponTriggerContext;
+                isTrigger = triggerContext != null;
+            }
+
             foreach (var property in _properties)
             {
                 if (property.IsProperty<TContext>(out var tProperty))
                     tProperty.Invoke(context);
+                if (isTrigger && property is ITriggerCallback callback && callback.Trigger != null)
+                    callback.Invoke(triggerContext!);
             }
             return context;
         }
@@ -84,13 +94,12 @@ namespace EWC.CustomWeapon.Properties
 
                 _properties.Add(property);
 
-                if (property is TempProperties tempProperties)
+                if (property is IReferenceHolder refHolder && !refHolder.Properties.Empty)
                 {
-                    if (!tempProperties.Properties.Empty)
-                        tempProperties.Node = CreateTree(cwc, tempProperties.Properties, curNode);
+                    var node = CreateTree(cwc, refHolder.Properties, curNode);
+                    if (property is TempProperties tempProperties)
+                        tempProperties.Node = node;
                 }
-                else if (property is IReferenceHolder refHolder)
-                    refHolder.Properties.SetCWC(cwc);
             }
             return curNode;
         }

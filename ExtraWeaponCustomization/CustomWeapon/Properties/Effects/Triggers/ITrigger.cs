@@ -97,7 +97,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 "sprintend" or "runend" => new BasicTrigger<WeaponSprintEndContext>(TriggerName.SprintEnd),
                 "jump" => new BasicTrigger<WeaponJumpContext>(TriggerName.Jump),
                 "jumpend" => new BasicTrigger<WeaponJumpEndContext>(TriggerName.JumpEnd),
-                "reference" => new ReferenceCallTrigger(),
+                string reference when reference.StartsWith("reference") => new ReferenceCallTrigger(origName.TrimStart(' ')["reference".Length..]),
                 string key when key.StartsWith("key") => DetermineKeyTrigger(name),
                 string init when init.ContainsAny("setup", "init", "drop") => new InitTrigger(name),
                 string sync when sync.Contains("sync") => DetermineModSyncTrigger(origName, sync),

@@ -29,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 amount = ClipMaxRel >= 0 ? CalculateAmount(fireContext.ClipRel) : CalculateAmount(fireContext.Clip);
                 return true;
             }
-            else if (context is WeaponInitContext initContext)
+            else if (context is WeaponCreatedContext initContext)
             {
                 var gun = (IGunComp)initContext.Weapon;
                 amount = ClipMaxRel >= 0 ? CalculateAmount((float)gun.GetCurrentClip() / gun.GetMaxClip()) : CalculateAmount(gun.GetCurrentClip());
