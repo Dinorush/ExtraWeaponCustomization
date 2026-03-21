@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         }
     }
 
-    public interface ITriggerCallbackSync : ITriggerCallback, IWeaponProperty<WeaponTriggerContext>
+    public interface ITriggerCallbackSync : ITriggerCallback
     {
         public ushort SyncID { get; set; }
 
@@ -42,6 +42,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     public interface ITriggerCallbackDirSync : ITriggerCallbackSync
     {
         public void TriggerApplySync(Vector3 position, Vector3 dir, float mod);
+    }
+
+    public interface ITriggerCallbackImpactSync : ITriggerCallbackSync
+    {
+        public void TriggerApplySync(Vector3 position, Vector3 dir, Vector3 normal, float mod);
     }
 
     public interface ITriggerCallbackAgentSync : ITriggerCallbackSync

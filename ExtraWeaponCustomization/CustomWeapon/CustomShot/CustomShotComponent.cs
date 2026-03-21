@@ -58,44 +58,49 @@ namespace EWC.CustomWeapon.CustomShot
         public void FireSpread(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default)
         {
             CalcRayDir(ref fireRay, hitData.angOffsetX, hitData.angOffsetY, hitData.randomSpread);
-            hitData.fireDir = fireRay.direction;
             Fire(fireRay, fxPos, hitData, friendlyMask, ignoreEnt);
         }
 
-        public void Fire(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default)
+        public int Fire(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default)
         {
+            hitData.fireDir = fireRay.direction;
+
             if (!_owner.IsType(OwnerType.Managed))
             {
                 if (Projectile == null)
                     FireVisual(fireRay, fxPos, hitData);
-                return;
+                return 0;
             }
 
             if (Projectile != null)
             {
                 Projectile.Fire(fireRay, fxPos, hitData, ignoreEnt);
-                return;
+                return 0;
             }
 
-            new ShotHitbox(this, hitData, fireRay, fxPos, friendlyMask, ignoreEnt);
+            ShotHitbox hitbox = new(this, hitData, fireRay, fxPos, friendlyMask, ignoreEnt);
+            return hitbox.Fire();
         }
 
-        public void FireCustom(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default, CustomShotSettings shotSettings = default)
+        public int FireCustom(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default, CustomShotSettings shotSettings = default)
         {
+            hitData.fireDir = fireRay.direction;
+
             if (!_owner.IsType(OwnerType.Managed))
             {
                 if (shotSettings.projectile == null)
                     FireVisual(fireRay, fxPos, hitData);
-                return;
+                return 0;
             }
 
             if (shotSettings.projectile != null)
             {
                 shotSettings.projectile.Fire(fireRay, fxPos, hitData, ignoreEnt);
-                return;
+                return 0;
             }
 
-            new ShotHitbox(this, hitData, fireRay, fxPos, friendlyMask, ignoreEnt, shotSettings);
+            ShotHitbox hitbox = new(this, hitData, fireRay, fxPos, friendlyMask, ignoreEnt, shotSettings);
+            return hitbox.Fire();
         }
 
         private void FireVisual(Ray fireRay, Vector3 fxPos, HitData hitData)
@@ -134,7 +139,7 @@ namespace EWC.CustomWeapon.CustomShot
             ray.direction = CalcRayDir(ray.direction, x, y, spread);
         }
 
-        class ShotHitbox
+        struct ShotHitbox
         {
             private readonly CustomShotComponent _parent;
             private readonly IWeaponComp _weapon;
@@ -178,6 +183,8 @@ namespace EWC.CustomWeapon.CustomShot
                     if (ignoreEnt != IntPtr.Zero)
                         _hitEnts.Add(ignoreEnt);
                 }
+                else
+                    _hitEnts = null;
 
                 _wallPierce = shotSettings.wallPierce;
                 _hitSize = 0;
@@ -204,11 +211,9 @@ namespace EWC.CustomWeapon.CustomShot
                 }
 
                 _hitFunc = shotSettings.hitFunc;
-
-                Fire();
             }
 
-            public void Fire()
+            public int Fire()
             {
                 // Stops at padlocks but that's the same behavior as vanilla so idc
                 Vector3 fxPos;
@@ -230,10 +235,11 @@ namespace EWC.CustomWeapon.CustomShot
                 }
 
                 _parent._cwc.Invoke(new WeaponShotEndContext(_hitData.damageType.GetBaseType(), _hitData.shotInfo, _origInfo));
+                return _pierceCount;
             }
 
             // Return false if bullet ended by hitting enemies, or true otherwise
-            public bool Fire_Internal(Vector3 endRayPos, bool hitWall, RaycastHit wallRayHit, out Vector3 fxTarget)
+            private bool Fire_Internal(Vector3 endRayPos, bool hitWall, RaycastHit wallRayHit, out Vector3 fxTarget)
             {
                 if (!CheckCollisionInitial(endRayPos, out fxTarget)) return false;
 

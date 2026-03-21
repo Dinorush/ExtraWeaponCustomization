@@ -78,12 +78,13 @@ namespace EWC.CustomWeapon.Properties.Traits
         // Used by Shrapnel to override properties that the hitbox uses
 
         private Func<HitData, ContextController, bool>? _hitFuncOverride = null;
-        public Func<HitData, ContextController, bool>? HitFuncOverride => _hitFuncOverride;
+        public Func<HitData, ContextController, bool>? HitFuncOverride => _useOverrides ? _hitFuncOverride : null;
 
         private WallPierce? _wallPierceOverride = null;
         public WallPierce? WallPierce => _useOverrides ? _wallPierceOverride : CWC?.GetTrait<WallPierce>();
 
         private bool _useOverrides = false;
+        private float _cachedVisualDist = 0;
         private float _cachedRayDist;
         private ushort _shotIndex = 0;
 
@@ -137,7 +138,17 @@ namespace EWC.CustomWeapon.Properties.Traits
             _useOverrides = true;
             _hitFuncOverride = hitFunc;
             _wallPierceOverride = wallPierce;
-            VisualLerpDist = 0f;
+            if (VisualLerpDist != 0)
+            {
+                _cachedVisualDist = VisualLerpDist;
+                VisualLerpDist = 0f;
+            }
+        }
+
+        internal void DisableOverrides()
+        {
+            _useOverrides = false;
+            VisualLerpDist = _cachedVisualDist;
         }
 
         public override void Serialize(Utf8JsonWriter writer)

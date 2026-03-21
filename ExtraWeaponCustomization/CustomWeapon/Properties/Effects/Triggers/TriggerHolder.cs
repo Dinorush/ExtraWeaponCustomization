@@ -97,14 +97,22 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             activate &= _triggerSum >= Threshold;
             if (activate)
             {
-                if (ConsumeThreshold)
-                    _triggerSum -= Threshold;
                 if (Apply == null)
+                {
+                    if (ConsumeThreshold)
+                        _triggerSum -= Threshold;
                     return true;
+                }
 
                 foreach (ITrigger trigger in Apply)
+                {
                     if (trigger.Invoke(context, out float amount) && amount > 0)
+                    {
+                        if (ConsumeThreshold)
+                            _triggerSum -= Threshold;
                         return true;
+                    }
+                }
             }
 
             if (Cancel != null)
@@ -137,14 +145,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         protected void SetCooldown(float time) => _nextTriggerTime = Math.Max(Clock.Time + time, _nextTriggerTime);
 
-        protected void ClearAccumulated()
-        {
-            _triggerSum = 0f;
-        }
-
         public virtual void Reset(bool resetAccumulated = true)
         {
-            _triggerSum = 0f;
+            if (resetAccumulated)
+                _triggerSum = 0f;
             _triggerCount = 0f;
             _delayedReset.Cancel();
 

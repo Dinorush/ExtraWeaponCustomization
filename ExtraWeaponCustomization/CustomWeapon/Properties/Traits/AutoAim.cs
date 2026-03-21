@@ -428,11 +428,6 @@ namespace EWC.CustomWeapon.Properties.Traits
             List<(EnemyAgent, float)>? angleList = null; // Needed for later comparisons with current target
             switch (TargetPriority)
             {
-                case TargetingPriority.Angle:
-                    angleList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetSearchTargetPos(enemy) - ray.origin)));
-                    angleList.Sort(SortUtil.FloatTuple);
-                    SortUtil.CopySortedList(angleList, enemies);
-                    break;
                 case TargetingPriority.Distance:
                     var distList = enemies.ConvertAll(enemy => (enemy, (GetSearchTargetPos(enemy) - ray.origin).sqrMagnitude));
                     distList.Sort(SortUtil.FloatTuple);
@@ -446,8 +441,11 @@ namespace EWC.CustomWeapon.Properties.Traits
                     SortUtil.CopySortedList(healthList, enemies);
                     break;
                 default:
-                    return null;
-            };
+                    angleList = enemies.ConvertAll(enemy => (enemy, Vector3.Angle(ray.direction, GetSearchTargetPos(enemy) - ray.origin)));
+                    angleList.Sort(SortUtil.FloatTuple);
+                    SortUtil.CopySortedList(angleList, enemies);
+                    break;
+            }
 
             // New targets scanned don't check weakspots for performance.
             // Still, we want to consider current target's weakspots (since it's already cached and feels better).
@@ -761,7 +759,8 @@ namespace EWC.CustomWeapon.Properties.Traits
     {
         Normal,
         Body,
-        Weakspot
+        Weakspot,
+        ClosestLimb
     }
 
     public enum TargetingPriority

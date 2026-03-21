@@ -60,7 +60,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override bool ShouldRegister(Type contextType)
         {
-            if (contextType == typeof(WeaponStealthUpdateContext)) return !LocalSoundOnly && !UseNoiseSystem && SNet.IsMaster;
+            if (contextType == typeof(WeaponStealthUpdateContext)) return !LocalSoundOnly && !UseNoiseSystem && SNet.IsMaster && (FakeAlertRadius > 0 || AlertAmount > 0 || WakeUpRadius > 0);
 
             return base.ShouldRegister(contextType);
         }

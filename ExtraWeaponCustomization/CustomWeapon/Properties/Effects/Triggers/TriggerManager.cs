@@ -15,6 +15,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     {
         private readonly static TriggerSync _triggerSync = new();
         private readonly static TriggerDirSync _triggerDirSync = new();
+        private readonly static TriggerImpactSync _triggerImpactSync = new();
         private readonly static TriggerAgentSync _triggerAgentSync = new();
         private readonly static TriggerResetSync _resetSync = new();
         private readonly static Dictionary<(OwnerType ownerType, InventorySlot slot), Queue<Action>> _queuedReceives = new();
@@ -25,6 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             _triggerSync.Setup();
             _triggerDirSync.Setup();
+            _triggerImpactSync.Setup();
             _triggerAgentSync.Setup();
             _resetSync.Setup();
         }
@@ -80,6 +82,26 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         {
             if (TryGetTriggerSync(data.instance, out var callback))
                 ((ITriggerCallbackDirSync)callback).TriggerApplySync(data.position, data.dir.Value, data.instance.mod.Get(MaxMod));
+            else if (storeOnFail)
+                QueueReceive(data.instance, () => Internal_ReceiveInstance(data, storeOnFail: false));
+            else
+                LogFailMessage(data.instance);
+        }
+
+        public static void SendInstance(ITriggerCallbackImpactSync caller, Vector3 position, Vector3 dir, Vector3 normal, float mod = 1f)
+        {
+            TriggerImpactInstanceData data = default;
+            data.position = position;
+            data.dir.Value = dir;
+            data.normal.Value = normal;
+            data.instance = PackInstance(caller, mod);
+            _triggerImpactSync.Send(data);
+        }
+
+        internal static void Internal_ReceiveInstance(TriggerImpactInstanceData data, bool storeOnFail = true)
+        {
+            if (TryGetTriggerSync(data.instance, out var callback))
+                ((ITriggerCallbackImpactSync)callback).TriggerApplySync(data.position, data.dir.Value, data.normal.Value, data.instance.mod.Get(MaxMod));
             else if (storeOnFail)
                 QueueReceive(data.instance, () => Internal_ReceiveInstance(data, storeOnFail: false));
             else
@@ -175,6 +197,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     {
         public Vector3 position;
         public LowResVector3_Normalized dir;
+        public TriggerInstanceData instance;
+    }
+
+    public struct TriggerImpactInstanceData
+    {
+        public Vector3 position;
+        public LowResVector3_Normalized dir;
+        public LowResVector3_Normalized normal;
         public TriggerInstanceData instance;
     }
 

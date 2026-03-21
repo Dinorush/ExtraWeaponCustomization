@@ -1,4 +1,6 @@
 ﻿using Agents;
+using AmorLib.Utils;
+using Enemies;
 using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
@@ -23,12 +25,12 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class Shrapnel :
         Effect,
         IWeaponProperty<WeaponCreatedContext>,
-        ITriggerCallbackDirSync,
+        ITriggerCallbackImpactSync,
         IReferenceHolder
     {
         public ushort SyncID { get; set; }
 
-        public uint Count { get; private set; } = 0;
+        public int Count { get; private set; } = 0;
         public uint ArchetypeID { get; private set; } = 0;
         public float MaxRange { get; private set; } = 0;
         public float MaxAngle { get; private set; } = 180;
@@ -55,6 +57,14 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool RunHitTriggers { get; private set; } = true;
         public bool ApplyAttackCooldown { get; private set; } = true;
         public TriggerPosMode ApplyPositionMode { get; private set; } = TriggerPosMode.Relative;
+        public bool SearchEnabled { get; private set; } = false;
+        public int SearchCap { get; private set; } = 0;
+        public int SearchCapPerTarget { get; private set; } = 1;
+        public float SearchRange { get; private set; } = 0f;
+        public float SearchAngle { get; private set; } = 180f;
+        public float SearchShotMaxAngle { get; private set; } = 0f;
+        public TargetingMode SearchTargetMode { get; private set; } = TargetingMode.ClosestLimb;
+        public TargetingPriority SearchTargetPriority { get; private set; } = TargetingPriority.Distance;
 
         private const float WallHitBuffer = 0.03f;
 
@@ -85,17 +95,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                 StaggerDamageMulti = archBlock.StaggerDamageMulti;
                 PierceLimit = archBlock.PierceLimit();
             }
-
-            _shotSettings.projectile?.SetOverrides(DoProjectileHit, _shotSettings.wallPierce);
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
             foreach (var tContext in contexts)
             {
-                var amount = (int)(tContext.triggerAmt * Count);
-                if (amount < 1) continue;
-
                 ShotInfo? info = null;
                 IntPtr ignoreBase = IntPtr.Zero;
                 float falloff = 1f;
@@ -128,56 +133,113 @@ namespace EWC.CustomWeapon.Properties.Effects
                     position = CWC.Owner.FirePos;
                 }
 
-                if (!CWC.HasTrait<Traits.Projectile>())
-                    TriggerManager.SendInstance(this, position, normal, tContext.triggerAmt);
-                DoShrapnel(position, dir, normal, amount, falloff, info, ignoreBase);
+                dir = ComputeBaseDir(dir, normal);
+
+                if (_shotSettings.projectile != null)
+                    TriggerManager.SendInstance(this, position, dir, normal, tContext.triggerAmt);
+                DoShrapnel(position, dir, normal, tContext.triggerAmt, falloff, info, ignoreBase);
             }
         }
 
-        public void TriggerApplySync(Vector3 position, Vector3 direction, float triggerAmt)
+        public void TriggerApplySync(Vector3 position, Vector3 direction, Vector3 normal, float triggerAmt)
         {
-            // Should always be an int, so round JFS in case of network compression errors.
-            var amount = (int)Math.Round(triggerAmt * Count);
-            DoShrapnelVisual(position, direction, amount);
+            DoShrapnelVisual(position, direction, normal, triggerAmt);
         }
 
         public override void TriggerReset() { }
         public void TriggerResetSync() { }
 
-        private void DoShrapnelVisual(Vector3 position, Vector3 normal, int amount)
+        private bool ForceRandomDir(Vector3 normal)
+        {
+            return MaxAngle >= 180 || FireFrom switch
+            {
+                FireSetting.HitPos => false,
+                _ => normal == Vector3.zero
+            };
+        }
+
+        private Vector3 ComputeBaseDir(Vector3 dir, Vector3 normal)
+        {
+            Vector3 baseDir = dir;
+            if (!ForceRandomDir(normal))
+            {
+                switch (FireFrom)
+                {
+                    case FireSetting.HitNormal:
+                        baseDir = normal;
+                        break;
+                    case FireSetting.HitReflect:
+                        baseDir = Vector3.Reflect(dir, normal);
+                        break;
+                    case FireSetting.HitPos:
+                        baseDir = normal == Vector3.zero ? dir : Vector3.Reflect(dir, normal);
+                        break;
+                }
+            }
+
+            return baseDir;
+        }
+
+        private List<Vector3> GenerateRayDirs(Vector3 position, Vector3 dir, Vector3 normal)
+        {
+            List<Vector3> results;
+            if (SearchEnabled && SearchCap > 0 && CWC.Owner.IsType(OwnerType.Managed))
+            {
+                results = GetBestEnemyDirs(position, dir);
+                for (int i = 0; i < results.Count; i++)
+                    results[i] = CustomShotComponent.CalcRayDir(results[i], 0, 0, SearchShotMaxAngle);
+                results.EnsureCapacity((int)Count);
+            }
+            else
+                results = new((int)Count);
+
+            for (int i = results.Count; i < Count; i++)
+            {
+                Vector3 rayDir;
+                if (ForceRandomDir(normal))
+                    rayDir = UnityEngine.Random.onUnitSphere;
+                else
+                    rayDir = CustomShotComponent.CalcRayDir(dir, 0, 0, MaxAngle);
+
+                if (normal != Vector3.zero && Vector3.Dot(rayDir, normal) < 0)
+                {
+                    if (FireFrom == FireSetting.HitReflect || FireFrom == FireSetting.HitPos)
+                        rayDir = Vector3.Reflect(rayDir, normal);
+                    else if (FireFrom == FireSetting.HitNormal)
+                        rayDir = -rayDir;
+                }
+                results.Add(rayDir);
+            }
+            return results;
+        }
+
+        private void DoShrapnelVisual(Vector3 position, Vector3 direction, Vector3 normal, float triggerAmt)
         {
             HitData hitData = new(DamageType.Shrapnel)
             {
                 owner = CWC.Owner.Player,
                 pierceLimit = 1,
-                damage = Damage
+                damage = Damage * triggerAmt
             };
-            var ray = new Ray(position, normal);
 
-            for (int i = 0; i < amount; i++)
+            var ray = new Ray(position, direction);
+            var rayDirs = GenerateRayDirs(position, direction, normal);
+            for (int i = 0; i < Count; i++)
             {
-                if (MaxAngle < 180 && ray.direction != Vector3.zero)
-                    CustomShotComponent.CalcRayDir(ref ray, 0, 0, MaxAngle);
-                else
-                    ray.direction = UnityEngine.Random.onUnitSphere;
-
-                if (normal != Vector3.zero && Vector3.Dot(ray.direction, normal) < 0)
-                    ray.direction = -ray.direction;
-                hitData.fireDir = ray.direction;
+                ray.direction = rayDirs[i];
                 CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, shotSettings: _shotSettings);
             }
         }
 
-        private void DoShrapnel(Vector3 position, Vector3 dir, Vector3 normal, int amount, float falloff, ShotInfo? shotInfo = null, IntPtr ignoreEnt = default)
+        private void DoShrapnel(Vector3 position, Vector3 dir, Vector3 normal, float triggerAmt, float falloff, ShotInfo? shotInfo = null, IntPtr ignoreEnt = default)
         {
-            var ray = new Ray(position, normal);
-
-            var inventorySlot = CWC.Weapon.InventorySlot;
-            for (int i = 0; i < amount; i++)
+            var ray = new Ray(position, dir);
+            var rayDirs = GenerateRayDirs(position, dir, normal);
+            for (int i = 0; i < Count; i++)
             {
                 HitData hitData = new(DamageType.Shrapnel);
                 hitData.owner = CWC.Owner.Player;
-                hitData.shotInfo.Reset(Damage, PrecisionDamageMulti, StaggerDamageMulti, CWC, shotInfo, UseParentShotMod);
+                hitData.shotInfo.Reset(Damage * triggerAmt, PrecisionDamageMulti, StaggerDamageMulti, CWC, shotInfo, UseParentShotMod);
                 hitData.falloff = IgnoreFalloff ? 1f : falloff;
                 hitData.pierceLimit = PierceLimit;
                 hitData.damage = hitData.shotInfo.OrigDamage;
@@ -187,26 +249,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 hitData.maxRayDist = MaxRange;
                 hitData.RayHit = default;
 
-                if (MaxAngle < 180 && (normal != Vector3.zero || FireFrom == FireSetting.HitPos))
-                {
-                    if (FireFrom == FireSetting.HitReflect)
-                        ray.direction = Vector3.Reflect(dir, normal);
-                    else if (FireFrom == FireSetting.HitPos)
-                        ray.direction = dir;
-
-                    CustomShotComponent.CalcRayDir(ref ray, 0, 0, MaxAngle);
-                }
-                else
-                    ray.direction = UnityEngine.Random.onUnitSphere;
-
-                if (normal != Vector3.zero && Vector3.Dot(ray.direction, normal) < 0)
-                {
-                    if (FireFrom == FireSetting.HitReflect)
-                        ray.direction = Vector3.Reflect(ray.direction, normal);
-                    else if (FireFrom == FireSetting.HitNormal)
-                        ray.direction = -ray.direction;
-                }
-
+                ray.direction = rayDirs[i];
                 switch (WallHandling)
                 {
                     case ShrapnelFallback.Avoid:
@@ -219,10 +262,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                         if (CheckNearbyWall(ray, out var bounceHit))
                         {
                             hitData.maxRayDist = bounceHit.distance;
-                            hitData.fireDir = ray.direction;
-                            ToggleRunTriggers(false);
-                            CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
-                            ToggleRunTriggers(true);
+                            ToggleShotModifiers(false);
+                            hitData.pierceLimit = CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
+                            ToggleShotModifiers(true);
+                            if (hitData.pierceLimit == 0) continue;
+
                             ray.origin = bounceHit.point + bounceHit.normal * WallHitBuffer;
                             ray.direction = Vector3.Reflect(ray.direction, bounceHit.normal);
                             hitData.maxRayDist = MaxRange - bounceHit.distance;
@@ -232,10 +276,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                         break;
                 }
 
-                hitData.fireDir = ray.direction;
-                ToggleRunTriggers(false);
+                ToggleShotModifiers(false);
                 CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
-                ToggleRunTriggers(true);
+                ToggleShotModifiers(true);
             }
         }
 
@@ -249,8 +292,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             return false;
         }
 
-        private void ToggleRunTriggers(bool enable)
+        private void ToggleShotModifiers(bool enable)
         {
+            if (!enable)
+                _shotSettings.projectile?.SetOverrides(DoProjectileHit, _shotSettings.wallPierce);
+            else
+                _shotSettings.projectile?.DisableOverrides();
             if (!RunHitTriggers)
                 CWC.RunHitTriggers = enable;
         }
@@ -273,6 +320,99 @@ namespace EWC.CustomWeapon.Properties.Effects
         }
 
         private bool DoProjectileHit(HitData hitData, ContextController cc) => ShrapnelHitManager.DoHit(this, hitData, cc, calcFalloff: false);
+
+        private List<Vector3> GetBestEnemyDirs(Vector3 position, Vector3 dir)
+        {
+            List<(EnemyAgent enemy, RaycastHit hit)> enemyHits;
+            if (SearchTargetMode == TargetingMode.ClosestLimb)
+            {
+                SearchSetting settings = SearchSetting.ClosestHit | SearchSetting.CheckLOS;
+                SearchUtil.SightBlockLayer = LayerUtil.MaskWorld;
+                enemyHits = SearchUtil.GetEnemyHitsInRange(new(position, dir), SearchRange, SearchAngle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex), settings);
+            }
+            else
+            {
+                var enemies = SearchUtil.GetEnemiesInRange(new(position, dir), SearchRange, SearchAngle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex));
+                enemyHits = enemies.ConvertAll(enemy => (enemy, default(RaycastHit)));
+            }
+
+            Vector3 GetTargetPos((EnemyAgent enemy, RaycastHit hit) pair) => SearchTargetMode switch
+            {
+                TargetingMode.Body => pair.enemy.AimTargetBody.position,
+                TargetingMode.ClosestLimb => pair.hit.point,
+                _ => pair.enemy.AimTarget.position,
+            };
+
+            bool TryGetClosestWeakspotPos((EnemyAgent enemy, RaycastHit hit) pair, out Vector3 pos)
+            {
+                float minDist = float.MaxValue;
+                pos = default;
+                foreach (var limb in pair.enemy.Damage.DamageLimbs)
+                {
+                    if (limb.TryGetComp<Collider>(out var collider) && collider.enabled && limb.m_type == eLimbDamageType.Weakspot)
+                    {
+                        float dist = (limb.DamageTargetPos - position).magnitude;
+                        if (minDist > dist && !Physics.Linecast(position, limb.DamageTargetPos, LayerUtil.MaskWorld))
+                        {
+                            minDist = dist;
+                            pos = limb.DamageTargetPos;
+                        }
+                    }
+                }
+                return minDist < float.MaxValue;
+            }
+
+            switch (SearchTargetPriority)
+            {
+                case TargetingPriority.Distance:
+                    var distList = enemyHits.ConvertAll(pair => (pair, (GetTargetPos(pair) - position).sqrMagnitude));
+                    distList.Sort(SortUtil.FloatTuple);
+                    SortUtil.CopySortedList(distList, enemyHits);
+                    break;
+                case TargetingPriority.Health:
+                    // Since we prefer higher HealthMax, need to invert angles so the reverse gets the right order
+                    var healthList = enemyHits.ConvertAll(pair => (pair, pair.enemy.Damage.HealthMax, 180f - Vector3.Angle(dir, GetTargetPos(pair) - position)));
+                    healthList.Sort(SortUtil.FloatTuple);
+                    healthList.Reverse();
+                    SortUtil.CopySortedList(healthList, enemyHits);
+                    break;
+                default:
+                    var angleList = enemyHits.ConvertAll(pair => (pair, Vector3.Angle(dir, GetTargetPos(pair) - position)));
+                    angleList.Sort(SortUtil.FloatTuple);
+                    SortUtil.CopySortedList(angleList, enemyHits);
+                    break;
+            }
+
+            var maxCount = Count;
+            if (SearchCap > 0 && SearchCap < maxCount)
+                maxCount = SearchCap;
+            List<Vector3> targets = new(Math.Min(maxCount, enemyHits.Count * SearchCapPerTarget));
+            for (int i = 0; i < enemyHits.Count && targets.Count < maxCount; i++)
+            {
+                var pair = enemyHits[i];
+                if (SearchTargetMode == TargetingMode.Weakspot)
+                {
+                    if (TryGetClosestWeakspotPos(pair, out var pos))
+                        targets.Add(pos);
+                }
+                else
+                {
+                    Vector3 pos = GetTargetPos(pair);
+                    if (SearchTargetMode == TargetingMode.ClosestLimb || !Physics.Linecast(position, pos, LayerUtil.MaskWorld))
+                        targets.Add(pos);
+                }
+            }
+
+            if (SearchCapPerTarget > 0 && SearchCapPerTarget * targets.Count < maxCount)
+                maxCount = SearchCapPerTarget * targets.Count;
+            if (targets.Count == maxCount)
+                return targets;
+
+            var targetCount = targets.Count;
+            for (int i = 0; targets.Count < maxCount; i++)
+                targets.Add(targets[i % targetCount]);
+            return targets;
+        }
 
         public void OnReferenceSet(WeaponPropertyBase property) => CheckAndSetTrait(property);
 
@@ -322,6 +462,14 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
             writer.WriteString(nameof(ApplyPositionMode), ApplyPositionMode.ToString());
+            writer.WriteBoolean(nameof(SearchEnabled), SearchEnabled);
+            writer.WriteNumber(nameof(SearchCap), SearchCap);
+            writer.WriteNumber(nameof(SearchCapPerTarget), SearchCapPerTarget);
+            writer.WriteNumber(nameof(SearchRange), SearchRange);
+            writer.WriteNumber(nameof(SearchAngle), SearchAngle);
+            writer.WriteNumber(nameof(SearchShotMaxAngle), SearchShotMaxAngle);
+            writer.WriteString(nameof(SearchTargetMode), SearchTargetMode.ToString());
+            writer.WriteString(nameof(SearchTargetPriority), SearchTargetPriority.ToString());
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -341,7 +489,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             switch (property)
             {
                 case "count":
-                    Count = reader.GetUInt32();
+                    Count = Math.Max(0, reader.GetInt32());
                     break;
                 case "maxrange":
                 case "range":
@@ -454,6 +602,34 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "applyonuser":
                     ApplyPositionMode = TriggerPosMode.User;
+                    break;
+                case "searchenabled":
+                case "search":
+                    SearchEnabled = reader.GetBoolean();
+                    break;
+                case "searchcap":
+                    SearchCap = Math.Max(0, reader.GetInt32());
+                    break;
+                case "searchcappertarget":
+                    SearchCapPerTarget = Math.Max(1, reader.GetInt32());
+                    break;
+                case "searchrange":
+                    SearchRange = reader.GetSingle();
+                    break;
+                case "searchangle":
+                    SearchAngle = reader.GetSingle();
+                    break;
+                case "searchshotmaxangle":
+                case "searchshotangle":
+                    SearchShotMaxAngle = reader.GetSingle();
+                    break;
+                case "targetingmode":
+                case "targetmode":
+                    SearchTargetMode = reader.GetString().ToEnum(SearchTargetMode);
+                    break;
+                case "targetingpriority":
+                case "targetpriority":
+                    SearchTargetPriority = reader.GetString().ToEnum(SearchTargetPriority);
                     break;
             }
         }

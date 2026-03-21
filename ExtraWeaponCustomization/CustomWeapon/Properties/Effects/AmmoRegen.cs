@@ -22,6 +22,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public float ClipRegen { get; private set; } = 0f;
         public float ReserveRegen { get; private set; } = 0f;
+        public int ChangeMin { get; private set; } = 1;
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
         public bool UseRawAmmo { get; private set; } = false;
@@ -164,7 +165,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _clipBuffer = addClip ? _clipBuffer + ClipRegen * delta : 0;
                 _reserveBuffer = addReserve ? _reserveBuffer + ReserveRegen * delta : 0;
 
-                float min = UseRawAmmo ? costOfBullet : 1f;
+                float min = ChangeMin * (UseRawAmmo ? costOfBullet : 1f);
                 if (Math.Abs(_clipBuffer) < min && Math.Abs(_reserveBuffer) < min)
                 {
                     yield return null;
@@ -268,6 +269,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(ClipRegen), ClipRegen);
             writer.WriteNumber(nameof(ReserveRegen), ReserveRegen);
+            writer.WriteNumber(nameof(ChangeMin), ChangeMin);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
@@ -295,6 +297,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "reservechange":
                 case "reserve":
                     ReserveRegen = reader.GetSingle();
+                    break;
+                case "changemin":
+                    ChangeMin = Math.Max(1, reader.GetInt32());
                     break;
                 case "overflowtoreserve":
                 case "overflow":

@@ -16,6 +16,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         protected override void Receive(TriggerDirInstanceData packet) => TriggerManager.Internal_ReceiveInstance(packet);
     }
 
+    internal sealed class TriggerImpactSync : SyncedEvent<TriggerImpactInstanceData>
+    {
+        public override string GUID => "TRGIMP";
+
+        protected override void Receive(TriggerImpactInstanceData packet) => TriggerManager.Internal_ReceiveInstance(packet);
+    }
+
     internal sealed class TriggerAgentSync : SyncedEvent<TriggerAgentInstanceData>
     {
         public override string GUID => "TRGAGT";
