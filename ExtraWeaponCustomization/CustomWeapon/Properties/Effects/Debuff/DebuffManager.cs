@@ -12,6 +12,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
     {
         private readonly static Dictionary<BaseDamageableWrapper, DebuffShotHolder[]> _shotMods = new();
         private readonly static Dictionary<BaseDamageableWrapper, DebuffStackHolder> _armorShreds = new();
+        private readonly static Dictionary<BaseDamageableWrapper, DebuffPlayerShotHolder> _armorMods = new();
 
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
@@ -53,6 +54,65 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
                 return true;
             }
             mod = default;
+            return false;
+        }
+
+        public static DebuffModifierBase AddArmorModBuff(IDamageable damageable, float mod, StackType layer, PlayerDamageType[] damageType)
+        {
+            if (!_armorMods.TryGetValue(TempWrapper.Set(damageable), out var armorMods))
+            {
+                _armorMods
+                    .Where(kv => !kv.Key.Alive)
+                    .ToList()
+                    .ForEach(kv =>
+                    {
+                        kv.Value.Reset();
+                        _armorMods.Remove(kv.Key);
+                    });
+
+                _armorMods.Add(new BaseDamageableWrapper(TempWrapper), armorMods = new());
+            }
+
+            return armorMods.AddModifier(mod, layer, damageType);
+        }
+
+        public static DebuffModifierBase AddArmorImmuneBuff(IDamageable damageable, PlayerDamageType[] damageType)
+        {
+            if (!_armorMods.TryGetValue(TempWrapper.Set(damageable), out var armorMods))
+            {
+                _armorMods
+                    .Where(kv => !kv.Key.Alive)
+                    .ToList()
+                    .ForEach(kv =>
+                    {
+                        kv.Value.Reset();
+                        _armorMods.Remove(kv.Key);
+                    });
+
+                _armorMods.Add(new BaseDamageableWrapper(TempWrapper), armorMods = new());
+            }
+
+            return armorMods.AddImmuneModifier(damageType);
+        }
+
+        public static bool TryGetArmorModBuff(IDamageable damageable, PlayerDamageType damageType, out bool immune, out float mod)
+        {
+            if (_armorMods.TryGetValue(TempWrapper.Set(damageable), out var shotMods))
+            {
+                if (shotMods.IsImmune(damageType))
+                {
+                    immune = true;
+                    mod = 0f;
+                }
+                else
+                {
+                    immune = false;
+                    mod = shotMods.GetMod(damageType).Value;
+                }
+                return true;
+            }
+            mod = 0f;
+            immune = false;
             return false;
         }
 

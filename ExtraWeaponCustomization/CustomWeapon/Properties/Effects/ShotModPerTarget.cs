@@ -73,12 +73,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     if (damageable == null) continue;
 
                     TempWrapper.Set(damageable);
-                    if (!triggerDict.ContainsKey(TempWrapper))
-                        triggerDict.Add(new BaseDamageableWrapper(TempWrapper), (0, hitContext.ShotInfo.Orig));
-
-                    var pair = triggerDict[TempWrapper];
-                    pair.triggerAmt += context.triggerAmt;
-                    triggerDict[TempWrapper] = pair;
+                    if (!triggerDict.TryGetValue(TempWrapper, out var pair))
+                        triggerDict.Add(new BaseDamageableWrapper(TempWrapper), (context.triggerAmt, hitContext.ShotInfo.Orig));
+                    else
+                        triggerDict[TempWrapper] = (Combine(pair.triggerAmt, context.triggerAmt), pair.info);
                 }
 
                 foreach ((BaseDamageableWrapper wrapper, (float triggerAmt, ShotInfo info)) in triggerDict)

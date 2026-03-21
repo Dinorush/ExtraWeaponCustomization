@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace EWC.CustomWeapon.Properties.Effects.Debuff
 {

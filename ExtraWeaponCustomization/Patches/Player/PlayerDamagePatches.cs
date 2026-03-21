@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon;
 using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using HarmonyLib;
 
@@ -59,11 +60,17 @@ namespace EWC.Patches.Player
         [HarmonyPrefix]
         private static void Pre_TakeDamage(Dam_PlayerDamageBase __instance, ref float damage, ref bool __state)
         {
-            var owner = __instance.Owner.Owner;
-            var context = CustomWeaponManager.InvokeOnGear(owner, new WeaponPlayerArmorContext(damage, _damageType));
-            _currentDamage = damage = context.Damage;
-            _currentImmune = context.Immune;
+            if (DebuffManager.TryGetArmorModBuff(__instance.Cast<IDamageable>(), _damageType, out _currentImmune, out var mod))
+            {
+                if (_currentImmune)
+                    _currentDamage = 0;
+                else
+                    _currentDamage = mod > 0 ? _currentDamage / mod : float.PositiveInfinity;
+            }
+            else
+                _currentDamage = damage;
 
+            var owner = __instance.Owner.Owner;
             __state = damage > 0 && __instance.Health > 0 && (owner.IsLocal || (owner.IsBot && SNetwork.SNet.IsMaster));
         }
 

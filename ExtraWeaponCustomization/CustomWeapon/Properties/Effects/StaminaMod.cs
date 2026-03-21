@@ -1,6 +1,8 @@
 ﻿using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Effects.Stamina;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
-using System;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
+using Player;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -13,39 +15,41 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float StaminaChange { get; private set; } = 0f;
         public float Cap { get; private set; } = -1f;
         public bool CancelRegen { get; private set; } = false;
+        public bool ApplyToTarget { get; private set; } = false;
 
-        protected override OwnerType RequiredOwnerType => OwnerType.Local;
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
+
+        public override bool ValidProperty()
+        {
+            if (!ApplyToTarget && !CWC.Owner.IsType(OwnerType.Local))
+                return false;
+            return base.ValidProperty();
+        }
 
         public override void TriggerReset() {}
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
             float cap = Cap >= 0f ? Cap : (StaminaChange > 0 ? 1 : 0);
-            float stamChange = StaminaChange * contexts.Sum(tContext => tContext.triggerAmt);
-
-            var stam = CWC.Owner.Player!.Stamina;
-            // Have to write this myself since vanilla UseStamina can't give stamina
-            if (stamChange > 0)
+            if (ApplyToTarget)
             {
-                if (DramaManager.InActionState)
-                    cap = Math.Min(cap, stam.PlayerData.StaminaMaximumCapWhenInCombat);
+                foreach (var tContext in contexts)
+                {
+                    PlayerAgent? target;
+                    if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(DamageType.Player))
+                        target = damContext.Damageable.GetBaseAgent().Cast<PlayerAgent>();
+                    else
+                        target = CWC.Owner.Player;
 
-                if (stam.Stamina >= cap) return;
-
-                stam.Stamina = Math.Min(cap, stam.Stamina + stamChange);
+                    if (target != null)
+                        StaminaManager.DoStaminaChange(target, StaminaChange * tContext.triggerAmt, cap, this);
+                }
             }
             else
             {
-                if (!DramaManager.InActionState)
-                    cap = Math.Max(cap, stam.PlayerData.StaminaMinimumCapWhenNotInCombat);
-
-                if (stam.Stamina <= cap) return;
-
-                stam.Stamina = Math.Max(cap, stam.Stamina + stamChange);
+                if (CWC.Owner.Player != null)
+                    StaminaManager.DoStaminaChange(CWC.Owner.Player, StaminaChange * contexts.Sum(tContext => tContext.triggerAmt), cap, this);
             }
-
-            if (CancelRegen)
-                stam.m_lastExertion = Clock.Time;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -55,6 +59,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(StaminaChange), StaminaChange);
             writer.WriteNumber(nameof(Cap), Cap);
             writer.WriteBoolean(nameof(CancelRegen), CancelRegen);
+            writer.WriteBoolean(nameof(ApplyToTarget), ApplyToTarget);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -76,6 +81,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "cancelregen":
                     CancelRegen = reader.GetBoolean();
+                    break;
+                case "applytotarget":
+                    ApplyToTarget = reader.GetBoolean();
                     break;
                 default:
                     break;

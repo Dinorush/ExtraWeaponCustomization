@@ -62,6 +62,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             return clamped ? ClampToCap(result) : result;
         }
 
+        protected float Combine(float triggerAmtA, float triggerAmtB)
+        {
+            return StackType switch
+            {
+                StackType.None => triggerAmtA,
+                StackType.Multiply or StackType.Add => triggerAmtA + triggerAmtB,
+                StackType.Max => triggerAmtA > triggerAmtB ? triggerAmtA : triggerAmtB,
+                StackType.Min => triggerAmtA > triggerAmtB ? triggerAmtB : triggerAmtA,
+                _ => 0f
+            };
+        }
+
         protected float Count(IEnumerable<TriggerInstance> contexts)
         {
             if (!contexts.Any()) return 0f;
@@ -70,7 +82,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 StackType.None => contexts.First().triggerAmt,
                 StackType.Multiply or StackType.Add => contexts.Sum(context => context.triggerAmt),
-                StackType.Max or StackType.Min => Mod > 1f ? contexts.Max(x => x.triggerAmt) : contexts.Min(x => x.triggerAmt),
+                StackType.Max => contexts.Max(x => x.triggerAmt),
+                StackType.Min => contexts.Min(x => x.triggerAmt),
                 _ => 0f
             };
         }
@@ -83,7 +96,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 StackType.None => contexts.First().triggerAmt,
                 StackType.Multiply or StackType.Add => contexts.Sum(context => context.triggerAmt),
-                StackType.Max or StackType.Min => Mod > 1f ? contexts.Max(x => x.triggerAmt) : contexts.Min(x => x.triggerAmt),
+                StackType.Max => contexts.Max(x => x.triggerAmt),
+                StackType.Min => contexts.Min(x => x.triggerAmt),
                 _ => 0f
             };
         }

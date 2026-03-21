@@ -90,16 +90,16 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     if (damageable == null) continue;
 
                     TempWrapper.Set(damageable);
-                    if (!triggerDict.ContainsKey(TempWrapper))
-                        triggerDict.Add(new BaseDamageableWrapper(TempWrapper), 0);
-
-                    triggerDict[TempWrapper] += context.triggerAmt;
+                    if (!triggerDict.TryGetValue(TempWrapper, out var amt))
+                        triggerDict.Add(new BaseDamageableWrapper(TempWrapper), context.triggerAmt);
+                    else
+                        triggerDict[TempWrapper] = Combine(amt, context.triggerAmt);
                 }
 
                 foreach ((BaseDamageableWrapper wrapper, float triggerAmt) in triggerDict)
                 {
                     AddTriggerInstance(wrapper, triggerAmt);
-                    TriggerManager.SendInstance(this, wrapper.Object!.GetBaseAgent());
+                    TriggerManager.SendInstance(this, wrapper.Object!.GetBaseAgent(), triggerAmt);
                 }
             }
             else
@@ -108,11 +108,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 IDamageable damageable = hitContext.Damageable;
                 if (damageable == null) return;
 
+                var triggerAmt = contexts[0].triggerAmt;
                 AddTriggerInstance(
                     new BaseDamageableWrapper(damageable),
-                    contexts[0].triggerAmt
+                    triggerAmt
                     );
-                TriggerManager.SendInstance(this, damageable.GetBaseAgent());
+                TriggerManager.SendInstance(this, damageable.GetBaseAgent(), triggerAmt);
             }
         }
 
@@ -121,7 +122,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             AddTriggerInstance(new BaseDamageableWrapper(target.GetComponent<IDamageable>()), mod);
         }
 
-        private void AddTriggerInstance(BaseDamageableWrapper wrapper, float triggerAmt)
+        protected void AddTriggerInstance(BaseDamageableWrapper wrapper, float triggerAmt)
         {
             if (!_storedDebuffs.TryGetValue(wrapper, out var debuff))
             {

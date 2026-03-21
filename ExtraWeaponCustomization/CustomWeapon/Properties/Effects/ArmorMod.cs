@@ -1,67 +1,108 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
+using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
-using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class ArmorMod :
-        TriggerMod,
-        ITriggerCallbackBasicSync,
-        IWeaponProperty<WeaponPlayerArmorContext>
+        TriggerModDebuff
     {
-        public ushort SyncID { get; set; }
-
         public PlayerDamageType[] DamageType { get; private set; } = PlayerDamageTypeConst.Any;
         public bool Immune { get; private set; } = false;
+        public bool ApplyToTarget { get; private set; } = false;
 
-        private readonly TriggerStack _triggerStack;
+        protected override OwnerType RequiredOwnerType => OwnerType.Managed;
 
-        protected override OwnerType RequiredOwnerType => OwnerType.Player;
+        private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
-        public ArmorMod() => _triggerStack = new(this);
+        public ArmorMod() { }
+
+        public override bool ValidProperty()
+        {
+            if (!ApplyToTarget && !CWC.Owner.IsType(OwnerType.Local))
+                return false;
+            return base.ValidProperty();
+        }
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
-            var num = Count(contexts);
-            TriggerApplySync(num);
-            TriggerManager.SendInstance(this, num);
-        }
-
-        public void TriggerApplySync(float num)
-        {
-            _triggerStack.Add(num);
-        }
-
-        public override void TriggerReset()
-        {
-            TriggerResetSync();
-            TriggerManager.SendReset(this);
-        }
-
-        public void TriggerResetSync()
-        {
-            _triggerStack.Clear();
-        }
-
-        public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);
-
-        public void Invoke(WeaponPlayerArmorContext context)
-        {
-            if (!context.DamageType.HasFlagIn(DamageType)) return;
-
-            if (Immune)
+            if (!ApplyToTarget)
             {
-                context.Immune = true;
+                var player = CWC.Owner.Player;
+                if (player != null)
+                {
+                    var triggerAmt = Count(contexts);
+                    AddTriggerInstance(
+                        new(player.Damage.Cast<IDamageable>()),
+                        triggerAmt
+                        );
+                    TriggerManager.SendInstance(this, player, triggerAmt);
+                }
                 return;
             }
-            
-            if (!_triggerStack.TryGetMod(out float mod)) return;
 
-            context.AddMod(mod, StackLayer);
+            if (contexts.Count > 1)
+            {
+                Dictionary<BaseDamageableWrapper, float> triggerDict = new();
+                foreach (var context in contexts)
+                {
+                    if (!TryGetPlayerDamageable(context, out var damageable)) continue;
+
+                    TempWrapper.Set(damageable);
+                    if (!triggerDict.TryGetValue(TempWrapper, out var amt))
+                        triggerDict.Add(new BaseDamageableWrapper(TempWrapper), context.triggerAmt);
+                    else
+                        triggerDict[TempWrapper] = Combine(amt, context.triggerAmt);
+                }
+
+                foreach ((BaseDamageableWrapper wrapper, float triggerAmt) in triggerDict)
+                {
+                    AddTriggerInstance(wrapper, triggerAmt);
+                    TriggerManager.SendInstance(this, wrapper.Object!.GetBaseAgent(), triggerAmt);
+                }
+            }
+            else
+            {
+                if (!TryGetPlayerDamageable(contexts[0], out var damageable)) return;
+
+                var triggerAmt = contexts[0].triggerAmt;
+                AddTriggerInstance(
+                    new BaseDamageableWrapper(damageable),
+                    triggerAmt
+                    );
+                TriggerManager.SendInstance(this, damageable.GetBaseAgent(), triggerAmt);
+            }
         }
+
+        private bool TryGetPlayerDamageable(TriggerContext tContext, [MaybeNullWhen(false)] out IDamageable damageable)
+        {
+            if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(Enums.DamageType.Player))
+            {
+                damageable = damContext.Damageable;
+                return true;
+            }
+            else if (CWC.Owner.Player != null)
+            {
+                damageable = CWC.Owner.Player.Damage.Cast<IDamageable>();
+                return true;
+            }
+            damageable = null;
+            return false;
+        }
+
+        protected override DebuffModifierBase AddModifier(IDamageable damageable)
+        {
+            if (Immune)
+                return DebuffManager.AddArmorImmuneBuff(damageable, DamageType);
+            else
+                return DebuffManager.AddArmorModBuff(damageable, 1f, StackLayer, DamageType);
+        }
+
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
@@ -75,6 +116,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(CombineDecayTime), CombineDecayTime);
             writer.WriteString(nameof(StackType), StackType.ToString());
             writer.WriteString(nameof(StackLayer), StackLayer.ToString());
+            writer.WriteBoolean(nameof(ApplyToTarget), ApplyToTarget);
+            writer.WriteNumber(nameof(GlobalID), GlobalID);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -91,6 +134,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "immune":
                 case "immunity":
                     Immune = reader.GetBoolean();
+                    break;
+                case "applytotarget":
+                    ApplyToTarget = reader.GetBoolean();
                     break;
             }
         }

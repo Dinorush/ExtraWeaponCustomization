@@ -28,7 +28,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         protected abstract void OnUpdate(float mod);
         protected abstract void OnDisable();
 
-        public override void TriggerReset()
+        public override void TriggerReset() => TriggerResetSync();
+
+        public void TriggerResetSync()
         {
             _triggerStack.Clear();
             _updateTimes.Clear();
@@ -36,15 +38,17 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             OnDisable();
         }
 
-        public override void TriggerApply(List<TriggerContext> contexts)
+        public override void TriggerApply(List<TriggerContext> contexts) => TriggerApplySync(Count(contexts));
+
+        public void TriggerApplySync(float amount)
         {
-            _triggerStack.Add(contexts);
+            _triggerStack.Add(amount);
             if (_triggerStack.TryGetMod(out var mod))
             {
                 OnUpdate(mod);
                 EnqueueUpdate();
             }
-            else if(CoroutineUtil.Stop(ref _updateRoutine))
+            else if (CoroutineUtil.Stop(ref _updateRoutine))
                 OnDisable();
         }
 
