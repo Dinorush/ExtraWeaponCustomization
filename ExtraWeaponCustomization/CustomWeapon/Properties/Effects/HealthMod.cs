@@ -4,7 +4,6 @@ using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Dependencies;
 using Player;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -48,7 +47,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void DoHeal(PlayerAgent target, float mod)
         {
-            float cap = CapRel >= 0f ? CapRel : Math.Sign(HealthChangeRel);
+            float cap = CapRel >= 0f ? CapRel : (HealthChangeRel > 0 ? 1 : 0);
             float heal = HealthChangeRel * target.Damage.HealthMax * mod;
 
             HealManager.DoHeal(

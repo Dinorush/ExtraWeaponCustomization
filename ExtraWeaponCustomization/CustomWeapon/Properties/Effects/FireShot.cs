@@ -254,7 +254,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 owner = CWC.Owner.Player,
                 damage = archData.Damage,
                 pierceLimit = 1,
-                fireDir = ray.direction,
                 angOffsetX = x,
                 angOffsetY = y,
                 randomSpread = spread

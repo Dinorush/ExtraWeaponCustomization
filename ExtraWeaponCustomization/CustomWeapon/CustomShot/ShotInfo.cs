@@ -54,18 +54,24 @@ namespace EWC.CustomWeapon.CustomShot
             _state = new(this);
         }
 
-        public ShotInfo(CustomWeaponComponent cwc, bool isTagged = false)
+        public ShotInfo(CustomWeaponComponent cwc, bool modOnly = false, bool isTagged = false)
         {
             ID = ShotManager.NextID;
             _hits = new(5);
 
             RefreshMods(cwc, isTagged);
-            if (!cwc.Weapon.Type.HasFlag(WeaponType.Melee))
+            if (!modOnly && !cwc.Weapon.Type.HasFlag(WeaponType.Melee))
             {
                 var archData = ((IAmmoComp)cwc.Weapon).ArchetypeData;
                 OrigDamage = archData.Damage * InnateDamageMod;
                 OrigPrecision = archData.PrecisionDamageMulti;
                 OrigStagger = archData.StaggerDamageMulti * InnateStaggerMod;
+            }
+            else
+            {
+                OrigDamage = 0;
+                OrigPrecision = 0;
+                OrigStagger = 0;
             }
             _state = new(this);
         }

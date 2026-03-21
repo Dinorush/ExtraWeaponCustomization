@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private Coroutine? _updateRoutine = null;
         private float _nextTickTime = float.MaxValue;
 
-        public void AddDOT(ref DOTInstance newDot, IDamageable damageable)
+        public void AddDOT(DOTInstance newDot, IDamageable damageable)
         {
             IntPtr ptr = damageable.Pointer;
 
@@ -40,7 +40,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 if (key.LastInstance?.CanAddInstance(newDot.DotBase) == true)
                 {
                     key.LastInstance.AddInstance(newDot);
-                    newDot = key.LastInstance;
                 }
                 else
                 {

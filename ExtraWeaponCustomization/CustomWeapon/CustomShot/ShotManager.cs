@@ -50,7 +50,7 @@ namespace EWC.CustomWeapon.CustomShot
             {
                 if (ActiveFiringInfo.cwc != null)
                 {
-                    s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(ActiveFiringInfo.cwc, ActiveFiringInfo.isTagged));
+                    s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(ActiveFiringInfo.cwc, modOnly: false, ActiveFiringInfo.isTagged));
 
                     if (vanillaData.owner == null)
                     {

@@ -169,15 +169,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             DOTInstance newDot = new(damage, falloff, precisionMulti, staggerMulti, statContext.BypassTumorCap, backstabMulti, origBackstabMulti, info, this);
             if (StackLimit == 0)
-                _controller.AddDOT(ref newDot, context.Damageable);
+                _controller.AddDOT(newDot, context.Damageable);
             else
             {
                 ClearDeadQueues();
-                float nextTickTime = -1f;
-                Queue<DOTInstance> queue;
-                if (_lastDOTs.ContainsKey(TempWrapper))
+                if (_lastDOTs.TryGetValue(TempWrapper, out var queue))
                 {
-                    queue = _lastDOTs[TempWrapper];
                     if (queue.Count >= StackLimit)
                     {
                         // If the new instance won't do more damage than the previous, no point in adding a new one
@@ -185,27 +182,22 @@ namespace EWC.CustomWeapon.Properties.Effects
                         if (damage <= firstDot.GetRemainingDamage())
                             return;
 
-                        nextTickTime = firstDot.NextTickTime;
+                        newDot.StartWithTargetTime(firstDot.NextTickTime);
                         queue.Dequeue().Destroy();
                     }
                 }
                 else
                     _lastDOTs.Add(new BaseDamageableWrapper(context.Damageable), queue = new Queue<DOTInstance>());
 
-                _controller.AddDOT(ref newDot, context.Damageable);
-                if (newDot != null)
-                {
-                    queue.Enqueue(newDot);
-                    if (nextTickTime >= 0f)
-                        newDot.StartWithTargetTime(nextTickTime);
-                }
+                // Always adds a new DOT since StackLimit > 0
+                _controller.AddDOT(newDot, context.Damageable);
+                queue.Enqueue(newDot);
             }
         }
 
         private void ClearDeadQueues()
         {
-            List<BaseDamageableWrapper> wrappers = _lastDOTs.Keys.ToList();
-            foreach (var wrapper in wrappers)
+            foreach (var wrapper in _lastDOTs.Keys.ToArray())
             {
                 if (!wrapper.Alive)
                 {

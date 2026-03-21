@@ -81,9 +81,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             ShotInfo shotInfo;
             if (triggerInfo != null)
-                shotInfo = new(triggerInfo, true, explosiveBase.UseParentShotMod);
+                shotInfo = new(triggerInfo, modOnly: true, explosiveBase.UseParentShotMod);
             else
-                shotInfo = new(explosiveBase.CWC);
+                shotInfo = new(explosiveBase.CWC, modOnly: true);
 
             var oldInfo = shotInfo.State;
             foreach (RaycastHit hit in hits)
