@@ -51,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool UseParentShotMod { get; private set; } = true;
         public bool DamageFriendly { get; private set; } = true;
         public bool DamageOwner { get; private set; } = true;
-        public bool DamageLocks { get; private set; } = true;
+        public bool DamageObjects { get; private set; } = true;
         public PropertyList Properties { get; private set; } = new();
         public bool TriggerScaleCount { get; private set; } = true;
         public bool HitTriggerTarget { get; private set; } = false;
@@ -489,7 +489,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(UseParentShotMod), UseParentShotMod);
             writer.WriteBoolean(nameof(DamageFriendly), DamageFriendly);
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
-            writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
+            writer.WriteBoolean(nameof(DamageObjects), DamageObjects);
             EWCJson.Serialize(writer, "Traits", Properties);
             writer.WriteBoolean(nameof(TriggerScaleCount), TriggerScaleCount);
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
@@ -617,7 +617,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                     _friendlyMask |= LayerUtil.MaskLocal;
                     break;
                 case "damagelocks":
-                    DamageLocks = reader.GetBoolean();
+                case "damageobjects":
+                    DamageObjects = reader.GetBoolean();
                     break;
                 case "traits":
                     Properties = EWCJson.Deserialize<PropertyList>(ref reader)!;

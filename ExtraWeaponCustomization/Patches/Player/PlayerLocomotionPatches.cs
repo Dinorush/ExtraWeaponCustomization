@@ -48,8 +48,11 @@ namespace EWC.Patches.Player
         [HarmonyPostfix]
         private static void EnterJump(PLOC_Jump __instance)
         {
-            _inJump = true;
-            CustomWeaponManager.InvokeOnGear(__instance.m_owner.Owner, StaticContext<WeaponJumpContext>.Instance);
+            if (!_inJump)
+            {
+                _inJump = true;
+                CustomWeaponManager.InvokeOnGear(__instance.m_owner.Owner, StaticContext<WeaponJumpContext>.Instance);
+            }
         }
 
         [HarmonyPatch(typeof(PLOC_Jump), nameof(PLOC_Jump.CommonExit))]
@@ -57,11 +60,14 @@ namespace EWC.Patches.Player
         [HarmonyPostfix]
         private static void ExitJump(PLOC_Jump __instance)
         {
-            var owner = __instance.m_owner;
-            if (owner.IsLocallyOwned && owner.Locomotion.m_currentStateEnum != PlayerLocomotion.PLOC_State.Fall)
+            if (_inJump)
             {
-                CustomWeaponManager.InvokeOnGear(owner.Owner, StaticContext<WeaponJumpEndContext>.Instance);
-                _inJump = false;
+                var owner = __instance.m_owner;
+                if (owner.IsLocallyOwned && owner.Locomotion.m_currentStateEnum != PlayerLocomotion.PLOC_State.Fall)
+                {
+                    CustomWeaponManager.InvokeOnGear(owner.Owner, StaticContext<WeaponJumpEndContext>.Instance);
+                    _inJump = false;
+                }
             }
         }
 
@@ -82,11 +88,14 @@ namespace EWC.Patches.Player
         [HarmonyPostfix]
         private static void ExitFall(PLOC_Fall __instance)
         {
-            var owner = __instance.m_owner;
-            if (owner.Locomotion.m_currentStateEnum != PlayerLocomotion.PLOC_State.Jump)
+            if (_inJump)
             {
-                CustomWeaponManager.InvokeOnGear(owner.Owner, StaticContext<WeaponJumpEndContext>.Instance);
-                _inJump = false;
+                var owner = __instance.m_owner;
+                if (owner.Locomotion.m_currentStateEnum != PlayerLocomotion.PLOC_State.Jump)
+                {
+                    CustomWeaponManager.InvokeOnGear(owner.Owner, StaticContext<WeaponJumpEndContext>.Instance);
+                    _inJump = false;
+                }
             }
         }
     }

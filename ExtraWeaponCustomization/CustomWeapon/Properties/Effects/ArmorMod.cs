@@ -20,7 +20,11 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
 
-        public ArmorMod() { }
+        public ArmorMod() : base()
+        {
+            Trigger = null!;
+            SetValidTriggers();
+        }
 
         public override bool ValidProperty()
         {

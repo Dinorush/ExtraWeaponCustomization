@@ -26,7 +26,7 @@ namespace EWC.Utils
             if (damageable == null) return false;
             
             Agents.Agent? agent = damageable.GetBaseAgent();
-            return agent != null || damageable.TryCast<LevelGeneration.LG_WeakLockDamage>() != null;
+            return agent != null || damageable.TryCast<LevelGeneration.LG_WeakDoorBladeDamage>() == null;
         }
 
         public static bool IsEnemy([NotNullWhen(true)] this IDamageable? damageable)

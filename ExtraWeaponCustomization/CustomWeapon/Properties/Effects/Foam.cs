@@ -44,7 +44,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public Foam()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.BulletLanded));
-            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.HitTriggers.Extend(TriggerName.BulletLanded, TriggerName.ChargeLanded));
+            SetValidTriggers(DamageType.Player | DamageType.Object, ITrigger.HitTriggers.Extend(TriggerName.BulletLanded, TriggerName.ChargeLanded));
         }
 
         public override void TriggerReset() {}
@@ -56,7 +56,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 var baseContext = (WeaponHitContextBase)tContext.context;
                 // Can't spawn glue on or do glue damage to players/locks. If we hit a door (none of the damage types), ignore it if we don't bubble doors
-                if (baseContext.DamageType.HasAnyFlag(DamageType.Player | DamageType.Lock))
+                if (baseContext.DamageType.HasAnyFlag(DamageType.Player | DamageType.Object))
                     continue;
 
                 float sizeMod = tContext.triggerAmt * (IgnoreFalloff ? 1f : baseContext.Falloff);

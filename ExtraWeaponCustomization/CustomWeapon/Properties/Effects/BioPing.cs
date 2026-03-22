@@ -20,7 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public BioPing() : base()
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
-            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.HitTriggers);
+            SetValidTriggers(DamageType.Player | DamageType.Object, ITrigger.HitTriggers);
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)

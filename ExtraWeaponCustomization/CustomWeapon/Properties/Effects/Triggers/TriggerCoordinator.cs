@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
 using EWC.Utils;
+using System.Collections.Generic;
 
 namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
@@ -50,6 +51,20 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             // Reset stored activations AND any related behavior on the callback this coordinator is tied to
             if (!ResetPreviousOnly && reset)
                 Reset!.ResetTriggers();
+        }
+
+        public void RemoteActivateTrigger(List<TriggerContext> contexts)
+        {
+            if (Activate.RemoteActivate(contexts))
+                Activate.ApplyTriggers();
+        }
+
+        public void RemoteResetTrigger(List<TriggerContext> contexts)
+        {
+            if (Reset == null) return;
+
+            if (Reset.RemoteActivate(contexts))
+                Reset.ResetTriggers();
         }
 
         public void ForceReset()

@@ -20,6 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public float Chance { get; private set; } = 1f;
         public float ResetDelay { get; private set; } = 0f;
         public bool ConsumeThreshold { get; private set; } = false;
+        public bool AllowOnce { get; private set; } = false;
 
         public List<ITrigger>? Apply { get; private set; }
 
@@ -34,6 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         protected float _triggerSum = 0f;
         protected float _triggerCount = 0f;
         protected float _nextTriggerTime = 0f;
+        protected bool _allow = true;
 
         public TriggerHolder(TriggerCoordinator parent, params ITrigger[] triggers)
         {
@@ -71,7 +73,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public bool Invoke(WeaponTriggerContext context)
         {
             bool activate = _triggerSum > 0;
-            if (Clock.Time >= _nextTriggerTime
+            if (_allow
+             && Clock.Time >= _nextTriggerTime
              && (Cap == 0 || _triggerSum < Cap)
              && (Chance == 1f || Chance > Random.NextSingle()))
             {
@@ -99,6 +102,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             {
                 if (Apply == null)
                 {
+                    _allow = !AllowOnce;
                     if (ConsumeThreshold)
                         _triggerSum -= Threshold;
                     return true;
@@ -108,6 +112,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 {
                     if (trigger.Invoke(context, out float amount) && amount > 0)
                     {
+                        _allow = !AllowOnce;
                         if (ConsumeThreshold)
                             _triggerSum -= Threshold;
                         return true;
@@ -127,6 +132,27 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 }
             }
 
+            return false;
+        }
+
+        public bool RemoteActivate(List<TriggerContext> contexts)
+        {
+            if (!_allow) return false;
+
+            foreach (var tContext in contexts)
+            {
+                if (Cap > 0 && _triggerSum >= Cap) break;
+
+                AddTrigger(tContext.context, tContext.triggerAmt);
+            }
+
+            if (_triggerSum >= Threshold)
+            {
+                _allow = !AllowOnce;
+                if (ConsumeThreshold)
+                    _triggerSum -= Threshold;
+                return true;
+            }
             return false;
         }
 
@@ -151,6 +177,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 _triggerSum = 0f;
             _triggerCount = 0f;
             _delayedReset.Cancel();
+            _allow = true;
 
             Triggers.ForEach(trigger => trigger.Reset());
             Apply?.ForEach(trigger => trigger.Reset());
@@ -208,6 +235,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                     break;
                 case "consumethreshold":
                     ConsumeThreshold = reader.GetBoolean();
+                    break;
+                case "allowonce":
+                    AllowOnce = reader.GetBoolean();
                     break;
                 case "apply":
                     Apply = DeserializeTriggers(ref reader);

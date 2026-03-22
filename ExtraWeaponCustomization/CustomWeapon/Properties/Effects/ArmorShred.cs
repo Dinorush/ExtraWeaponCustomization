@@ -9,7 +9,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public ArmorShred() : base()
         {
-            SetValidTriggers(DamageType.Player | DamageType.Lock, ITrigger.HitTriggers);
+            SetValidTriggers(DamageType.Player | DamageType.Object, ITrigger.HitTriggers);
         }
 
         protected override DebuffModifierBase AddModifier(IDamageable damageable)

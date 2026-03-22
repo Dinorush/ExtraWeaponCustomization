@@ -117,9 +117,9 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 _playerSync.Send(playerData);
                 return true;
             }
-            else if (hitData.damageType.HasFlag(DamageType.Lock)) // Lock damage; direction doesn't matter
+            else if (hitData.damageType.HasFlag(DamageType.Object)) // Lock damage; direction doesn't matter
             {
-                if (!shrapnel.DamageLocks)
+                if (!shrapnel.DamageObjects)
                     return false;
                 cc.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 damageable.BulletDamage(damage, source, hitData.hitPos, hitData.fireDir, hitData.RayHit.normal);

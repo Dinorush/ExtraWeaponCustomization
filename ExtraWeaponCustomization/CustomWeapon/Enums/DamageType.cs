@@ -23,7 +23,7 @@ namespace EWC.CustomWeapon.Enums
         Unstaggered = 1<<12,
         Enemy = 1<<13,
         Player = 1<<14,
-        Lock = 1<<15,
+        Object = 1<<15,
         Dead = 1<<16,
         Terrain = 1<<17 | Dead
     }
@@ -84,8 +84,8 @@ namespace EWC.CustomWeapon.Enums
                 flag |= DamageType.Enemy;
             else if (name.Contains("player") || name.Contains("friendly"))
                 flag |= DamageType.Player;
-            else if (name.Contains("lock"))
-                flag |= DamageType.Lock;
+            else if (name.Contains("object") || name.Contains("lock"))
+                flag |= DamageType.Object;
 
             if (name.Contains("bullet") || name.Contains("melee"))
                 flag |= DamageType.Bullet;
@@ -136,8 +136,8 @@ namespace EWC.CustomWeapon.Enums
             Agent? agent = damageable.GetBaseAgent();
             if (agent == null)
             {
-                if (damageable.TryCast<LevelGeneration.LG_WeakLockDamage>() != null)
-                    return DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Lock;
+                if (damageable.TryCast<LevelGeneration.LG_WeakDoorBladeDamage>() == null)
+                    return DamageType.Flesh | DamageType.Body | DamageType.Unfoamed | DamageType.Object;
                 else
                     return DamageType.Terrain;
             }
