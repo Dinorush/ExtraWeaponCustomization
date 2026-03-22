@@ -303,7 +303,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         internal static void Internal_ReceiveExplosionDamagePlayer(PlayerAgent target, PlayerAgent? source, OwnerType ownerType, float damage, Vector3 direction)
         {
-            EWCLogger.Log($"Receiving damage! {target.Owner.NickName}");
             ShotManager.ReceivePlayerDamage(target, damage, PlayerDamageType.Explosive | PlayerDamageType.Player, direction);
 
             if (target.IsLocallyOwned)

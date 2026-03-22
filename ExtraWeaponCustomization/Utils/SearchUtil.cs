@@ -356,27 +356,14 @@ namespace EWC.Utils
                 if (!settings.HasFlag(SearchSetting.CheckOwner) && isOwner) continue;
                 if (!settings.HasFlag(SearchSetting.CheckFriendly) && !isOwner) continue;
 
-                if ((ClosestPointOnBounds(player.m_movingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange)
-                {
-                    EWCLogger.Log($"Player bounds out of range ({player.Owner.NickName})!");
-                    continue;
-                }
+                if ((ClosestPointOnBounds(player.m_movingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange) continue;
                 if (player.IsLocallyOwned)
                 {
                     // Local players have one collider; checking LoS can easily put the floor as the closest point, so this uses a custom position
-                    EWCLogger.Log($"Checking local player...");
                     s_ray.origin = ray.origin;
                     s_ray.direction = player.Damage.DamageTargetPos - ray.origin;
-                    if (!player.GetComponent<Collider>().Raycast(s_ray, out s_rayHit, range))
-                    {
-                        EWCLogger.Log($"Failed to raycast to local player!");
-                        continue;
-                    }
-                    if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, s_rayHit.point, SightBlockLayer))
-                    {
-                        EWCLogger.Log($"Got an object in the linecast!");
-                        continue;
-                    }
+                    if (!player.GetComponent<Collider>().Raycast(s_ray, out s_rayHit, range)) continue;
+                    if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, s_rayHit.point, SightBlockLayer)) continue;
                 }
                 else if (!IsAgentInCone(ray, range, angle, player, out s_rayHit, settings))
                     continue;
