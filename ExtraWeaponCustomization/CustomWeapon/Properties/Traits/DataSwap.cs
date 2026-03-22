@@ -293,7 +293,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (newArch != null)
                 newArch.m_clip = CGC.Gun.GetCurrentClip();
-            if (CGC.SpreadController.Active)
+            if (CGC.SpreadController.Active && (!CGC.Gun.IsAiming || CGC.Gun.Component.ItemDataBlock.ShowCrosshairWhenAiming))
                 GuiManager.CrosshairLayer.ShowSpreadCircle(CGC.Gun.Component.RecoilData.hipFireCrosshairSizeDefault);
 
             if (hasOwner)

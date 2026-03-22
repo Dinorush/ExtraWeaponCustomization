@@ -231,6 +231,7 @@ namespace EWC.CustomWeapon
                 _timeSensitiveCallbacks.Clear();
             }
             Invoke(StaticContext<WeaponClearContext>.Instance);
+            InvokeAll(StaticContext<WeaponDestroyedContext>.Instance);
             _propertyController.Clear();
             SpreadController.Reset();
             DebuffIDs = DebuffGroup.DefaultGroupList;

@@ -4,6 +4,7 @@ using EWC.Attributes;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils;
 using System.Collections;
@@ -16,7 +17,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 {
     public abstract class TriggerModDebuff :
         TriggerMod,
-        ITriggerCallbackAgentSync
+        ITriggerCallbackAgentSync,
+        IWeaponProperty<WeaponDestroyedContext>
     {
         public ushort SyncID { get; set; }
 
@@ -62,6 +64,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         }
 
         protected abstract DebuffModifierBase AddModifier(IDamageable damageable);
+
+        public void Invoke(WeaponDestroyedContext context) => TriggerResetSync();
 
         public override void TriggerReset() => TriggerResetSync();
 
