@@ -670,12 +670,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "searchshotspread":
                     SearchShotMaxAngle = reader.GetSingle();
                     break;
-                case "targetingmode":
-                case "targetmode":
+                case "searchtargetingmode":
+                case "searchtargetmode":
                     SearchTargetMode = reader.GetString().ToEnum(SearchTargetMode);
                     break;
-                case "targetingpriority":
-                case "targetpriority":
+                case "searchtargetingpriority":
+                case "searchtargetpriority":
                     SearchTargetPriority = reader.GetString().ToEnum(SearchTargetPriority);
                     break;
             }
