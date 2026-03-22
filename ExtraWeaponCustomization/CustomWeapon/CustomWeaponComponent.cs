@@ -217,7 +217,8 @@ namespace EWC.CustomWeapon
             _propertyController.Init(this, data.Properties.Clone());
             DebuffIDs = data.DebuffIDs.IDs;
             DebuffIDs.Add(DebuffManager.DefaultGroup);
-            InvokeAll(new WeaponCreatedContext(Owner, Weapon));
+            InvokeAll(StaticContext<WeaponCreatedContext>.Instance);
+            Invoke(new WeaponInitContext(Owner, Weapon));
             TriggerManager.RunQueuedReceives(this);
         }
 

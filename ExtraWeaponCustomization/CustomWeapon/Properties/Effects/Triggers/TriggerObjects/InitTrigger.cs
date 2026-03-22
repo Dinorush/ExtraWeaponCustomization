@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             if (_type != PlayerType.Any && SNetwork.SNet.IsMaster != (_type == PlayerType.Host))
                 return false;
 
-            if (context is WeaponCreatedContext)
+            if (context is WeaponInitContext)
             {
                 amount = Amount;
                 return true;

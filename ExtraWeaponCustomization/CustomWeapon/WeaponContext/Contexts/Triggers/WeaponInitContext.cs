@@ -2,12 +2,12 @@
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    public sealed class WeaponCreatedContext : WeaponTriggerContext
+    public sealed class WeaponInitContext : WeaponTriggerContext
     {
         public readonly IWeaponComp Weapon;
         public readonly IOwnerComp Owner;
 
-        public WeaponCreatedContext(IOwnerComp owner, IWeaponComp weapon) : base()
+        public WeaponInitContext(IOwnerComp owner, IWeaponComp weapon) : base()
         {
             Weapon = weapon;
             Owner = owner;
