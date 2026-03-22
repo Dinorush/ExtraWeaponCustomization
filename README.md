@@ -4,6 +4,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 
 #### Effects - Apply when a condition is triggered
 - Accelerate: Fire rate and/or damage changes with continuous fire. [Gun]
+- Action Lock: Prevents performing certain actions while active. [Player]
 - Ammo Mod: Modifies the magazine/reserve ammo counts.
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
 - Armor Mod: Applies a damage reduction modifier.
@@ -28,9 +29,9 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Shot Mod Debuff: Applies a global stat modifier to shots/melees unique to each target. [Hit Triggers]
 - Shot Mod Per Target: Applies a stat modifier to shots/melees unique to each target. [Hit Triggers]
 - Shrapnel: Causes bullets to fire out from where bullets land.
-- Speed Mod: Applies a modifier to the user's movement speed. [Player]
+- Speed Mod: Applies a modifier to the user's movement speed.
 - Spread Mod: Applies a spread modifier.
-- Stamina Mod: Modifies the user's stamina. [Player]
+- Stamina Mod: Modifies the user's stamina.
 - Temp Properties: Temporarily adds another set of properties.
 
 #### Traits - Innate gun behavior modifications
