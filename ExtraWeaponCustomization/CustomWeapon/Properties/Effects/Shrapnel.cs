@@ -533,6 +533,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "maxangle":
                 case "angle":
+                case "spread":
                     MaxAngle = reader.GetSingle();
                     break;
                 case "archetypeid":
@@ -666,6 +667,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "searchshotmaxangle":
                 case "searchshotangle":
+                case "searchshotspread":
                     SearchShotMaxAngle = reader.GetSingle();
                     break;
                 case "targetingmode":
