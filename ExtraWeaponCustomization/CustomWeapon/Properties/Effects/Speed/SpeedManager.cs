@@ -19,7 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Speed
 
         public static void ApplySpeedMod(SNet_Player player, SpeedMod speedMod, float triggerAmt)
         {
-            if (triggerAmt == 0) return;
+            if (triggerAmt == 0 || player.IsBot) return;
 
             SpeedData data = new() { propertyID = speedMod.SyncID };
             data.cwc.Set(speedMod.CWC);

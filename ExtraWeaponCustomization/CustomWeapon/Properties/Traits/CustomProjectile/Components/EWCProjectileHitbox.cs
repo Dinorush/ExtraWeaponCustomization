@@ -23,6 +23,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         // Set on init
         private Projectile _settings;
         private IOwnerComp _owner;
+        private IntPtr _ownerPtr;
         private readonly HashSet<IntPtr> _initialPlayers = new();
         private ShotInfo.Const _origInfo;
         private int _friendlyLayer;
@@ -85,24 +86,35 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             s_ray.direction = dir;
             _friendlyLayer = 0;
             _searchSettings = SearchSetting.ClosestHit | SearchSetting.IgnoreDupes;
-            IntPtr ownerPtr = _owner.Player?.Pointer ?? IntPtr.Zero;
-            if (ownerPtr != IntPtr.Zero && projBase.DamageOwner)
-            {
-                _searchSettings |= SearchSetting.CheckOwner;
-                _initialPlayers.Add(ownerPtr);
-                _friendlyLayer |= LayerUtil.MaskOwner;
-            }
+
+            _ownerPtr = _owner.IsType(Enums.OwnerType.Player) ? _owner.Player!.Pointer : IntPtr.Zero;
 
             if (projBase.DamageFriendly)
             {
+                if (!_owner.IsType(Enums.OwnerType.Local))
+                {
+                    _searchSettings |= SearchSetting.CheckOwner;
+                    _friendlyLayer |= LayerUtil.MaskOwner;
+                }
                 _searchSettings |= SearchSetting.CheckFriendly;
                 _friendlyLayer |= LayerUtil.MaskFriendly;
                 foreach (PlayerAgent agent in PlayerManager.PlayerAgentsInLevel)
                 {
                     Vector3 diff = agent.Position - pos;
-                    if (agent.Pointer != ownerPtr && Vector3.Dot(dir, diff) < 0)
+                    if (agent.Pointer != _ownerPtr && Vector3.Dot(dir, diff) < 0)
                         _initialPlayers.Add(agent.Pointer);
                 }
+            }
+
+            if (projBase.DamageOwner && _ownerPtr != IntPtr.Zero)
+            {
+                if (_owner.IsType(Enums.OwnerType.Local))
+                {
+                    _searchSettings |= SearchSetting.CheckOwner;
+                    _friendlyLayer |= LayerUtil.MaskOwner;
+                }
+                _initialPlayers.Add(_ownerPtr);
+                _ownerPtr = IntPtr.Zero;
             }
 
             _wallPierce = _settings.WallPierce;
@@ -379,12 +391,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Agent? agent = damageable.GetBaseAgent();
             if (agent != null)
             {
-                if (agent.Type == AgentType.Player && _initialPlayers.Contains(agent.Pointer))
+                if (agent.Type == AgentType.Player)
                 {
-                    s_playerCheck.Add(agent.Pointer);
-                    return false;
+                    var agentPtr = agent.Pointer;
+                    if (_ownerPtr == agentPtr)
+                        return false;
+                    if (_initialPlayers.Contains(agentPtr))
+                    {
+                        s_playerCheck.Add(agentPtr);
+                        return false;
+                    }
                 }
-                else if (!agent.Alive)
+                
+                if (!agent.Alive)
                     return false;
             }
 

@@ -60,8 +60,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool SearchEnabled { get; private set; } = false;
         public int SearchCap { get; private set; } = 0;
         public int SearchCapPerTarget { get; private set; } = 1;
+        public bool SearchOverflow { get; private set; } = true;
         public float SearchRange { get; private set; } = 0f;
-        public float SearchAngle { get; private set; } = 180f;
+        public float SearchAngle { get; private set; } = 0f;
         public float SearchShotMaxAngle { get; private set; } = 0f;
         public TargetingMode SearchTargetMode { get; private set; } = TargetingMode.ClosestLimb;
         public TargetingPriority SearchTargetPriority { get; private set; } = TargetingPriority.Distance;
@@ -183,15 +184,17 @@ namespace EWC.CustomWeapon.Properties.Effects
         private List<Vector3> GenerateRayDirs(Vector3 position, Vector3 dir, Vector3 normal)
         {
             List<Vector3> results;
-            if (SearchEnabled && SearchCap > 0 && CWC.Owner.IsType(OwnerType.Managed))
+            if (SearchEnabled && CWC.Owner.IsType(OwnerType.Managed))
             {
                 results = GetBestEnemyDirs(position, dir);
                 for (int i = 0; i < results.Count; i++)
                     results[i] = CustomShotComponent.CalcRayDir(results[i], 0, 0, SearchShotMaxAngle);
-                results.EnsureCapacity((int)Count);
+                if (!SearchOverflow)
+                    return results;
+                results.EnsureCapacity(Count);
             }
             else
-                results = new((int)Count);
+                results = new(Count);
 
             for (int i = results.Count; i < Count; i++)
             {
@@ -235,7 +238,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             var ray = new Ray(position, dir);
             var rayDirs = GenerateRayDirs(position, dir, normal);
-            for (int i = 0; i < Count; i++)
+            for (int i = 0; i < rayDirs.Count; i++)
             {
                 HitData hitData = new(DamageType.Shrapnel);
                 hitData.owner = CWC.Owner.Player;
@@ -323,16 +326,23 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private List<Vector3> GetBestEnemyDirs(Vector3 position, Vector3 dir)
         {
+            float range;
+            if (_shotSettings.projectile != null)
+                range = SearchRange > 0 ? Math.Min(MaxRange, SearchRange) : MaxRange;
+            else
+                range = Math.Max(MaxRange, SearchRange);
+            var angle = SearchAngle > 0 ? Math.Min(MaxAngle, SearchAngle) : MaxAngle;
+
             List<(EnemyAgent enemy, RaycastHit hit)> enemyHits;
             if (SearchTargetMode == TargetingMode.ClosestLimb)
             {
                 SearchSetting settings = SearchSetting.ClosestHit | SearchSetting.CheckLOS;
                 SearchUtil.SightBlockLayer = LayerUtil.MaskWorld;
-                enemyHits = SearchUtil.GetEnemyHitsInRange(new(position, dir), SearchRange, SearchAngle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex), settings);
+                enemyHits = SearchUtil.GetEnemyHitsInRange(new(position, dir), range, angle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex), settings);
             }
             else
             {
-                var enemies = SearchUtil.GetEnemiesInRange(new(position, dir), SearchRange, SearchAngle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex));
+                var enemies = SearchUtil.GetEnemiesInRange(new(position, dir), range, angle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex));
                 enemyHits = enemies.ConvertAll(enemy => (enemy, default(RaycastHit)));
             }
 
@@ -393,13 +403,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (SearchTargetMode == TargetingMode.Weakspot)
                 {
                     if (TryGetClosestWeakspotPos(pair, out var pos))
-                        targets.Add(pos);
+                        targets.Add((pos - position).normalized);
                 }
                 else
                 {
                     Vector3 pos = GetTargetPos(pair);
                     if (SearchTargetMode == TargetingMode.ClosestLimb || !Physics.Linecast(position, pos, LayerUtil.MaskWorld))
-                        targets.Add(pos);
+                        targets.Add((pos - position).normalized);
                 }
             }
 
@@ -465,6 +475,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(SearchEnabled), SearchEnabled);
             writer.WriteNumber(nameof(SearchCap), SearchCap);
             writer.WriteNumber(nameof(SearchCapPerTarget), SearchCapPerTarget);
+            writer.WriteBoolean(nameof(SearchOverflow), SearchOverflow);
             writer.WriteNumber(nameof(SearchRange), SearchRange);
             writer.WriteNumber(nameof(SearchAngle), SearchAngle);
             writer.WriteNumber(nameof(SearchShotMaxAngle), SearchShotMaxAngle);
@@ -612,6 +623,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "searchcappertarget":
                     SearchCapPerTarget = Math.Max(1, reader.GetInt32());
+                    break;
+                case "searchoverflow":
+                    SearchOverflow = reader.GetBoolean();
                     break;
                 case "searchrange":
                     SearchRange = reader.GetSingle();

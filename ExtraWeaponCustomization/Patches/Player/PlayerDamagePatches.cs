@@ -63,13 +63,12 @@ namespace EWC.Patches.Player
             if (DebuffManager.TryGetArmorModBuff(__instance.Cast<IDamageable>(), _damageType, out _currentImmune, out var mod))
             {
                 if (_currentImmune)
-                    _currentDamage = 0;
+                    damage = 0;
                 else
-                    _currentDamage = mod > 0 ? _currentDamage / mod : float.PositiveInfinity;
+                    damage = mod > 0 ? damage / mod : float.PositiveInfinity;
             }
-            else
-                _currentDamage = damage;
 
+            _currentDamage = damage;
             var owner = __instance.Owner.Owner;
             __state = damage > 0 && __instance.Health > 0 && (owner.IsLocal || (owner.IsBot && SNetwork.SNet.IsMaster));
         }

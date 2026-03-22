@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
 
         public DebuffPlayerShotHolder()
         {
-            _group = new(this);
+            _group = new();
         }
 
         public DebuffModifierBase AddModifier(float mod, StackType layer, PlayerDamageType[] damageType)
@@ -42,7 +42,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
         {
             private readonly HashSet<DebuffModifier>[] _layers = new HashSet<DebuffModifier>[StackTypeConst.Count];
             private readonly HashSet<ImmuneModifier> _immunities = new();
-            private readonly DebuffPlayerShotHolder _holder;
 
             private StackValue _mod = new();
             private bool _immune = false;
@@ -56,8 +55,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
             }
             private uint _recomputeMask = 0;
             private bool _recomputeImmune = false;
-
-            public DebuffPlayerShotGroup(DebuffPlayerShotHolder holder) => _holder = holder;
 
             public bool IsImmune(PlayerDamageType damageType)
             {
@@ -138,6 +135,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Debuff
 
             private void RecomputeImmunity(PlayerDamageType damageType)
             {
+                _immune = false;
                 foreach (var modifier in _immunities)
                 {
                     if (damageType.HasFlagIn(modifier.DamageType))

@@ -49,9 +49,9 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (contexts.Count == 1)
             {
                 var context = contexts[0];
-                if (TryGetSyncedPlayer(context, out var target))
+                if (TryGetPlayer(context, out var target))
                     SpeedManager.ApplySpeedMod(target.Owner, this, context.triggerAmt);
-                else if (CWC.Owner.IsType(OwnerType.Local))
+                else
                     TriggerApplySync(context.triggerAmt);
                 return;
             }
@@ -60,7 +60,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             Dictionary<ObjectWrapper<SNet_Player>, float> otherTargets = new();
             foreach (var tContext in contexts)
             {
-                if (!TryGetSyncedPlayer(tContext, out var target))
+                if (!TryGetPlayer(tContext, out var target))
                     localAmt = Combine(localAmt, tContext.triggerAmt);
                 else
                 {
@@ -71,18 +71,18 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
             }
 
-            if (localAmt > 0 && CWC.Owner.IsType(OwnerType.Local))
+            if (localAmt > 0)
                 TriggerApplySync(localAmt);
             foreach ((var wrapper, float amt) in otherTargets)
                 SpeedManager.ApplySpeedMod(wrapper.Object!, this, amt);
         }
 
-        private bool TryGetSyncedPlayer(TriggerContext tContext, [MaybeNullWhen(false)] out PlayerAgent player)
+        private bool TryGetPlayer(TriggerContext tContext, [MaybeNullWhen(false)] out PlayerAgent player)
         {
             if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(DamageType.Player))
             {
                 player = damContext.Damageable.GetBaseAgent().Cast<PlayerAgent>();
-                return !player.IsLocallyOwned;
+                return player;
             }
             player = null;
             return false;
