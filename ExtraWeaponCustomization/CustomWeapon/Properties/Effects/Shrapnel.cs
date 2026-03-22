@@ -61,6 +61,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool SearchEnabled { get; private set; } = false;
         public int SearchCap { get; private set; } = 0;
         public int SearchCapPerTarget { get; private set; } = 1;
+        public bool ScaleSearchCapPerTarget { get; private set; } = true;
         public bool SearchOverflow { get; private set; } = true;
         public float SearchRange { get; private set; } = 0f;
         public float SearchAngle { get; private set; } = 0f;
@@ -184,12 +185,15 @@ namespace EWC.CustomWeapon.Properties.Effects
             return baseDir;
         }
 
-        private List<Vector3> GenerateRayDirs(Vector3 position, Vector3 dir, Vector3 normal, int count)
+        private List<Vector3> GenerateRayDirs(Vector3 position, Vector3 dir, Vector3 normal, float triggerAmt)
         {
+            if (!TriggerScaleCount)
+                triggerAmt = 1f;
+            int count = (int) Math.Round(Count * triggerAmt);
             List<Vector3> results;
             if (SearchEnabled && CWC.Owner.IsType(OwnerType.Managed))
             {
-                results = GetBestEnemyDirs(position, dir, count);
+                results = GetBestEnemyDirs(position, dir, triggerAmt);
                 for (int i = 0; i < results.Count; i++)
                     results[i] = CustomShotComponent.CalcRayDir(results[i], 0, 0, SearchShotMaxAngle);
                 if (!SearchOverflow)
@@ -227,15 +231,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                 pierceLimit = 1,
                 damage = Damage
             };
-            int count = Count;
-            if (TriggerScaleCount)
-                count = (int)Math.Round(count * triggerAmt);
-            else
+
+            if (!TriggerScaleCount)
                 hitData.damage *= triggerAmt;
 
             var ray = new Ray(position, direction);
-            var rayDirs = GenerateRayDirs(position, direction, normal, count);
-            for (int i = 0; i < count; i++)
+            var rayDirs = GenerateRayDirs(position, direction, normal, triggerAmt);
+            for (int i = 0; i < rayDirs.Count; i++)
             {
                 ray.direction = rayDirs[i];
                 CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, shotSettings: _shotSettings);
@@ -244,15 +246,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void DoShrapnel(Vector3 position, Vector3 dir, Vector3 normal, float triggerAmt, float falloff, ShotInfo? shotInfo = null, IntPtr ignoreEnt = default)
         {
-            int count = Count;
             float damage = Damage;
-            if (TriggerScaleCount)
-                count = (int)Math.Round(count * triggerAmt);
-            else
+            if (!TriggerScaleCount)
                 damage *= triggerAmt;
 
             var ray = new Ray(position, dir);
-            var rayDirs = GenerateRayDirs(position, dir, normal, count);
+            var rayDirs = GenerateRayDirs(position, dir, normal, triggerAmt);
             for (int i = 0; i < rayDirs.Count; i++)
             {
                 HitData hitData = new(DamageType.Shrapnel);
@@ -339,8 +338,20 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private bool DoProjectileHit(HitData hitData, ContextController cc) => ShrapnelHitManager.DoHit(this, hitData, cc, calcFalloff: false);
 
-        private List<Vector3> GetBestEnemyDirs(Vector3 position, Vector3 dir, int count)
+        private List<Vector3> GetBestEnemyDirs(Vector3 position, Vector3 dir, float triggerScale)
         {
+            int count = (int)Math.Round(Count * triggerScale);
+            List<Vector3> targets = new(count);
+
+            int searchCap = (int)Math.Round(SearchCap * triggerScale);
+            if (SearchCap > 0 && searchCap < count)
+                count = searchCap;
+
+            if (count == 0) return targets;
+
+            int capPerTarget = ScaleSearchCapPerTarget ? (int)Math.Round(SearchCapPerTarget * triggerScale) : SearchCapPerTarget;
+            if (SearchCapPerTarget > 0 && capPerTarget == 0) return targets;
+
             float range;
             if (_shotSettings.projectile != null)
                 range = SearchRange > 0 ? Math.Min(MaxRange, SearchRange) : MaxRange;
@@ -408,9 +419,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
             }
 
-            if (SearchCap > 0 && SearchCap < count)
-                count = SearchCap;
-            List<Vector3> targets = new(Math.Min(count, enemyHits.Count * SearchCapPerTarget));
             for (int i = 0; i < enemyHits.Count && targets.Count < count; i++)
             {
                 var pair = enemyHits[i];
@@ -427,11 +435,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
             }
 
-            if (SearchCapPerTarget > 0 && SearchCapPerTarget * targets.Count < count)
-                count = SearchCapPerTarget * targets.Count;
+            if (capPerTarget * targets.Count < count)
+                count = capPerTarget * targets.Count;
             if (targets.Count == count)
                 return targets;
 
+            targets.EnsureCapacity(count);
             var targetCount = targets.Count;
             for (int i = 0; targets.Count < count; i++)
                 targets.Add(targets[i % targetCount]);
@@ -490,6 +499,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(SearchEnabled), SearchEnabled);
             writer.WriteNumber(nameof(SearchCap), SearchCap);
             writer.WriteNumber(nameof(SearchCapPerTarget), SearchCapPerTarget);
+            writer.WriteBoolean(nameof(ScaleSearchCapPerTarget), ScaleSearchCapPerTarget);
             writer.WriteBoolean(nameof(SearchOverflow), SearchOverflow);
             writer.WriteNumber(nameof(SearchRange), SearchRange);
             writer.WriteNumber(nameof(SearchAngle), SearchAngle);
@@ -637,10 +647,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                     SearchEnabled = reader.GetBoolean();
                     break;
                 case "searchcap":
-                    SearchCap = Math.Max(0, reader.GetInt32());
+                    SearchCap = reader.GetInt32();
                     break;
                 case "searchcappertarget":
-                    SearchCapPerTarget = Math.Max(1, reader.GetInt32());
+                    SearchCapPerTarget = reader.GetInt32();
+                    break;
+                case "scalesearchcappertarget":
+                    ScaleSearchCapPerTarget = reader.GetBoolean();
                     break;
                 case "searchoverflow":
                     SearchOverflow = reader.GetBoolean();
