@@ -22,7 +22,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public float ClipRegen { get; private set; } = 0f;
         public float ReserveRegen { get; private set; } = 0f;
-        public int ChangeMin { get; private set; } = 1;
+        public int ChangeAmount { get; private set; } = 1;
         public bool OverflowToReserve { get; private set; } = true;
         public bool PullFromReserve { get; private set; } = false;
         public bool UseRawAmmo { get; private set; } = false;
@@ -165,38 +165,38 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _clipBuffer = addClip ? _clipBuffer + ClipRegen * delta : 0;
                 _reserveBuffer = addReserve ? _reserveBuffer + ReserveRegen * delta : 0;
 
-                float min = ChangeMin * (UseRawAmmo ? costOfBullet : 1f);
-                if (Math.Abs(_clipBuffer) < min && Math.Abs(_reserveBuffer) < min)
+                int clipBullets = (int) (UseRawAmmo ? _clipBuffer / costOfBullet : _clipBuffer);
+                int reserveBullets = (int) (UseRawAmmo ? _reserveBuffer / costOfBullet : _reserveBuffer);
+                clipBullets = clipBullets / ChangeAmount * ChangeAmount;
+                reserveBullets = reserveBullets / ChangeAmount * ChangeAmount;
+
+                if (clipBullets == 0 && reserveBullets == 0)
                 {
                     yield return null;
                     continue;
                 }
 
-                if (UseRawAmmo)
-                {
-                    _clipBuffer /= costOfBullet;
-                    _reserveBuffer /= costOfBullet;
-                }
-
                 // Calculate the actual changes we can make to clip/ammo
-                int clipChange = (int)(PullFromReserve ? Math.Min(_clipBuffer, _slotAmmo.BulletsInPack) : _clipBuffer);
+                int clipChange = PullFromReserve ? Math.Min(clipBullets, _slotAmmo.BulletsInPack) : clipBullets;
                 int newClip = Math.Clamp(currClip + clipChange, 0, maxClip);
 
                 // If we overflow/underflow the magazine, send the rest to reserves (if not pulling from reserves)
                 int bonusReserve = OverflowToReserve ? clipChange - (newClip - currClip) : 0;
                 clipChange = newClip - currClip;
 
-                int reserveChange = (int)(PullFromReserve ? _reserveBuffer - clipChange : _reserveBuffer + bonusReserve);
-
-                _clipBuffer -= (int)_clipBuffer;
-                _reserveBuffer -= (int)_reserveBuffer;
+                int reserveChange = PullFromReserve ? reserveBullets - clipChange : reserveBullets + bonusReserve;
 
                 weapon.SetCurrentClip(newClip);
 
                 if (UseRawAmmo)
                 {
-                    _clipBuffer *= costOfBullet;
-                    _reserveBuffer *= costOfBullet;
+                    _clipBuffer -= clipBullets * costOfBullet;
+                    _reserveBuffer -= reserveBullets * costOfBullet;
+                }
+                else
+                {
+                    _clipBuffer -= clipBullets;
+                    _reserveBuffer -= reserveBullets;
                 }
 
                 float reserveCost = reserveChange * costOfBullet;
@@ -237,18 +237,17 @@ namespace EWC.CustomWeapon.Properties.Effects
             _clipBuffer = addClip ? _clipBuffer + ClipRegen * delta : 0;
 
             float costOfBullet = sentry.ArchetypeData.CostOfBullet;
-            float min = UseRawAmmo ? costOfBullet : 1f;
-            if (Math.Abs(_clipBuffer) < min) return true;
+            int clipBullets = (int)(UseRawAmmo ? _clipBuffer / costOfBullet : _clipBuffer);
+            clipBullets = clipBullets / ChangeAmount * ChangeAmount;
+            if (clipBullets == 0) return true;
 
-            if (UseRawAmmo)
-                _clipBuffer /= costOfBullet;
-
-            int newClip = Math.Clamp(currClip + (int)_clipBuffer, 0, maxClip);
-            _clipBuffer -= (int)_clipBuffer;
+            int newClip = Math.Clamp(currClip + clipBullets, 0, maxClip);
             sentry.SetCurrentClip(newClip);
 
             if (UseRawAmmo)
-                _clipBuffer *= costOfBullet;
+                _clipBuffer -= clipBullets * costOfBullet;
+            else
+                _clipBuffer -= clipBullets;
 
             return true;
         }
@@ -269,7 +268,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(ClipRegen), ClipRegen);
             writer.WriteNumber(nameof(ReserveRegen), ReserveRegen);
-            writer.WriteNumber(nameof(ChangeMin), ChangeMin);
+            writer.WriteNumber(nameof(ChangeAmount), ChangeAmount);
             writer.WriteBoolean(nameof(OverflowToReserve), OverflowToReserve);
             writer.WriteBoolean(nameof(PullFromReserve), PullFromReserve);
             writer.WriteBoolean(nameof(UseRawAmmo), UseRawAmmo);
@@ -298,8 +297,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "reserve":
                     ReserveRegen = reader.GetSingle();
                     break;
-                case "changemin":
-                    ChangeMin = Math.Max(1, reader.GetInt32());
+                case "changeamount":
+                    ChangeAmount = Math.Max(1, reader.GetInt32());
                     break;
                 case "overflowtoreserve":
                 case "overflow":
