@@ -5,11 +5,17 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
     [RequireType(requiredOwnerType: Enums.OwnerType.Local, requiredWeaponType: Enums.WeaponType.Gun)]
     public sealed class WeaponSwapContext : IWeaponContext
     {
-        public bool Allow { get; set; } = true;
-
-        public WeaponSwapContext(bool allow)
+        private bool _allow = true;
+        public bool AllowInBurst { get; set; }
+        public bool Allow
         {
-            Allow = allow;
+            get => _allow && AllowInBurst;
+            set => _allow = value;
+        }
+
+        public WeaponSwapContext(bool allowInBurst)
+        {
+            AllowInBurst = allowInBurst;
         }
     }
 }

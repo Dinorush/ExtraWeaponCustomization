@@ -52,7 +52,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         {
             if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
 
-            context.Allow = context.Allow || _burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel;
+            context.AllowInBurst = context.AllowInBurst || _burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
