@@ -69,8 +69,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(ray, explosiveBase.Radius, 180f, node, searchSetting))
                 hits.Add(hit);
 
+            var ownerPlayer = explosiveBase.CWC.Owner.IsType(OwnerType.Player) ? explosiveBase.CWC.Owner.Player : null;
             if (explosiveBase.DamageFriendly || explosiveBase.DamageOwner)
-                foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, searchSetting))
+                foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, ownerPlayer, searchSetting))
                     hits.Add(hit);
 
             if (explosiveBase.DamageLocks)
@@ -302,6 +303,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         internal static void Internal_ReceiveExplosionDamagePlayer(PlayerAgent target, PlayerAgent? source, OwnerType ownerType, float damage, Vector3 direction)
         {
+            EWCLogger.Log($"Receiving damage! {target.Owner.NickName}");
             ShotManager.ReceivePlayerDamage(target, damage, PlayerDamageType.Explosive | PlayerDamageType.Player, direction);
 
             if (target.IsLocallyOwned)

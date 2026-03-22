@@ -2,6 +2,7 @@
 using AmorLib.Utils;
 using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.CustomShot;
+using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Patches.Gun;
@@ -24,6 +25,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private Projectile _settings;
         private IOwnerComp _owner;
         private IntPtr _ownerPtr;
+        private PlayerAgent? _ownerPlayer;
         private readonly HashSet<IntPtr> _initialPlayers = new();
         private ShotInfo.Const _origInfo;
         private int _friendlyLayer;
@@ -32,6 +34,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private float _startLifetime;
         private eDimensionIndex _dimensionIndex;
         private bool _runHitTriggers = true;
+        private Func<HitData, ContextController, bool>? _hitFuncOverride = null;
         private bool _enabled = false;
         public HitData HitData { get; private set; } = new(Enums.DamageType.Bullet);
 
@@ -87,15 +90,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _friendlyLayer = 0;
             _searchSettings = SearchSetting.ClosestHit | SearchSetting.IgnoreDupes;
 
-            _ownerPtr = _owner.IsType(Enums.OwnerType.Player) ? _owner.Player!.Pointer : IntPtr.Zero;
+            _ownerPlayer = _owner.IsType(Enums.OwnerType.Player) ? _owner.Player : null;
+            _ownerPtr = _ownerPlayer?.Pointer ?? IntPtr.Zero;
 
             if (projBase.DamageFriendly)
             {
                 if (!_owner.IsType(Enums.OwnerType.Local))
-                {
-                    _searchSettings |= SearchSetting.CheckOwner;
-                    _friendlyLayer |= LayerUtil.MaskOwner;
-                }
+                    _friendlyLayer |= LayerUtil.MaskLocal;
                 _searchSettings |= SearchSetting.CheckFriendly;
                 _friendlyLayer |= LayerUtil.MaskFriendly;
                 foreach (PlayerAgent agent in PlayerManager.PlayerAgentsInLevel)
@@ -109,15 +110,16 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (projBase.DamageOwner && _ownerPtr != IntPtr.Zero)
             {
                 if (_owner.IsType(Enums.OwnerType.Local))
-                {
-                    _searchSettings |= SearchSetting.CheckOwner;
-                    _friendlyLayer |= LayerUtil.MaskOwner;
-                }
+                    _friendlyLayer |= LayerUtil.MaskLocal;
+                else
+                    _friendlyLayer |= LayerUtil.MaskFriendly;
+                _searchSettings |= SearchSetting.CheckOwner;
                 _initialPlayers.Add(_ownerPtr);
                 _ownerPtr = IntPtr.Zero;
             }
 
             _wallPierce = _settings.WallPierce;
+            _hitFuncOverride = projBase.HitFuncOverride;
             _pierceCount = hitData!.GetPierceOrFallback(cwc.Weapon);
             _ricochetCount = _settings.RicochetCount;
             HitData = new(hitData!);
@@ -190,7 +192,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 {
                     if (_settings.RicochetIgnorePlayers)
                     {
-                        _friendlyLayer &= ~(LayerUtil.MaskFriendly | LayerUtil.MaskOwner);
+                        _friendlyLayer &= ~(LayerUtil.MaskFriendly | LayerUtil.MaskLocal);
                         _searchSettings &= ~(SearchSetting.CheckFriendly | SearchSetting.CheckOwner);
                     }
                     if (_settings.RicochetResetHits)
@@ -256,7 +258,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     s_hits.AddRange(SearchUtil.RaycastAll(s_ray, s_velMagnitude, _friendlyLayer, _searchSettings));
                 else
                 {
-                    foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSizeFriendly, 180f, _searchSettings))
+                    foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSizeFriendly, 180f, _ownerPlayer, _searchSettings))
                         s_hits.Add(hit);
 
                     // Get all enemies/locks ahead of the projectile
@@ -394,8 +396,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 if (agent.Type == AgentType.Player)
                 {
                     var agentPtr = agent.Pointer;
-                    if (_ownerPtr == agentPtr)
+                    if (!_settings.DamageOwner && _ownerPtr == agentPtr)
                         return false;
+                    else if (!_settings.DamageFriendly && _ownerPtr != agentPtr)
+                        return false;
+
                     if (_initialPlayers.Contains(agentPtr))
                     {
                         s_playerCheck.Add(agentPtr);
@@ -443,13 +448,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             API.ProjectileAPI.FireProjectileHitCallback(_base, damageable);
 
-            if (_settings.HitFuncOverride != null)
-                return _settings.HitFuncOverride(HitData, _base.ContextController);
-            
-            ToggleRunTriggers(false);
-            WeaponPatches.ApplyEWCHit(_settings.CWC, _base.ContextController, HitData, out var backstab);
-            ToggleRunTriggers(true);
-
             foreach (var statChange in _settings.StatChanges)
             {
                 float mod = Time.time.Map(_startLifetime + statChange.Delay, _startLifetime + statChange.Delay + statChange.ChangeTime, 1f, statChange.EndFrac, statChange.Exponent);
@@ -466,6 +464,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                         break;
                 }
             }
+
+            if (_hitFuncOverride != null)
+                return _hitFuncOverride(HitData, _base.ContextController);
+
+            ToggleRunTriggers(false);
+            WeaponPatches.ApplyEWCHit(_settings.CWC, _base.ContextController, HitData, out var backstab);
+            ToggleRunTriggers(true);
 
             float damage = HitData.damage * HitData.falloff;
             if (damageable != null)

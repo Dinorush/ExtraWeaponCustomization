@@ -144,6 +144,7 @@ namespace EWC.CustomWeapon.CustomShot
             private readonly CustomShotComponent _parent;
             private readonly IWeaponComp _weapon;
             private readonly IOwnerComp _owner;
+            private readonly Player.PlayerAgent? _ownerPlayer;
             private readonly HashSet<IntPtr>? _hitEnts;
             private readonly HitData _hitData;
             private readonly ShotInfo.Const _origInfo;
@@ -169,6 +170,7 @@ namespace EWC.CustomWeapon.CustomShot
                 _parent = parent;
                 _weapon = _parent._weapon;
                 _owner = _parent._owner;
+                _ownerPlayer = _owner.IsType(OwnerType.Player) ? _owner.Player : null;
 
                 _ray = fireRay;
                 _fxPos = fxPos;
@@ -194,14 +196,27 @@ namespace EWC.CustomWeapon.CustomShot
                 {
                     _friendlyMask = LayerUtil.MaskFriendly;
                     _friendlySetting |= SearchSetting.CheckFriendly;
+                    if (!_owner.IsType(OwnerType.Local))
+                        _friendlyMask |= LayerUtil.MaskLocal;
                 }
                 else
                 {
-                    _friendlyMask = friendlyMask & (LayerUtil.MaskFriendly | LayerUtil.MaskOwner);
-                    if ((_friendlyMask & LayerUtil.MaskFriendly) != 0)
-                        _friendlySetting |= SearchSetting.CheckFriendly;
-                    if ((_friendlyMask & LayerUtil.MaskOwner) != 0)
+                    _friendlyMask = friendlyMask & (LayerUtil.MaskFriendly | LayerUtil.MaskLocal);
+                    bool checkFriendly = (_friendlyMask & LayerUtil.MaskFriendly) != 0;
+                    bool checkOwner = (_friendlyMask & LayerUtil.MaskLocal) != 0;
+                    if (checkOwner)
                         _friendlySetting |= SearchSetting.CheckOwner;
+                    if (checkFriendly)
+                        _friendlySetting |= SearchSetting.CheckFriendly;
+
+                    if (!_owner.IsType(OwnerType.Local))
+                    {
+                        _friendlyMask &= LayerUtil.MaskFriendly;
+                        if (checkOwner)
+                            _friendlyMask |= LayerUtil.MaskFriendly;
+                        if (checkFriendly)
+                            _friendlyMask |= LayerUtil.MaskLocal;
+                    }
                 }
 
                 if (shotSettings.thickBullet != null)
@@ -305,6 +320,7 @@ namespace EWC.CustomWeapon.CustomShot
                 foreach ((var damageable, var hit) in hits)
                 {
                     Agent? agent = damageable.GetBaseAgent();
+                    if (agent != null && agent == _ownerPlayer) continue;
                     if (agent != null && _wallPierce?.IsTargetReachable(_owner.CourseNode, agent.CourseNode) == false) continue;
 
                     float hitSize = agent?.Type == AgentType.Player ? _hitSizeFriendly : _hitSize;
@@ -370,7 +386,7 @@ namespace EWC.CustomWeapon.CustomShot
                
                 if (_hitSizeFriendly > 0)
                 {
-                    var players = SearchUtil.GetPlayerHitsInRange(_ray, _hitSizeFriendly, 180f, _friendlySetting);
+                    var players = SearchUtil.GetPlayerHitsInRange(_ray, _hitSizeFriendly, 180f, _ownerPlayer, _friendlySetting);
                     hits.EnsureCapacity(players.Count + hits.Count);
                     foreach ((var player, var hit) in players)
                         hits.Add((player.Cast<Agent>(), hit));

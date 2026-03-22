@@ -53,6 +53,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool DamageOwner { get; private set; } = true;
         public bool DamageLocks { get; private set; } = true;
         public PropertyList Properties { get; private set; } = new();
+        public bool TriggerScaleCount { get; private set; } = true;
         public bool HitTriggerTarget { get; private set; } = false;
         public bool RunHitTriggers { get; private set; } = true;
         public bool ApplyAttackCooldown { get; private set; } = true;
@@ -102,6 +103,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             foreach (var tContext in contexts)
             {
+                if (TriggerScaleCount && tContext.triggerAmt * Count < 1) continue;
+
                 ShotInfo? info = null;
                 IntPtr ignoreBase = IntPtr.Zero;
                 float falloff = 1f;
@@ -181,22 +184,22 @@ namespace EWC.CustomWeapon.Properties.Effects
             return baseDir;
         }
 
-        private List<Vector3> GenerateRayDirs(Vector3 position, Vector3 dir, Vector3 normal)
+        private List<Vector3> GenerateRayDirs(Vector3 position, Vector3 dir, Vector3 normal, int count)
         {
             List<Vector3> results;
             if (SearchEnabled && CWC.Owner.IsType(OwnerType.Managed))
             {
-                results = GetBestEnemyDirs(position, dir);
+                results = GetBestEnemyDirs(position, dir, count);
                 for (int i = 0; i < results.Count; i++)
                     results[i] = CustomShotComponent.CalcRayDir(results[i], 0, 0, SearchShotMaxAngle);
                 if (!SearchOverflow)
                     return results;
-                results.EnsureCapacity(Count);
+                results.EnsureCapacity(count);
             }
             else
-                results = new(Count);
+                results = new(count);
 
-            for (int i = results.Count; i < Count; i++)
+            for (int i = results.Count; i < count; i++)
             {
                 Vector3 rayDir;
                 if (ForceRandomDir(normal))
@@ -222,12 +225,17 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 owner = CWC.Owner.Player,
                 pierceLimit = 1,
-                damage = Damage * triggerAmt
+                damage = Damage
             };
+            int count = Count;
+            if (TriggerScaleCount)
+                count = (int)Math.Round(count * triggerAmt);
+            else
+                hitData.damage *= triggerAmt;
 
             var ray = new Ray(position, direction);
-            var rayDirs = GenerateRayDirs(position, direction, normal);
-            for (int i = 0; i < Count; i++)
+            var rayDirs = GenerateRayDirs(position, direction, normal, count);
+            for (int i = 0; i < count; i++)
             {
                 ray.direction = rayDirs[i];
                 CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, shotSettings: _shotSettings);
@@ -236,13 +244,20 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void DoShrapnel(Vector3 position, Vector3 dir, Vector3 normal, float triggerAmt, float falloff, ShotInfo? shotInfo = null, IntPtr ignoreEnt = default)
         {
+            int count = Count;
+            float damage = Damage;
+            if (TriggerScaleCount)
+                count = (int)Math.Round(count * triggerAmt);
+            else
+                damage *= triggerAmt;
+
             var ray = new Ray(position, dir);
-            var rayDirs = GenerateRayDirs(position, dir, normal);
+            var rayDirs = GenerateRayDirs(position, dir, normal, count);
             for (int i = 0; i < rayDirs.Count; i++)
             {
                 HitData hitData = new(DamageType.Shrapnel);
                 hitData.owner = CWC.Owner.Player;
-                hitData.shotInfo.Reset(Damage * triggerAmt, PrecisionDamageMulti, StaggerDamageMulti, CWC, shotInfo, UseParentShotMod);
+                hitData.shotInfo.Reset(damage, PrecisionDamageMulti, StaggerDamageMulti, CWC, shotInfo, UseParentShotMod);
                 hitData.falloff = IgnoreFalloff ? 1f : falloff;
                 hitData.pierceLimit = PierceLimit;
                 hitData.damage = hitData.shotInfo.OrigDamage;
@@ -324,7 +339,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private bool DoProjectileHit(HitData hitData, ContextController cc) => ShrapnelHitManager.DoHit(this, hitData, cc, calcFalloff: false);
 
-        private List<Vector3> GetBestEnemyDirs(Vector3 position, Vector3 dir)
+        private List<Vector3> GetBestEnemyDirs(Vector3 position, Vector3 dir, int count)
         {
             float range;
             if (_shotSettings.projectile != null)
@@ -393,11 +408,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
             }
 
-            var maxCount = Count;
-            if (SearchCap > 0 && SearchCap < maxCount)
-                maxCount = SearchCap;
-            List<Vector3> targets = new(Math.Min(maxCount, enemyHits.Count * SearchCapPerTarget));
-            for (int i = 0; i < enemyHits.Count && targets.Count < maxCount; i++)
+            if (SearchCap > 0 && SearchCap < count)
+                count = SearchCap;
+            List<Vector3> targets = new(Math.Min(count, enemyHits.Count * SearchCapPerTarget));
+            for (int i = 0; i < enemyHits.Count && targets.Count < count; i++)
             {
                 var pair = enemyHits[i];
                 if (SearchTargetMode == TargetingMode.Weakspot)
@@ -413,13 +427,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
             }
 
-            if (SearchCapPerTarget > 0 && SearchCapPerTarget * targets.Count < maxCount)
-                maxCount = SearchCapPerTarget * targets.Count;
-            if (targets.Count == maxCount)
+            if (SearchCapPerTarget > 0 && SearchCapPerTarget * targets.Count < count)
+                count = SearchCapPerTarget * targets.Count;
+            if (targets.Count == count)
                 return targets;
 
             var targetCount = targets.Count;
-            for (int i = 0; targets.Count < maxCount; i++)
+            for (int i = 0; targets.Count < count; i++)
                 targets.Add(targets[i % targetCount]);
             return targets;
         }
@@ -468,6 +482,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteBoolean(nameof(DamageOwner), DamageOwner);
             writer.WriteBoolean(nameof(DamageLocks), DamageLocks);
             EWCJson.Serialize(writer, "Traits", Properties);
+            writer.WriteBoolean(nameof(TriggerScaleCount), TriggerScaleCount);
             writer.WriteBoolean(nameof(HitTriggerTarget), HitTriggerTarget);
             writer.WriteBoolean(nameof(RunHitTriggers), RunHitTriggers);
             writer.WriteBoolean(nameof(ApplyAttackCooldown), ApplyAttackCooldown);
@@ -588,7 +603,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "damageowner":
                 case "damageuser":
                     DamageOwner = reader.GetBoolean();
-                    _friendlyMask |= LayerUtil.MaskOwner;
+                    _friendlyMask |= LayerUtil.MaskLocal;
                     break;
                 case "damagelocks":
                     DamageLocks = reader.GetBoolean();
@@ -596,6 +611,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "traits":
                     Properties = EWCJson.Deserialize<PropertyList>(ref reader)!;
                     Properties.Properties.RemoveAll(prop => !CheckAndSetTrait(prop));
+                    break;
+                case "triggerscalecount":
+                    TriggerScaleCount = reader.GetBoolean();
                     break;
                 case "hittriggertarget":
                     HitTriggerTarget = reader.GetBoolean();

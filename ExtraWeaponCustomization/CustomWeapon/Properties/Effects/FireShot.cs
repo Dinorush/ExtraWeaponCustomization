@@ -231,7 +231,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             int friendlyMask = 0;
             if (DamageOwner)
-                friendlyMask |= LayerUtil.MaskOwner;
+                friendlyMask |= LayerUtil.MaskLocal;
             if (DamageFriendly)
                 friendlyMask |= LayerUtil.MaskFriendly;
 

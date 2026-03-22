@@ -67,10 +67,9 @@ namespace EWC.CustomWeapon.Properties
         {
             PropertyNode curNode = new(list, parent);
             list.SetCWC(cwc);
-            for (int i = list.Properties.Count - 1; i >= 0; i--)
-            {
-                WeaponPropertyBase property = list.Properties[i];
 
+            void AddPropertyToLookups(WeaponPropertyBase property)
+            {
                 if (property.ID != 0)
                 {
                     if (!_idToProperty.TryAdd(property.ID, property.Reference))
@@ -82,6 +81,13 @@ namespace EWC.CustomWeapon.Properties
                     syncProperty.SyncID = (ushort)_syncList.Count;
                     _syncList.Add(syncProperty);
                 }
+            }
+
+            for (int i = list.Properties.Count - 1; i >= 0; i--)
+            {
+                WeaponPropertyBase property = list.Properties[i];
+
+                AddPropertyToLookups(property);
 
                 if (!property.ValidProperty())
                 {
@@ -96,9 +102,14 @@ namespace EWC.CustomWeapon.Properties
 
                 if (property is IReferenceHolder refHolder && !refHolder.Properties.Empty)
                 {
-                    var node = CreateTree(cwc, refHolder.Properties, curNode);
                     if (property is TempProperties tempProperties)
-                        tempProperties.Node = node;
+                        tempProperties.Node = CreateTree(cwc, refHolder.Properties, curNode);
+                    else
+                    {
+                        refHolder.Properties.SetCWC(cwc);
+                        foreach (var subProperty in refHolder.Properties.Properties)
+                            AddPropertyToLookups(subProperty);
+                    }
                 }
             }
             return curNode;

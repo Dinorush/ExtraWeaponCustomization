@@ -342,7 +342,7 @@ namespace EWC.Utils
             return s_rayHitCache;
         }
 
-        public static List<(PlayerAgent player, RaycastHit hit)> GetPlayerHitsInRange(Ray ray, float range, float angle, SearchSetting settings = SearchSetting.CheckFriendly | SearchSetting.CheckOwner)
+        public static List<(PlayerAgent player, RaycastHit hit)> GetPlayerHitsInRange(Ray ray, float range, float angle, PlayerAgent? source, SearchSetting settings = SearchSetting.CheckFriendly | SearchSetting.CheckOwner)
         {
             s_combinedCachePlayer.Clear();
             if (range == 0 || angle == 0)
@@ -352,17 +352,33 @@ namespace EWC.Utils
             foreach (PlayerAgent player in PlayerManager.PlayerAgentsInLevel)
             {
                 if (player == null || !player.Alive) continue;
-                if ((ClosestPointOnBounds(player.m_movingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange) continue;
+                bool isOwner = player.Pointer == source?.Pointer;
+                if (!settings.HasFlag(SearchSetting.CheckOwner) && isOwner) continue;
+                if (!settings.HasFlag(SearchSetting.CheckFriendly) && !isOwner) continue;
+
+                if ((ClosestPointOnBounds(player.m_movingCuller.Culler.Bounds, ray.origin) - ray.origin).sqrMagnitude > sqrRange)
+                {
+                    EWCLogger.Log($"Player bounds out of range ({player.Owner.NickName})!");
+                    continue;
+                }
                 if (player.IsLocallyOwned)
                 {
                     // Local players have one collider; checking LoS can easily put the floor as the closest point, so this uses a custom position
-                    if (!settings.HasFlag(SearchSetting.CheckOwner)) continue;
+                    EWCLogger.Log($"Checking local player...");
                     s_ray.origin = ray.origin;
                     s_ray.direction = player.Damage.DamageTargetPos - ray.origin;
-                    if (!player.GetComponent<Collider>().Raycast(s_ray, out s_rayHit, range)) continue;
-                    if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, s_rayHit.point, SightBlockLayer)) continue;
+                    if (!player.GetComponent<Collider>().Raycast(s_ray, out s_rayHit, range))
+                    {
+                        EWCLogger.Log($"Failed to raycast to local player!");
+                        continue;
+                    }
+                    if (settings.HasFlag(SearchSetting.CheckLOS) && Physics.Linecast(ray.origin, s_rayHit.point, SightBlockLayer))
+                    {
+                        EWCLogger.Log($"Got an object in the linecast!");
+                        continue;
+                    }
                 }
-                else if (!settings.HasFlag(SearchSetting.CheckFriendly) || !IsAgentInCone(ray, range, angle, player, out s_rayHit, settings))
+                else if (!IsAgentInCone(ray, range, angle, player, out s_rayHit, settings))
                     continue;
 
                 s_combinedCachePlayer.Add((player, s_rayHit));

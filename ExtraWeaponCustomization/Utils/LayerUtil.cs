@@ -14,7 +14,7 @@ namespace EWC.Utils
         public static int MaskEntityDynamic3P { get; private set; }
         public static int MaskEntity { get; private set; }
         public static int MaskEntity3P { get; private set; }
-        public static int MaskOwner { get; private set; }
+        public static int MaskLocal { get; private set; }
         public static int MaskFriendly { get; private set; }
         public static int MaskEnemy { get; private set; }
         public static int MaskEnemyDynamic { get; private set; }
@@ -23,14 +23,14 @@ namespace EWC.Utils
         [InvokeOnAssetLoad]
         private static void Init()
         {
-            MaskOwner = LayerMask.GetMask("PlayerMover");
+            MaskLocal = LayerMask.GetMask("PlayerMover");
             MaskFriendly = LayerMask.GetMask("PlayerSynced");
             MaskEnemy = LayerMask.GetMask("EnemyDamagable");
             MaskDynamic = LayerMask.GetMask("Dynamic");
 
             MaskEnemyDynamic = MaskEnemy | MaskDynamic;
             MaskEntity3P = MaskFriendly | MaskEnemy;
-            MaskEntity = MaskOwner | MaskEntity3P;
+            MaskEntity = MaskLocal | MaskEntity3P;
 
             MaskDecalValid = LayerMask.GetMask("Default", "Default_NoGraph", "Default_BlockGraph");
             MaskWorldExcProj = MaskDecalValid | MaskDynamic;
