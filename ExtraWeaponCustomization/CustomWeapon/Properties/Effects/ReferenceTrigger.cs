@@ -188,8 +188,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "resetontrigger":
                     ResetOnTrigger = reader.GetBoolean();
                     break;
-                case "sendapplyamount":
-                case "sendamount":
+                case "sendtotrigger":
+                case "sendtrigger":
                     SendToTrigger = reader.GetBoolean();
                     break;
                 case "sendreset":
