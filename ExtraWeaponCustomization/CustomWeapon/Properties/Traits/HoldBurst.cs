@@ -21,13 +21,6 @@ namespace EWC.CustomWeapon.Properties.Traits
         protected override OwnerType RequiredOwnerType => OwnerType.Local;
         protected override WeaponType RequiredWeaponType => WeaponType.Gun;
 
-        public override bool ShouldRegister(Type contextType)
-        {
-            if (!RequireHold && contextType == typeof(WeaponFireCancelContext)) return false;
-
-            return base.ShouldRegister(contextType);
-        }
-
         public void Invoke(WeaponPostStartFireContext context)
         {
             if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
@@ -38,8 +31,9 @@ namespace EWC.CustomWeapon.Properties.Traits
         public void Invoke(WeaponFireCancelContext context)
         {
             if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
-
-            if (_burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel && !arch.m_fireHeld)
+            if (_burstMaxCount - arch.m_burstCurrentCount < ShotsUntilCancel) return;
+            
+            if (!arch.m_fireHeld && (RequireHold || !CanShoot()))
             {
                 arch.m_burstCurrentCount = 0;
                 context.Allow = false;
@@ -62,6 +56,13 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
 
             context.AllowInBurst = context.AllowInBurst || _burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel;
+        }
+
+        private bool CanShoot()
+        {
+            if (CGC.Gun.Component.FPItemHolder.ItemIsBusy) return false;
+            var locomotion = CGC.Owner.Player!.Locomotion;
+            return !locomotion.IsRunning && !locomotion.IsInAir;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
