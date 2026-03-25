@@ -2,7 +2,6 @@
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Triggers;
 using EWC.Utils;
-using EWC.Utils.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -19,17 +18,15 @@ namespace EWC.CustomWeapon.Properties
             { 
                 _cwc = value;
                 CGC = _cwc.Weapon.IsType(WeaponType.Gun) ? _cwc.Cast<CustomGunComponent>() : null!;
-                OnCWCSet(); 
             }
         }
         public CustomGunComponent CGC { get; private set; } = null!;
 
         public uint ID { get; private set; } = 0;
-        public PropertyRef Reference { get; protected set; }
+        public int RefCount { get; set; } = 0;
+
         private readonly static Dictionary<string, uint> s_stringToIDDict = new();
         private static uint s_nextID = uint.MaxValue;
-
-        public WeaponPropertyBase() => Reference = new(this);
 
         public virtual bool ShouldRegister(Type contextType) => true;
 
@@ -46,27 +43,12 @@ namespace EWC.CustomWeapon.Properties
 
         public string GetValidTypes() => $"Required Owner Types [{RequiredOwnerType}], Valid Owner Types [{ValidOwnerType}], Required Weapon Types [{RequiredWeaponType}], Valid Weapon Types [{ValidWeaponType}]";
 
-        public virtual WeaponPropertyBase Clone()
-        {
-            var copy = CopyUtil.Clone(this);
-            copy.Reference = new(copy);
-            return copy;
-        }
+        public virtual WeaponPropertyBase Clone() => CopyUtil.Clone(this);
 
-        protected virtual void OnCWCSet() { }
-        public virtual void OnReferenceSet()
+        public virtual void OnPropertiesSetup()
         {
-            if (this is IReferenceHolder refHolder)
-            {
-                foreach (var property in refHolder.Properties.ReferenceProperties.OrEmptyIfNull())
-                {
-                    if (CWC.TryGetReference(property.ReferenceID, out var prop))
-                        refHolder.OnReferenceSet(prop);
-                }
-            }
-
             if (this is ITriggerCallback callback)
-                callback.Trigger?.OnReferenceSet();
+                callback.Trigger?.OnPropertiesSetup();
         }
 
         public abstract void Serialize(Utf8JsonWriter writer);

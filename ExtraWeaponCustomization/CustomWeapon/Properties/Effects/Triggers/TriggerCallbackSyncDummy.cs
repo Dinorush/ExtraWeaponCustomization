@@ -10,6 +10,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
     public sealed class TriggerCallbackSyncDummy : WeaponPropertyBase,
         ITriggerCallbackBasicSync,
         ITriggerCallbackDirSync,
+        ITriggerCallbackImpactSync,
         ITriggerCallbackAgentSync
     {
         public readonly static TriggerCallbackSyncDummy Instance = new();
@@ -29,6 +30,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         public void TriggerApply(List<TriggerContext> triggerList) { }
 
         public void TriggerApplySync(Vector3 position, Vector3 dir, float mod) { }
+
+        public void TriggerApplySync(Vector3 position, Vector3 dir, Vector3 normal, float mod) { }
 
         public void TriggerApplySync(Agent target, float mod) { }
 

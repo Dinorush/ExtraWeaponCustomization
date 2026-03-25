@@ -18,13 +18,6 @@ namespace EWC.CustomWeapon.Properties
 
         public uint ReferenceID { get; private set; } = 0;
 
-        public override void OnReferenceSet()
-        {
-            base.OnReferenceSet();
-            if (CWC.TryGetReferenceHolder(ReferenceID, out var propRef))
-                Reference = propRef;
-        }
-
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

@@ -57,7 +57,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
         bool StoreZeroAmount => false;
         bool Invoke(WeaponTriggerContext context, out float amount);
         void Reset();
-        void OnReferenceSet(CustomWeaponComponent cwc) { }
+        void OnPropertiesSetup(CustomWeaponComponent cwc) { }
         ITrigger Clone();
         void DeserializeProperty(string property, ref Utf8JsonReader reader);
 

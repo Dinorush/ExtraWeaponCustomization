@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         public ushort SyncID { get; set; }
 
-        public readonly List<float> Offsets = new(2);
+        public float[] Offsets { get; private set; } = Array.Empty<float>();
         public uint ArchetypeID { get; private set; } = 0;
         public uint Repeat { get; private set; } = 0;
         public float Spread { get; private set; } = 0;
@@ -193,7 +193,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             for (uint mod = 1; mod <= Repeat + 1; mod++)
             {
-                for (int i = 0; i < Offsets.Count; i += 2)
+                for (int i = 0; i < Offsets.Length; i += 2)
                 {
                     float x = Offsets[i] * mod * spreadMod;
                     float y = Offsets[i + 1] * mod * spreadMod;
@@ -264,7 +264,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public override WeaponPropertyBase Clone()
         {
             var copy = (FireShot)base.Clone();
-            copy.Offsets.AddRange(Offsets);
+            copy.Offsets = (float[])Offsets.Clone();
             return copy;
         }
 
@@ -296,11 +296,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 case "offsets":
                 case "offset":
-                    List<float>? offsets = ReadOffsets(ref reader);
-                    if (offsets == null) return;
-                    if (offsets.Count % 2 != 0)
-                        offsets.RemoveAt(offsets.Count - 1);
-                    Offsets.AddRange(offsets);
+                    Offsets = JsonUtil.ReadPairs(ref reader);
                     break;
                 case "archetypeid":
                 case "archetype":
@@ -349,39 +345,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                     RunHitTriggers = reader.GetBoolean();
                     break;
             }
-        }
-
-        private static List<float>? ReadOffsets(ref Utf8JsonReader reader)
-        {
-            if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException("Expected list object");
-
-            List<float> offsets = new();
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonTokenType.EndArray) return offsets;
-
-                if (reader.TokenType == JsonTokenType.StartArray)
-                {
-                    reader.Read();
-                    if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected number for x offset");
-                    offsets.Add(reader.GetSingle());
-
-                    reader.Read();
-                    if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected number for y offset");
-                    offsets.Add(reader.GetSingle());
-
-                    reader.Read();
-                    if (reader.TokenType != JsonTokenType.EndArray) throw new JsonException("Expected EndArray token for [x,y] offset pair");
-                }
-                else
-                {
-                    if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected number for offset value");
-
-                    offsets.Add(reader.GetSingle());
-                }
-            }
-
-            throw new JsonException("Expected EndArray token");
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using System;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Traits
@@ -13,11 +14,19 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponSwapContext>
     {
         public int ShotsUntilCancel { get; private set; } = 1;
+        public bool RequireHold { get; private set; } = true;
 
         private int _burstMaxCount = 0;
 
         protected override OwnerType RequiredOwnerType => OwnerType.Local;
         protected override WeaponType RequiredWeaponType => WeaponType.Gun;
+
+        public override bool ShouldRegister(Type contextType)
+        {
+            if (!RequireHold && contextType == typeof(WeaponFireCancelContext)) return false;
+
+            return base.ShouldRegister(contextType);
+        }
 
         public void Invoke(WeaponPostStartFireContext context)
         {
@@ -60,6 +69,7 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteStartObject();
             writer.WriteString("Name", GetType().Name);
             writer.WriteNumber(nameof(ShotsUntilCancel), ShotsUntilCancel);
+            writer.WriteBoolean(nameof(RequireHold), RequireHold);
             writer.WriteEndObject();
         }
 
@@ -71,6 +81,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "shotsuntilcancel":
                 case "shots":
                     ShotsUntilCancel = reader.GetInt32();
+                    break;
+                case "requirehold":
+                case "hold":
+                    RequireHold = reader.GetBoolean();
                     break;
                 default:
                     break;

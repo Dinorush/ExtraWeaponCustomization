@@ -31,9 +31,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public ITrigger Clone() => this;
 
-        public void OnReferenceSet(CustomWeaponComponent cwc)
+        public void OnPropertiesSetup(CustomWeaponComponent cwc)
         {
-            if (cwc.TryGetReference(ID, out var property))
+            if (cwc.TryGetProperty(ID, out var property))
             {
                 if (property is ITriggerEvent triggerEvent)
                     _callbackID = triggerEvent.GetCallbackID(Callback);

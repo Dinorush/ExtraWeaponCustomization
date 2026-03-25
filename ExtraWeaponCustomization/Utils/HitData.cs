@@ -56,7 +56,7 @@ namespace EWC.Utils
         {
             _weaponHitData = data._weaponHitData;
             _meleeWeapon = data._meleeWeapon;
-            shotInfo = data.shotInfo;
+            shotInfo = new(data.shotInfo);
             damage = data.damage;
             falloff = data.falloff;
             pierceLimit = data.pierceLimit;

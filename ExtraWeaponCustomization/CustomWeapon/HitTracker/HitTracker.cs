@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.HitTracker
                     hitInfo[cwc] = (hitContext, Clock.Time);
                 else
                     hitInfo[new ObjectWrapper<CustomWeaponComponent>(cwc)] = (hitContext, Clock.Time);
-                if (_onlyOnce)
+                if (!_onlyOnce)
                     _shownHits[enemy] = false;
             }
             else

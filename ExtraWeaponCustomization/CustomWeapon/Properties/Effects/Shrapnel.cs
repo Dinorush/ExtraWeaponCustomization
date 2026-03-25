@@ -26,7 +26,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         Effect,
         IWeaponProperty<WeaponCreatedContext>,
         ITriggerCallbackImpactSync,
-        IReferenceHolder
+        IPropertyHolder
     {
         public ushort SyncID { get; set; }
 
@@ -34,6 +34,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public uint ArchetypeID { get; private set; } = 0;
         public float MaxRange { get; private set; } = 0;
         public float MaxAngle { get; private set; } = 180;
+        public float[] Offsets { get; private set; } = Array.Empty<float>();
         public float Damage { get; private set; } = 0;
         public Vector2 DamageFalloff { get; private set; } = new Vector2(100, 100);
         public float PrecisionDamageMulti { get; private set; } = 1f;
@@ -70,6 +71,9 @@ namespace EWC.CustomWeapon.Properties.Effects
         public TargetingPriority SearchTargetPriority { get; private set; } = TargetingPriority.Distance;
 
         private const float WallHitBuffer = 0.03f;
+        private bool FireFromGun => ApplyPositionMode == TriggerPosMode.User && FireFrom == FireSetting.HitPos;
+
+        public PropertyNode Node { get; set; } = null!;
 
         private CustomShotSettings _shotSettings;
         private int _friendlyMask = 0;
@@ -110,7 +114,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 IntPtr ignoreBase = IntPtr.Zero;
                 float falloff = 1f;
                 Vector3 position;
-                Vector3 dir = Vector3.zero;
+                Vector3 dir;
                 Vector3 normal = Vector3.zero;
                 if (ApplyPositionMode != TriggerPosMode.User && tContext.context is IPositionContext hitContext)
                 {
@@ -136,6 +140,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 else
                 {
                     position = CWC.Owner.FirePos;
+                    dir = CWC.Owner.FireDir;
                 }
 
                 dir = ComputeBaseDir(dir, normal);
@@ -209,7 +214,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (ForceRandomDir(normal))
                     rayDir = UnityEngine.Random.onUnitSphere;
                 else
-                    rayDir = CustomShotComponent.CalcRayDir(dir, 0, 0, MaxAngle);
+                {
+                    var (x, y) = GetOffsetAt(i);
+                    rayDir = CustomShotComponent.CalcRayDir(dir, x, y, MaxAngle);
+                }
 
                 if (normal != Vector3.zero && Vector3.Dot(rayDir, normal) < 0)
                 {
@@ -221,6 +229,14 @@ namespace EWC.CustomWeapon.Properties.Effects
                 results.Add(rayDir);
             }
             return results;
+        }
+
+        private (float x, float y) GetOffsetAt(int i)
+        {
+            if (Offsets.Length == 0)
+                return (0, 0);
+            else
+                return (Offsets[(i * 2) % Offsets.Length], Offsets[(i * 2 + 1) % Offsets.Length]);
         }
 
         private void DoShrapnelVisual(Vector3 position, Vector3 direction, Vector3 normal, float triggerAmt)
@@ -236,11 +252,12 @@ namespace EWC.CustomWeapon.Properties.Effects
                 hitData.damage *= triggerAmt;
 
             var ray = new Ray(position, direction);
+            var fxPos = FireFromGun ? CWC.Owner.MuzzleAlign.position : ray.origin;
             var rayDirs = GenerateRayDirs(position, direction, normal, triggerAmt);
             for (int i = 0; i < rayDirs.Count; i++)
             {
                 ray.direction = rayDirs[i];
-                CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, shotSettings: _shotSettings);
+                CWC.ShotComponent.FireCustom(ray, fxPos, hitData, shotSettings: _shotSettings);
             }
         }
 
@@ -251,6 +268,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 damage *= triggerAmt;
 
             var ray = new Ray(position, dir);
+            var fxPos = FireFromGun ? CWC.Owner.MuzzleAlign.position : ray.origin;
             var rayDirs = GenerateRayDirs(position, dir, normal, triggerAmt);
             for (int i = 0; i < rayDirs.Count; i++)
             {
@@ -280,7 +298,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                         {
                             hitData.maxRayDist = bounceHit.distance;
                             ToggleShotModifiers(false);
-                            hitData.pierceLimit = CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
+                            hitData.pierceLimit = CWC.ShotComponent.FireCustom(ray, fxPos, hitData, _friendlyMask, ignoreEnt, _shotSettings);
                             ToggleShotModifiers(true);
                             if (hitData.pierceLimit == 0) continue;
 
@@ -294,7 +312,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 }
 
                 ToggleShotModifiers(false);
-                CWC.ShotComponent.FireCustom(ray, ray.origin, hitData, _friendlyMask, ignoreEnt, _shotSettings);
+                CWC.ShotComponent.FireCustom(ray, fxPos, hitData, _friendlyMask, ignoreEnt, _shotSettings);
                 ToggleShotModifiers(true);
             }
         }
@@ -312,7 +330,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         private void ToggleShotModifiers(bool enable)
         {
             if (!enable)
-                _shotSettings.projectile?.SetOverrides(DoProjectileHit, _shotSettings.wallPierce);
+                _shotSettings.projectile?.SetOverrides(DoProjectileHit, _shotSettings.wallPierce, !FireFromGun);
             else
                 _shotSettings.projectile?.DisableOverrides();
             if (!RunHitTriggers)
@@ -447,22 +465,18 @@ namespace EWC.CustomWeapon.Properties.Effects
             return targets;
         }
 
-        public void OnReferenceSet(WeaponPropertyBase property) => CheckAndSetTrait(property);
+        public override void OnPropertiesSetup()
+        {
+            Properties.Values.RemoveAll(prop => !CheckAndSetTrait(prop));
+            base.OnPropertiesSetup();
+        }
 
         public override WeaponPropertyBase Clone()
         {
             var copy = (Shrapnel)base.Clone();
             copy.Properties = Properties.Clone();
-            foreach (var prop in copy.Properties.Properties)
-                copy.CheckAndSetTrait(prop);
             copy._friendlyMask = _friendlyMask;
             return copy;
-        }
-
-        protected override void OnCWCSet()
-        {
-            foreach (var property in Properties.Properties)
-                property.CWC = CWC;
         }
 
         public override void Serialize(Utf8JsonWriter writer)
@@ -472,6 +486,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Count), Count);
             writer.WriteNumber(nameof(MaxRange), MaxRange);
             writer.WriteNumber(nameof(MaxAngle), MaxAngle);
+            EWCJson.Serialize(writer, nameof(Offsets), Offsets);
             writer.WriteNumber(nameof(ArchetypeID), ArchetypeID);
             writer.WriteNumber(nameof(Damage), Damage);
             SerializeFalloff(writer);
@@ -536,6 +551,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "spread":
                     MaxAngle = reader.GetSingle();
                     break;
+                case "offsets":
+                    Offsets = JsonUtil.ReadPairs(ref reader);
+                    break;
                 case "archetypeid":
                 case "archetype":
                 case "archid":
@@ -573,7 +591,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "firefrom":
                     FireFrom = reader.GetString().ToEnum(FireSetting.HitNormal);
                     if (FireFrom == FireSetting.User)
-                        FireFrom = FireSetting.HitNormal;
+                        FireFrom = FireSetting.HitPos;
                     break;
                 case "wallhandling":
                     WallHandling = reader.GetString().ToEnum(ShrapnelFallback.None);
@@ -622,7 +640,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "traits":
                     Properties = EWCJson.Deserialize<PropertyList>(ref reader)!;
-                    Properties.Properties.RemoveAll(prop => !CheckAndSetTrait(prop));
                     break;
                 case "triggerscalecount":
                     TriggerScaleCount = reader.GetBoolean();
@@ -690,7 +707,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 _shotSettings.wallPierce = pierce;
             else if (property is Traits.Projectile projectile)
                 _shotSettings.projectile = projectile;
-            else if (property is not ReferenceProperty)
+            else
             {
                 EWCLogger.Warning($"Shrapnel has trait of type {property.GetType().Name}, expected any of [{typeof(ThickBullet).Name}, {typeof(WallPierce).Name}, {typeof(Traits.Projectile)}]");
                 return false;

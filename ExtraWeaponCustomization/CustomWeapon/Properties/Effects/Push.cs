@@ -19,7 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public ushort SyncPropertyID { get; set; }
 
         public float Force { get; private set; } = 0f;
-        public List<float> Offset { get; private set; } = new(2) { 0, 0 };
+        public float[] Offset { get; private set; } = new float[] { 0, 0 };
         public float FrictionDelay { get; private set; } = 0.1f;
         public float RepeatFrictionDelay { get; private set; } = 0.1f;
         public float FrictionStrength { get; private set; } = 8f;
@@ -124,9 +124,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     Force = reader.GetSingle();
                     break;
                 case "offset":
-                    List<float>? offset = ReadOffset(ref reader);
-                    if (offset == null) return;
-                    Offset = offset;
+                    Offset = ReadOffset(ref reader);
                     break;
                 case "frictiondelay":
                     FrictionDelay = reader.GetSingle();
@@ -165,19 +163,19 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
         }
 
-        private static List<float>? ReadOffset(ref Utf8JsonReader reader)
+        private static float[] ReadOffset(ref Utf8JsonReader reader)
         {
             if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException("Expected list object");
 
-            List<float> offsets = new();
+            float[] offsets = new float[2];
 
             reader.Read();
             if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected number for x offset");
-            offsets.Add(reader.GetSingle());
+            offsets[0] = reader.GetSingle();
 
             reader.Read();
             if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected number for y offset");
-            offsets.Add(reader.GetSingle());
+            offsets[1] = reader.GetSingle();
 
             reader.Read();
             if (reader.TokenType != JsonTokenType.EndArray) throw new JsonException("Expected EndArray token for [x,y] offset pair");

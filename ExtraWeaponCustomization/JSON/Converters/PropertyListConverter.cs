@@ -18,7 +18,7 @@ namespace EWC.JSON.Converters
 
         public override void Write(Utf8JsonWriter writer, PropertyList value, JsonSerializerOptions options)
         {
-            EWCJson.Serialize(writer, value.Properties);
+            EWCJson.Serialize(writer, value.Values);
         }
     }
 }

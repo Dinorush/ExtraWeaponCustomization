@@ -1,4 +1,5 @@
 ﻿using EWC.JSON;
+using EWC.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -8,7 +9,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
 {
     public sealed class ProjectileDirChange
     {
-        public readonly List<float> Offsets = new(2);
+        public float[] Offsets { get; private set; } = Array.Empty<float>();
         public float Exponent { get; private set; } = 1f;
         public float Delay { get; private set; } = 0f;
         public float ChangeTime { get; private set; } = 0f;
@@ -29,8 +30,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             {
                 _startTime = Time.time;
                 Settings = settings;
-                _x = settings.Offsets[(shotIndex * 2) % settings.Offsets.Count];
-                _y = settings.Offsets[(shotIndex * 2 + 1) % settings.Offsets.Count];
+                _x = settings.Offsets[(shotIndex * 2) % settings.Offsets.Length];
+                _y = settings.Offsets[(shotIndex * 2 + 1) % settings.Offsets.Length];
                 _lastX = 0;
                 _lastY = 0;
                 Vector3 cross = Math.Abs(dir.y) < 0.99f ? Vector3.up : Vector3.forward;
@@ -75,7 +76,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
         public void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
-            writer.WritePropertyName("Offsets");
             EWCJson.Serialize(writer, nameof(Offsets), Offsets);
             writer.WriteNumber(nameof(Exponent), Exponent);
             //writer.WriteString(nameof(MoveType), MoveType.ToString());
@@ -98,11 +98,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             {
                 case "offsets":
                 case "offset":
-                    List<float>? offsets = ReadOffsets(ref reader);
-                    if (offsets == null) return;
-                    if (offsets.Count % 2 != 0)
-                        offsets.RemoveAt(offsets.Count - 1);
-                    Offsets.AddRange(offsets);
+                    Offsets = JsonUtil.ReadPairs(ref reader);
                     break;
                 case "exponent":
                     Exponent = reader.GetSingle();
@@ -134,39 +130,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             }
 
             throw new JsonException("Expected EndObject token");
-        }
-
-        private static List<float>? ReadOffsets(ref Utf8JsonReader reader)
-        {
-            if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException("Expected list object");
-
-            List<float> offsets = new();
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonTokenType.EndArray) return offsets;
-
-                if (reader.TokenType == JsonTokenType.StartArray)
-                {
-                    reader.Read();
-                    if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected number for x offset");
-                    offsets.Add(reader.GetSingle());
-
-                    reader.Read();
-                    if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected number for y offset");
-                    offsets.Add(reader.GetSingle());
-
-                    reader.Read();
-                    if (reader.TokenType != JsonTokenType.EndArray) throw new JsonException("Expected EndArray token for [x,y] offset pair");
-                }
-                else
-                {
-                    if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected number for offset value");
-
-                    offsets.Add(reader.GetSingle());
-                }
-            }
-
-            throw new JsonException("Expected EndArray token");
         }
 
         public static List<ProjectileDirChange> DeserializeList(ref Utf8JsonReader reader)

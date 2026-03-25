@@ -15,7 +15,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class ReferenceTrigger :
         Effect,
-        IReferenceHolder,
+        IPropertyHolder,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>
     {
@@ -27,6 +27,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float LoopInterval { get; private set; } = 1f;
         public float LoopDelay { get; private set; } = 0f;
         public bool LoopAddNewTriggers { get; private set; } = false;
+
+        public PropertyNode Node { get; set; } = null!;
 
         private List<ITriggerCallback>? _callbackProperties;
         private float _endLoopTime = 0f;
@@ -136,12 +138,16 @@ namespace EWC.CustomWeapon.Properties.Effects
             _callbackProperties.Add(callback);
         }
 
-        public void OnReferenceSet(WeaponPropertyBase property)
+        public override void OnPropertiesSetup()
         {
-            if (property is ITriggerCallback callback)
-                AddTriggerCallback(callback);
-            else
-                EWCLogger.Warning(nameof(ReferenceTrigger) + " contains a non-trigger property: " + property.GetType().Name);
+            foreach (var property in Properties)
+            {
+                if (property is ITriggerCallback callback)
+                    AddTriggerCallback(callback);
+                else
+                    EWCLogger.Warning(nameof(ReferenceTrigger) + " contains a non-trigger property: " + property.GetType().Name);
+            }
+            base.OnPropertiesSetup();
         }
 
         public override WeaponPropertyBase Clone()
@@ -175,15 +181,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "references":
                 case "properties":
                     Properties = EWCJson.Deserialize<PropertyList>(ref reader)!;
-                    var list = Properties.Properties;
-                    for (int i = list.Count - 1; i >= 0; i--)
-                    {
-                        if (list[i] is not ReferenceProperty)
-                        {
-                            EWCLogger.Warning(nameof(ReferenceTrigger) + " contains a non-reference property, removing: " + list[i].GetType().Name);
-                            list.RemoveAt(i);
-                        }
-                    }
                     break;
                 case "resetontrigger":
                     ResetOnTrigger = reader.GetBoolean();

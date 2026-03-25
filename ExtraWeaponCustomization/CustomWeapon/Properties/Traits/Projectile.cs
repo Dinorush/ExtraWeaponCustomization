@@ -133,12 +133,12 @@ namespace EWC.CustomWeapon.Properties.Traits
                 comp.SetVisualPosition(fxPos, visualDist);
         }
 
-        internal void SetOverrides(Func<HitData, ContextController, bool>? hitFunc = null, WallPierce? wallPierce = null)
+        internal void SetOverrides(Func<HitData, ContextController, bool>? hitFunc, WallPierce? wallPierce, bool disableLerp)
         {
             _useOverrides = true;
             _hitFuncOverride = hitFunc;
             _wallPierceOverride = wallPierce;
-            if (VisualLerpDist != 0)
+            if (disableLerp && VisualLerpDist != 0)
             {
                 _cachedVisualDist = VisualLerpDist;
                 VisualLerpDist = 0f;
@@ -148,7 +148,11 @@ namespace EWC.CustomWeapon.Properties.Traits
         internal void DisableOverrides()
         {
             _useOverrides = false;
-            VisualLerpDist = _cachedVisualDist;
+            if (_cachedVisualDist != 0)
+            {
+                VisualLerpDist = _cachedVisualDist;
+                _cachedVisualDist = 0;
+            }
         }
 
         public override void Serialize(Utf8JsonWriter writer)

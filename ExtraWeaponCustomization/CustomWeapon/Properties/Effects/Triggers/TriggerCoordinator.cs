@@ -25,10 +25,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
             return copy;
         }
 
-        public void OnReferenceSet()
+        public void OnPropertiesSetup()
         {
-            Activate.OnReferenceSet();
-            Reset?.OnReferenceSet();
+            Activate.OnPropertiesSetup();
+            Reset?.OnPropertiesSetup();
         }
 
         public void Invoke(WeaponTriggerContext context)

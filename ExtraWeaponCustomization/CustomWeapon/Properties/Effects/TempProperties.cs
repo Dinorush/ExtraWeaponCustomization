@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class TempProperties :
         Effect,
         ITriggerCallbackBasicSync,
-        IReferenceHolder
+        IPropertyHolder
     {
         public ushort SyncID { get; set; }
 
@@ -20,7 +20,16 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool Override { get; private set; } = false;
         public bool ResetTriggersOnEnd { get; private set; } = false;
 
-        internal PropertyNode? Node { get; set; }
+        private PropertyNode _node = null!;
+        public PropertyNode Node
+        {
+            get => _node;
+            set
+            {
+                _node = value;
+                _node.Override = Override;
+            }
+        }
 
         private readonly DelayedCallback _applyCallback;
 
@@ -62,12 +71,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void ApplyProperties()
         {
-            CWC.ActivateNode(Node!);
+            CWC.ActivateNode(Node);
         }
 
         private void RemoveProperties()
         {
-            CWC.DeactivateNode(Node!);
+            CWC.DeactivateNode(Node);
 
             if (ResetTriggersOnEnd && _callbackProperties != null)
             {
@@ -79,14 +88,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public override WeaponPropertyBase Clone()
         {
             var copy = (TempProperties) base.Clone();
-
             copy.Properties = Properties.Clone();
-            copy.Properties.Owner = copy;
-            copy.Properties.Override = Override;
-            foreach (var property in copy.Properties.Properties)
-                if (property is ITriggerCallback callback)
-                    copy.AddTriggerCallback(callback);
-
             return copy;
         }
 
@@ -96,10 +98,12 @@ namespace EWC.CustomWeapon.Properties.Effects
             _callbackProperties.Add(callback);
         }
 
-        public void OnReferenceSet(WeaponPropertyBase property)
+        public override void OnPropertiesSetup()
         {
-            if (property is ITriggerCallback callback)
-                AddTriggerCallback(callback);
+            foreach (var property in Properties)
+                if (property is ITriggerCallback callback)
+                    AddTriggerCallback(callback);
+            base.OnPropertiesSetup();
         }
 
         public override void Serialize(Utf8JsonWriter writer)

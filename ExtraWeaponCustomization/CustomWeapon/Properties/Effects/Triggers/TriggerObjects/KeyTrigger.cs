@@ -30,7 +30,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
 
         public void Reset() { }
 
-        public void OnReferenceSet(CustomWeaponComponent cwc)
+        public void OnPropertiesSetup(CustomWeaponComponent cwc)
         {
             cwc.RegisterKeyWatcher(Key);
         }

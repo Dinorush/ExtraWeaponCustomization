@@ -198,14 +198,14 @@ namespace EWC.CustomWeapon
 
         private void RegisterSyncedProperties_Recurse(PropertyList list)
         {
-            foreach (var property in list.Properties)
+            foreach (var property in list)
             {
                 if (property is ISyncProperty syncProperty)
                 {
                     syncProperty.SyncPropertyID = (ushort)_syncedProperties.Count;
                     _syncedProperties.Add(syncProperty);
                 }
-                if (property is IReferenceHolder refHolder)
+                if (property is IPropertyHolder refHolder)
                     RegisterSyncedProperties_Recurse(refHolder.Properties);
             }
         }

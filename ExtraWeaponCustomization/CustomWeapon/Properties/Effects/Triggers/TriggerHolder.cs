@@ -47,18 +47,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Triggers
                 );
         }
 
-        public void OnReferenceSet()
+        public void OnPropertiesSetup()
         {
             if (Caller == null) return;
             var cwc = Caller.CWC;
             foreach (var trigger in Triggers)
-                trigger.OnReferenceSet(cwc);
+                trigger.OnPropertiesSetup(cwc);
 
             foreach (var trigger in Apply.OrEmptyIfNull())
-                trigger.OnReferenceSet(cwc);
+                trigger.OnPropertiesSetup(cwc);
 
             foreach (var trigger in Cancel.OrEmptyIfNull())
-                trigger.OnReferenceSet(cwc);
+                trigger.OnPropertiesSetup(cwc);
         }
 
         public virtual TriggerHolder Clone(TriggerCoordinator parent)

@@ -29,12 +29,16 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float AlertAmount { get; private set; } = 0f;
         public float WakeUpRadius { get; private set; } = 0f;
         public uint SoundID { get; private set; } = 0u;
+        public uint LocalSoundID { get; private set; } = 0u;
         public CrossDoorMode CrossDoorMode { get; private set; } = CrossDoorMode.NoPenalty;
         public bool UseNoiseSystem { get; private set; } = false;
-        public bool LocalSoundOnly { get; private set; } = false;
         public bool FollowUser { get; private set; } = false;
 
+        private bool LocalSoundOnly => SoundID == 0 && !CanAlert;
+        private bool CanAlert => FakeAlertRadius > 0f || WakeUpRadius > 0f || (AlertRadius > 0f && AlertAmount > 0f);
+
         private readonly Dictionary<ObjectWrapper<Agent>, float> _alertProgress = new();
+        private bool _localSoundLegacy = false;
 
         private readonly static List<EnemyAgent> s_wakeupList = new();
         private readonly static List<EnemyAgent> s_alertList = new();
@@ -43,7 +47,6 @@ namespace EWC.CustomWeapon.Properties.Effects
         private static Ray s_ray = new(Vector3.zero, Vector3.forward);
         private const SearchSetting SearchSettings = SearchSetting.CheckDoors;
 
-        private const float InstantWakeupProgress = 1000f;
         // Based on R6Mono
         private const float InstantWakeupOutput = 1000f;
         private const float WakeupOutput = 1.1f;
@@ -53,14 +56,14 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override bool ValidProperty()
         {
-            if (LocalSoundOnly && !CWC.Owner.IsType(Enums.OwnerType.Local))
-                return false;
+            if (!CanAlert)
+                return SoundID != 0 || (LocalSoundID != 0 && CWC.Owner.IsType(Enums.OwnerType.Local));
             return base.ValidProperty();
         }
 
         public override bool ShouldRegister(Type contextType)
         {
-            if (contextType == typeof(WeaponStealthUpdateContext)) return !LocalSoundOnly && !UseNoiseSystem && SNet.IsMaster && (FakeAlertRadius > 0 || AlertAmount > 0 || WakeUpRadius > 0);
+            if (contextType == typeof(WeaponStealthUpdateContext)) return !UseNoiseSystem && SNet.IsMaster && CanAlert;
 
             return base.ShouldRegister(contextType);
         }
@@ -70,14 +73,10 @@ namespace EWC.CustomWeapon.Properties.Effects
             foreach (var trigger in triggerList)
             {
                 Vector3 position = !FollowUser && trigger.context is WeaponHitContextBase hitContext ? hitContext.Position : CWC.Owner.FirePos;
-                if (LocalSoundOnly)
-                {
-                    PostSound(position);
-                    continue;
-                }
 
                 TriggerApplySync(position, Vector3.zero, trigger.triggerAmt);
-                TriggerManager.SendInstance(this, position, Vector3.zero, trigger.triggerAmt);
+                if (!LocalSoundOnly)
+                    TriggerManager.SendInstance(this, position, Vector3.zero, trigger.triggerAmt);
 
                 if (UseNoiseSystem)
                     MakeNoise(position);
@@ -88,17 +87,18 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             PostSound(position);
 
-            if (UseNoiseSystem || !SNet.IsMaster) return;
+            if (UseNoiseSystem || !CanAlert || !SNet.IsMaster) return;
 
             TriggerSound(position, mod);
         }
 
         private void PostSound(Vector3 position)
         {
+            uint id = CWC.Owner.IsType(Enums.OwnerType.Local) && LocalSoundID != 0 ? LocalSoundID : SoundID;
             if (FollowUser)
-                CWC.Weapon.Sound.Post(SoundID, position);
+                CWC.Weapon.Sound.Post(id, position);
             else
-                CellSound.Post(SoundID, position);
+                CellSound.Post(id, position);
         }
 
         public void TriggerResetSync()
@@ -116,7 +116,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             TempWrapper.Set(context.Enemy);
             if (!_alertProgress.TryGetValue(TempWrapper, out float progress)) return;
 
-            if (progress >= InstantWakeupProgress)
+            if (progress >= InstantWakeupOutput)
             {
                 context.Output = InstantWakeupOutput;
                 _alertProgress.Remove(TempWrapper);
@@ -177,7 +177,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 if (!_alertProgress.ContainsKey(TempWrapper))
                     _alertProgress.Add(new ObjectWrapper<Agent>(enemy), 0);
 
-                _alertProgress[TempWrapper] += InstantWakeupProgress;
+                _alertProgress[TempWrapper] += InstantWakeupOutput;
             }
 
             // Standard alert (like walking)
@@ -239,6 +239,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void MakeNoise(Vector3 position)
         {
+            if (WakeUpRadius <= 0 && FakeAlertRadius <= 0) return;
+
             var noiseData = new pNM_NoiseData()
             {
                 position = position,
@@ -258,6 +260,20 @@ namespace EWC.CustomWeapon.Properties.Effects
                 NoiseManager.s_noisePacket.Send(noiseData, SNet_ChannelType.GameNonCritical, SNet.Master);
         }
 
+        public override WeaponPropertyBase Clone()
+        {
+            Noise copy = (Noise) base.Clone();
+            if (_localSoundLegacy)
+            {
+                copy.LocalSoundID = copy.SoundID;
+                copy.SoundID = 0;
+                copy.AlertAmount = 0;
+                copy.FakeAlertRadius = 0;
+                copy.WakeUpRadius = 0;
+            }
+            return copy;
+        }
+
         public override void Serialize(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();
@@ -267,9 +283,9 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(AlertAmount), AlertAmount);
             writer.WriteNumber(nameof(WakeUpRadius), WakeUpRadius);
             writer.WriteNumber(nameof(SoundID), SoundID);
+            writer.WriteNumber(nameof(LocalSoundID), LocalSoundID);
             writer.WriteString(nameof(CrossDoorMode), CrossDoorMode.ToString());
             writer.WriteBoolean(nameof(UseNoiseSystem), UseNoiseSystem);
-            writer.WriteBoolean(nameof(LocalSoundOnly), LocalSoundOnly);
             writer.WriteBoolean(nameof(FollowUser), FollowUser);
             writer.WriteEndObject();
         }
@@ -301,6 +317,18 @@ namespace EWC.CustomWeapon.Properties.Effects
                     else
                         SoundID = reader.GetUInt32();
                     break;
+                case "localsoundid":
+                case "localsound":
+                    if (reader.TokenType == JsonTokenType.True || reader.TokenType == JsonTokenType.False)
+                    {
+                        _localSoundLegacy = reader.GetBoolean();
+                        break;
+                    }
+                    if (reader.TokenType == JsonTokenType.String)
+                        LocalSoundID = AkSoundEngine.GetIDFromString(reader.GetString()!);
+                    else
+                        LocalSoundID = reader.GetUInt32();
+                    break;
                 case "crossdoormode":
                 case "crossdoors":
                 case "crossdoor":
@@ -311,8 +339,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                     UseNoiseSystem = reader.GetBoolean();
                     break;
                 case "localsoundonly":
-                case "localsound":
-                    LocalSoundOnly = reader.GetBoolean();
+                    _localSoundLegacy = reader.GetBoolean();
                     break;
                 case "followuser":
                 case "follow":
