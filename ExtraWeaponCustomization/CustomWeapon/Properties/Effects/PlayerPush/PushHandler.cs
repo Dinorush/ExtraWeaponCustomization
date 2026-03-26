@@ -1,4 +1,5 @@
 ﻿using EWC.Attributes;
+using Il2CppInterop.Runtime.Attributes;
 using Il2CppInterop.Runtime.Injection;
 using Player;
 using System;
@@ -57,6 +58,7 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
             Current!.AddInstance_Internal(force, settings);
         }
 
+        [HideFromIl2Cpp]
         private void AddInstance_Internal(Vector3 force, Push settings)
         {
             if (!_instances.TryGetValue(settings.SyncPropertyID, out var instance))
