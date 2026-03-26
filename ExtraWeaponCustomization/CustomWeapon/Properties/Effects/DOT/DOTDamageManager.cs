@@ -10,6 +10,7 @@ using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
+using EWC.Utils.Extensions;
 using Player;
 using SNetwork;
 using System;
@@ -175,8 +176,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
             Vector3 direction = target.TargetLookDir * -1;
             Vector3 position = localPos + target.Position;
-            if (damageLimb && (willKill || limb.DoDamage(damage)))
-                damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
+            if (damageLimb)
+            {
+                bool brokeLimb = willKill || limb.DoDamage(damage);
+                if (!brokeLimb)
+                    target.AI.m_behaviour.SignalEvent(EnemyBehaviour.Event.LimbDamaged, limb);
+                else
+                    damBase.CheckDestruction(limb, ref localPos, ref direction, limbID, ref severity, ref tryForceHitreact, ref hitreact);
+            }
 
             ProcessReceivedDOTDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
             DamageSyncWrapper.RunDamageSync(target, damageLimb ? limbID : -1);
@@ -187,26 +194,27 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private static void ProcessReceivedDOTDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)
         {
             EnemyAgent owner = damBase.Owner;
-            bool num = damBase.RegisterDamage(damage);
+            bool willKill = damBase.RegisterDamage(damage);
             owner.RegisterDamageInflictor(damageSource);
-            if (setCooldowns)
-                owner.Abilities.OnTakeDamage(damage);
-            bool flag = false;
-            if (num)
+            bool doHitreact = false;
+            if (willKill)
             {
                 hitreact = ES_HitreactType.ToDeath;
-                flag = true;
+                doHitreact = true;
             }
             else
             {
                 damBase.m_damBuildToHitreact += damage * staggerDamageMulti;
                 if (tryForceHitreact || damBase.m_damBuildToHitreact >= owner.EnemyBalancingData.Health.DamageUntilHitreact)
                 {
-                    flag = true;
+                    doHitreact = true;
                     damBase.m_damBuildToHitreact = 0f;
                 }
             }
-            if (flag && owner.Locomotion.Hitreact.CanHitreact(hitreact, tryForceHitreact))
+
+            owner.OnTakeCustomDamage(damage, damageSource, position, direction, hitreact, setCooldowns);
+
+            if (doHitreact && owner.Locomotion.Hitreact.CanHitreact(hitreact, tryForceHitreact))
             {
                 ImpactDirection direction2 = ES_Hitreact.GetDirection(owner.transform, direction);
                 owner.Locomotion.Hitreact.ActivateState(hitreact, direction2, attackerIsPlayer: true, damageSource, position, DamageNoiseLevel.Normal);

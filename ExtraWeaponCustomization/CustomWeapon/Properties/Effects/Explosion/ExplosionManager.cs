@@ -277,8 +277,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             EnemyAgent owner = damBase.Owner;
             bool num = damBase.RegisterDamage(damage);
             owner.RegisterDamageInflictor(damageSource);
-            if (setCooldowns)
-                owner.Abilities.OnTakeDamage(damage);
             bool flag = false;
             if (num)
             {
@@ -294,6 +292,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     damBase.m_damBuildToHitreact = 0f;
                 }
             }
+
+            owner.OnTakeCustomDamage(damage, damageSource, position, direction, hitreact, setCooldowns);
+
             if (flag && owner.Locomotion.Hitreact.CanHitreact(hitreact, tryForceHitreact))
             {
                 ImpactDirection direction2 = ES_Hitreact.GetDirection(owner.transform, direction);
