@@ -1,5 +1,5 @@
 ﻿using EWC.CustomWeapon.Properties.Effects;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;

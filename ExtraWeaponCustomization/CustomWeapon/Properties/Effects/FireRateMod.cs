@@ -1,5 +1,6 @@
 ﻿using EWC.CustomWeapon.ObjectWrappers;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Effects.TriggerModifier;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Text.Json;

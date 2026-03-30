@@ -1,7 +1,7 @@
 ﻿using EWC.CustomWeapon.ComponentWrapper.OwnerComps;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.JSON;

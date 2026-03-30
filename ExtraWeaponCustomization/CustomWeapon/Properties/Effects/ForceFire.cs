@@ -1,7 +1,7 @@
 ﻿using EWC.API;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using Gear;
 using System;
 using System.Collections.Generic;

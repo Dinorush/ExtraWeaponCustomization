@@ -18,24 +18,6 @@ namespace EWC.Patches.Gun
     [HarmonyPatch]
     internal static class WeaponPatches
     {
-        [InvokeOnCleanup]
-        private static void OnCleanup() => _localCGC = null;
-
-        private static CustomGunComponent? _localCGC;
-        public static void FastSetLocalCGC(CustomGunComponent gun)
-        {
-            if (!gun.Owner.IsType(OwnerType.Local)) return;
-
-            _localCGC = gun;
-        }
-
-        public static void FastClearLocalCGC(CustomGunComponent gun)
-        {
-            if (!gun.Owner.IsType(OwnerType.Local) || _localCGC != gun) return;
-
-            _localCGC = null;
-        }
-
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.OnGearSpawnComplete))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
@@ -52,16 +34,6 @@ namespace EWC.Patches.Gun
             if (!__instance.TryGetComp<CustomGunComponent>(out var cgc)) return;
 
             __result /= cgc.Invoke(new WeaponReloadContext()).Value;
-        }
-
-        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.RunAllowed), MethodType.Getter)]
-        [HarmonyWrapSafe]
-        [HarmonyPostfix]
-        private static void PostGetRunAllowed(ref bool __result)
-        {
-            if (_localCGC == null) return;
-
-            __result = _localCGC.Invoke(new WeaponSwapContext(__result)).Allow;
         }
 
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.SetCurrentClip))]

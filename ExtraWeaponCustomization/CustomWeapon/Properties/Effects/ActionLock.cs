@@ -1,5 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,8 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class ActionLock :
         Effect,
-        IWeaponProperty<WeaponSwapContext>,
+        IWeaponProperty<WeaponPreSwapContext>,
+        IWeaponProperty<WeaponPreSprintContext>,
         IWeaponProperty<WeaponFireCancelContext>,
         IWeaponProperty<WeaponPreReloadContext>
     {
@@ -22,7 +23,9 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override bool ShouldRegister(Type contextType)
         {
-            if (!Actions.HasFlag(PlayerAction.Swap) && contextType == typeof(WeaponSwapContext))
+            if (!Actions.HasFlag(PlayerAction.Swap) && contextType == typeof(WeaponPreSwapContext))
+                return false;
+            if (!Actions.HasFlag(PlayerAction.Sprint) && contextType == typeof(WeaponPreSprintContext))
                 return false;
             if (!Actions.HasFlag(PlayerAction.Fire) && contextType == typeof(WeaponFireCancelContext))
                 return false;
@@ -33,7 +36,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerApply(List<TriggerContext> contexts)
         {
-            if (Actions.HasFlag(PlayerAction.Swap))
+            if (Actions.HasFlag(PlayerAction.Sprint))
             {
                 var locomotion = CWC.Owner.Player!.Locomotion;
                 if (locomotion.m_currentStateEnum == Player.PlayerLocomotion.PLOC_State.Run)
@@ -44,7 +47,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public override void TriggerReset() => _endTime = 0f;
 
-        public void Invoke(WeaponSwapContext context)
+        public void Invoke(WeaponPreSwapContext context)
+        {
+            context.Allow = context.Allow && _endTime < Clock.Time;
+        }
+
+        public void Invoke(WeaponPreSprintContext context)
         {
             context.Allow = context.Allow && _endTime < Clock.Time;
         }
@@ -91,8 +99,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 return PlayerAction.All;
 
             PlayerAction result = PlayerAction.None;
-            if (value.Contains("swap") || value.Contains("sprint") || value.Contains("run"))
+            if (value.Contains("swap"))
                 result |= PlayerAction.Swap;
+            if (value.Contains("sprint") || value.Contains("run"))
+                result |= PlayerAction.Sprint;
             if (value.Contains("fire") || value.Contains("shoot"))
                 result |= PlayerAction.Fire;
             if (value.Contains("reload"))
@@ -106,8 +116,9 @@ namespace EWC.CustomWeapon.Properties.Effects
     {
         None = 0,
         Swap = 1,
-        Fire = 1 << 1,
-        Reload = 1 << 2,
+        Sprint = 1 << 1,
+        Fire = 1 << 2,
+        Reload = 1 << 3,
         All = -1
     }
 }

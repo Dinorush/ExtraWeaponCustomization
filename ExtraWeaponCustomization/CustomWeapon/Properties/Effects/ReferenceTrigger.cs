@@ -1,5 +1,5 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;

@@ -2,7 +2,7 @@
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils.Extensions;

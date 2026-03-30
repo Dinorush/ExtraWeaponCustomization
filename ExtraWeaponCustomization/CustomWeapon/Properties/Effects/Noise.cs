@@ -3,7 +3,7 @@ using AIGraph;
 using AmorLib.Utils;
 using Enemies;
 using EWC.CustomWeapon.ObjectWrappers;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.Utils;

@@ -1,6 +1,6 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Effects.TriggerModifier;
 
 namespace EWC.CustomWeapon.CustomShot
 {

@@ -1,4 +1,4 @@
-﻿using EWC.CustomWeapon.Properties.Effects.Triggers;
+﻿using EWC.CustomWeapon.Properties.Shared.Triggers;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;

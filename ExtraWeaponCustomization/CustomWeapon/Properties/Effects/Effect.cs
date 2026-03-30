@@ -1,10 +1,10 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 using System.Text.Json;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
 using System.Linq;
 using EWC.JSON;
 using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {

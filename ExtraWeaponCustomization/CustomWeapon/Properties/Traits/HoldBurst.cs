@@ -11,7 +11,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         IWeaponProperty<WeaponPostStartFireContext>,
         IWeaponProperty<WeaponFireCancelContext>,
         IWeaponProperty<WeaponSprintContext>,
-        IWeaponProperty<WeaponSwapContext>
+        IWeaponProperty<WeaponPreSprintContext>,
+        IWeaponProperty<WeaponPreSwapContext>
     {
         public int ShotsUntilCancel { get; private set; } = 1;
         public bool RequireHold { get; private set; } = true;
@@ -51,11 +52,18 @@ namespace EWC.CustomWeapon.Properties.Traits
             }
         }
 
-        public void Invoke(WeaponSwapContext context)
+        public void Invoke(WeaponPreSprintContext context)
         {
             if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
 
-            context.AllowInBurst = context.AllowInBurst || _burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel;
+            context.AllowBurstCancel = context.AllowBurstCancel || _burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel;
+        }
+
+        public void Invoke(WeaponPreSwapContext context)
+        {
+            if (!((LocalGunComp)CGC.Gun).TryGetBurstArchetype(out var arch)) return;
+
+            context.AllowBurstCancel = context.AllowBurstCancel || _burstMaxCount - arch.m_burstCurrentCount >= ShotsUntilCancel;
         }
 
         private bool CanShoot()

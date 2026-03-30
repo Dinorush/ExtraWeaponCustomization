@@ -1,5 +1,5 @@
 ﻿using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Effects.TriggerModifier;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects

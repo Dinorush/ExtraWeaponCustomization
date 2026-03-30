@@ -5,7 +5,7 @@ using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.Properties.Traits;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;

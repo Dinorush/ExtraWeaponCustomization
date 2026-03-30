@@ -1,6 +1,6 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Effects.Infection;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using Player;
 using System;

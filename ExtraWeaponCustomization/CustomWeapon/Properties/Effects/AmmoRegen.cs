@@ -1,7 +1,7 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using Player;
 using System;

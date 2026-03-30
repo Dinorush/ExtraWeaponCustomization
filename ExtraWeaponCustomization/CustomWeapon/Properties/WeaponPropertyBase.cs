@@ -1,6 +1,6 @@
 ﻿using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.Properties.Effects.Triggers;
+using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.Utils;
 using System;
 using System.Collections.Generic;
