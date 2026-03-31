@@ -6,12 +6,25 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils.Extensions;
 using Gear;
 using HarmonyLib;
+using Player;
 
 namespace EWC.Patches.Item
 {
     [HarmonyPatch]
     internal class ItemPatches
     {
+        [InvokeOnLoad]
+        private static void Init() => CustomWeaponManager.OnResetCWCs += ReloadLocalCWC;
+        private static void ReloadLocalCWC(bool activate)
+        {
+            _localCWC = null;
+            if (!activate || !PlayerManager.HasLocalPlayerAgent()) return;
+
+            var wielded = PlayerManager.GetLocalPlayerAgent().Inventory.WieldedItem;
+            if (wielded != null && wielded.TryGetComp<CustomWeaponComponent>(out var cwc))
+                _localCWC = cwc;
+        }
+
         [InvokeOnCleanup]
         private static void OnCleanup() => _localCWC = null;
 

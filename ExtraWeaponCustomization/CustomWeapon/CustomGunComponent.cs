@@ -62,14 +62,12 @@ namespace EWC.CustomWeapon
             RefreshSoundDelay();
             base.OnWield();
             Gun.ArchetypeData.SpecialChargetupTime *= CurrentChargeMod;
-            Patches.Gun.WeaponPatches.FastSetLocalCGC(this);
         }
 
         public override void OnUnWield()
         {
             base.OnUnWield();
             Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime;
-            Patches.Gun.WeaponPatches.FastClearLocalCGC(this);
         }
 
         protected override void Update()
@@ -100,7 +98,6 @@ namespace EWC.CustomWeapon
             _currentChargeSpeed = 1f;
             if (!_destroyed)
                 Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
-            Patches.Gun.WeaponPatches.FastClearLocalCGC(this);
         }
 
         public void StoreCancelShot()

@@ -36,6 +36,8 @@ namespace EWC.CustomWeapon
         }
 
         public static readonly CustomWeaponManager Current = new();
+        public static event Action<bool>? OnResetCWCs = null;
+
         private static bool s_inLevel = false;
         private static bool s_assetsLoaded = false;
 
@@ -211,6 +213,7 @@ namespace EWC.CustomWeapon
 
             foreach (var item in deletedItems)
                 listeners.Remove(item);
+            OnResetCWCs?.Invoke(activate);
         }
 
         private void AddAllEquippedItems()
