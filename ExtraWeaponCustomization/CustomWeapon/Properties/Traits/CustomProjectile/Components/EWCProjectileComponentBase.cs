@@ -1,5 +1,6 @@
 ﻿using EWC.API;
 using EWC.Attributes;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -333,6 +334,17 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             info.Velocity.y -= info.GravityVel;
             info.Dir = info.Velocity.normalized;
             return deltaMove;
+        }
+
+        public void OnHit(DamageType damageType)
+        {
+            if (damageType.HasFlagIn(Settings.HitDestroyDamageType))
+            {
+                if (Settings.HitDestroyDelay <= 0)
+                    Die();
+                else
+                    _endLifetime = Math.Min(Time.time + Settings.HitDestroyDelay, _endLifetime);
+            }
         }
 
         private void TimeOut()

@@ -54,6 +54,8 @@ namespace EWC.CustomWeapon.Properties.Traits
         public bool HitFromOwnerPos { get; private set; } = false;
         public float HitCooldown { get; private set; } = -1;
         public float HitIgnoreWallsDuration { get; private set; } = 0f;
+        public float HitDestroyDelay { get; private set; } = 0f;
+        public DamageType[] HitDestroyDamageType { get; private set; } = DamageTypeConst.Invalid;
         public int RicochetCount { get; private set; } = 0;
         public float RicochetSpeedMod { get; private set; } = 1f;
         public float RicochetSpeedAngleFactor { get; private set; } = 0f;
@@ -184,6 +186,8 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteBoolean(nameof(HitFromOwnerPos), HitFromOwnerPos);
             writer.WriteNumber(nameof(HitCooldown), HitCooldown);
             writer.WriteNumber(nameof(HitIgnoreWallsDuration), HitIgnoreWallsDuration);
+            writer.WriteNumber(nameof(HitDestroyDelay), HitDestroyDelay);
+            writer.WriteString(nameof(HitDestroyDamageType), HitDestroyDamageType[0].ToString());
             writer.WriteNumber(nameof(RicochetCount), RicochetCount);
             writer.WriteNumber(nameof(RicochetSpeedMod), RicochetSpeedMod);
             writer.WriteNumber(nameof(RicochetSpeedAngleFactor), RicochetSpeedAngleFactor);
@@ -365,6 +369,14 @@ namespace EWC.CustomWeapon.Properties.Traits
                     break;
                 case "alivetriggerinterval":
                     AliveTriggerInterval = reader.GetSingle();
+                    break;
+                case "hitdestroydelay":
+                case "destroydelay":
+                    HitDestroyDelay = reader.GetSingle();
+                    break;
+                case "hitdestroydamagetype":
+                case "destroydamagetype":
+                    HitDestroyDamageType = reader.GetString().ToDamageTypes();
                     break;
                 case "dirchanges":
                     DirChanges = ProjectileDirChange.DeserializeList(ref reader);

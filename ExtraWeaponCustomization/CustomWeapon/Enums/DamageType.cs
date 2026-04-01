@@ -31,6 +31,7 @@ namespace EWC.CustomWeapon.Enums
     public static class DamageTypeConst
     {
         public static readonly DamageType[] Any = new[] { DamageType.Any };
+        public static readonly DamageType[] Invalid = new[] { DamageType.Invalid };
     }
 
     public static class DamageTypeMethods
@@ -86,6 +87,8 @@ namespace EWC.CustomWeapon.Enums
                 flag |= DamageType.Player;
             else if (name.Contains("object") || name.Contains("lock"))
                 flag |= DamageType.Object;
+            else if (name.Contains("terrain"))
+                flag |= DamageType.Terrain;
 
             if (name.Contains("bullet") || name.Contains("melee"))
                 flag |= DamageType.Bullet;

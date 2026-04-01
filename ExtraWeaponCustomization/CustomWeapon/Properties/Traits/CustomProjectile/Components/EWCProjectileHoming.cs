@@ -109,8 +109,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             Vector3 diff = _homingTarget!.position - position;
             if (Time.time >= _initialHomingEndTime)
             {
-                float distMod = diff.magnitude.Map(_settings.HomingMinDist, _settings.HomingMaxDist, 1f, 0f);
-                strength = (float)(_settings.HomingStrength * Math.Pow(distMod, _settings.HomingDistExponent));
+                strength = _settings.HomingStrength * diff.magnitude.MapInverted(_settings.HomingMinDist, _settings.HomingMaxDist, 1f, 0f, _settings.HomingDistExponent);
             }
 
             if (_settings.UseSteadyStrength)

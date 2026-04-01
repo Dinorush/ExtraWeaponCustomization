@@ -3,11 +3,11 @@ using EndskApi.Api;
 using GTFuckingXP.Extensions;
 using Enemies;
 using Player;
-using System.Linq;
 using GTFuckingXP.Enums;
-using GTFuckingXP.Information.Level;
 using System.Runtime.CompilerServices;
 using EWC.CustomWeapon.Enums;
+using System.Collections.Generic;
+using EWC.CustomWeapon.ComponentWrapper;
 
 namespace EWC.Dependencies
 {
@@ -22,7 +22,7 @@ namespace EWC.Dependencies
             HasEXP = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
         }
 
-        public static float GetAmmoMod(bool local) => local && HasEXP ? EXPGetAmmoMod() : 1f;
+        public static float GetCapacityMod(IOwnerComp owner) => HasEXP ? EXPGetCapacityMod(owner) : 1f;
 
         public static float GetExplosionResistanceMod(PlayerAgent player) => HasEXP ? EXPGetExplosionResistanceMod(player) : 1f;
 
@@ -37,7 +37,16 @@ namespace EWC.Dependencies
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static float EXPGetAmmoMod() => CacheApiWrapper.GetActiveLevel().CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.AmmoEfficiency)?.Value ?? 1f;
+        private static float EXPGetCapacityMod(IOwnerComp owner)
+        {
+            if (!CacheApiWrapper.TryGetActiveLevel(owner.Player, out var level)) return 1f;
+            var effEnum = owner.IsType(OwnerType.Sentry) ? CustomScaling.ToolEfficiency : CustomScaling.AmmoEfficiency;
+            var capEnum = owner.IsType(OwnerType.Sentry) ? CustomScaling.ToolCapacity : CustomScaling.AmmoCapacity;
+            var scaling = level.CustomScaling;
+            float mod = scaling.GetValueOrDefault(effEnum, 1f);
+            mod *= scaling.GetValueOrDefault(capEnum, 1f);
+            return mod;
+        }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static float EXPGetDamageMod(WeaponType type)
@@ -52,27 +61,17 @@ namespace EWC.Dependencies
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static float EXPGetExplosionResistanceMod(PlayerAgent player)
         {
-            Level level;
-            if (player.IsLocallyOwned)
-                level = CacheApiWrapper.GetActiveLevel();
-            else if (!CacheApiWrapper.GetPlayerToLevelMapping().TryGetValue(player.PlayerSlotIndex, out level!))
-                return 1f;
+            if (!CacheApiWrapper.TryGetActiveLevel(player, out var level)) return 1f;
 
-            CustomScalingBuff? buff = level.CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.ExplosionResistance);
-            return buff != null ? 2f - buff.Value : 1f;
+            return level.CustomScaling.TryGetValue(CustomScaling.ExplosionResistance, out var value) ? 2f - value : 1f;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static float EXPGetHealthRegenMod(PlayerAgent player)
         {
-            Level level;
-            if (player.IsLocallyOwned)
-                level = CacheApiWrapper.GetActiveLevel();
-            else if (!CacheApiWrapper.GetPlayerToLevelMapping().TryGetValue(player.PlayerSlotIndex, out level!))
-                return 1f;
+            if (!CacheApiWrapper.TryGetActiveLevel(player, out var level)) return 1f;
 
-            CustomScalingBuff? buff = level.CustomScaling.FirstOrDefault(buff => buff.CustomBuff == CustomScaling.RegenStartDelayMultiplier);
-            return buff != null ? buff.Value : 1f;
+            return level.CustomScaling.TryGetValue(CustomScaling.RegenStartDelayMultiplier, out var value) ? value : 1f;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

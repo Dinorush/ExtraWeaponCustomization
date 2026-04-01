@@ -147,6 +147,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _initialPlayers.Clear();
                 HitEnts.Clear();
                 _hitEntCooldowns.Clear();
+                _ricochetCount = 0;
+                _pierceCount = 0;
                 _ignoreWallsTime = 0;
             }
             _enabled = false;
@@ -466,7 +468,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
 
             if (_hitFuncOverride != null)
-                return _hitFuncOverride(HitData, _base.ContextController);
+            {
+                var result = _hitFuncOverride(HitData, _base.ContextController);
+                _base.OnHit(HitData.damageType);
+                return result;
+            }
 
             ToggleRunTriggers(false);
             WeaponPatches.ApplyEWCHit(_settings.CWC, _base.ContextController, HitData, out var backstab);
@@ -481,6 +487,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
                 damageable?.BulletDamage(damage, HitData.owner, HitData.hitPos, HitData.fireDir, HitData.RayHit.normal, backstab, HitData.staggerMulti, HitData.precisionMulti);
             }
+            _base.OnHit(HitData.damageType);
             return true;
         }
 

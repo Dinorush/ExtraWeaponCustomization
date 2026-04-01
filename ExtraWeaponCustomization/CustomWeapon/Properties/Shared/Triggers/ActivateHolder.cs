@@ -85,7 +85,9 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                     var callback = new DelayedCallback(delay, () =>
                     {
                         Caller?.TriggerApply(triggerContexts);
-                        _delayedApplies!.Dequeue();
+                        // If applying would reset this holder, queue could be cleared
+                        if (_delayedApplies!.Count > 0)
+                            _delayedApplies.Dequeue();
                     });
                     _delayedApplies!.Enqueue(callback);
                     StartDelayedCallback(callback);

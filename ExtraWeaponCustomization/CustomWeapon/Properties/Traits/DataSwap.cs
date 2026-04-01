@@ -258,7 +258,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             if (hasOwner)
             {
-                slotAmmo!.Setup(cost / EXPAPIWrapper.GetAmmoMod(CWC.Owner.IsType(OwnerType.Local)), slotAmmoClipSize);
+                slotAmmo!.Setup(cost / EXPAPIWrapper.GetCapacityMod(CWC.Owner), slotAmmoClipSize);
                 cost = slotAmmo.CostOfBullet;
             }
 
