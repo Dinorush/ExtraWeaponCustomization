@@ -78,7 +78,7 @@ namespace EWC.Patches.Item
                 return false;
             }
             // Directly modify fire mode and restore using cached FireMode on gun component.
-            if (results.AllowBurstCancel)
+            if (_localCWC.Weapon.IsType(WeaponType.Gun) && results.AllowBurstCancel)
                 _localCWC.Weapon.ArchetypeData.FireMode = eWeaponFireMode.Semi;
             return true;
         }
@@ -97,7 +97,7 @@ namespace EWC.Patches.Item
         }
 
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.RunAllowed), MethodType.Getter)]
-        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.RunAllowed), MethodType.Getter)]
+        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.WeaponSwitchAllowed), MethodType.Getter)]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
         private static void PostGetRunAllowed(ref bool __result)
