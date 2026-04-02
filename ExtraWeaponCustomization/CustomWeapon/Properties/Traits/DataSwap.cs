@@ -227,12 +227,14 @@ namespace EWC.CustomWeapon.Properties.Traits
                 slotAmmo = ammoStorage.GetInventorySlotAmmo(CGC.Weapon.AmmoType);
                 clipCost = clip * slotAmmo.CostOfBullet;
             }
-            else
+            else if (CWC.Owner.IsType(OwnerType.Sentry))
             {
                 ammoStorage = null;
                 slotAmmo = null;
                 clipCost = ((SentryGunComp)CWC.Weapon).CostOfBullet;
             }
+            else
+                return;
 
             var oldBlock = CGC.Gun.ArchetypeData;
             CGC.Gun.ArchetypeData = newBlock;

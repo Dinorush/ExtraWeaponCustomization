@@ -284,6 +284,11 @@ namespace EWC.CustomWeapon.Properties.Effects
                 holder = new EmptyHolder(gun);
                 return true;
             }
+            else if (item.TryCastOut<BulletWeaponSynced>(out var synced))
+            {
+                holder = new EmptyHolder(synced);
+                return true;
+            }
             else if (item.TryCastOut<SentryGunFirstPerson>(out var sentry))
             {
                 if (CustomWeaponManager.TryGetSentry(sentry.Owner, out var sentryInfo))
