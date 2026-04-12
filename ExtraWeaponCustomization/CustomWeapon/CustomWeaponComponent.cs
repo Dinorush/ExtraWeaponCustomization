@@ -251,6 +251,7 @@ namespace EWC.CustomWeapon
                 Owner = new SentryOwnerComp(((SentryGunComp)Weapon).Value);
             else
                 Owner = new SyncedOwnerComp(owner, item.MuzzleAlign);
+            ShotComponent.RefreshOwner();
         }
 
         [HideFromIl2Cpp]

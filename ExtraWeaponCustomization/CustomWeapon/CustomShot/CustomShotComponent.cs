@@ -17,7 +17,7 @@ namespace EWC.CustomWeapon.CustomShot
     public sealed class CustomShotComponent
     {
         private readonly IWeaponComp _weapon;
-        private readonly IOwnerComp _owner;
+        private IOwnerComp _owner;
         private readonly CustomWeaponComponent _cwc;
 
         public CustomShotComponent(CustomWeaponComponent cwc)
@@ -45,6 +45,8 @@ namespace EWC.CustomWeapon.CustomShot
         public ThickBullet? ThickBullet { get; set; }
 
         private static RaycastHit s_rayHit;
+
+        public void RefreshOwner() => _owner = _cwc.Owner;
 
         public void FireVanilla(HitData hitData, Vector3 origin)
         {
