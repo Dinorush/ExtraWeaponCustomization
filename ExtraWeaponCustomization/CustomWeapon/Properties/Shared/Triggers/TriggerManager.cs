@@ -37,6 +37,17 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             _queuedReceives.Clear();
         }
 
+        private static bool CheckInvalidCaller(ITriggerCallback caller)
+        {
+            if (caller.CWC.Weapon.InventorySlot == InventorySlot.None)
+            {
+                var player = caller.CWC.Owner.Player;
+                EWCLogger.Warning($"Attempting to send a trigger from {caller.CWC.Weapon.Component?.name}, but slot is None! (owner: {(player != null ? player.Owner.NickName : "none")})");
+                return true;
+            }
+            return false;
+        }
+
         internal static void RunQueuedReceives(CustomWeaponComponent cwc)
         {
             if (!_queuedReceives.TryGetValue((cwc.Owner.Type, cwc.Weapon.InventorySlot), out var queue)) return;
@@ -47,6 +58,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public static void SendInstance(ITriggerCallbackBasicSync caller, float mod = 1f)
         {
+            if (CheckInvalidCaller(caller)) return;
+
             _triggerSync.Send(PackInstance(caller, mod));
         }
 
@@ -71,6 +84,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public static void SendInstance(ITriggerCallbackDirSync caller, Vector3 position, Vector3 dir, float mod = 1f)
         {
+            if (CheckInvalidCaller(caller)) return;
+
             TriggerDirInstanceData data = default;
             data.position = position;
             data.dir.Value = dir;
@@ -90,6 +105,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public static void SendInstance(ITriggerCallbackImpactSync caller, Vector3 position, Vector3 dir, Vector3 normal, float mod = 1f)
         {
+            if (CheckInvalidCaller(caller)) return;
+
             TriggerImpactInstanceData data = default;
             data.position = position;
             data.dir.Value = dir;
@@ -110,6 +127,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public static void SendInstance(ITriggerCallbackAgentSync caller, Agent target, float mod = 1f)
         {
+            if (CheckInvalidCaller(caller)) return;
+
             TriggerAgentInstanceData data = default;
             data.target.Set(target);
             data.instance = PackInstance(caller, mod);
@@ -128,6 +147,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public static void SendReset(ITriggerCallbackSync caller)
         {
+            if (CheckInvalidCaller(caller)) return;
+
             TriggerResetData data = default;
             data.cwc.Set(caller.CWC);
             data.id = caller.SyncID;
