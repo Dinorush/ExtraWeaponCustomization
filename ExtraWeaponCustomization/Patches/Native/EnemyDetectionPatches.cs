@@ -60,7 +60,7 @@ namespace EWC.Patches.Native
         private static void UpdateCache()
         {
             if (s_cachedCWCs.Count != PlayerManager.PlayerAgentsInLevel.Count
-             || s_cachedCWCs.Values.Any(list => !list.All(cwc => cwc == null)))
+             || s_cachedCWCs.Values.Any(list => list.Any(cwc => cwc == null)))
             {
                 s_cachedCWCs.Clear();
                 foreach (PlayerAgent player in PlayerManager.PlayerAgentsInLevel)
