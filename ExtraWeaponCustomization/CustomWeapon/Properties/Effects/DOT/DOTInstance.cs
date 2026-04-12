@@ -80,7 +80,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             return DotBase.EndDamageFrac * tick + (DotBase.EndDamageFrac - 1) * Math.Pow(_totalTicks - tick, _expoPlusOne) / _expoDivisor;
         }
 
-        public float GetRemainingDamage() => (float) (_damagePerTick * (ComputeDamageMod(_totalTicks) - ComputeDamageMod(_tick)));
+        public float GetRemainingDamage() => (float)(_damagePerTick * (ComputeDamageMod(_totalTicks) - ComputeDamageMod(_tick)));
 
         public void DoDamage(IDamageable damageable)
         {
@@ -96,7 +96,15 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             _lastTickTime += damageTicks * _tickDelay;
             _tick += damageTicks;
 
-            DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _precisionMulti, _staggerMulti, _bypassTumor, _backstabMulti, _origBackstabMulti, damageTicks, _shotInfo, DotBase);
+            try
+            {
+                DOTDamageManager.DoDOTDamage(damageable, damage, _falloff, _precisionMulti, _staggerMulti, _bypassTumor, _backstabMulti, _origBackstabMulti, damageTicks, _shotInfo, DotBase);
+            }
+            catch (Exception e)
+            {
+                EWCLogger.Log($"DOT: Error when doing damage: {e}");
+                Destroy();
+            }
         }
     }
 }
