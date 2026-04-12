@@ -20,14 +20,14 @@ namespace EWC.CustomWeapon.Properties.Effects
         public bool Override { get; private set; } = false;
         public bool ResetTriggersOnEnd { get; private set; } = false;
 
-        private PropertyNode _node = null!;
-        public PropertyNode Node
+        private PropertyNode? _node = null;
+        public PropertyNode? Node
         {
             get => _node;
             set
             {
                 _node = value;
-                _node.Override = Override;
+                _node!.Override = Override;
             }
         }
 
@@ -71,12 +71,12 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private void ApplyProperties()
         {
-            CWC.ActivateNode(Node);
+            CWC.ActivateNode(Node!);
         }
 
         private void RemoveProperties()
         {
-            CWC.DeactivateNode(Node);
+            CWC.DeactivateNode(Node!);
 
             if (ResetTriggersOnEnd && _callbackProperties != null)
             {

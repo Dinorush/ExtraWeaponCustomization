@@ -28,7 +28,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float LoopDelay { get; private set; } = 0f;
         public bool LoopAddNewTriggers { get; private set; } = false;
 
-        public PropertyNode Node { get; set; } = null!;
+        public PropertyNode? Node { get; set; } = null;
 
         private List<ITriggerCallback>? _callbackProperties;
         private float _endLoopTime = 0f;

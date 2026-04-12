@@ -243,7 +243,7 @@ namespace EWC.CustomWeapon.Properties
                         {
                             s_subtreePropCache.Add(property);
 
-                            if (property is IPropertyHolder propHolder)
+                            if (property is IPropertyHolder propHolder && propHolder.Node != null)
                                 SetSubtree(propHolder.Node, enabled);
                         }
 

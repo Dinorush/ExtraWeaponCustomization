@@ -73,7 +73,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         private const float WallHitBuffer = 0.03f;
         private bool FireFromGun => ApplyPositionMode == TriggerPosMode.User && FireFrom == FireSetting.HitPos;
 
-        public PropertyNode Node { get; set; } = null!;
+        public PropertyNode? Node { get; set; } = null!;
 
         private CustomShotSettings _shotSettings;
         private int _friendlyMask = 0;

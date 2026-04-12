@@ -3,6 +3,6 @@
     public interface IPropertyHolder : IWeaponProperty
     {
         public PropertyList Properties { get; }
-        public PropertyNode Node { get; set; }
+        public PropertyNode? Node { get; set; }
     }
 }
