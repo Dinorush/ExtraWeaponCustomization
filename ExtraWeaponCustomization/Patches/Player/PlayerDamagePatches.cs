@@ -80,7 +80,11 @@ namespace EWC.Patches.Player
         {
             var owner = __instance.Owner.Owner;
             if (__state)
+            {
                 CustomWeaponManager.InvokeOnGear(owner, new WeaponDamageTakenContext(damage, _damageType));
+                if (SNetwork.SNet.IsMaster)
+                    CustomWeaponManager.InvokeOnGear(owner, new WeaponHealthContext(__instance));
+            }
             if (!owner.IsLocal)
                 ResetAttackData();
         }
@@ -103,6 +107,22 @@ namespace EWC.Patches.Player
             _damageType = PlayerDamageType.Any;
             _currentDamage = -1;
             _currentImmune = false;
+        }
+
+        [HarmonyPatch(typeof(Dam_PlayerDamageBase), nameof(Dam_PlayerDamageBase.ReceiveAddHealth))]
+        [HarmonyPrefix]
+        private static void Pre_ReceiveAddHealth(Dam_PlayerDamageBase __instance, ref float __state)
+        {
+            __state = __instance.Health;
+        }
+
+        [HarmonyPatch(typeof(Dam_PlayerDamageBase), nameof(Dam_PlayerDamageBase.ReceiveAddHealth))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void Post_ReceiveAddHealth(Dam_PlayerDamageBase __instance, ref float __state)
+        {
+            if (SNetwork.SNet.IsMaster && __state != __instance.Health)
+                CustomWeaponManager.InvokeOnGear(__instance.Owner.Owner, new WeaponHealthContext(__instance));
         }
 
         [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveSetHealth))]
