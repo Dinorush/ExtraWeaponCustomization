@@ -20,6 +20,7 @@ namespace EWC.CustomWeapon.ComponentWrapper
         public ItemEquippable Component => Value;
         public abstract WeaponType Type { get; }
         public abstract AmmoType AmmoType { get; }
+        public virtual InventorySlot InventorySlot => AmmoType.ToInventorySlot();
         public abstract CellSoundPlayer Sound { get; }
         public abstract bool AllowBackstab { get; }
 
@@ -39,7 +40,7 @@ namespace EWC.CustomWeapon.ComponentWrapper
         public bool IsType(WeaponType type) => Type.HasFlag(type);
         public bool IsAnyType(WeaponType type) => Type.HasAnyFlag(type);
         public AmmoType AmmoType { get; }
-        public InventorySlot InventorySlot => AmmoType.ToInventorySlot();
+        public InventorySlot InventorySlot { get; }
         public CellSoundPlayer Sound { get; }
         public bool AllowBackstab { get; }
 

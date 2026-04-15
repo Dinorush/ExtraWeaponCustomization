@@ -313,6 +313,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
 
             public AmmoType AmmoType => _isSentry ? AmmoType.Class : _item!.AmmoType;
+            public InventorySlot InventorySlot => AmmoType.ToInventorySlot();
 
             public int GetCurrentClip()
             {

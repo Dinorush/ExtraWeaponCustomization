@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
 
         public override WeaponType Type => WeaponType.Melee;
         public override AmmoType AmmoType => AmmoType.None;
-        public InventorySlot InventorySlot => InventorySlot.GearMelee;
+        public override InventorySlot InventorySlot => InventorySlot.GearMelee;
         public override CellSoundPlayer Sound => Value.Sound;
         public override bool AllowBackstab => true;
     }
