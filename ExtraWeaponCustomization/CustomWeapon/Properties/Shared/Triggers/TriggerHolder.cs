@@ -20,6 +20,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         public float Chance { get; private set; } = 1f;
         public float ResetDelay { get; private set; } = 0f;
         public bool ConsumeThreshold { get; private set; } = false;
+        public float ThresholdOffset { get; private set; } = 0f;
         public bool AllowOnce { get; private set; } = false;
 
         public List<ITrigger>? Apply { get; private set; }
@@ -59,6 +60,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
             foreach (var trigger in Cancel.OrEmptyIfNull())
                 trigger.OnPropertiesSetup(cwc);
+
+            _triggerSum = Threshold > 0 ? ThresholdOffset % Threshold : 0;
         }
 
         public virtual TriggerHolder Clone(TriggerCoordinator parent)
@@ -235,6 +238,9 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                     break;
                 case "consumethreshold":
                     ConsumeThreshold = reader.GetBoolean();
+                    break;
+                case "thresholdoffset":
+                    ThresholdOffset = reader.GetSingle();
                     break;
                 case "allowonce":
                     AllowOnce = reader.GetBoolean();
