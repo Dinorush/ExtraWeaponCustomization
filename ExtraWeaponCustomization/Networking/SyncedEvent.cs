@@ -27,7 +27,14 @@ namespace EWC.Networking
         {
             if (target != null)
             {
-                NetworkAPI.InvokeEvent(EventName, packetData, target, priority);
+                if (target.IsLocal)
+                {
+                    Receive(packetData);
+                }
+                else
+                {
+                    NetworkAPI.InvokeEvent(EventName, packetData, target, priority);
+                }
             }
             else
             {

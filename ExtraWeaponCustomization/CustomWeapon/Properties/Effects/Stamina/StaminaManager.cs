@@ -61,7 +61,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Stamina
     public struct StaminaData
     {
         public SFloat16 mod;
-        public UFloat16 cap;
+        public UFloat8 cap;
         public bool cancelRegen;
     }
 }
