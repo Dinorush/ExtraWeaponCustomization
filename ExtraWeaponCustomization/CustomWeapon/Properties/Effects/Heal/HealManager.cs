@@ -2,6 +2,7 @@
 using EWC.Attributes;
 using EWC.CustomWeapon.CustomShot;
 using EWC.Dependencies;
+using EWC.Networking.Structs;
 using Player;
 using SNetwork;
 using System;
@@ -72,8 +73,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Heal
     public struct HealData
     {
         public pPlayerAgent player;
-        public SFloat16 heal;
-        public UFloat16 cap;
+        public SFloat16b heal;
+        public UFloat16b cap;
         public bool cancelRegen;
         public bool damageFX;
     }

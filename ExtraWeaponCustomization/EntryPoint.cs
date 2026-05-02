@@ -13,7 +13,7 @@ using System.Runtime.CompilerServices;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.11.7")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.11.8")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("Dinorush.ModifierAPI", BepInDependency.DependencyFlags.HardDependency)]

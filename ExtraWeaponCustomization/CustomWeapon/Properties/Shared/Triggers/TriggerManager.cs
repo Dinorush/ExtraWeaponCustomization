@@ -2,8 +2,8 @@
 using EWC.Attributes;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Structs;
+using EWC.Networking.Structs;
 using Player;
-using SNetwork;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -210,22 +210,22 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
     public struct TriggerInstanceData
     {
         public pCWC cwc;
-        public UFloat16 mod;
+        public UFloat16b mod;
         public ushort id;
     }
 
     public struct TriggerDirInstanceData
     {
         public Vector3 position;
-        public LowResVector3_Normalized dir;
+        public Vector3_24b_Normalized dir;
         public TriggerInstanceData instance;
     }
 
     public struct TriggerImpactInstanceData
     {
         public Vector3 position;
-        public LowResVector3_Normalized dir;
-        public LowResVector3_Normalized normal;
+        public Vector3_24b_Normalized dir;
+        public Vector3_24b_Normalized normal;
         public TriggerInstanceData instance;
     }
 

@@ -13,12 +13,15 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponShotCooldownContext>,
-        IWeaponProperty<WeaponPostStartFireContext>,
+        IWeaponProperty<WeaponPreFireContext>,
+        IWeaponProperty<WeaponPreFireContextSync>,
         IWeaponProperty<WeaponPostFireContext>,
         IWeaponProperty<WeaponPostFireContextSync>
     {
         private int _lastSyncShotCount = 0;
+        private bool _inExtraShots = false;
         private float _nextShotTime = 0f;
+        private float _fireShotTime = 0f;
         private float _shotBuffer = 0f;
         private float _fixedTime = 0f;
         private readonly static float FixedDelta;
@@ -42,19 +45,14 @@ namespace EWC.CustomWeapon.Properties.Traits
             _nextShotTime = context.NextShotTime;
         }
 
-        public void Invoke(WeaponPostStartFireContext context)
+        public void Invoke(WeaponPreFireContext context)
         {
-            // If semi-auto or burst, calculate if they've continuously fired
-            // based on whether this is the first frame since they could fire
-            var gun = (LocalGunComp)CWC.Weapon;
-            if (gun.FireMode != eWeaponFireMode.Auto)
-            {
-                float maxContinueTime = _nextShotTime + Clock.Delta;
-                if (Clock.Time <= maxContinueTime)
-                    return;
-            }
-            _shotBuffer = 0;
-            _nextShotTime = 0;
+            _fireShotTime = _nextShotTime;
+        }
+
+        public void Invoke(WeaponPreFireContextSync context)
+        {
+            _fireShotTime = _nextShotTime;
         }
 
         public void Invoke(WeaponPostFireContextSync context)
@@ -67,7 +65,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 return;
             }
 
-            _shotBuffer += (Clock.Time - _nextShotTime) * CGC.CurrentFireRate;
+            _shotBuffer += (Clock.Time - _fireShotTime) * CGC.CurrentFireRate;
             int extraShots = (int)_shotBuffer;
             weapon.m_shotsToFire = Math.Max(0, weapon.m_shotsToFire - extraShots);
             _lastSyncShotCount = weapon.m_shotsToFire;
@@ -76,19 +74,28 @@ namespace EWC.CustomWeapon.Properties.Traits
 
         public void Invoke(WeaponPostFireContext context)
         {
-            // Acts as a lock against recursive calls and first shot
-            if (_nextShotTime == 0) return;
+            if (_inExtraShots) return;
 
-            _shotBuffer += (Clock.Time - _nextShotTime) * CGC.CurrentFireRate;
+            // If semi-auto or burst, calculate if they've continuously fired
+            // based on whether this is the first frame since they could fire
+            var gun = (LocalGunComp)CWC.Weapon;
+            float maxContinueTime = _fireShotTime + Clock.Delta;
+            if (Clock.Time > maxContinueTime)
+            {
+                _shotBuffer = 0;
+                return;
+            }
+
+            _shotBuffer += (Clock.Time - _fireShotTime) * CGC.CurrentFireRate;
             int extraShots = GetShotsInBuffer();
             _nextShotTime = 0;
 
             if (extraShots == 0) return;
 
+            _inExtraShots = true;
             _fixedTime = Time.time - Time.fixedTime;
             FPSCamera camera = CWC.Owner.Player!.FPSCamera;
             FPS_RecoilSystem system = camera.m_recoilSystem;
-            var gun = (LocalGunComp)CWC.Weapon;
 
             float delta = Clock.Delta;
             float shotDelay = 1f / CGC.CurrentFireRate;
@@ -113,6 +120,7 @@ namespace EWC.CustomWeapon.Properties.Traits
 
             Clock.Delta = delta;
             _shotBuffer -= extraShots;
+            _inExtraShots = false;
         }
 
         private int GetShotsInBuffer()

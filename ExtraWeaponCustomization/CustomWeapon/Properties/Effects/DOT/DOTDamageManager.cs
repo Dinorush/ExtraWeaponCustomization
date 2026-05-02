@@ -10,6 +10,7 @@ using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
+using EWC.Networking.Structs;
 using EWC.Utils.Extensions;
 using Player;
 using SNetwork;
@@ -228,7 +229,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         public pCWC cwc;
         public byte limbID;
         public bool damageLimb;
-        public LowResVector3 localPosition;
+        public Vector3_32b localPosition;
         public float damage;
         public float staggerMult;
         public bool setCooldowns;

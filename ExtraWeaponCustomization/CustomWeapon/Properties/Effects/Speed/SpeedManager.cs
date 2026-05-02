@@ -1,5 +1,6 @@
 ﻿using EWC.Attributes;
 using EWC.CustomWeapon.Structs;
+using EWC.Networking.Structs;
 using SNetwork;
 using System.Diagnostics.CodeAnalysis;
 
@@ -51,6 +52,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Speed
     {
         public pCWC cwc;
         public ushort propertyID;
-        public UFloat16 mod;
+        public UFloat16b mod;
     }
 }

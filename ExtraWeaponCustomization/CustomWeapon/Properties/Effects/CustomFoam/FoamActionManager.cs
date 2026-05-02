@@ -1,6 +1,7 @@
 ﻿using Agents;
 using Enemies;
 using EWC.Attributes;
+using EWC.Networking.Structs;
 using Player;
 using SNetwork;
 using System.Diagnostics.CodeAnalysis;
@@ -101,7 +102,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
             ProjectileManager.WantToSpawnStaticGlue(proj.SyncID, packet.position, proj.m_volumeDesc);
         }
 
-        private static bool TrySpawnNewFoam(pPlayerAgent owner, UFloat16 volumeMod, ushort propertyID, [MaybeNullWhen(false)] out GlueGunProjectile projectile, uint syncID = 0)
+        private static bool TrySpawnNewFoam(pPlayerAgent owner, UFloat16b volumeMod, ushort propertyID, [MaybeNullWhen(false)] out GlueGunProjectile projectile, uint syncID = 0)
         {
             projectile = null;
             if (!owner.TryGet(out var source) || !CustomDataManager.TryGetSyncProperty<Foam>(propertyID, out var property)) return false;
@@ -222,7 +223,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         public byte limbID;
         public pPlayerAgent source;
         public Vector3 localPosition;
-        public UFloat16 volumeMod;
+        public UFloat16b volumeMod;
         public ushort propertyID;
     }
 
@@ -230,7 +231,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
     {
         public pPlayerAgent source;
         public Vector3 position;
-        public UFloat16 volumeMod;
+        public UFloat16b volumeMod;
         public ushort propertyID;
     }
 
@@ -240,22 +241,22 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         public int glueTarget;
         public pPlayerAgent source;
         public Vector3 localPosition;
-        public UFloat16 volumeMod;
+        public UFloat16b volumeMod;
         public ushort propertyID;
     }
 
     public struct FoamDirectData
     {
         public pEnemyAgent target;
-        public UFloat16 amount;
+        public UFloat16b amount;
         public ushort propertyID;
     }
 
     public struct FoamSyncData
     {
         public pEnemyAgent target;
-        public UFloat16 amount;
-        public UFloat16 time;
+        public UFloat16b amount;
+        public UFloat16b time;
     }
 
     public struct FoamActivateSyncData
@@ -269,7 +270,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
     {
         public pPlayerAgent source;
         public uint syncID;
-        public UFloat16 volumeMod;
+        public UFloat16b volumeMod;
         public ushort propertyID;
     }
 }

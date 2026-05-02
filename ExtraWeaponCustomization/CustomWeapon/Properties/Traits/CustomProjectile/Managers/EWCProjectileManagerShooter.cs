@@ -1,10 +1,10 @@
-﻿using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
-using UnityEngine;
-using System.Collections.Generic;
-using SNetwork;
+﻿using EWC.Attributes;
+using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
+using EWC.Networking.Structs;
 using EWC.Utils;
 using System;
-using EWC.Attributes;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 {
@@ -87,7 +87,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         public ushort id;
         public ushort propertyID;
         public Vector3 position;
-        public LowResVector3 localFXPos;
-        public LowResVector3_Normalized dir;
+        public Vector3_32b localFXPos;
+        public Vector3_24b_Normalized dir;
     }
 }

@@ -1,10 +1,10 @@
 ﻿using EWC.API;
 using EWC.Attributes;
 using EWC.CustomWeapon.Properties.Effects.Hit.Explosion.EEC_ExplosionFX;
+using EWC.Networking.Structs;
 using EWC.Utils.Extensions;
 using FX_EffectSystem;
 using Player;
-using SNetwork;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
@@ -94,7 +94,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
     public struct ExplosionFXData
     {
         public Vector3 position;
-        public LowResVector3_Normalized normal;
+        public Vector3_24b_Normalized normal;
         public ushort propertyID;
     }
 }

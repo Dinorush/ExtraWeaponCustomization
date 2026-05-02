@@ -1,8 +1,8 @@
 ﻿using Agents;
 using AK;
 using EWC.Attributes;
+using EWC.Networking.Structs;
 using Player;
-using SNetwork;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Effects.Infection
@@ -55,8 +55,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Infection
     public struct InfectionFXData
     {
         public pPlayerAgent player;
-        public LowResVector3 localPos;
-        public LowResVector3_Normalized dir;
+        public Vector3_32b localPos;
+        public Vector3_24b_Normalized dir;
         public bool isDirect;
     }
 }

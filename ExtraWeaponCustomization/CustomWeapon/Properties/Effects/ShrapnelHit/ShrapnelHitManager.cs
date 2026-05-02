@@ -12,6 +12,7 @@ using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
+using EWC.Networking.Structs;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using GameEvent;
@@ -249,8 +250,8 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
         public pCWC cwc;
         public byte limbID;
         public bool damageLimb;
-        public LowResVector3 localPosition;
-        public LowResVector3_Normalized dir;
+        public Vector3_32b localPosition;
+        public Vector3_24b_Normalized dir;
         public float damage;
         public float staggerMult;
         public bool setCooldowns;
@@ -261,6 +262,6 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
         public pPlayerAgent target;
         public pCWC cwc;
         public float damage;
-        public LowResVector3_Normalized dir;
+        public Vector3_24b_Normalized dir;
     }
 }

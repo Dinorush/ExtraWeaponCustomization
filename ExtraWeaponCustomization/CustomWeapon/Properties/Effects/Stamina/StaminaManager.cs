@@ -1,4 +1,5 @@
 ﻿using EWC.Attributes;
+using EWC.Networking.Structs;
 using Player;
 using SNetwork;
 using System;
@@ -60,8 +61,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Stamina
 
     public struct StaminaData
     {
-        public SFloat16 mod;
-        public UFloat8 cap;
+        public SFloat16b mod;
+        public UFloat8b cap;
         public bool cancelRegen;
     }
 }

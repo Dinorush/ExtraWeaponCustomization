@@ -13,6 +13,7 @@ using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
+using EWC.Networking.Structs;
 using EWC.Utils;
 using EWC.Utils.Extensions;
 using GameEvent;
@@ -324,8 +325,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public pCWC cwc;
         public byte limbID;
         public bool damageLimb;
-        public LowResVector3 localPosition;
-        public LowResVector3_Normalized direction;
+        public Vector3_32b localPosition;
+        public Vector3_24b_Normalized direction;
         public float damage;
         public float staggerMult;
         public bool setCooldowns;
@@ -336,6 +337,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         public pPlayerAgent target;
         public pCWC cwc;
         public float damage;
-        public LowResVector3_Normalized direction;
+        public Vector3_24b_Normalized direction;
     }
 }
