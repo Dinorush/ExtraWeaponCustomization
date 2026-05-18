@@ -221,7 +221,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             hitData.owner = CWC.Owner.Player;
             hitData.shotInfo.Reset(archData.Damage, archData.PrecisionDamageMulti, archData.StaggerDamageMulti, CWC, orig, UseParentShotMod);
             hitData.ResetDamage();
-            hitData.damageFalloff = archData.DamageFalloff;
+            hitData.VectorFalloff = archData.DamageFalloff;
             hitData.pierceLimit = archData.PierceLimit();
             hitData.maxRayDist = CWC.Weapon.MaxRayDist;
             hitData.angOffsetX = x;

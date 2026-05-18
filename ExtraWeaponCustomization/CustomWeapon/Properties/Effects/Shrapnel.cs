@@ -278,7 +278,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 hitData.falloff = IgnoreFalloff ? 1f : falloff;
                 hitData.pierceLimit = PierceLimit;
                 hitData.damage = hitData.shotInfo.OrigDamage;
-                hitData.damageFalloff = DamageFalloff;
+                hitData.VectorFalloff = DamageFalloff;
                 hitData.staggerMulti = hitData.shotInfo.OrigStagger;
                 hitData.precisionMulti = PrecisionDamageMulti;
                 hitData.maxRayDist = MaxRange;

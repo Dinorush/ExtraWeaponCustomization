@@ -1,5 +1,4 @@
-﻿using EWC.CustomWeapon;
-using EWC.CustomWeapon.ComponentWrapper;
+﻿using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.Utils.Extensions;
@@ -14,7 +13,12 @@ namespace EWC.Utils
     public sealed class HitData
     {
         public float damage;
-        public Vector2 damageFalloff;
+        public (float start, float end) damageFalloff;
+        public Vector2 VectorFalloff
+        {
+            get => new(damageFalloff.start, damageFalloff.end);
+            set => damageFalloff = (value.x, value.y);
+        }
         public float falloff = 1f;
         public int pierceLimit = 0;
         public float precisionMulti;
@@ -50,7 +54,7 @@ namespace EWC.Utils
 
 #pragma warning disable CS8618
         // All used fields are set
-        public HitData(WeaponHitData hitData, float additionalDist = 0) : this(DamageType.Bullet) => Setup(hitData, additionalDist);
+        public HitData(WeaponHitData hitData, float additionalDist = 0, int pierceLimit = 0) : this(DamageType.Bullet) => Setup(hitData, additionalDist, pierceLimit);
         public HitData(MeleeWeaponFirstPerson melee, MeleeWeaponDamageData hitData) : this(DamageType.Bullet) => Setup(melee, hitData);
         public HitData(HitData data)
         {
@@ -84,14 +88,15 @@ namespace EWC.Utils
         }
 #pragma warning restore CS8618
 
-        public void Setup(WeaponHitData hitData, float additionalDist = 0)
+        public void Setup(WeaponHitData hitData, float additionalDist = 0, int pierceLimit = 0)
         {
             _weaponHitData = hitData;
             _meleeWeapon = null;
 
             shotInfo = ShotManager.GetVanillaShotInfo(hitData);
             ResetDamage();
-            damageFalloff = hitData.damageFalloff;
+            this.pierceLimit = pierceLimit;
+            damageFalloff = (hitData.damageFalloff.x, hitData.damageFalloff.y);
             randomSpread = hitData.randomSpread;
             angOffsetX = hitData.angOffsetX;
             angOffsetY = hitData.angOffsetY;
@@ -129,7 +134,7 @@ namespace EWC.Utils
         {
             hitData.owner = owner;
             hitData.damage = damage;
-            hitData.damageFalloff = damageFalloff;
+            hitData.damageFalloff = VectorFalloff;
             hitData.precisionMulti = precisionMulti;
             hitData.staggerMulti = staggerMulti;
             hitData.randomSpread = randomSpread;
@@ -158,7 +163,12 @@ namespace EWC.Utils
 
         public float CalcRawFalloff(float distance)
         {
-            return Math.Max(distance.Map(damageFalloff.x, damageFalloff.y, 1f, 0f), BulletWeapon.s_falloffMin);
+            if (damageFalloff.start <= damageFalloff.end)
+                return Math.Max(distance.Map(damageFalloff.start, damageFalloff.end, 1f, 0f), BulletWeapon.s_falloffMin);
+
+            if (distance < damageFalloff.start)
+                return 1f;
+            return 1f + (distance - damageFalloff.start) * (damageFalloff.start - damageFalloff.end);
         }
 
         public float CalcFalloff(float additionalDist = 0) => CalcRawFalloff(RayHit.distance + additionalDist);
@@ -183,7 +193,7 @@ namespace EWC.Utils
             return new WeaponHitData()
             {
                 damage = damage,
-                damageFalloff = damageFalloff,
+                damageFalloff = VectorFalloff,
                 precisionMulti = precisionMulti,
                 staggerMulti = staggerMulti,
                 randomSpread = randomSpread,

@@ -120,9 +120,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             _wallPierce = _settings.WallPierce;
             _hitFuncOverride = projBase.HitFuncOverride;
-            _pierceCount = hitData!.GetPierceOrFallback(cwc.Weapon);
             _ricochetCount = _settings.RicochetCount;
             HitData = new(hitData!);
+            HitData.pierceLimit = _pierceCount = hitData!.GetPierceOrFallback(cwc.Weapon);
             _baseFalloff = HitData.falloff;
             _origInfo = HitData.shotInfo.State;
             if (ignoreEnt != IntPtr.Zero)

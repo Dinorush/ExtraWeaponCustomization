@@ -1,5 +1,4 @@
 ﻿using Agents;
-using EWC.Attributes;
 using EWC.CustomWeapon;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
@@ -71,7 +70,7 @@ namespace EWC.Patches.Gun
             if (damageSearchID != 0 && damBase?.TempSearchID == damageSearchID) return;
 
             CustomWeaponComponent? cwc = ShotManager.ActiveFiringInfo.cwc;
-            HitData data = new(weaponRayData, additionalDis);
+            HitData data = new(weaponRayData, additionalDis, ShotManager.ActiveFiringInfo.archBlock?.PierceLimit() ?? 1);
             if (cwc == null)
             {
                 ApplyDebuffs(data);
@@ -82,7 +81,6 @@ namespace EWC.Patches.Gun
             ApplyEWCHit(cwc, data, out allowDirectionalBonus);
         }
 
-        private static void ApplyDebuffs(WeaponHitData weaponRayData, float additionalDis) => ApplyDebuffs(new(weaponRayData, additionalDis));
         private static void ApplyDebuffs(HitData data)
         {
             if (data.damageType.HasFlag(DamageType.Dead)) return;

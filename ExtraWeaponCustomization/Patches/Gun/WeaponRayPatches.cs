@@ -7,6 +7,7 @@ using System;
 using EWC.Utils;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.CustomShot;
+using EWC.Utils.Extensions;
 
 namespace EWC.Patches.Gun
 {
@@ -38,7 +39,7 @@ namespace EWC.Patches.Gun
             var cwc = ShotManager.ActiveFiringInfo.cwc;
             if (cwc == null) return true;
 
-            s_hitData.Setup(weaponRayData);
+            s_hitData.Setup(weaponRayData, 0, ShotManager.ActiveFiringInfo.archBlock!.PierceLimit());
             cwc.Invoke(new WeaponPreRayContext(s_hitData, originPos));
             float mod = cwc.SpreadController.Value;
             if (mod != 1f)
