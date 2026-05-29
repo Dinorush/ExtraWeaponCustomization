@@ -35,7 +35,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 {
                     // Clean dead agents from dict
                     _cooldownTimes.Keys
-                        .Where(wrapper => wrapper.Object == null || !wrapper.Object.Alive)
+                        .Where(wrapper => wrapper.IsNull || !wrapper.Object.Alive)
                         .ToList()
                         .ForEach(wrapper => _cooldownTimes.Remove(wrapper));
 

@@ -5,5 +5,6 @@ namespace EWC.CustomWeapon.WeaponContext
     [RequireType(Enums.OwnerType.Managed)]
     public interface IWeaponContext
     {
+        public bool IsValid => true;
     }
 }

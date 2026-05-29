@@ -53,7 +53,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 if (!_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out var stored))
                 {
                     _targetAmounts.Keys
-                        .Where(wrapper => wrapper.Object == null)
+                        .Where(wrapper => wrapper.IsNull)
                         .ToList()
                         .ForEach(wrapper => _targetAmounts.Remove(wrapper));
                     _targetAmounts.Add(new(TempWrapper), stored = 0);

@@ -102,7 +102,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             }
             catch (Exception e)
             {
-                EWCLogger.Log($"DOT: Error when doing damage: {e}");
+                EWCLogger.Error($"DOT: Error when doing damage: {e}");
                 Destroy();
             }
         }

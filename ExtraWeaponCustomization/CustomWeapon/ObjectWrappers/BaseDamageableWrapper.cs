@@ -5,7 +5,7 @@ namespace EWC.CustomWeapon.ObjectWrappers
     public class BaseDamageableWrapper : ObjectWrapper<IDamageable>
     {
         public static readonly new BaseDamageableWrapper SharedInstance = new(null, IntPtr.Zero);
-        public bool Alive => Object != null && Object.GetHealthRel() > 0;
+        public bool Alive => !IsNull && Object.GetHealthRel() > 0;
 
         public BaseDamageableWrapper(BaseDamageableWrapper wrapper) : base(wrapper) { }
 
@@ -24,7 +24,7 @@ namespace EWC.CustomWeapon.ObjectWrappers
     public class BaseDamageableWrapper<T> : ObjectWrapper<T> where T : Dam_SyncedDamageBase
     {
         public static readonly new BaseDamageableWrapper<T> SharedInstance = new(null, IntPtr.Zero);
-        public bool Alive => Object != null && Object.GetHealthRel() > 0;
+        public bool Alive => !IsNull && Object.GetHealthRel() > 0;
 
         public BaseDamageableWrapper(BaseDamageableWrapper<T> wrapper) : base(wrapper) { }
 

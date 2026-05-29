@@ -6,6 +6,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
     [AllowAbstract]
     public abstract class WeaponTriggerContext : IWeaponContext
     {
+        public virtual bool IsValid => true;
         public WeaponTriggerContext()
         {
         }

@@ -13,6 +13,7 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts.Base
         public float Backstab { get; }
         public float OrigBackstab { get; }
         protected override GameObject SetGameObject() => Damageable.Cast<MonoBehaviour>().gameObject;
+        public override bool IsValid => GameObject != null;
 
         public WeaponHitDamageableContextBase(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 normal, float backstab, float origBackstab, float falloff, ShotInfo.Const info, DamageType flag) :
             base(position, direction, normal, falloff, info, flag.WithSubTypes(damageable))

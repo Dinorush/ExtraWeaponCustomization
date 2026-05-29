@@ -33,7 +33,7 @@ namespace EWC.CustomWeapon.Properties.Traits
                 if (!_cooldownsPerTarget.TryGetValue(TempWrapper, out float hitTime))
                 {
                     _cooldownsPerTarget.Keys
-                        .Where(wrapper => wrapper.Object == null || !wrapper.Object.Alive)
+                        .Where(wrapper => wrapper.IsNull || !wrapper.Object.Alive)
                         .ToList()
                         .ForEach(wrapper => _cooldownsPerTarget.Remove(wrapper));
 

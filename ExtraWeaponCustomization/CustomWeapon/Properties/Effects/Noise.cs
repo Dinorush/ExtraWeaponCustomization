@@ -153,7 +153,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             if (runAlert)
             {
-                foreach (ObjectWrapper<Agent> wrapper in _alertProgress.Keys.Where(key => key.Object == null || !key.Object.Alive).ToList())
+                foreach (ObjectWrapper<Agent> wrapper in _alertProgress.Keys.Where(key => key.IsNull || !key.Object.Alive).ToList())
                     _alertProgress.Remove(wrapper);
                 s_alertList.Clear();
                 s_alertList.AddRange(SearchUtil.GetEnemiesInRange(s_ray, AlertRadius, 180f, node, SearchSettings));

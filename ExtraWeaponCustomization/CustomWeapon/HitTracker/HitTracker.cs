@@ -44,7 +44,7 @@ namespace EWC.CustomWeapon.HitTracker
         public bool TryGetContexts(ObjectWrapper<Agent> enemy, [MaybeNullWhen(false)] out Dictionary<ObjectWrapper<CustomWeaponComponent>, (WeaponHitDamageableContext context, float time)> hitsDict, out IntPtr lastCWCPtr)
         {
             _lastHits.Keys
-                .Where(wrapper => wrapper.Object == null)
+                .Where(wrapper => wrapper.IsNull)
                 .ToList()
                 .ForEach(wrapper =>
                 {

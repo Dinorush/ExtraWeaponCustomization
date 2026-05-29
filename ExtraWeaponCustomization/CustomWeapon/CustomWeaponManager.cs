@@ -196,11 +196,11 @@ namespace EWC.CustomWeapon
             var listeners = Current._weaponListeners;
             foreach ((var wrapper, var info) in listeners)
             {
-                if (wrapper.Object != null)
+                if (!wrapper.IsNull)
                 {
                     if (!info.IsValid()) continue;
 
-                    var item = wrapper.Object!;
+                    var item = wrapper.Object;
                     if (item.TryGetComp<CustomWeaponComponent>(out var cwc))
                         cwc.Clear();
 

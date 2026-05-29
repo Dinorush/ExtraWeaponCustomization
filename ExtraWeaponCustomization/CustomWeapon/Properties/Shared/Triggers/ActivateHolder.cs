@@ -84,7 +84,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 {
                     var callback = new DelayedCallback(delay, () =>
                     {
-                        Caller?.TriggerApply(triggerContexts);
+                        SafeApply(triggerContexts);
                         // If applying would reset this holder, queue could be cleared
                         if (_delayedApplies!.Count > 0)
                             _delayedApplies.Dequeue();
@@ -94,7 +94,20 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 }
             }
             else
-                Caller?.TriggerApply(triggerContexts);
+            {
+                if (Apply != null)
+                    SafeApply(triggerContexts);
+                else
+                    Caller?.TriggerApply(triggerContexts);
+            }
+        }
+
+        private void SafeApply(List<TriggerContext> triggerContexts)
+        {
+            if (Caller == null) return;
+
+            triggerContexts.RemoveAll(tContext => !tContext.context.IsValid);
+            Caller.TriggerApply(triggerContexts);
         }
 
         public override void Reset(bool resetAccumulated = true)

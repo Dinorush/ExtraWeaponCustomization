@@ -116,15 +116,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             // Used for batching shotgun hits on same shot
             public DOTInstance? LastInstance { get; set; }
             // In some cases, a Transform becomes null but not their damageable and can crash later when getting DamageTargetPos.
-            public bool Alive => _baseDamageable != null && _baseDamageable.GetHealthRel() > 0 && _hasTrans == (_transform != null);
+            public bool Alive => !IsNull && _baseDamageable.GetHealthRel() > 0;
             private readonly IDamageable _baseDamageable;
-            private readonly bool _hasTrans;
-            private readonly Transform? _transform;
             public DOTDamageableWrapper(IDamageable damageable, IntPtr ptr) : base(damageable, ptr)
             {
                 _baseDamageable = damageable.GetBaseDamagable();
-                _transform = damageable.Cast<Component>().transform;
-                _hasTrans = _transform != null;
             }
         }
 

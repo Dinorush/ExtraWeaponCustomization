@@ -1,5 +1,6 @@
 ﻿using Il2CppInterop.Runtime.InteropTypes;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EWC.CustomWeapon.ObjectWrappers
 {
@@ -7,13 +8,26 @@ namespace EWC.CustomWeapon.ObjectWrappers
     {
         public static readonly ObjectWrapper<T> SharedInstance = new(null, IntPtr.Zero);
 
-        public T? Object { get; private set; }
+        private T? _object;
+        private UnityEngine.Object? _instance;
+        [MemberNotNullWhen(false, nameof(Object))]
+        public bool IsNull => _instance == null;
+        public T? Object
+        {
+            get => _object;
+            private set
+            { 
+                _object = value;
+                _instance = value != null ? value.TryCast<UnityEngine.Object>() : null;
+            }
+        }
         public IntPtr Pointer { get; protected set; }
 
         public ObjectWrapper(ObjectWrapper<T> wrapper)
         {
             Pointer = wrapper.Pointer;
-            Object = wrapper.Object;
+            _object = wrapper._object;
+            _instance = wrapper._instance;
         }
 
         public ObjectWrapper(T? obj, IntPtr ptr)

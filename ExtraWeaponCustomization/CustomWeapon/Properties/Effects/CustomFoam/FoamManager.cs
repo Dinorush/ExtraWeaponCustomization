@@ -90,7 +90,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
         {
             // Remove dead bubbles. Doesn't clear expiring ones, but those will be cleaned when their timer finishes.
             _customFoams.Keys
-                .Where(wrapper => wrapper.Object == null)
+                .Where(wrapper => wrapper.IsNull)
                 .ToList()
                 .ForEach(wrapper =>
                 {
@@ -140,7 +140,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam
                 float time = Clock.Time;
                 while (_bubbleExpireTimes.TryPeek(out var wrapper, out float endTime) && endTime < time)
                 {
-                    if (wrapper.Object != null)
+                    if (!wrapper.IsNull)
                         ProjectileManager.WantToDestroyGlue(wrapper.Object.SyncID);
                     _bubbleExpireTimes.Dequeue();
                 }
