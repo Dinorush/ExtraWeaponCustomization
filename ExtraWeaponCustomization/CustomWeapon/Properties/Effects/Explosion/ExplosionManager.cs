@@ -72,7 +72,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             var ownerPlayer = explosiveBase.CWC.Owner.IsType(OwnerType.Player) ? explosiveBase.CWC.Owner.Player : null;
             if (explosiveBase.DamageFriendly || explosiveBase.DamageOwner)
-                foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.Radius, 180f, ownerPlayer, searchSetting))
+                foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(ray, explosiveBase.FriendlyRadius > 0 ? explosiveBase.FriendlyRadius : explosiveBase.Radius, 180f, ownerPlayer, searchSetting))
                     hits.Add(hit);
 
             if (explosiveBase.DamageLocks)
@@ -109,7 +109,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 blastDir, Vector3 normal, float distance, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
         {
-            float damage = distance.MapInverted(eBase.InnerRadius, eBase.Radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
+            AgentType agentType = damageable.GetAgentType();
+            float radius = agentType == AgentType.Player || eBase.FriendlyRadius == 0 ? eBase.Radius : eBase.FriendlyRadius;
+            float innerRadius = agentType == AgentType.Player || eBase.FriendlyRadius == 0 ? eBase.InnerRadius : eBase.FriendlyInnerRadius;
+
+            float damage = distance.MapInverted(innerRadius, radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;
             damage *= triggerAmt;
             float precisionMult = eBase.PrecisionDamageMulti;
@@ -117,9 +121,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
             float backstabMulti = 1f;
             float origBackstabMulti = 1f;
-            bool enemy = damageable.IsEnemy();
             Dam_EnemyDamageLimb? limb = null;
-            if (enemy)
+            if (agentType == AgentType.Enemy)
             {
                 limb = damageable.Cast<Dam_EnemyDamageLimb>();
                 if (!eBase.IgnoreBackstab && eBase.CWC.Weapon.AllowBackstab)
@@ -168,12 +171,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             staggerMult *= info.InnateStaggerMod;
 
             PlayerAgent? source = eBase.CWC.Owner.Player;
-            Agent? agent = damageable.GetBaseAgent();
-            if (agent?.Type == AgentType.Player)
+            if (agentType == AgentType.Player)
             {
-                if (agent == source)
+                if (!eBase.DamageOwner)
                 {
-                    if (!eBase.DamageOwner)
+                    if (damageable.GetBaseAgent() == source)
                         return;
                 }
                 else if (!eBase.DamageFriendly)
@@ -196,14 +198,14 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                 _playerSync.Send(playerData);
                 return;
             }
-            else if (agent == null) // Lock damage; direction doesn't matter
+            else if (agentType == AgentType.Decoy) // Lock damage; direction doesn't matter
             {
                 eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 damageable.BulletDamage(damage, source, Vector3.zero, Vector3.zero, Vector3.zero);
                 return;
             }
 
-            if (!enemy) return;
+            if (agentType != AgentType.Enemy) return;
 
             Dam_EnemyDamageBase damBase = limb!.m_base;
             Vector3 localPosition = position - damBase.Owner.Position;

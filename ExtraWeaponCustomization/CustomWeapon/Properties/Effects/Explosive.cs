@@ -21,6 +21,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float MinDamage { get; private set; } = 0f;
         public float InnerRadius { get; private set; } = 0f;
         public float Radius { get; private set; } = 0f;
+        public float FriendlyInnerRadius { get; private set; } = 0f;
+        public float FriendlyRadius { get; private set; } = 0f;
         public float Exponent { get; private set; } = 1f;
         public float PrecisionDamageMulti { get; private set; } = 0f;
         public float StaggerDamageMulti { get; private set; } = 1f;
@@ -97,6 +99,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(MinDamage), MinDamage);
             writer.WriteNumber(nameof(InnerRadius), InnerRadius);
             writer.WriteNumber(nameof(Radius), Radius);
+            writer.WriteNumber(nameof(FriendlyInnerRadius), FriendlyInnerRadius);
+            writer.WriteNumber(nameof(FriendlyRadius), FriendlyRadius);
             writer.WriteNumber(nameof(Exponent), Exponent);
             writer.WriteNumber(nameof(PrecisionDamageMulti), PrecisionDamageMulti);
             writer.WriteNumber(nameof(StaggerDamageMulti), StaggerDamageMulti);
@@ -147,6 +151,14 @@ namespace EWC.CustomWeapon.Properties.Effects
                 case "radius":
                 case "maxradius":
                     Radius = reader.GetSingle();
+                    break;
+                case "friendlyinnerradius":
+                case "friendlyminradius":
+                    FriendlyInnerRadius = reader.GetSingle();
+                    break;
+                case "friendlyradius":
+                case "friendlymaxradius":
+                    FriendlyRadius = reader.GetSingle();
                     break;
                 case "exponent":
                     Exponent = reader.GetSingle();

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Agents;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
@@ -25,7 +26,7 @@ namespace EWC.Utils
         {
             if (damageable == null) return false;
             
-            Agents.Agent? agent = damageable.GetBaseAgent();
+            Agent? agent = damageable.GetBaseAgent();
             return agent != null || damageable.TryCast<LevelGeneration.LG_WeakDoorBladeDamage>() == null;
         }
 
@@ -33,8 +34,16 @@ namespace EWC.Utils
         {
             if (damageable == null) return false;
 
-            Agents.Agent? agent = damageable.GetBaseAgent();
-            return agent != null && agent.Alive && agent.Type == Agents.AgentType.Enemy;
+            Agent? agent = damageable.GetBaseAgent();
+            return agent != null && agent.Alive && agent.Type == AgentType.Enemy;
+        }
+
+        public static AgentType GetAgentType([NotNullWhen(true)] this IDamageable? damageable)
+        {
+            if (damageable == null) return AgentType.Decoy;
+
+            Agent? agent = damageable.GetBaseAgent();
+            return agent != null && agent.Alive ? agent.Type : AgentType.Decoy;
         }
 
         private static IntPtr _cachedExpedition = default;
