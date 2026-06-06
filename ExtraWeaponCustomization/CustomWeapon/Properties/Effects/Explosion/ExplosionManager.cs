@@ -110,8 +110,8 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
         internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 blastDir, Vector3 normal, float distance, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
         {
             AgentType agentType = damageable.GetAgentType();
-            float radius = agentType == AgentType.Player || eBase.FriendlyRadius == 0 ? eBase.Radius : eBase.FriendlyRadius;
-            float innerRadius = agentType == AgentType.Player || eBase.FriendlyRadius == 0 ? eBase.InnerRadius : eBase.FriendlyInnerRadius;
+            float radius = agentType == AgentType.Player || eBase.FriendlyRadius <= 0 ? eBase.Radius : eBase.FriendlyRadius;
+            float innerRadius = agentType == AgentType.Player || eBase.FriendlyRadius <= 0 ? eBase.InnerRadius : eBase.FriendlyInnerRadius;
 
             float damage = distance.MapInverted(innerRadius, radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;

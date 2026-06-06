@@ -5,6 +5,7 @@ using EWC.Networking.Structs;
 using EWC.Utils.Extensions;
 using FX_EffectSystem;
 using Player;
+using System;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
@@ -65,7 +66,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                         position = position,
                         flashColor = eBase.GlowColor,
                         intensity = eBase.GlowIntensity,
-                        range = eBase.Radius,
+                        range = Math.Max(eBase.Radius, eBase.FriendlyRadius),
                         duration = eBase.GlowDuration,
                         fadeDuration = eBase.GlowFadeDuration
                     });
