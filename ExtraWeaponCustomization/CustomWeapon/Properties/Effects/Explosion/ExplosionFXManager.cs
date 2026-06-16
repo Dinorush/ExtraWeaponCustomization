@@ -51,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             }
 
             // Lighting
-            if (Configuration.ShowExplosionEffect && eBase.Radius > 0)
+            if (Configuration.ShowExplosionEffect && Math.Max(eBase.Radius, eBase.FriendlyRadius) > 0)
             {
                 if (eBase.EnableMineFX)
                 {

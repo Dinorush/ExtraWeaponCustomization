@@ -190,7 +190,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             return baseDir;
         }
 
-        private List<Vector3> GenerateRayDirs(Vector3 position, Vector3 dir, Vector3 normal, float triggerAmt)
+        private List<Vector3> GenerateRayDirs(Vector3 position, Vector3 dir, Vector3 normal, float triggerAmt, IntPtr ignoreEnt = default)
         {
             if (!TriggerScaleCount)
                 triggerAmt = 1f;
@@ -198,7 +198,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             List<Vector3> results;
             if (SearchEnabled && CWC.Owner.IsType(OwnerType.Managed))
             {
-                results = GetBestEnemyDirs(position, dir, triggerAmt);
+                results = GetBestEnemyDirs(position, dir, triggerAmt, ignoreEnt);
                 for (int i = 0; i < results.Count; i++)
                     results[i] = CustomShotComponent.CalcRayDir(results[i], 0, 0, SearchShotMaxAngle);
                 if (!SearchOverflow)
@@ -269,7 +269,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             var ray = new Ray(position, dir);
             var fxPos = FireFromGun ? CWC.Owner.MuzzleAlign.position : ray.origin;
-            var rayDirs = GenerateRayDirs(position, dir, normal, triggerAmt);
+            var rayDirs = GenerateRayDirs(position, dir, normal, triggerAmt, ignoreEnt);
             for (int i = 0; i < rayDirs.Count; i++)
             {
                 HitData hitData = new(DamageType.Shrapnel);
@@ -356,7 +356,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private bool DoProjectileHit(HitData hitData, ContextController cc) => ShrapnelHitManager.DoHit(this, hitData, cc, calcFalloff: false);
 
-        private List<Vector3> GetBestEnemyDirs(Vector3 position, Vector3 dir, float triggerScale)
+        private List<Vector3> GetBestEnemyDirs(Vector3 position, Vector3 dir, float triggerScale, IntPtr ignoreEnt = default)
         {
             int count = (int)Math.Round(Count * triggerScale);
             List<Vector3> targets = new(count);
@@ -372,21 +372,22 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             float range;
             if (_shotSettings.projectile != null)
-                range = SearchRange > 0 ? Math.Min(MaxRange, SearchRange) : MaxRange;
+                range = SearchRange > 0 ? SearchRange : MaxRange;
             else
-                range = Math.Max(MaxRange, SearchRange);
+                range = SearchRange > 0 ? Math.Min(MaxRange, SearchRange) : MaxRange;
             var angle = SearchAngle > 0 ? Math.Min(MaxAngle, SearchAngle) : MaxAngle;
 
+            SearchUtil.DupeCheckSet = new() { ignoreEnt };
             List<(EnemyAgent enemy, RaycastHit hit)> enemyHits;
             if (SearchTargetMode == TargetingMode.ClosestLimb)
             {
-                SearchSetting settings = SearchSetting.ClosestHit | SearchSetting.CheckLOS;
+                SearchSetting settings = SearchSetting.ClosestHit | SearchSetting.CheckLOS | SearchSetting.IgnoreDupes;
                 SearchUtil.SightBlockLayer = LayerUtil.MaskWorld;
                 enemyHits = SearchUtil.GetEnemyHitsInRange(new(position, dir), range, angle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex), settings);
             }
             else
             {
-                var enemies = SearchUtil.GetEnemiesInRange(new(position, dir), range, angle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex));
+                var enemies = SearchUtil.GetEnemiesInRange(new(position, dir), range, angle, CourseNodeUtil.GetCourseNode(position, CWC.Owner.DimensionIndex), SearchSetting.IgnoreDupes);
                 enemyHits = enemies.ConvertAll(enemy => (enemy, default(RaycastHit)));
             }
 
@@ -437,18 +438,20 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
             }
 
+            bool IsValidDir(Vector3 trgt, Vector3 position) => (trgt - position).sqrMagnitude >= 0.001f;
+
             for (int i = 0; i < enemyHits.Count && targets.Count < count; i++)
             {
                 var pair = enemyHits[i];
                 if (SearchTargetMode == TargetingMode.Weakspot)
                 {
-                    if (TryGetClosestWeakspotPos(pair, out var pos))
+                    if (TryGetClosestWeakspotPos(pair, out var pos) && IsValidDir(pos, position))
                         targets.Add((pos - position).normalized);
                 }
                 else
                 {
                     Vector3 pos = GetTargetPos(pair);
-                    if (SearchTargetMode == TargetingMode.ClosestLimb || !Physics.Linecast(position, pos, LayerUtil.MaskWorld))
+                    if (IsValidDir(pos, position) && (SearchTargetMode == TargetingMode.ClosestLimb || !Physics.Linecast(position, pos, LayerUtil.MaskWorld)))
                         targets.Add((pos - position).normalized);
                 }
             }

@@ -49,7 +49,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
 
         internal static void DoExplosionDamage(Vector3 position, Vector3 direction, float falloffMod, Explosive explosiveBase, float triggerAmt, ShotInfo? triggerInfo)
         {
-            if (explosiveBase.Radius == 0 || (explosiveBase.MaxDamage == 0 && explosiveBase.MinDamage == 0)) return;
+            if (Math.Max(explosiveBase.Radius, explosiveBase.FriendlyRadius) == 0 || (explosiveBase.MaxDamage == 0 && explosiveBase.MinDamage == 0)) return;
 
             AIG_CourseNode? node = CourseNodeUtil.GetCourseNode(position, explosiveBase.CWC.Owner.DimensionIndex);
             if (node == null)
