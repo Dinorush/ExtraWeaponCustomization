@@ -14,9 +14,9 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
     public sealed class PerTargetTrigger : ITrigger
     {
         public TriggerName Name { get; } = TriggerName.PerTarget;
-        public ITrigger Activate { get; private set; }
-        public ITrigger Apply { get; private set; }
-        public ITrigger? Cancel { get; private set; }
+        public List<ITrigger> Activate { get; private set; }
+        public List<ITrigger> Apply { get; private set; }
+        public List<ITrigger>? Cancel { get; private set; }
         public float Amount { get; private set; } = 1f;
         public float Cap { get; private set; } = 0f;
         public float Threshold { get; private set; } = 0f;
@@ -32,8 +32,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public PerTargetTrigger(ITrigger activate, ITrigger apply)
         {
-            Activate = activate;
-            Apply = apply;
+            Activate = new() { activate };
+            Apply = new() { apply };
         }
 
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
@@ -47,51 +47,60 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             amount = 0f;
             if (context is not WeaponHitDamageableContextBase baseContext) return false;
 
-            if (Activate.Invoke(context, out var triggerAmt) && triggerAmt > 0)
+            foreach (var trigger in Activate)
             {
-                var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
-                if (!_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out var stored))
+                if (trigger.Invoke(context, out var triggerAmt) && triggerAmt > 0)
                 {
-                    _targetAmounts.Keys
-                        .Where(wrapper => wrapper.IsNull)
-                        .ToList()
-                        .ForEach(wrapper => _targetAmounts.Remove(wrapper));
-                    _targetAmounts.Add(new(TempWrapper), stored = 0);
-                }
+                    var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
+                    if (!_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out var stored))
+                    {
+                        _targetAmounts.Keys
+                            .Where(wrapper => wrapper.IsNull)
+                            .ToList()
+                            .ForEach(wrapper => _targetAmounts.Remove(wrapper));
+                        _targetAmounts.Add(new(TempWrapper), stored = 0);
+                    }
 
-                var addAmount = triggerAmt * Amount;
-                if (ActivateScaleWithFalloff)
-                    addAmount *= baseContext.Falloff;
+                    var addAmount = triggerAmt * Amount;
+                    if (ActivateScaleWithFalloff)
+                        addAmount *= baseContext.Falloff;
 
-                stored += triggerAmt * Amount;
-                if (Cap > 0)
-                    stored = Math.Min(stored, Cap);
-                _targetAmounts[TempWrapper] = stored;
-            }
-
-            if (Apply.Invoke(context, out triggerAmt) && triggerAmt > 0)
-            {
-                var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
-                if (_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out var stored) && stored >= Threshold)
-                {
-                    if (OverrideAmount)
-                        amount = Amount;
-                    else if (ApplyAboveThreshold)
-                        amount = stored - Threshold;
-                    else
-                        amount = stored;
-
-                    if (amount == 0) return true;
-
-                    _targetAmounts.Remove(TempWrapper);
-                    return true;
+                    stored += triggerAmt * Amount;
+                    if (Cap > 0)
+                        stored = Math.Min(stored, Cap);
+                    _targetAmounts[TempWrapper] = stored;
                 }
             }
 
-            if (Cancel?.Invoke(context, out triggerAmt) == true && triggerAmt > 0)
+            foreach (var trigger in Apply)
             {
-                var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
-                _targetAmounts.Remove(TempWrapper.Set(damageable));
+                if (trigger.Invoke(context, out var triggerAmt) && triggerAmt > 0)
+                {
+                    var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
+                    if (_targetAmounts.TryGetValue(TempWrapper.Set(damageable), out var stored) && stored >= Threshold)
+                    {
+                        if (OverrideAmount)
+                            amount = Amount;
+                        else if (ApplyAboveThreshold)
+                            amount = stored - Threshold;
+                        else
+                            amount = stored;
+
+                        if (amount == 0) return true;
+
+                        _targetAmounts.Remove(TempWrapper);
+                        return true;
+                    }
+                }
+            }
+
+            foreach (var trigger in Cancel.OrEmptyIfNull())
+            {
+                if (trigger.Invoke(context, out var triggerAmt) && triggerAmt > 0)
+                {
+                    var damageable = ((WeaponHitDamageableContextBase)context).Damageable;
+                    _targetAmounts.Remove(TempWrapper.Set(damageable));
+                }
             }
             
             return _targetAmounts.Count > 0;
@@ -100,15 +109,20 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         public void Reset()
         {
             _targetAmounts.Clear();
-            Activate.Reset();
-            Apply.Reset();
+            foreach (var trigger in Activate)
+                trigger.Reset();
+            foreach (var trigger in Apply)
+                trigger.Reset();
+            foreach (var trigger in Cancel.OrEmptyIfNull())
+                trigger.Reset();
         }
 
         public ITrigger Clone()
         {
             var copy = CopyUtil.Clone(this);
-            copy.Activate = Activate.Clone();
-            copy.Apply = Apply.Clone();
+            copy.Activate = Activate.ConvertAll(trigger => trigger.Clone());
+            copy.Apply = Apply.ConvertAll(trigger => trigger.Clone());
+            copy.Cancel = Cancel?.ConvertAll(trigger => trigger.Clone());
             return copy;
         }
 
@@ -118,21 +132,21 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             {
                 case "store":
                 case "activate":
-                    Activate = EWCJson.Deserialize<ITrigger>(ref reader)!;
-                    if (Activate == null || !ValidActivates.Contains(Activate.Name))
-                        throw new JsonException($"PerTarget Trigger requires a trigger of type [{string.Join(", ", ValidActivates)}]!");
+                    Activate = ITrigger.DeserializeList(ref reader)!;
+                    if (!IsValidList(Activate, ValidActivates))
+                        throw new JsonException($"PerTarget Trigger requires an activate trigger of type [{string.Join(", ", ValidActivates)}]!");
                     break;
                 case "apply":
-                    Apply = EWCJson.Deserialize<ITrigger>(ref reader)!;
-                    if (Apply == null || !ValidApplies.Contains(Apply.Name))
-                        throw new JsonException($"PerTarget Trigger requires a trigger of type [{string.Join(", ", ValidApplies)}]!");
+                    Apply = ITrigger.DeserializeList(ref reader)!;
+                    if (!IsValidList(Apply, ValidApplies))
+                        throw new JsonException($"PerTarget Trigger requires an apply trigger of type [{string.Join(", ", ValidApplies)}]!");
                     break;
                 case "cancel":
                 case "reset":
-                    Cancel = EWCJson.Deserialize<ITrigger>(ref reader)!;
+                    Cancel = ITrigger.DeserializeList(ref reader)!;
                     if (Cancel == null) break;
-                    if (!ValidActivates.Contains(Cancel.Name))
-                        throw new JsonException($"PerTarget Trigger requires a trigger of type [{string.Join(", ", ValidApplies)}]!");
+                    if (!IsValidList(Cancel, ValidActivates))
+                        throw new JsonException($"PerTarget Trigger requires a cancel trigger of type [{string.Join(", ", ValidActivates)}]!");
                     break;
                 case "cap":
                     Cap = reader.GetSingle();
@@ -157,6 +171,16 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                     Amount = reader.GetSingle();
                     break;
             }
+        }
+
+        private static bool IsValidList(List<ITrigger>? list, TriggerName[] validList)
+        {
+            if (list == null) return false;
+
+            foreach (ITrigger trigger in list)
+                if (!validList.Contains(trigger.Name))
+                    return false;
+            return true;
         }
     }
 }

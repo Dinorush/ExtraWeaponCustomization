@@ -1,6 +1,8 @@
 ﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.JSON;
 using EWC.Utils.Extensions;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Shared.Triggers
@@ -115,6 +117,30 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 string stagger when stagger.ContainsAny("stagger", "stun") => new StaggerTrigger(name.ToDamageTypes()),
                 _ => new ReferenceCallTrigger(origName)
             };
+        }
+
+        public static List<ITrigger>? DeserializeList(ref Utf8JsonReader reader)
+        {
+            if (reader.TokenType == JsonTokenType.String || reader.TokenType == JsonTokenType.StartObject)
+            {
+                ITrigger? trigger = EWCJson.Deserialize<ITrigger>(ref reader);
+                if (trigger == null) return null;
+                return new() { trigger };
+            }
+            else if (reader.TokenType == JsonTokenType.StartArray)
+            {
+                List<ITrigger> list = new();
+                reader.Read();
+                while (reader.TokenType != JsonTokenType.EndArray)
+                {
+                    ITrigger? trigger = EWCJson.Deserialize<ITrigger>(ref reader);
+                    reader.Read();
+                    if (trigger == null) continue;
+                    list.Add(trigger);
+                }
+                return list;
+            }
+            throw new JsonException("Expected trigger or list of triggers when deserializing triggers for Coordinator");
         }
 
         private static ITrigger DetermineLandedTrigger(string name)

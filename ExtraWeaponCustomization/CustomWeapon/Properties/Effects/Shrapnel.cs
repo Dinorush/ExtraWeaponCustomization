@@ -61,6 +61,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public TriggerPosMode ApplyPositionMode { get; private set; } = TriggerPosMode.Relative;
         public bool SearchEnabled { get; private set; } = false;
         public int SearchCap { get; private set; } = 0;
+        public bool ScaleSearchCap { get; private set; } = true;
         public int SearchCapPerTarget { get; private set; } = 1;
         public bool ScaleSearchCapPerTarget { get; private set; } = true;
         public bool SearchOverflow { get; private set; } = true;
@@ -361,7 +362,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             int count = (int)Math.Round(Count * triggerScale);
             List<Vector3> targets = new(count);
 
-            int searchCap = (int)Math.Round(SearchCap * triggerScale);
+            int searchCap = ScaleSearchCap ? (int)Math.Round(SearchCap * triggerScale) : SearchCap;
             if (SearchCap > 0 && searchCap < count)
                 count = searchCap;
 
@@ -516,6 +517,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteString(nameof(ApplyPositionMode), ApplyPositionMode.ToString());
             writer.WriteBoolean(nameof(SearchEnabled), SearchEnabled);
             writer.WriteNumber(nameof(SearchCap), SearchCap);
+            writer.WriteBoolean(nameof(ScaleSearchCap), ScaleSearchCap);
             writer.WriteNumber(nameof(SearchCapPerTarget), SearchCapPerTarget);
             writer.WriteBoolean(nameof(ScaleSearchCapPerTarget), ScaleSearchCapPerTarget);
             writer.WriteBoolean(nameof(SearchOverflow), SearchOverflow);
@@ -670,6 +672,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "searchcap":
                     SearchCap = reader.GetInt32();
+                    break;
+                case "scalesearchcap":
+                    ScaleSearchCap = reader.GetBoolean();
                     break;
                 case "searchcappertarget":
                     SearchCapPerTarget = reader.GetInt32();
