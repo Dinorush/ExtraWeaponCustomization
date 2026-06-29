@@ -141,5 +141,22 @@ namespace EWC.Patches.Player
 
             CustomWeaponManager.InvokeOnGear(__instance.Owner.Owner, new WeaponHealthContext(__instance));
         }
+
+        [HarmonyPatch(typeof(Dam_PlayerDamageBase), nameof(Dam_PlayerDamageBase.ModifyInfection))]
+        [HarmonyPrefix]
+        private static void Pre_ModifyInfection(Dam_PlayerDamageBase __instance, ref float __state)
+        {
+            __state = __instance.Infection;
+        }
+
+        [HarmonyPatch(typeof(Dam_PlayerDamageBase), nameof(Dam_PlayerDamageBase.ModifyInfection))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void Post_ModifyInfection(Dam_PlayerDamageBase __instance, bool sync, float __state)
+        {
+            if (!sync || __state == __instance.Health) return;
+
+            CustomWeaponManager.InvokeOnGear(__instance.Owner.Owner, new WeaponInfectionContext(__instance));
+        }
     }
 }

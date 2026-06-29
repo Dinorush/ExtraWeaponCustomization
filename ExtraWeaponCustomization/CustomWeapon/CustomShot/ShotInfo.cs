@@ -10,6 +10,8 @@ namespace EWC.CustomWeapon.CustomShot
     public sealed class ShotInfo
     {
         public uint ID { get; private set; }
+        public uint OriginID { get; private set; }
+        public uint GroupID { get; private set; }
         private readonly List<DamageType> _hits;
         public uint Hits => (uint)_hits.Count;
         public uint TypeHits(DamageType type) => (uint)_hits.Count(hitType => hitType.HasFlag(type));
@@ -23,16 +25,21 @@ namespace EWC.CustomWeapon.CustomShot
         public float InnateDamageMod { get; private set; }
         public float InnateStaggerMod { get; private set; }
 
-        public ShotInfoMod Mod { get; set; }
-        public ShotInfoMod GroupMod { get; set; }
+        public ShotInfoMod Mod { get; private set; }
+        public ShotInfoMod GroupMod { get; private set; }
+        public CustomWeaponComponent? CWC { get; private set; }
 
+        private bool _isDirty;
         private Const _state;
         public Const State
         {
             get
             {
-                if (!Equals(_state))
+                if (_isDirty)
+                {
                     _state = new Const(this);
+                    _isDirty = false;
+                }
                 return _state;
             }
         }
@@ -40,9 +47,7 @@ namespace EWC.CustomWeapon.CustomShot
         public ShotInfo() : this(0, 0, 0) { }
         public ShotInfo(float origDamage, float origPrecision, float origStagger)
         {
-            ID = ShotManager.NextID;
             _hits = new(5);
-
             Mod = new();
             InnateDamageMod = ShotManager.CurrentDamageMod;
             InnateStaggerMod = ShotManager.CurrentStaggerMod;
@@ -54,12 +59,14 @@ namespace EWC.CustomWeapon.CustomShot
             _state = new(this);
         }
 
-        public ShotInfo(CustomWeaponComponent cwc, bool modOnly = false, bool isTagged = false)
+        public ShotInfo(CustomWeaponComponent cwc, bool modOnly = false, bool isTagged = false, bool computeAccuracy = true)
         {
-            ID = ShotManager.NextID;
+            CWC = cwc;
+            if (computeAccuracy)
+                GetIDs();
             _hits = new(5);
 
-            RefreshMods(cwc, isTagged);
+            RefreshMods(isTagged);
             if (!modOnly && !cwc.Weapon.Type.HasFlag(WeaponType.Melee))
             {
                 var archData = ((IAmmoComp)cwc.Weapon).ArchetypeData;
@@ -78,11 +85,12 @@ namespace EWC.CustomWeapon.CustomShot
 
         public ShotInfo(ShotInfo copy, bool modOnly = false, bool useParentMod = true)
         {
+            CWC = copy.CWC;
             PullMods(copy, useParentMod);
+            GetIDs(copy, modOnly);
 
             if (modOnly)
             {
-                ID = ShotManager.NextID;
                 _hits = new(5);
                 OrigDamage = 0;
                 OrigPrecision = 0;
@@ -91,7 +99,6 @@ namespace EWC.CustomWeapon.CustomShot
             }
             else
             {
-                ID = copy.ID;
                 _hits = new(copy._hits);
                 OrigDamage = copy.OrigDamage;
                 OrigPrecision = copy.OrigPrecision;
@@ -102,35 +109,45 @@ namespace EWC.CustomWeapon.CustomShot
 
         public void Reset(float origDamage, float origPrecision, float origStagger, CustomWeaponComponent cwc, ShotInfo? parent = null, bool useParent = true)
         {
+            CWC = cwc;
             if (parent != null)
                 PullMods(parent, useParent);
             else
-                RefreshMods(cwc);
+                RefreshMods();
 
+            GetIDs(parent);
             OrigDamage = origDamage * InnateDamageMod;
             OrigPrecision = origPrecision * InnateStaggerMod;
             OrigStagger = origStagger;
-            ID = ShotManager.NextID;
             _hits.Clear();
+            _isDirty = true;
         }
 
-        public void SetToPush()
+        public void SetToPush(CustomWeaponComponent cwc)
         {
+            CWC = cwc;
             InnateDamageMod = 1f;
             InnateStaggerMod = 1f;
             ExternalDamageMod = 1f;
             OrigDamage = 1f;
             OrigPrecision = 1f;
             OrigStagger = 1f;
-            ID = ShotManager.NextID;
+            (ID, OriginID, GroupID) = (0, 0, 0);
             _hits.Clear();
+            _isDirty = true;
         }
 
-        public void AddHit(DamageType type) => _hits.Add(type);
+        public void AddHit(DamageType type)
+        {
+            _hits.Add(type);
+            _isDirty = true;
+        }
+
         public void AddHits(DamageType type, int hits)
         {
             for (int i = 0; i < hits; i++)
                 _hits.Add(type);
+            _isDirty = true;
         }
 
         [MemberNotNull(nameof(Mod))]
@@ -146,15 +163,25 @@ namespace EWC.CustomWeapon.CustomShot
 
         [MemberNotNull(nameof(Mod))]
         [MemberNotNull(nameof(GroupMod))]
-        private void RefreshMods(CustomWeaponComponent cwc, bool isTagged = false)
+        private void RefreshMods(bool isTagged = false)
         {
-            ShotManager.AdvanceGroupModIfOld(cwc, isTagged);
+            ShotManager.AdvanceGroupModIfOld(CWC!, isTagged);
             Mod = new();
             GroupMod = ShotManager.CurrentGroupMod;
             InnateDamageMod = ShotManager.CurrentDamageMod;
             InnateStaggerMod = ShotManager.CurrentStaggerMod;
             ExternalDamageMod = ShotManager.CurrentExternalDamageMod;
-            cwc.Invoke(new WeaponShotInitContext(Mod));
+            CWC!.Invoke(new WeaponShotInitContext(Mod));
+        }
+
+        private void GetIDs(ShotInfo? info = null, bool asNew = true)
+        {
+            if (CWC!.Weapon.IsType(WeaponType.Melee))
+                (ID, OriginID, GroupID) = (0, 0, 0);
+            else if (info != null)
+                (ID, OriginID, GroupID) = ShotManager.PullIDs(CWC.Owner, info, asNew);
+            else
+                (ID, OriginID, GroupID) = ShotManager.GetIDs(CWC.Owner);
         }
 
         // Snapshot of ShotInfo to capture its current state
@@ -166,6 +193,8 @@ namespace EWC.CustomWeapon.CustomShot
             public readonly float InnateDamageMod;
             public readonly float InnateStaggerMod;
             public readonly uint ID;
+            public readonly uint OriginID;
+            public readonly uint GroupID;
             private readonly DamageType[] _hits;
             public readonly uint Hits;
             public uint TypeHits(DamageType type) => (uint)_hits.Count(hitType => hitType.HasFlag(type));
@@ -179,12 +208,13 @@ namespace EWC.CustomWeapon.CustomShot
                 InnateDamageMod = info.InnateDamageMod;
                 InnateStaggerMod = info.InnateStaggerMod;
                 ID = info.ID;
+                OriginID = info.OriginID;
+                GroupID = info.GroupID;
                 _hits = info._hits.ToArray();
                 Hits = (uint)_hits.Length;
             }
         }
 
         public static implicit operator Const(ShotInfo info) => info.State;
-        public bool Equals(Const state) => ID == state.ID && Hits == state.Hits;
     }
 }

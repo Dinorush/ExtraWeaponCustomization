@@ -1,6 +1,7 @@
 ﻿using Agents;
 using EWC.Attributes;
 using EWC.CustomWeapon.ComponentWrapper;
+using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
 
@@ -21,6 +22,7 @@ namespace EWC.CustomWeapon.HitTracker
             if (!_trackers.TryGetValue(owner, out var tracker))
                 _trackers.Add(owner, tracker = new());
             tracker.RegisterHit(cwc, hitContext);
+            AccuracyManager.AddHit(hitContext.DamageType, hitContext.ShotInfo);
         }
 
         public static void RunKillContexts(Agent? enemy)

@@ -52,11 +52,11 @@ namespace EWC.Patches.Melee
         private static void PrePushCallback(MWS_Push __instance)
         {
             var weapon = __instance.m_weapon;
-            _cachedSwingCWC = weapon.GetComponent<CustomWeaponComponent>(); ;
+            _cachedSwingCWC = weapon.GetComponent<CustomWeaponComponent>();
             if (_cachedSwingCWC == null) return;
 
             _cachedSwingCWC.Invoke(StaticContext<WeaponPrePushContext>.Instance);
-            HitData.shotInfo.SetToPush();
+            HitData.shotInfo.SetToPush(_cachedSwingCWC);
         }
 
         [HarmonyPatch(typeof(MWS_AttackLight), nameof(MWS_AttackLight.Enter))]

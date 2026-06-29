@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using SNetwork;
 using System;
 
 namespace EWC.Patches.Checkpoint
@@ -7,14 +6,28 @@ namespace EWC.Patches.Checkpoint
     [HarmonyPatch]
     internal static class SyncManagerPatches
     {
-        public static event Action? OnCheckpointReload;
+        public static event Action? OnCheckpointReached;
+        public static event Action? OnCheckpointReloaded;
 
-        [HarmonyPatch(typeof(SNet_SyncManager), nameof(SNet_SyncManager.OnRecallDone))]
+        [HarmonyPatch(typeof(CheckpointManager), nameof(CheckpointManager.OnStateChange))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void Pre_Reload()
+        static void Pre_StateChanged(pCheckpointState oldState, pCheckpointState newState, bool isRecall)
         {
-            OnCheckpointReload?.Invoke();
+            if (!oldState.isReloadingCheckpoint && !newState.isReloadingCheckpoint)
+            {
+                // Ignore cases:
+                // Client syncs on drop with isRecall: true.
+                // Client runs a redundant StoreCheckpoint call w/ no changes prior to any change.
+                if (isRecall || oldState.doorLockPosition == newState.doorLockPosition)
+                    return;
+
+                OnCheckpointReached?.Invoke();
+            }
+            else if (oldState.isReloadingCheckpoint && isRecall)
+            {
+                OnCheckpointReloaded?.Invoke();
+            }
         }
     }
 }

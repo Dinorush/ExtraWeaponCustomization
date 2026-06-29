@@ -29,8 +29,31 @@ namespace EWC.CustomWeapon.CustomShot
             public FiringInfo() { }
         }
 
-        public static uint CurrentID { get; private set; } = 0;
-        public static uint NextID => ++CurrentID;
+        private static uint s_shotID = 0;
+        private static uint s_originID = 0;
+        private static uint s_groupID = 0;
+        private static uint StepID(ref uint id)
+        {
+            if (id < uint.MaxValue)
+                ++id;
+            else
+                id = 1;
+            return id;
+        }
+        public static (uint id, uint originID, uint groupID) GetIDs(IOwnerComp owner)
+        {
+            var newIDs = (StepID(ref s_shotID), StepID(ref s_originID), s_groupID);
+            AccuracyManager.InitShot(owner, newIDs);
+            return newIDs;
+        }
+        public static (uint id, uint originID, uint groupID) PullIDs(IOwnerComp owner, ShotInfo shotInfo, bool asNew = true)
+        {
+            var newIDs = (asNew ? StepID(ref s_shotID) : shotInfo.ID, shotInfo.OriginID, shotInfo.GroupID);
+            if (asNew)
+                AccuracyManager.InitShot(owner, newIDs);
+            return newIDs;
+        }
+
         public static ShotInfoMod CurrentGroupMod { get; private set; } = new();
         // Modifiers applied after EWC systems run. Should not modify direct damage, but should modify EWC damage.
         public static float CurrentExternalDamageMod { get; private set; } = 1f;
@@ -50,7 +73,7 @@ namespace EWC.CustomWeapon.CustomShot
             {
                 if (ActiveFiringInfo.cwc != null)
                 {
-                    s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(ActiveFiringInfo.cwc, modOnly: false, ActiveFiringInfo.isTagged));
+                    s_vanillaShotInfo = (vanillaData.Pointer, new ShotInfo(ActiveFiringInfo.cwc, isTagged: ActiveFiringInfo.isTagged));
 
                     if (vanillaData.owner == null)
                     {
@@ -177,6 +200,8 @@ namespace EWC.CustomWeapon.CustomShot
             var weaponType = cwc.Weapon.Type;
             var owner = cwc.Owner.Player;
             CurrentGroupMod = new();
+            StepID(ref s_groupID);
+
             if (weaponType.HasFlag(WeaponType.Sentry))
             {
                 CurrentExternalDamageMod = 1f;

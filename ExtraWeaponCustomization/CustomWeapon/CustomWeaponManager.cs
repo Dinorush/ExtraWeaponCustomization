@@ -66,7 +66,7 @@ namespace EWC.CustomWeapon
             ResetCWCs(activate: false);
         }
 
-        [InvokeOnCheckpoint]
+        [InvokeOnCheckpointReloaded]
         private static void OnCheckpoint()
         {
             ResetCWCs(activate: true);
