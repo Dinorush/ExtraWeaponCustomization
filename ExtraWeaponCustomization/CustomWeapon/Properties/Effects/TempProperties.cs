@@ -1,4 +1,5 @@
 ﻿using EWC.CustomWeapon.Properties.Shared.Triggers;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
@@ -10,7 +11,8 @@ namespace EWC.CustomWeapon.Properties.Effects
     public sealed class TempProperties :
         Effect,
         ITriggerCallbackBasicSync,
-        IPropertyHolder
+        IPropertyHolder,
+        IWeaponProperty<WeaponCreatedContext>
     {
         public ushort SyncID { get; set; }
 
@@ -19,6 +21,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float Duration { get; private set; } = 0f;
         public bool Override { get; private set; } = false;
         public bool ResetTriggersOnEnd { get; private set; } = false;
+        public bool Invert { get; private set; } = false;
 
         private PropertyNode? _node = null;
         public PropertyNode? Node
@@ -31,15 +34,27 @@ namespace EWC.CustomWeapon.Properties.Effects
             }
         }
 
-        private readonly DelayedCallback _applyCallback;
+        private DelayedCallback _applyCallback = null!;
 
-        public TempProperties()
+        public void Invoke(WeaponCreatedContext context)
         {
-            _applyCallback = new(
-                () => Duration,
-                ApplyProperties,
-                RemoveProperties
-            );
+            if (!Invert)
+            {
+                _applyCallback = new(
+                    Duration,
+                    ApplyProperties,
+                    RemoveProperties
+                );
+            }
+            else
+            {
+                _applyCallback = new(
+                    Duration,
+                    RemoveProperties,
+                    ApplyProperties
+                );
+                ApplyProperties();
+            }
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
@@ -114,6 +129,7 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteNumber(nameof(Duration), Duration);
             writer.WriteBoolean(nameof(Override), Override);
             writer.WriteBoolean(nameof(ResetTriggersOnEnd), ResetTriggersOnEnd);
+            writer.WriteBoolean(nameof(Invert), Invert);
             SerializeTrigger(writer);
             writer.WriteEndObject();
         }
@@ -134,6 +150,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     break;
                 case "resettriggersonend":
                     ResetTriggersOnEnd = reader.GetBoolean();
+                    break;
+                case "invert":
+                    Invert = reader.GetBoolean();
                     break;
             }
         }

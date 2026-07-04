@@ -160,6 +160,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             HitTrackerManager.RegisterHit(shrapnel.CWC.Owner, shrapnel.CWC, hitContext);
             ShotManager.DoHitmarker(shrapnel.CWC, cc, limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
+            DamageAPI.FirePreLocalShrapnelCallbacks(precDamage, damBase.Owner, limb, source, data.cwc);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
             return true;
         }
@@ -179,13 +180,13 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             }
         }
 
-        internal static void Internal_ReceiveShrapnelDamage(EnemyAgent target, PlayerAgent? source, OwnerType ownerType, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
+        internal static void Internal_ReceiveShrapnelDamage(EnemyAgent target, PlayerAgent? source, pCWC cwc, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
             if (damBase.Health <= 0 || !damBase.Owner.Alive || damBase.IsImortal) return;
 
-            DamageAPI.FirePreShrapnelCallbacks(damage, target, limb, source, ownerType);
+            DamageAPI.FirePreShrapnelCallbacks(damage, target, limb, source, cwc);
 
             ES_HitreactType hitreact = staggerMult > 0 ? ES_HitreactType.Light : ES_HitreactType.None;
             bool tryForceHitreact = false;
@@ -210,7 +211,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             Vector3 position = localPos + target.Position;
             ProcessReceivedShrapnelDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
             DamageSyncWrapper.RunDamageSync(target, damageLimb ? limbID : -1);
-            DamageAPI.FirePostShrapnelCallbacks(damage, target, limb, source, ownerType);
+            DamageAPI.FirePostShrapnelCallbacks(damage, target, limb, source, cwc);
         }
 
         private static void ProcessReceivedShrapnelDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)

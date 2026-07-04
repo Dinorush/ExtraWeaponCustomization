@@ -125,23 +125,14 @@ namespace EWC.CustomWeapon.Properties.Traits
             if (_archBlock != null && CWC.Owner.IsType(OwnerType.Local) && _archetype == null)
             {
                 var gun = (LocalGunComp)CWC.Weapon;
-                switch (_archBlock.FireMode)
+                _archetype = _archBlock.FireMode switch
                 {
-                    case eWeaponFireMode.Semi:
-                        _archetype = new BWA_Semi(_archBlock);
-                        break;
-                    case eWeaponFireMode.Burst:
-                        _archetype = new BWA_Burst(_archBlock);
-                        break;
-                    case eWeaponFireMode.Auto:
-                        _archetype = new BWA_Auto(_archBlock);
-                        break;
-                    case eWeaponFireMode.SemiBurst:
-                        _archetype = new BWA_SemiBurst(_archBlock);
-                        break;
-                    default:
-                        throw new NotImplementedException($"DataSwap does not support FireMode {_archBlock.FireMode} for the player (should be one of the standard 4)");
-                }
+                    eWeaponFireMode.Semi => new BWA_Semi(_archBlock),
+                    eWeaponFireMode.Burst => new BWA_Burst(_archBlock),
+                    eWeaponFireMode.Auto => new BWA_Auto(_archBlock),
+                    eWeaponFireMode.SemiBurst => new BWA_SemiBurst(_archBlock),
+                    _ => throw new NotImplementedException($"DataSwap does not support FireMode {_archBlock.FireMode} for the player (should be one of the standard 4)"),
+                };
                 _archetype!.Setup(gun.Value);
                 if (_archBlock.FireMode == eWeaponFireMode.Burst)
                 {

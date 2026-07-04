@@ -238,16 +238,17 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             HitTrackerManager.RegisterHit(eBase.CWC.Owner, eBase.CWC, hitContext);
             ShotManager.DoHitmarker(eBase.CWC, eBase.CWC.GetContextController(), limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
+            DamageAPI.FirePreLocalExplosiveCallbacks(precDamage, damBase.Owner, limb, source, data.cwc);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
-        internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, OwnerType ownerType, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
+        internal static void Internal_ReceiveExplosionDamage(EnemyAgent target, PlayerAgent? source, pCWC cwc, int limbID, bool damageLimb, Vector3 localPos, Vector3 direction, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
             if (damBase.Health <= 0 || !damBase.Owner.Alive || damBase.IsImortal) return;
 
-            DamageAPI.FirePreExplosiveCallbacks(damage, target, limb, source, ownerType);
+            DamageAPI.FirePreExplosiveCallbacks(damage, target, limb, source, cwc);
 
             ES_HitreactType hitreact = staggerMult > 0 ? ES_HitreactType.Light : ES_HitreactType.None;
             bool tryForceHitreact = false;
@@ -272,7 +273,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             Vector3 position = localPos + target.Position;
             ProcessReceivedExplosiveDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
             DamageSyncWrapper.RunDamageSync(target, damageLimb ? limbID : -1);
-            DamageAPI.FirePostExplosiveCallbacks(damage, target, limb, source, ownerType);
+            DamageAPI.FirePostExplosiveCallbacks(damage, target, limb, source, cwc);
         }
 
         private static void ProcessReceivedExplosiveDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)

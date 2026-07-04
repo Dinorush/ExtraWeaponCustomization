@@ -1,6 +1,6 @@
 ﻿using EWC.API;
+using EWC.API.Accuracy;
 using EWC.Attributes;
-using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.Enums;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -21,19 +21,15 @@ namespace EWC.CustomWeapon.CustomShot
             }
         }
 
-        private const int FullCacheLen = 4096;
-        private const int CacheLen = 2048;
+        private const int CacheLen = 4096;
 
-        private static readonly AccuracyStats[] _fullCache = new AccuracyStats[4096];
-        private static readonly Stats[] _cache = new Stats[2048];
-        private static readonly Stats[] _groupCache = new Stats[2048];
+        private static readonly WeaponAccuracy[] _fullCache = new WeaponAccuracy[CacheLen];
+        private static readonly Stats[] _cache = new Stats[CacheLen];
+        private static readonly Stats[] _groupCache = new Stats[CacheLen];
         private static uint _lastOrigin = 0;
         private static uint _lastGroup = 0;
 
         private static readonly Dictionary<ulong, AccuracyStats> _stats = new();
-        private static readonly Dictionary<ulong, AccuracyStats> _sentryStats = new();
-        private static readonly Dictionary<ulong, AccuracyStats> _checkpointStats = new();
-        private static readonly Dictionary<ulong, AccuracyStats> _checkpointSentryStats = new();
         private const DamageType ValidTypes = DamageType.Enemy | DamageType.Object;
         private const DamageType BlacklistTypes = DamageType.DOT;
 
@@ -41,68 +37,39 @@ namespace EWC.CustomWeapon.CustomShot
         private static void OnBuildDone()
         {
             _stats.Clear();
-            _sentryStats.Clear();
-            _checkpointStats.Clear();
-            _checkpointSentryStats.Clear();
             AccuracyAPI.InvokeAccuracyReset();
         }
 
-        [InvokeOnCheckpointReached]
-        private static void OnCheckpointReached()
-        {
-            _checkpointStats.Clear();
-            foreach ((ulong lookup, var stats) in _stats)
-                _checkpointStats.Add(lookup, new(stats));
-            _checkpointSentryStats.Clear();
-            foreach ((ulong lookup, var stats) in _sentryStats)
-                _checkpointSentryStats.Add(lookup, new(stats));
-        }
-
-        [InvokeOnCheckpointReloaded]
-        private static void OnCheckpointReloaded()
-        {
-            _stats.Clear();
-            foreach ((ulong lookup, var stats) in _checkpointStats)
-            {
-                _stats.Add(lookup, new(stats));
-                AccuracyAPI.InvokeAccuracyUpdate(stats);
-            }
-            _sentryStats.Clear();
-            foreach ((ulong lookup, var stats) in _checkpointSentryStats)
-            {
-                _sentryStats.Add(lookup, new(stats));
-                AccuracyAPI.InvokeAccuracyUpdate(stats);
-            }
-        }
-
         public static bool TryGetStats(ulong playerLookup, [MaybeNullWhen(false)] out AccuracyStats stats) => _stats.TryGetValue(playerLookup, out stats);
-        public static bool TryGetSentryStats(ulong playerLookup, [MaybeNullWhen(false)] out AccuracyStats stats) => _sentryStats.TryGetValue(playerLookup, out stats);
 
-        public static void InitShot(IOwnerComp owner, (uint id, uint originID, uint groupID) idSet)
+        public static void InitShot(CustomWeaponComponent cwc, (uint id, uint originID, uint groupID) idSet)
         {
-            if (owner.Player == null || idSet.id == 0) return;
+            if (cwc.Owner.Player == null || idSet.id == 0) return;
 
-            var statsDict = owner.IsType(OwnerType.Sentry) ? _sentryStats : _stats;
-            var lookup = owner.Player.Owner.Lookup;
-            if (!statsDict.TryGetValue(lookup, out var stats))
-                statsDict.Add(lookup, stats = new(owner));
+            var lookup = cwc.Owner.Player.Owner.Lookup;
+            if (!_stats.TryGetValue(lookup, out var stats))
+                _stats.Add(lookup, stats = new(cwc.Owner.Player));
 
-            _fullCache[idSet.id % FullCacheLen] = stats;
-            stats.FullShots.Count++;
+            var weaponInfo = stats[cwc.Weapon.InventorySlot];
+            _fullCache[idSet.id % CacheLen] = weaponInfo;
+
+            WeaponDelta delta = new();
+            delta.FullShots.Count++;
             if (idSet.originID > _lastOrigin)
             {
                 _lastOrigin = idSet.originID;
                 _cache[idSet.originID % CacheLen] = new();
-                stats.Shots.Count++;
+                delta.Shots.Count++;
             }
             if (idSet.groupID > _lastGroup)
             {
                 _lastGroup = idSet.groupID;
                 _groupCache[idSet.groupID % CacheLen] = new();
-                stats.Groups.Count++;
+                delta.Groups.Count++;
             }
 
-            AccuracyAPI.InvokeAccuracyUpdate(stats);
+            weaponInfo.Add(delta);
+            AccuracyAPI.InvokeAccuracyUpdate(weaponInfo, delta);
         }
 
         public static void AddHit(DamageType damageType, ShotInfo.Const shotInfo)
@@ -110,35 +77,38 @@ namespace EWC.CustomWeapon.CustomShot
             if (!damageType.HasAnyFlag(ValidTypes) || damageType.HasAnyFlag(BlacklistTypes) || shotInfo.ID == 0) return;
 
             bool crit = damageType.HasFlag(DamageType.Weakspot);
-            var stats = _fullCache[shotInfo.ID % FullCacheLen];
-            stats.FullShots.Hits++;
+            var weaponInfo = _fullCache[shotInfo.ID % CacheLen];
+            WeaponDelta delta = new();
+
+            delta.FullShots.Hits++;
             if (crit)
-                stats.FullShots.Crits++;
+                delta.FullShots.Crits++;
 
             var index = shotInfo.OriginID % CacheLen;
             if (!_cache[index].hasHit)
             {
                 _cache[index].hasHit = true;
-                stats.Shots.Hits++;
+                delta.Shots.Hits++;
             }
             if (crit && !_cache[index].hasCrit)
             {
                 _cache[index].hasCrit = true;
-                stats.Shots.Crits++;
+                delta.Shots.Crits++;
             }
             index = shotInfo.GroupID % CacheLen;
             if (!_groupCache[index].hasHit)
             {
                 _groupCache[index].hasHit = true;
-                stats.Groups.Hits++;
+                delta.Groups.Hits++;
             }
             if (crit && !_groupCache[index].hasCrit)
             {
                 _groupCache[index].hasCrit = true;
-                stats.Groups.Crits++;
+                delta.Groups.Crits++;
             }
 
-            AccuracyAPI.InvokeAccuracyUpdate(stats);
+            weaponInfo.Add(delta);
+            AccuracyAPI.InvokeAccuracyUpdate(weaponInfo, delta);
         }
     }
 }

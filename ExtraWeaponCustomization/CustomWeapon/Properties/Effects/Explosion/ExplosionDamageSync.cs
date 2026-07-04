@@ -16,7 +16,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             ExplosionManager.Internal_ReceiveExplosionDamage(
                 target,
                 source,
-                packet.cwc.ownerType,
+                packet.cwc,
                 packet.limbID,
                 packet.damageLimb,
                 packet.localPosition.Get(10f),

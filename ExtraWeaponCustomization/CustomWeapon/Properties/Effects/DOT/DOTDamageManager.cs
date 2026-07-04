@@ -129,6 +129,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 ShotManager.DoHitmarker(dotBase.CWC, dotBase.CWC.GetContextController(), limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             shotInfo.AddHits(hitContext.DamageType, ticks);
+            DamageAPI.FirePreLocalDOTCallbacks(precDamage, damBase.Owner, limb, dotBase.CWC.Owner.Player, data.cwc);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
@@ -149,13 +150,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             ShotManager.ReceivePlayerDamage(target, damage, PlayerDamageType.DOT, Vector3.zero, cameraShake: false);
         }
 
-        internal static void Internal_ReceiveDOTDamageEnemy(EnemyAgent target, PlayerAgent? source, OwnerType ownerType, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
+        internal static void Internal_ReceiveDOTDamageEnemy(EnemyAgent target, PlayerAgent? source, pCWC cwc, int limbID, bool damageLimb, Vector3 localPos, float damage, float staggerMult, bool setCooldowns)
         {
             Dam_EnemyDamageBase damBase = target.Damage;
             Dam_EnemyDamageLimb limb = damBase.DamageLimbs[limbID];
             if (!target.Alive || damBase.IsImortal) return;
 
-            DamageAPI.FirePreDOTCallbacks(damage, target, limb, source, ownerType);
+            DamageAPI.FirePreDOTCallbacks(damage, target, limb, source, cwc);
             // DoT should only stagger if threshold is reached. Need the hitreact to not be None for the threshold to do anything, though.
             bool staggers = damage * staggerMult + damBase.m_damBuildToHitreact >= target.EnemyBalancingData.Health.DamageUntilHitreact;
             ES_HitreactType hitreact = staggers ? ES_HitreactType.Light : ES_HitreactType.None;
@@ -189,7 +190,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             ProcessReceivedDOTDamage(damBase, damage, source, position, direction, hitreact, tryForceHitreact, staggerMult, setCooldowns);
             DamageSyncWrapper.RunDamageSync(target, damageLimb ? limbID : -1);
 
-            DamageAPI.FirePostDOTCallbacks(damage, target, limb, source, ownerType);
+            DamageAPI.FirePostDOTCallbacks(damage, target, limb, source, cwc);
         }
 
         private static void ProcessReceivedDOTDamage(Dam_EnemyDamageBase damBase, float damage, Agent? damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, float staggerDamageMulti = 1f, bool setCooldowns = true)

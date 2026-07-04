@@ -1,5 +1,7 @@
-﻿using EWC.CustomWeapon.ComponentWrapper;
+﻿using EWC.API.Accuracy;
 using EWC.CustomWeapon.CustomShot;
+using EWC.Utils.Extensions;
+using Player;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -7,60 +9,45 @@ namespace EWC.API
 {
     public class AccuracyStats
     {
-        public class StatInfo
-        {
-            public int Hits { get; internal set; }
-            public int Crits { get; internal set; }
-            public int Count { get; internal set; }
-
-            public StatInfo() { }
-            public StatInfo(StatInfo statInfo)
-            {
-                Hits = statInfo.Hits;
-                Crits = statInfo.Crits;
-                Count = statInfo.Count;
-            }
-        }
-
-        public readonly StatInfo Shots;
-        public readonly StatInfo FullShots;
-        public readonly StatInfo Groups;
+        public readonly WeaponAccuracy Main;
+        public readonly WeaponAccuracy Special;
+        public readonly WeaponAccuracy Tool;
         // Always has a player.
-        public readonly IOwnerComp Owner;
+        public readonly PlayerAgent Owner;
 
-        public AccuracyStats(IOwnerComp owner)
+        public WeaponAccuracy this[AmmoType ammoType] => this[ammoType.ToInventorySlot()];
+        public WeaponAccuracy this[InventorySlot slot] => slot switch
+            {
+                InventorySlot.GearStandard => Main,
+                InventorySlot.GearSpecial => Special,
+                InventorySlot.GearClass => Tool,
+                _ => throw new ArgumentException($"Cannot get accuracy stats for unsupported inventory slot {slot}!")
+            };
+
+        public AccuracyStats(PlayerAgent owner)
         {
             Owner = owner;
-            Shots = new();
-            FullShots = new();
-            Groups = new();
-        }
-
-        public AccuracyStats(AccuracyStats stats)
-        {
-            Owner = stats.Owner;
-            Shots = new(stats.Shots);
-            FullShots = new(stats.FullShots);
-            Groups = new(stats.Groups);
+            Main = new(InventorySlot.GearStandard, this);
+            Special = new(InventorySlot.GearSpecial, this);
+            Tool = new(InventorySlot.GearClass, this);
         }
     }
 
     public static class AccuracyAPI
     {
-        public delegate void AccuracyCallback(AccuracyStats stats);
+        public delegate void AccuracyCallback(WeaponAccuracy stats, WeaponDelta delta);
 
         public static event Action? OnAccuracyReset;
         public static event AccuracyCallback? OnLocalAccuracyUpdate;
         public static event AccuracyCallback? OnAccuracyUpdate;
 
         public static bool TryGetStats(ulong playerLookup, [MaybeNullWhen(false)] out AccuracyStats stats) => AccuracyManager.TryGetStats(playerLookup, out stats);
-        public static bool TryGetSentryStats(ulong playerLookup, [MaybeNullWhen(false)] out AccuracyStats stats) => AccuracyManager.TryGetSentryStats(playerLookup, out stats);
 
-        internal static void InvokeAccuracyUpdate(AccuracyStats stats)
+        internal static void InvokeAccuracyUpdate(WeaponAccuracy stats, WeaponDelta delta)
         {
-            if (stats.Owner.IsType(CustomWeapon.Enums.OwnerType.Local))
-                OnLocalAccuracyUpdate?.Invoke(stats);
-            OnAccuracyUpdate?.Invoke(stats);
+            if (stats.ParentStats.Owner.IsLocallyOwned)
+                OnLocalAccuracyUpdate?.Invoke(stats, delta);
+            OnAccuracyUpdate?.Invoke(stats, delta);
         }
 
         internal static void InvokeAccuracyReset() => OnAccuracyReset?.Invoke();

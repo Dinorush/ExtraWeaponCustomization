@@ -40,17 +40,17 @@ namespace EWC.CustomWeapon.CustomShot
                 id = 1;
             return id;
         }
-        public static (uint id, uint originID, uint groupID) GetIDs(IOwnerComp owner)
+        public static (uint id, uint originID, uint groupID) GetIDs(CustomWeaponComponent cwc)
         {
             var newIDs = (StepID(ref s_shotID), StepID(ref s_originID), s_groupID);
-            AccuracyManager.InitShot(owner, newIDs);
+            AccuracyManager.InitShot(cwc, newIDs);
             return newIDs;
         }
-        public static (uint id, uint originID, uint groupID) PullIDs(IOwnerComp owner, ShotInfo shotInfo, bool asNew = true)
+        public static (uint id, uint originID, uint groupID) PullIDs(CustomWeaponComponent cwc, ShotInfo shotInfo, bool asNew = true)
         {
             var newIDs = (asNew ? StepID(ref s_shotID) : shotInfo.ID, shotInfo.OriginID, shotInfo.GroupID);
             if (asNew)
-                AccuracyManager.InitShot(owner, newIDs);
+                AccuracyManager.InitShot(cwc, newIDs);
             return newIDs;
         }
 
