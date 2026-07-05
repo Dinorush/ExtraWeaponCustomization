@@ -72,6 +72,27 @@ namespace EWC.CustomWeapon.CustomShot
             AccuracyAPI.InvokeAccuracyUpdate(weaponInfo, delta);
         }
 
+        public static void CancelShot(CustomWeaponComponent cwc, ShotInfo shotInfo)
+        {
+            if (cwc.Owner.Player == null || shotInfo.ID == 0) return;
+
+            var lookup = cwc.Owner.Player.Owner.Lookup;
+            if (!_stats.TryGetValue(lookup, out var stats)) return;
+
+            var weaponInfo = stats[cwc.Weapon.InventorySlot];
+            WeaponDelta delta = new();
+            delta.FullShots.Count--;
+            delta.Shots.Count--;
+            if (_lastGroup == shotInfo.GroupID)
+            {
+                delta.Groups.Count--;
+                _lastGroup--;
+            }
+
+            weaponInfo.Add(delta);
+            AccuracyAPI.InvokeAccuracyUpdate(weaponInfo, delta);
+        }
+
         public static void AddHit(DamageType damageType, ShotInfo.Const shotInfo)
         {
             if (!damageType.HasAnyFlag(ValidTypes) || damageType.HasAnyFlag(BlacklistTypes) || shotInfo.ID == 0) return;

@@ -55,6 +55,8 @@ namespace EWC.CustomWeapon.CustomShot
             ShotManager.VanillaFireDir = ray.direction;
             if (!CancelNormalShot)
                 Fire(ray, _owner.MuzzleAlign.position, hitData);
+            else
+                AccuracyManager.CancelShot(_cwc, hitData.shotInfo);
         }
 
         public void FireSpread(Ray fireRay, Vector3 fxPos, HitData hitData, int friendlyMask = -1, IntPtr ignoreEnt = default)
