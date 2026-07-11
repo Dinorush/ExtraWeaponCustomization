@@ -104,14 +104,13 @@ namespace EWC.Patches.Gun
 
             doBackstab = cwc.Weapon.AllowBackstab;
             IDamageable? damageable = hitData.damageable;
-            if (!hitData.damageType.HasFlag(DamageType.Dead))
+            var damageType = hitData.damageType;
+            if (!damageType.HasFlag(DamageType.Dead))
             {
                 float backstab = 1f;
                 float origBackstab = 1f;
-                Agent? agent = damageable!.GetBaseAgent();
                 Dam_EnemyDamageLimb? limb = null;
-                bool enemy = agent != null && agent.Alive && agent.Type == AgentType.Enemy;
-                if (enemy)
+                if (damageType.HasFlag(DamageType.Enemy))
                 {
                     limb = damageable!.Cast<Dam_EnemyDamageLimb>();
                     if (doBackstab)
@@ -126,11 +125,13 @@ namespace EWC.Patches.Gun
                 WeaponStatContext damageContext = new(hitData, cwc.DebuffIDs);
                 cc.Invoke(damageContext);
                 hitData.damage = damageContext.Damage;
+                if (damageType.HasFlag(DamageType.Player))
+                    hitData.damage *= cwc.Weapon.FriendlyFireMulti;
                 hitData.staggerMulti = damageContext.Stagger;
                 hitData.precisionMulti = damageContext.Precision;
                 bool bypassCap = Enemy.EnemyLimbPatches.CachedBypassTumorCap = damageContext.BypassTumorCap;
 
-                if (enemy)
+                if (damageType.HasFlag(DamageType.Enemy))
                 {
                     WeaponHitDamageableContext hitContext = new(
                         hitData,

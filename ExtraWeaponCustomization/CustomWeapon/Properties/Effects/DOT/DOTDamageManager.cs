@@ -54,6 +54,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     ));
 
                 if (!ApplyShotMod(ref damage, ref precisionMulti, ref staggerMulti, prePlayerContext, dotBase)) return;
+                damage *= dotBase.CWC.Weapon.FriendlyFireMulti;
                 dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, prePlayerContext));
                 shotInfo.AddHits(prePlayerContext.DamageType, ticks);
 

@@ -15,9 +15,31 @@ namespace EWC.Dependencies
             hasETC = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
         }
 
-        public static bool CanDoBackDamage(uint archetypeID) => hasETC && ETC_CanDoBackDamage(archetypeID);
+        public static void GetETCData(uint archetypeID, out bool backDamage, out float friendlyMulti)
+        {
+            if (hasETC)
+                ETC_GetData(archetypeID, out backDamage, out friendlyMulti);
+            else
+            {
+                backDamage = false;
+                friendlyMulti = 1f;
+            }
+        }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool ETC_CanDoBackDamage(uint archetypeID) => ToolDataManager.GetArchData<SentryData>(archetypeID)?.BackDamage == true;
+        private static void ETC_GetData(uint archetypeID, out bool backDamage, out float friendlyMulti)
+        {
+            var data = ToolDataManager.GetArchData<SentryData>(archetypeID);
+            if (data != null)
+            {
+                backDamage = data.BackDamage;
+                friendlyMulti = data.FriendlyDamageMulti;
+            }
+            else
+            {
+                backDamage = false;
+                friendlyMulti = 1f;
+            }
+        }
     }
 }

@@ -182,7 +182,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     return;
 
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().Cast<Dam_PlayerDamageBase>();
-                damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti;
+                damage *= playerBase.m_playerData.friendlyFireMulti * eBase.FriendlyDamageMulti * eBase.CWC.Weapon.FriendlyFireMulti;
                 damage *= EXPAPIWrapper.GetExplosionResistanceMod(playerBase.Owner);
                 eBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 if (damage == 0) return;

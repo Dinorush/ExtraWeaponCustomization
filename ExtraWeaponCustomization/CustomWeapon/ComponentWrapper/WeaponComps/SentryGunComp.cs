@@ -14,6 +14,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
         private ArchetypeDataBlock _archetypeData;
         private readonly CellSoundPlayer _sound;
         private bool _allowBackstab;
+        private float _friendlyFireMulti;
 
         public bool IsFirstShot { get; set; } = true;
 
@@ -25,7 +26,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
             Detection = Value.m_detection.Cast<SentryGunInstance_Detection>();
             _sound = Value.Sound;
             CostOfBullet = _archetypeData.CostOfBullet * Math.Max(1, _archetypeData.ShotgunBulletCount) * Value.ItemDataBlock.ClassAmmoCostFactor;
-            _allowBackstab = ETCWrapper.CanDoBackDamage(_archetypeData.persistentID);
+            ETCWrapper.GetETCData(_archetypeData.persistentID, out _allowBackstab, out _friendlyFireMulti);
         }
 
         public readonly SentryGunInstance_Firing_Bullets Firing;
@@ -51,7 +52,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
                 Detection.m_archetypeData = value;
                 FireMode = value.FireMode;
                 CostOfBullet = _archetypeData.CostOfBullet * Math.Max(1, _archetypeData.ShotgunBulletCount) * Value.ItemDataBlock.ClassAmmoCostFactor;
-                _allowBackstab = ETCWrapper.CanDoBackDamage(value.persistentID);
+                ETCWrapper.GetETCData(value.persistentID, out _allowBackstab, out _friendlyFireMulti);
 
                 if (IsShotgun)
                     Firing.m_segmentSize = MathUtil.DegreeToRadian(360f / (value.ShotgunBulletCount - 1f));
@@ -109,6 +110,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
             get => Firing.MaxRayDist;
             set => Firing.MaxRayDist = value;
         }
+        public override float FriendlyFireMulti => _friendlyFireMulti;
 
         public override bool IsAiming => false;
         public override AmmoType AmmoType => AmmoType.Class;

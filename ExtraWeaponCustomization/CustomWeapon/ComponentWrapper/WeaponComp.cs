@@ -31,6 +31,7 @@ namespace EWC.CustomWeapon.ComponentWrapper
         public virtual Weapon.WeaponHitData VanillaHitData => Weapon.s_weaponRayData ??= new();
         public virtual FX_Pool TracerPool => BulletWeapon.s_tracerPool;
         public virtual float MaxRayDist { get; set; } = 100f;
+        public virtual float FriendlyFireMulti => 1f;
     }
 
     public interface IWeaponComp
@@ -51,5 +52,6 @@ namespace EWC.CustomWeapon.ComponentWrapper
         public Weapon.WeaponHitData VanillaHitData { get; }
         public FX_Pool TracerPool { get; }
         public float MaxRayDist { get; set; }
+        public float FriendlyFireMulti { get; }
     }
 }

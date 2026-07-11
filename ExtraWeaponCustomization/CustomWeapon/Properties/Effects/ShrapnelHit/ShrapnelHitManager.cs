@@ -107,7 +107,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
                 if (source?.IsLocallyOwned == true)
                     GuiManager.CrosshairLayer.PopFriendlyTarget();
                 Dam_PlayerDamageBase playerBase = damageable.GetBaseDamagable().Cast<Dam_PlayerDamageBase>();
-                damage *= playerBase.m_playerData.friendlyFireMulti * shrapnel.FriendlyDamageMulti;
+                damage *= playerBase.m_playerData.friendlyFireMulti * shrapnel.FriendlyDamageMulti * shrapnel.CWC.Weapon.FriendlyFireMulti;
                 cc.Invoke(new WeaponHitDamageableContext(damage, preContext));
                 // Only damage and direction are used AFAIK, but again, just in case...
 
