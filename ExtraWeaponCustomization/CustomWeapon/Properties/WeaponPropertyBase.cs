@@ -17,10 +17,25 @@ namespace EWC.CustomWeapon.Properties
             set
             { 
                 _cwc = value;
-                CGC = _cwc.Weapon.IsType(WeaponType.Gun) ? _cwc.Cast<CustomGunComponent>() : null!;
+                if (_cwc.Weapon.IsType(WeaponType.Gun))
+                {
+                    CGC = _cwc.Cast<CustomGunComponent>();
+                    CMC = null!;
+                }
+                else if (_cwc.Weapon.IsType(WeaponType.Melee))
+                {
+                    CGC = null!;
+                    CMC = _cwc.Cast<CustomMeleeComponent>();
+                }
+                else
+                {
+                    CGC = null!;
+                    CMC = null!;
+                }
             }
         }
         public CustomGunComponent CGC { get; private set; } = null!;
+        public CustomMeleeComponent CMC { get; private set; } = null!;
 
         public uint ID { get; private set; } = 0;
         public int RefCount { get; set; } = 0;

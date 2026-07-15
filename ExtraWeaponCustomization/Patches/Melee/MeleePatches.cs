@@ -107,7 +107,7 @@ namespace EWC.Patches.Melee
         [HarmonyPatch(typeof(MWS_AttackSwingBase), nameof(MWS_AttackSwingBase.Exit))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
-        private static void PostSwingCallback(MWS_AttackSwingBase __instance)
+        private static void PostSwingCallback()
         {
             if (_cachedSwingCWC == null) return;
 

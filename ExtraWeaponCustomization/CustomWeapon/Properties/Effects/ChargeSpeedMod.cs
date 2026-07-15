@@ -16,7 +16,6 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         public ChargeSpeedMod() => _triggerStack = new(this);
 
-        protected override WeaponType RequiredWeaponType => WeaponType.BulletWeapon;
         protected override OwnerType RequiredOwnerType => OwnerType.Local;
 
         public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);
@@ -25,7 +24,10 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             _triggerStack.Clear();
 
-            CGC.UpdateChargeTime();
+            if (CWC.Weapon.IsType(WeaponType.Gun))
+                CGC.UpdateChargeTime();
+            else if (CWC.Weapon.IsType(WeaponType.Melee))
+                CMC.UpdateAttackSpeed();
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
@@ -33,7 +35,10 @@ namespace EWC.CustomWeapon.Properties.Effects
             var num = Count(contexts);
             _triggerStack.Add(num);
 
-            CGC.UpdateChargeTime();
+            if (CWC.Weapon.IsType(WeaponType.Gun))
+                CGC.UpdateChargeTime();
+            else if (CWC.Weapon.IsType(WeaponType.Melee))
+                CMC.UpdateAttackSpeed();
         }
 
         public void Invoke(WeaponChargeSpeedContext context)

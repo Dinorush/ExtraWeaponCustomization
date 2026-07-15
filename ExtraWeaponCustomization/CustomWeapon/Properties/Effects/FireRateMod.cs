@@ -48,6 +48,10 @@ namespace EWC.CustomWeapon.Properties.Effects
                 CGC.UpdateStoredFireRate();
                 CGC.ModifyFireRate();
             }
+            else if (CWC.Weapon.IsType(Enums.WeaponType.Melee))
+            {
+                CMC.UpdateAttackSpeed();
+            }
         }
 
         public void TriggerApplySync(float num)
@@ -58,6 +62,10 @@ namespace EWC.CustomWeapon.Properties.Effects
             {
                 CGC.UpdateStoredFireRate();
                 CGC.ModifyFireRate();
+            }
+            else if (CWC.Weapon.IsType(Enums.WeaponType.Melee))
+            {
+                CMC.UpdateAttackSpeed();
             }
         }
 
