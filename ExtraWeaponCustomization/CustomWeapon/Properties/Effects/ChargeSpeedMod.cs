@@ -4,7 +4,6 @@ using EWC.CustomWeapon.Properties.Effects.TriggerModifier;
 using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace EWC.CustomWeapon.Properties.Effects
 {
@@ -12,7 +11,6 @@ namespace EWC.CustomWeapon.Properties.Effects
         TriggerMod,
         IWeaponProperty<WeaponChargeSpeedContext>
     {
-        public bool ForceUpdate { get; private set; } = false;
 
         private readonly TriggerStack _triggerStack;
 
@@ -27,7 +25,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             _triggerStack.Clear();
 
-            CGC.UpdateChargeTime(ForceUpdate);
+            CGC.UpdateChargeTime();
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
@@ -35,40 +33,13 @@ namespace EWC.CustomWeapon.Properties.Effects
             var num = Count(contexts);
             _triggerStack.Add(num);
 
-            CGC.UpdateChargeTime(ForceUpdate);
+            CGC.UpdateChargeTime();
         }
 
         public void Invoke(WeaponChargeSpeedContext context)
         {
             if (_triggerStack.TryGetMod(out float mod))
                 context.AddMod(mod, StackLayer);
-        }
-
-        public override void Serialize(Utf8JsonWriter writer)
-        {
-            writer.WriteStartObject();
-            writer.WriteString("Name", GetType().Name);
-            writer.WriteNumber(nameof(Mod), Mod);
-            writer.WriteNumber(nameof(Cap), Cap);
-            writer.WriteNumber(nameof(Duration), Duration);
-            writer.WriteBoolean(nameof(CombineModifiers), CombineModifiers);
-            writer.WriteNumber(nameof(CombineDecayTime), CombineDecayTime);
-            writer.WriteString(nameof(StackType), StackType.ToString());
-            writer.WriteString(nameof(StackLayer), StackLayer.ToString());
-            writer.WriteBoolean(nameof(ForceUpdate), ForceUpdate);
-            SerializeTrigger(writer);
-            writer.WriteEndObject();
-        }
-
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
-        {
-            base.DeserializeProperty(property, ref reader);
-            switch (property)
-            {
-                case "forceupdate":
-                    ForceUpdate = reader.GetBoolean();
-                    break;
-            }
         }
     }
 }

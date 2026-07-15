@@ -3,6 +3,7 @@ using EWC.Attributes;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Utils.Extensions;
 using GameData;
 using Gear;
 using Il2CppInterop.Runtime.Injection;
@@ -149,20 +150,21 @@ namespace EWC.CustomWeapon
 
         public void NotifyShotFired() => _lastFireTime = Clock.Time;
 
-        public void UpdateChargeTime(bool forceUpdateTime = false)
+        public void UpdateChargeTime()
         {
             float newChargeSpeed = Math.Max(0.001f, Invoke(new WeaponChargeSpeedContext()).Value);
             if (newChargeSpeed != _currentChargeSpeed)
             {
                 _currentChargeSpeed = Math.Max(newChargeSpeed, 0.001f);
                 CurrentChargeMod = 1f / _currentChargeSpeed;
-                Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime * CurrentChargeMod;
-                // JFS - Should only run locally.
-                if (forceUpdateTime)
+                var chargeTime = _baseChargeTime * CurrentChargeMod;
+                Gun.ArchetypeData.SpecialChargetupTime = chargeTime;
+                var arch = ((LocalGunComp)Gun).GunArchetype;
+                if (arch.m_inChargeup)
                 {
-                    var arch = ((LocalGunComp)Gun).GunArchetype;
-                    if (arch.m_inChargeup)
-                        arch.m_chargeupTimer = _startChargeTime + _baseChargeTime * CurrentChargeMod;
+                    var time = Clock.Time;
+                    var remainingProgress = time.MapInverted(_startChargeTime, arch.m_chargeupTimer, 1, 0);
+                    arch.m_chargeupTimer = time + remainingProgress * chargeTime;
                 }
             }
         }
