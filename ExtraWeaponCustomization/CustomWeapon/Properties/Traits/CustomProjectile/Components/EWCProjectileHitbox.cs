@@ -473,6 +473,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 var result = _hitFuncOverride(HitData, _base.ContextController);
                 _base.OnHit(HitData.damageType);
+                API.ProjectileAPI.FireProjectilePostHitCallback(_base, damageable);
                 return result;
             }
 
@@ -489,6 +490,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
                 damageable?.BulletDamage(damage, HitData.owner, HitData.hitPos, HitData.fireDir, HitData.RayHit.normal, backstab, HitData.staggerMulti, HitData.precisionMulti);
             }
+            API.ProjectileAPI.FireProjectilePostHitCallback(_base, damageable);
             _base.OnHit(HitData.damageType);
             return true;
         }

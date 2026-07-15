@@ -9,10 +9,12 @@ namespace EWC.API
 
         public static event ProjectileCallback? OnProjectileSpawned;
         public static event ProjectileHitCallback? OnProjectileHit;
+        public static event ProjectileHitCallback? OnProjectilePostHit;
         public static event ProjectileCallback? OnProjectileDestroyed;
 
         internal static void FireProjectileSpawnedCallback(EWCProjectileComponentBase projectile) => OnProjectileSpawned?.Invoke(projectile);
         internal static void FireProjectileHitCallback(EWCProjectileComponentBase projectile, IDamageable? damageable) => OnProjectileHit?.Invoke(projectile, damageable);
+        internal static void FireProjectilePostHitCallback(EWCProjectileComponentBase projectile, IDamageable? damageable) => OnProjectilePostHit?.Invoke(projectile, damageable);
         internal static void FireProjectileDestroyedCallback(EWCProjectileComponentBase projectile) => OnProjectileDestroyed?.Invoke(projectile);
     }
 }
