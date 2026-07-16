@@ -13,7 +13,7 @@ namespace EWC.API
         public readonly WeaponAccuracy Special;
         public readonly WeaponAccuracy Tool;
         // Always has a player.
-        public readonly PlayerAgent Owner;
+        public PlayerAgent Owner { get; internal set; }
 
         public WeaponAccuracy this[AmmoType ammoType] => this[ammoType.ToInventorySlot()];
         public WeaponAccuracy this[InventorySlot slot] => slot switch
