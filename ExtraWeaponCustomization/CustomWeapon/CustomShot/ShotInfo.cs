@@ -176,12 +176,10 @@ namespace EWC.CustomWeapon.CustomShot
 
         private void GetIDs(ShotInfo? info = null, bool asNew = true)
         {
-            if (CWC!.Owner.Player == null || !CWC.Owner.IsType(OwnerType.Managed) || CWC.Weapon.IsType(WeaponType.Melee))
-                (ID, OriginID, GroupID) = (0, 0, 0);
-            else if (info != null)
-                (ID, OriginID, GroupID) = ShotManager.PullIDs(CWC, info, asNew);
+            if (info != null)
+                (ID, OriginID, GroupID) = ShotManager.PullIDs(CWC!, info, asNew);
             else
-                (ID, OriginID, GroupID) = ShotManager.GetIDs(CWC);
+                (ID, OriginID, GroupID) = ShotManager.GetIDs(CWC!);
         }
 
         // Snapshot of ShotInfo to capture its current state
