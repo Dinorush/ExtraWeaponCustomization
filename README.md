@@ -9,8 +9,9 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Ammo Regen: Continually modifies magazine/reserve ammo counts. [Gun]
 - Armor Mod: Applies a damage reduction modifier.
 - Armor Shred: Applies a global armor reduction to shots/melees unique to each target. [Hit Triggers]
+- Auto Pickup: Picks up the sentry. [Sentry]
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
-- Charge Speed Mod: Applies a charge speed modifier. [Gun]
+- Charge Speed Mod: Applies a charge speed modifier.
 - Damage Over Time: Applies a damage over time effect. [Hit Triggers]
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
@@ -42,6 +43,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Backstab Multi: Applies a multiplier to backstab damage.
 - Charge Exponent: Modifies the exponent applied to melee charge attacks. [Melee]
 - Data Swap: Toggles archetype and audio on a trigger. [Gun]
+- EMP Immunity: Makes the gear immune to ExtraEnemyCustomization EMP effects.
 - Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate. [Player]
 - Hitmarker Cooldown: Sets a cooldown on how frequently the weapon can generate hitmarkers. [Player]
 - Hold Burst: Releasing the trigger ends a burst early. [Player]
