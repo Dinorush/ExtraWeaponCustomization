@@ -1,7 +1,6 @@
 ﻿using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
-using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
@@ -13,7 +12,6 @@ using Gear;
 using Player;
 using System;
 using UnityEngine;
-using static UnityEngine.UI.Image;
 
 namespace EWC.CustomWeapon.CustomShot
 {
