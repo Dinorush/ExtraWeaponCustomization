@@ -71,20 +71,24 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public void Reset() { }
 
-        public void OnPropertiesSetup(CustomWeaponComponent cwc)
+        public bool OnPropertiesSetup(CustomWeaponComponent cwc)
         {
             if (cwc.TryGetProperty(ID, out var property))
             {
                 if (property is TriggerMod mod)
                 {
                     if (!mod.IsPerTarget || ValidActivates.Contains(Name))
+                    {
                         _syncedMod = mod;
+                        return true;
+                    }
                     else
                         EWCLogger.Error($"Cannot sync with {mod.GetType().Name} since trigger {Name} is not a hit trigger!");
                 }
                 else
                     EWCLogger.Error($"Cannot use {property.GetType().Name} as a synced mod!");
             }
+            return false;
         }
 
         public ITrigger Clone()

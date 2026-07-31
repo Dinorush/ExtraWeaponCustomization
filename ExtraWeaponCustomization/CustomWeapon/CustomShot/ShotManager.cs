@@ -1,6 +1,7 @@
 ﻿using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Enums;
+using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
@@ -12,6 +13,7 @@ using Gear;
 using Player;
 using System;
 using UnityEngine;
+using static UnityEngine.UI.Image;
 
 namespace EWC.CustomWeapon.CustomShot
 {
@@ -42,12 +44,16 @@ namespace EWC.CustomWeapon.CustomShot
         }
         public static (uint id, uint originID, uint groupID) GetIDs(CustomWeaponComponent cwc)
         {
+            if (cwc.Owner.Player == null || !cwc.Owner.IsType(OwnerType.Managed) || cwc.Weapon.IsType(WeaponType.Melee))
+                return (0, 0, 0);
             var newIDs = (StepID(ref s_shotID), StepID(ref s_originID), s_groupID);
             AccuracyManager.InitShot(cwc, newIDs);
             return newIDs;
         }
         public static (uint id, uint originID, uint groupID) PullIDs(CustomWeaponComponent cwc, ShotInfo shotInfo, bool asNew = true)
         {
+            if (cwc.Owner.Player == null || !cwc.Owner.IsType(OwnerType.Managed) || cwc.Weapon.IsType(WeaponType.Melee))
+               return (0, 0, 0);
             var newIDs = (asNew ? StepID(ref s_shotID) : shotInfo.ID, shotInfo.OriginID, shotInfo.GroupID);
             if (asNew)
                 AccuracyManager.InitShot(cwc, newIDs);

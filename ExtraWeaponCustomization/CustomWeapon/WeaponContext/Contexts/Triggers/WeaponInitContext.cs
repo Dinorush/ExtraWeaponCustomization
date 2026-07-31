@@ -7,10 +7,10 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public readonly IWeaponComp Weapon;
         public readonly IOwnerComp Owner;
 
-        public WeaponInitContext(IOwnerComp owner, IWeaponComp weapon) : base()
+        public WeaponInitContext(CustomWeaponComponent cwc) : base()
         {
-            Weapon = weapon;
-            Owner = owner;
+            Weapon = cwc.Weapon;
+            Owner = cwc.Owner;
         }
     }
 }

@@ -49,6 +49,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         JumpEnd,
         PerTarget,
         Key,
+        SentryState,
         Reference,
         Init
     }
@@ -61,7 +62,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         bool StoreZeroAmount => false;
         bool Invoke(WeaponTriggerContext context, out float amount);
         void Reset();
-        void OnPropertiesSetup(CustomWeaponComponent cwc) { }
+        bool OnPropertiesSetup(CustomWeaponComponent cwc) => true;
         ITrigger Clone();
         void DeserializeProperty(string property, ref Utf8JsonReader reader);
 
@@ -108,6 +109,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 string init when init.ContainsAny("setup", "init", "drop") => new InitTrigger(name),
                 string sync when sync.Contains("sync") => DetermineModSyncTrigger(origName, sync),
                 string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(name),
+                string sentry when sentry.StartsWith("sentry") => DetermineSentryStateTrigger(name),
                 string hitTaken when hitTaken.Contains("hittaken") => new PlayerDamageTypeTrigger(TriggerName.HitTaken, name.ToPlayerDamageTypes()),
                 string damageTaken when damageTaken.Contains("damagetaken") => new DamageTakenTrigger(name.ToPlayerDamageTypes()),
                 string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
@@ -184,7 +186,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         private static ITrigger? DetermineKeyTrigger(string name)
         {
-            name = name[3..];
+            name = name["key".Length..];
             if (name.Length == 0) return null;
 
             bool onDown = true;
@@ -229,6 +231,15 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             if (key == UnityEngine.KeyCode.None) return null;
 
             return new KeyTrigger(key, onDown);
+        }
+
+        private static ITrigger? DetermineSentryStateTrigger(string name)
+        {
+            name = name["sentry".Length..];
+            if (name == "held" || name == "pickup")
+                return new SentryStateTrigger(false);
+            else
+                return new SentryStateTrigger(true);
         }
     }
 

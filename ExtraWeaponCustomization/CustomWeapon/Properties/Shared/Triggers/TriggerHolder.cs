@@ -19,9 +19,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         public float CooldownThreshold { get; private set; } = 0f;
         public float Chance { get; private set; } = 1f;
         public float ResetDelay { get; private set; } = 0f;
-        public bool ConsumeThreshold { get; private set; } = false;
         public float ThresholdOffset { get; private set; } = 0f;
-        public bool AllowOnce { get; private set; } = false;
 
         public List<ITrigger>? Apply { get; private set; }
 
@@ -33,10 +31,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         public ITriggerCallback? Caller => Parent.Parent;
         private readonly DelayedCallback _delayedReset;
 
-        protected float _triggerSum = 0f;
-        protected float _triggerCount = 0f;
-        protected float _nextTriggerTime = 0f;
-        protected bool _allow = true;
+        private protected float _triggerSum = 0f;
+        private protected float _triggerCount = 0f;
+        private protected float _nextTriggerTime = 0f;
+        private protected bool _allow = true;
 
         public TriggerHolder(TriggerCoordinator parent, params ITrigger[] triggers)
         {
@@ -48,20 +46,16 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 );
         }
 
-        public void OnPropertiesSetup()
+        public virtual void OnPropertiesSetup()
         {
             if (Caller == null) return;
             var cwc = Caller.CWC;
-            foreach (var trigger in Triggers)
-                trigger.OnPropertiesSetup(cwc);
 
-            foreach (var trigger in Apply.OrEmptyIfNull())
-                trigger.OnPropertiesSetup(cwc);
+            Triggers.RemoveAll(trigger => !trigger.OnPropertiesSetup(cwc));
+            Apply?.RemoveAll(trigger => !trigger.OnPropertiesSetup(cwc));
+            Cancel?.RemoveAll(trigger => !trigger.OnPropertiesSetup(cwc));
 
-            foreach (var trigger in Cancel.OrEmptyIfNull())
-                trigger.OnPropertiesSetup(cwc);
-
-            _triggerSum = Threshold > 0 ? ThresholdOffset % Threshold : 0;
+            _triggerSum += Threshold > 0 ? ThresholdOffset % Threshold : 0;
         }
 
         public virtual TriggerHolder Clone(TriggerCoordinator parent)
@@ -104,22 +98,12 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             if (activate)
             {
                 if (Apply == null)
-                {
-                    _allow = !AllowOnce;
-                    if (ConsumeThreshold)
-                        _triggerSum -= Threshold;
                     return true;
-                }
 
                 foreach (ITrigger trigger in Apply)
                 {
                     if (trigger.Invoke(context, out float amount) && amount > 0)
-                    {
-                        _allow = !AllowOnce;
-                        if (ConsumeThreshold)
-                            _triggerSum -= Threshold;
                         return true;
-                    }
                 }
             }
 
@@ -150,16 +134,11 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             }
 
             if (_triggerSum >= Threshold)
-            {
-                _allow = !AllowOnce;
-                if (ConsumeThreshold)
-                    _triggerSum -= Threshold;
                 return true;
-            }
             return false;
         }
 
-        private void AddTrigger(WeaponTriggerContext context, float triggerAmt)
+        private protected void AddTrigger(WeaponTriggerContext context, float triggerAmt)
         {
             OnAddTrigger(context, triggerAmt);
             _triggerCount += triggerAmt;
@@ -236,14 +215,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "resetdelay":
                     ResetDelay = reader.GetSingle();
                     break;
-                case "consumethreshold":
-                    ConsumeThreshold = reader.GetBoolean();
-                    break;
                 case "thresholdoffset":
                     ThresholdOffset = reader.GetSingle();
-                    break;
-                case "allowonce":
-                    AllowOnce = reader.GetBoolean();
                     break;
                 case "apply":
                     Apply = DeserializeTriggers(ref reader);

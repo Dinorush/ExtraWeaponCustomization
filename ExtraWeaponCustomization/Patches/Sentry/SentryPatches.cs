@@ -5,6 +5,7 @@ using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils.Extensions;
 using HarmonyLib;
+using Player;
 
 namespace EWC.Patches.Sentry
 {
@@ -33,6 +34,20 @@ namespace EWC.Patches.Sentry
         private static void PrePickupCallback(SentryGunInstance __instance)
         {
             CustomWeaponManager.RemoveSentry(__instance);
+        }
+
+        [HarmonyPatch(typeof(PlayerBackpack), nameof(PlayerBackpack.SetDeployed))]
+        [HarmonyWrapSafe]
+        [HarmonyPrefix]
+        private static void PreDeployChangeCallback(PlayerBackpack __instance, InventorySlot slot, bool mode)
+        {
+            if (slot != InventorySlot.GearClass || !__instance.TryGetBackpackItem(slot, out var bpItem)) return;
+
+            var status = mode ? eInventoryItemStatus.Deployed : eInventoryItemStatus.InBackpack;
+            if (bpItem.Status == status) return;
+
+            var cwc = bpItem?.Instance.GetComponent<CustomWeaponComponent>();
+            cwc?.Invoke(new WeaponSentryStateContext(mode));
         }
 
         [HarmonyPatch(typeof(SentryGunInstance), nameof(SentryGunInstance.StartFiring))]

@@ -1,26 +1,24 @@
 ﻿using EWC.CustomWeapon.WeaponContext.Contexts;
 using System.Text.Json;
-using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Shared.Triggers
 {
-    public sealed class KeyTrigger : ITrigger
+    public sealed class SentryStateTrigger : ITrigger
     {
-        public TriggerName Name => TriggerName.Key;
+        public TriggerName Name => TriggerName.SentryState;
         public float Amount { get; private set; } = 1f;
-        public KeyCode Key { get; }
-        public bool OnDown { get; }
 
-        public KeyTrigger(KeyCode key, bool onDown)
+        private readonly bool _deployed;
+
+        public SentryStateTrigger(bool deployed)
         {
-            Key = key;
-            OnDown = onDown;
+            _deployed = deployed;
         }
 
         public bool Invoke(WeaponTriggerContext context, out float amount)
         {
             amount = 0f;
-            if (context is WeaponKeyContext keyContext && Key == keyContext.Key && OnDown == keyContext.IsDown)
+            if (context is WeaponSentryStateContext sentryContext && _deployed == sentryContext.Deployed)
             {
                 amount = Amount;
                 return true;
@@ -29,12 +27,6 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         }
 
         public void Reset() { }
-
-        public bool OnPropertiesSetup(CustomWeaponComponent cwc)
-        {
-            cwc.RegisterKeyWatcher(Key);
-            return true;
-        }
 
         public ITrigger Clone() => this;
 

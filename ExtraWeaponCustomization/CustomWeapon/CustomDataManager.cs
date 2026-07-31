@@ -34,8 +34,8 @@ namespace EWC.CustomWeapon
             if (weaponComp.IsType(Enums.WeaponType.Melee))
                 return TryGetCustomMeleeData(((MeleeComp)weaponComp).Value.MeleeArchetypeData.persistentID, out data);
             else if (weaponComp.IsType(Enums.WeaponType.SentryHolder))
-                return TryGetCustomGunData(((IAmmoComp)weaponComp).ArchetypeData.persistentID, out data) && !data.IgnoreHeldSentry;
-            return TryGetCustomGunData(((IAmmoComp)weaponComp).ArchetypeData.persistentID, out data);
+                return TryGetCustomGunData(weaponComp.ArchetypeData.persistentID, out data) && data.HeldSentryProperties.Count > 0;
+            return TryGetCustomGunData(weaponComp.ArchetypeData.persistentID, out data);
         }
 
         public static bool TryGetCustomData(ItemEquippable item, [MaybeNullWhen(false)] out CustomWeaponData data)
@@ -49,7 +49,7 @@ namespace EWC.CustomWeapon
             if (item.TryCast<MeleeWeaponFirstPerson>() != null)
                 return TryGetCustomMeleeData(item.MeleeArchetypeData.persistentID, out data);
             else if (item.TryCast<SentryGunFirstPerson>() != null)
-                return TryGetCustomGunData(item.ArchetypeID, out data) && !data.IgnoreHeldSentry;
+                return TryGetCustomGunData(item.ArchetypeID, out data) && data.HeldSentryProperties.Count > 0;
             return TryGetCustomGunData(item.ArchetypeID, out data);
         }
 
@@ -190,7 +190,10 @@ namespace EWC.CustomWeapon
         {
             _syncedProperties.Clear();
             foreach (CustomWeaponData data in _customGunData.Values)
+            {
                 RegisterSyncedProperties_Recurse(data.Properties);
+                RegisterSyncedProperties_Recurse(data.HeldSentryProperties);
+            }
 
             foreach (CustomWeaponData data in _customMeleeData.Values)
                 RegisterSyncedProperties_Recurse(data.Properties);

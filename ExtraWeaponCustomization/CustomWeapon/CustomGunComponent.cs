@@ -97,7 +97,7 @@ namespace EWC.CustomWeapon
             Gun.ArchetypeData.SpecialChargetupTime = _baseChargeTime;
             CurrentChargeMod = 1f;
             _currentChargeSpeed = 1f;
-            if (!_destroyed)
+            if (!Destroyed)
                 Weapon.Sound.SetRTPCValue(GAME_PARAMETERS.FIREDELAY, 1f / CurrentFireRate);
         }
 

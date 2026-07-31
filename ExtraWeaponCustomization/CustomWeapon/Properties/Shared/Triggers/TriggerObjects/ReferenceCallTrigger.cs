@@ -31,15 +31,19 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public ITrigger Clone() => this;
 
-        public void OnPropertiesSetup(CustomWeaponComponent cwc)
+        public bool OnPropertiesSetup(CustomWeaponComponent cwc)
         {
             if (cwc.TryGetProperty(ID, out var property))
             {
                 if (property is ITriggerEvent triggerEvent)
+                {
                     _callbackID = triggerEvent.GetCallbackID(Callback);
+                    return true;
+                }
                 else
                     EWCLogger.Error($"Cannot use {property.GetType().Name} as a trigger!");
             }
+            return false;
         }
 
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)

@@ -68,7 +68,7 @@ namespace EWC.CustomWeapon
         private float _lastInvokeTime = 0f;
         private readonly Dictionary<KeyCode, bool> _keyWatchers;
 
-        protected bool _destroyed = false;
+        public bool Destroyed { get; private set; } = false;
 
         public CustomWeaponComponent(IntPtr value) : base(value)
         {
@@ -162,7 +162,7 @@ namespace EWC.CustomWeapon
 
         private void OnDestroy()
         {
-            _destroyed = true;
+            Destroyed = true;
             Clear();
         }
 
@@ -205,7 +205,7 @@ namespace EWC.CustomWeapon
         [HideFromIl2Cpp]
         public void Register(CustomWeaponData? data = null)
         {
-            if (enabled || _destroyed) return; // Don't want to register data twice
+            if (enabled || Destroyed) return; // Don't want to register data twice
             enabled = true;
 
             if (data == null)
@@ -214,17 +214,17 @@ namespace EWC.CustomWeapon
                     return;
             }
 
-            _propertyController.Init(this, data.Properties.Clone());
             DebuffIDs = data.DebuffIDs.IDs;
             DebuffIDs.Add(DebuffManager.DefaultGroup);
-            InvokeAll(StaticContext<WeaponCreatedContext>.Instance);
-            Invoke(new WeaponInitContext(Owner, Weapon));
+            var properties = Weapon.IsType(Enums.WeaponType.SentryHolder) ? data.HeldSentryProperties : data.Properties;
+            _propertyController.Init(this, properties.Clone());
+            Invoke(new WeaponInitContext(this));
             TriggerManager.RunQueuedReceives(this);
         }
 
         public virtual void Clear()
         {
-            if (_destroyed)
+            if (Destroyed)
             {
                 foreach (var callback in _timeSensitiveCallbacks)
                     callback.Cancel();

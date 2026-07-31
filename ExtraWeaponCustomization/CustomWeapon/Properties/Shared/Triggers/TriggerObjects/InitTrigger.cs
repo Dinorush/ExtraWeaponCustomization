@@ -39,6 +39,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public ITrigger Clone() => this;
 
+        public bool OnPropertiesSetup(CustomWeaponComponent cwc) => false;
+
         public void DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)

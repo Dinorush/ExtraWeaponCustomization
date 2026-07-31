@@ -50,6 +50,7 @@ namespace EWC.CustomWeapon.Properties
 
             _root = CreateTree(cwc, baseList);
             ReplaceReferences(_root.List);
+            InvokeAll(StaticContext<WeaponCreatedContext>.Instance);
             foreach (var property in _properties)
                 property.OnPropertiesSetup();
             SetActive(_root, true);

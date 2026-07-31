@@ -14,6 +14,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         public uint CooldownOnApplyThreshold { get; private set; } = 1;
         public bool ApplyAboveThreshold { get; private set; } = false;
         public float ApplyOverrideAmount { get; private set; } = 0f;
+        public bool AllowOnce { get; private set; } = false;
 
         private readonly List<TriggerContext> _accumulatedTriggers = new();
         private uint _applyCount = 0;
@@ -28,6 +29,47 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             copy._applyDelays = _applyDelays;
             copy._delayedApplies = _delayedApplies != null ? new() : null;
             return copy;
+        }
+
+        public override void OnPropertiesSetup()
+        {
+            if (Caller == null) return;
+            var cwc = Caller.CWC;
+
+            WeaponInitContext? initContext = null;
+            for (int i = Triggers.Count - 1; i >= 0; i--)
+            {
+                var trigger = Triggers[i];
+                if (!trigger.OnPropertiesSetup(cwc))
+                {
+                    Triggers.RemoveAt(i);
+                    if (trigger is InitTrigger initTrigger)
+                        AddTrigger(initContext ??= new WeaponInitContext(cwc), initTrigger.Amount);
+                }
+            }
+
+            bool activate = _triggerSum > 0;
+            if (Apply != null)
+            {
+                bool apply = false;
+                for (int i = Apply.Count - 1; i >= 0; i--)
+                {
+                    var trigger = Apply[i];
+                    if (!trigger.OnPropertiesSetup(cwc))
+                    {
+                        Apply.RemoveAt(i);
+                        if (activate && trigger is InitTrigger)
+                            apply = true;
+                    }
+                }
+                activate &= apply;
+            }
+
+            Cancel?.RemoveAll(trigger => !trigger.OnPropertiesSetup(cwc));
+            
+            _triggerSum += Threshold > 0 ? ThresholdOffset % Threshold : 0;
+            if (activate)
+                ApplyTriggers();
         }
 
         public void ApplyTriggers()
@@ -64,6 +106,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             else
                 currentTriggers = new(_accumulatedTriggers);
 
+            _allow = !AllowOnce;
             _triggerSum = 0f;
             _accumulatedTriggers.Clear();
 
@@ -194,6 +237,9 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "applyamount":
                     ApplyOverrideAmount = reader.GetSingle();
                     return;
+                case "allowonce":
+                    AllowOnce = reader.GetBoolean();
+                    break;
             }
         }
     }
