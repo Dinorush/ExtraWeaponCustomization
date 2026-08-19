@@ -223,7 +223,7 @@ namespace EWC.CustomWeapon.CustomShot
                 {
                     var modifier = cwc.Weapon.InventorySlot == InventorySlot.GearStandard ? AgentModifier.StandardWeaponDamage : AgentModifier.SpecialWeaponDamage;
                     CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(cwc.Owner.IsType(OwnerType.Local), weaponType);
-                    CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, modifier, 1f);
+                    CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, modifier, 1f) + AgentModifierManager.ApplyModifier(owner, cwc.Weapon.ArchetypeData.DamageBoosterEffect, 1f) - 1f;
                 }
                 else if (weaponType.HasFlag(WeaponType.Melee))
                 {
