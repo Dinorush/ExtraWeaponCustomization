@@ -166,7 +166,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
 
         private static StopSearchMode ToStopSearchMode(string value)
         {
-            value = value.Replace(" ", null).ToLower();
+            value = value.Replace(" ", null).ToLowerInvariant();
             StopSearchMode result = StopSearchMode.None;
             if (value.Contains("pierce"))
                 result |= StopSearchMode.Pierce;

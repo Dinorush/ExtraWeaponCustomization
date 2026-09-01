@@ -177,10 +177,13 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             origName = origName.Replace(" ", null);
             int sep = name.IndexOf("sync");
             if (sep == -1) return null;
+
             string id = origName[0..sep];
             if (string.IsNullOrEmpty(id)) return null;
+
             ITrigger? activate = GetTrigger(name[(sep+4)..]);
             if (activate == null) return null;
+
             return new ModSyncTrigger(activate, id);
         }
 

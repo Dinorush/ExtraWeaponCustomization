@@ -4,6 +4,7 @@ using System.Text.Json;
 using GTFO.API.JSON.Converters;
 using EWC.JSON.Converters;
 using EWC.Dependencies;
+using System.Collections.Generic;
 
 namespace EWC.JSON
 {
@@ -20,6 +21,7 @@ namespace EWC.JSON
 
         static EWCJson()
         {
+            _setting.Converters.Add(new SafeDataListConverter());
             _setting.Converters.Add(new JsonStringEnumConverter());
             _setting.Converters.Add(new TriggerConverter());
             _setting.Converters.Add(new TriggerCoordinatorConverter());

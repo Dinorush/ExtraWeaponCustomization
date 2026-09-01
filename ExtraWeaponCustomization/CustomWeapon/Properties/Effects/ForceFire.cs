@@ -79,7 +79,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private static WeaponState ToWeaponState(string value)
         {
-            value = value.Replace(" ", null).ToLower();
+            value = value.Replace(" ", null).ToLowerInvariant();
             WeaponState result = WeaponState.None;
             if (value == "all")
                 return WeaponState.All;

@@ -21,18 +21,26 @@ namespace EWC.JSON.Converters
             WeaponPropertyBase? instance = CreatePropertyInstance(reader);
             if (instance == null || reader.TokenType != JsonTokenType.StartObject) return instance;
 
-            while (reader.Read())
+            try
             {
-                if (reader.TokenType == JsonTokenType.EndObject) return instance;
+                while (reader.Read())
+                {
+                    if (reader.TokenType == JsonTokenType.EndObject) return instance;
 
-                if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected PropertyName token");
+                    if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected PropertyName token");
 
-                string property = reader.GetString()!;
-                reader.Read();
-                instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                    string property = reader.GetString()!;
+                    reader.Read();
+                    instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                }
+
+                throw new JsonException("Expected EndObject token");
             }
-
-            throw new JsonException("Expected EndObject token");
+            catch (JsonException)
+            {
+                EWCLogger.Error($"Exception reading EWC block for {instance.GetType().Name}");
+                throw;
+            }   
         }
 
         public override void Write(Utf8JsonWriter writer, WeaponPropertyBase value, JsonSerializerOptions options)
@@ -75,9 +83,9 @@ namespace EWC.JSON.Converters
         private static WeaponPropertyBase? NameToProperty(string name)
         {
             name = name.Replace(" ", "");
-            var lower = name.ToLower();
+            var lower = name.ToLowerInvariant();
             // Reference Property is not an effect or trait so it can't be dereferenced
-            if (lower == nameof(ReferenceProperty).ToLower()) return new ReferenceProperty();
+            if (lower == nameof(ReferenceProperty).ToLowerInvariant()) return new ReferenceProperty();
 
             if (!LegacyNames.TryGetValue(lower, out Type? type))
                 type = Type.GetType(PropertyNamespace + ".Effects." + name, false, true) ?? Type.GetType(PropertyNamespace + ".Traits." + name, false, true);

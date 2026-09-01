@@ -12,7 +12,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public InitTrigger(string jsonName)
         {
-            jsonName = jsonName.ToLower();
+            jsonName = jsonName.ToLowerInvariant();
             if (jsonName.Contains("client"))
                 _type = PlayerType.Client;
             else if (jsonName.Contains("host"))

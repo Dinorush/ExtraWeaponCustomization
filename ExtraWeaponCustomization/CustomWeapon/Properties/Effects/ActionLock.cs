@@ -94,7 +94,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private static PlayerAction ToPlayerAction(string value)
         {
-            value = value.Replace(" ", null).ToLower();
+            value = value.Replace(" ", null).ToLowerInvariant();
             if (value == "all")
                 return PlayerAction.All;
 

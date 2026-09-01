@@ -25,19 +25,27 @@ namespace EWC.JSON.Converters
             ITrigger? trigger = CreateTriggerInstance(reader);
             if (trigger == null) return null;
 
-            while (reader.Read())
+            try
             {
-                if (reader.TokenType == JsonTokenType.EndObject)
-                    return trigger;
+                while (reader.Read())
+                {
+                    if (reader.TokenType == JsonTokenType.EndObject)
+                        return trigger;
 
-                if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected PropertyName token");
-                string property = reader.GetString()!;
+                    if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected PropertyName token");
+                    string property = reader.GetString()!;
 
-                reader.Read();
-                trigger.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                    reader.Read();
+                    trigger.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                }
+
+                throw new JsonException("Expected EndObject token");
             }
-
-            throw new JsonException("Expected EndObject token");
+            catch (JsonException)
+            {
+                EWCLogger.Error($"Error deserializing fields for {trigger.Name}:");
+                throw;
+            }
         }
 
         // Only called for templates, so don't need logic for customized triggers

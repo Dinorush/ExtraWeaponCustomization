@@ -142,30 +142,14 @@ namespace EWC.CustomWeapon
                 _customMeleeData.Remove(id);
             fileIDs.Clear();
 
-            List<CustomWeaponData?>? dataList = null;
-            try
+            foreach (CustomWeaponData data in EWCJson.Deserialize<List<CustomWeaponData>>(content)!)
             {
-                dataList = EWCJson.Deserialize<List<CustomWeaponData?>>(content);
-            }
-            catch (JsonException ex)
-            {
-                EWCLogger.Error("Error parsing custom weapon json " + file);
-                EWCLogger.Error(ex.Message);
-            }
-
-            if (dataList == null) return;
-
-            foreach (CustomWeaponData? data in dataList)
-            {
-                if (data != null)
-                {
-                    if (data.ArchetypeID != 0 && _customGunData.ContainsKey(data.ArchetypeID))
-                        EWCLogger.Warning("Duplicate archetype ID " + data.ArchetypeID + " found. Previous name: " + _customGunData[data.ArchetypeID].Name + ", new name: " + data.Name);
-                    if (data.MeleeArchetypeID != 0 && _customMeleeData.ContainsKey(data.MeleeArchetypeID))
-                        EWCLogger.Warning("Duplicate melee archetype ID " + data.MeleeArchetypeID + " found. Previous name: " + _customMeleeData[data.MeleeArchetypeID].Name + ", new name: " + data.Name);
+                if (data.ArchetypeID != 0 && _customGunData.ContainsKey(data.ArchetypeID))
+                    EWCLogger.Warning("Duplicate archetype ID " + data.ArchetypeID + " found. Previous name: " + _customGunData[data.ArchetypeID].Name + ", new name: " + data.Name);
+                if (data.MeleeArchetypeID != 0 && _customMeleeData.ContainsKey(data.MeleeArchetypeID))
+                    EWCLogger.Warning("Duplicate melee archetype ID " + data.MeleeArchetypeID + " found. Previous name: " + _customMeleeData[data.MeleeArchetypeID].Name + ", new name: " + data.Name);
                     
-                    AddCustomWeaponData(data, file);
-                }
+                AddCustomWeaponData(data, file);
             }
         }
 
