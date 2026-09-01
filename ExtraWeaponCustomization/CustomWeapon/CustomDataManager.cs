@@ -142,7 +142,18 @@ namespace EWC.CustomWeapon
                 _customMeleeData.Remove(id);
             fileIDs.Clear();
 
-            foreach (CustomWeaponData data in EWCJson.Deserialize<List<CustomWeaponData>>(content)!)
+            List<CustomWeaponData> dataList;
+            try
+            {
+                dataList = EWCJson.Deserialize<List<CustomWeaponData>>(content)!;
+            }
+            catch (JsonException ex)
+            {
+                EWCLogger.Error($"Error reading {file}: {ex.Message}");
+                return;
+            }
+
+            foreach (CustomWeaponData data in dataList)
             {
                 if (data.ArchetypeID != 0 && _customGunData.ContainsKey(data.ArchetypeID))
                     EWCLogger.Warning("Duplicate archetype ID " + data.ArchetypeID + " found. Previous name: " + _customGunData[data.ArchetypeID].Name + ", new name: " + data.Name);
