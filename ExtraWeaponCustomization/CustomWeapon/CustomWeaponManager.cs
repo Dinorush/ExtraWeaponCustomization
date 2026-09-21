@@ -1,4 +1,5 @@
-﻿using EWC.Attributes;
+﻿using EWC.API;
+using EWC.Attributes;
 using EWC.CustomWeapon.ObjectWrappers;
 using EWC.Utils.Extensions;
 using Gear;
@@ -122,6 +123,8 @@ namespace EWC.CustomWeapon
             
             if (sentry.Owner != null)
                 Current._trackedSentries.Add(sentry.Owner.Pointer, (sentry, cgc));
+
+            GearAPI.FireGearSpawnedCallback(sentry, cgc);
         }
 
         public static void RemoveSentry(SentryGunInstance sentry)
@@ -175,14 +178,17 @@ namespace EWC.CustomWeapon
             if (!info.IsReady()) return;
 
             item.SetOwner(info.owner);
+            CustomWeaponComponent? cwc = null;
             if (CustomDataManager.TryGetCustomData(item, out var data))
             {
-                if (!item.TryGetComp<CustomWeaponComponent>(out var cwc))
+                if (!item.TryGetComp<CustomWeaponComponent>(out cwc))
                     cwc = info.addCWC!(item.gameObject);
                 else
                     cwc.RefreshOwner();
                 cwc.Register(data);
             }
+
+            GearAPI.FireGearSpawnedCallback(item, cwc);
         }
 
         public static void ResetCWCs(bool activate = true)

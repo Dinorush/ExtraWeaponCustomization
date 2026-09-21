@@ -84,19 +84,16 @@ namespace EWC.CustomWeapon
             CustomWeaponManager.ResetCWCs();
         }
 
-        private void FileChanged(LiveEditEventArgs e)
+        private void FileChanged(FileEventArgs e)
         {
-            EWCLogger.Warning($"LiveEdit File Changed: {e.FileName}");
-            LiveEdit.TryReadFileContent(e.FullPath, (content) =>
-            {
-                ReadFileContent(e.FullPath, content);
-                OnReload();
-            });
+            EWCLogger.Warning($"File Changed: {e.FileName}");
+            ReadFileContent(e.FullPath, e.ReadContent());
+            OnReload();
         }
 
-        private void FileDeleted(LiveEditEventArgs e)
+        private void FileDeleted(FileEventArgs e)
         {
-            EWCLogger.Warning($"LiveEdit File Removed: {e.FileName}");
+            EWCLogger.Warning($"File Removed: {e.FileName}");
             if (!_fileToGuns.ContainsKey(e.FullPath))
             {
                 PrintCustomIDs();
@@ -114,14 +111,28 @@ namespace EWC.CustomWeapon
             OnReload();
         }
 
-        private void FileCreated(LiveEditEventArgs e)
+        private void FileCreated(FileEventArgs e)
         {
-            EWCLogger.Warning($"LiveEdit File Created: {e.FileName}");
-            LiveEdit.TryReadFileContent(e.FullPath, (content) =>
+            EWCLogger.Warning($"File Created: {e.FileName}");
+            ReadFileContent(e.FullPath, e.ReadContent());
+            OnReload();
+        }
+
+        private void FileRenamed(FileRenamedEventArgs e)
+        {
+            string oldPath = e.OldFullPath;
+            string path = e.FullPath;
+            if (_fileToGuns.TryGetValue(oldPath, out var idSet))
             {
-                ReadFileContent(e.FullPath, content);
-                OnReload();
-            });
+                _fileToGuns[path] = _fileToGuns[oldPath];
+                _fileToGuns.Remove(oldPath);
+            }
+
+            if (_fileToMelees.TryGetValue(oldPath, out idSet))
+            {
+                _fileToMelees[path] = _fileToMelees[oldPath];
+                _fileToMelees.Remove(oldPath);
+            }
         }
 
         private void ReadFileContent(string file, string content)
@@ -256,10 +267,11 @@ namespace EWC.CustomWeapon
 
             if (liveEdit)
             {
-                var liveEditListener = LiveEdit.CreateListener(directory, "*.json", true);
-                liveEditListener.FileCreated += FileCreated;
-                liveEditListener.FileChanged += FileChanged;
-                liveEditListener.FileDeleted += FileDeleted;
+                var watcher = SafeFileSystemWatcher.Create(directory, new string[] { "*.json" }, true);
+                watcher.OnCreated += FileCreated;
+                watcher.OnChanged += FileChanged;
+                watcher.OnDeleted += FileDeleted;
+                watcher.OnRenamed += FileRenamed;
             }
         }
     }

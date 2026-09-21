@@ -5,6 +5,7 @@ using GTFO.API.Utilities;
 using EWC.CustomWeapon;
 using EWC.Attributes;
 using UnityEngine;
+using System;
 
 namespace EWC
 {
@@ -38,32 +39,32 @@ namespace EWC
         private readonly static ConfigEntry<float> _homingTickDelay;
         public static float HomingTickDelay => _homingTickDelay.Value;
 
-        private readonly static ConfigFile configFile;
+        private readonly static ConfigFile _configFile;
 
         static Configuration()
         {
-            configFile = new ConfigFile(Path.Combine(Paths.ConfigPath, EntryPoint.MODNAME + ".cfg"), saveOnInit: true);
+            _configFile = new ConfigFile(Path.Combine(Paths.ConfigPath, EntryPoint.MODNAME + ".cfg"), saveOnInit: true);
             string section = "Auto Aim Settings";
-            _autoAimTickDelay = configFile.Bind(section, "Search Cooldown", 0.1f, "Time between attempted searches to acquire targets.");
+            _autoAimTickDelay = _configFile.Bind(section, "Search Cooldown", 0.1f, "Time between attempted searches to acquire targets.");
 
             section = "Explosion Settings";
-            _showExplosionEffect = configFile.Bind(section, "Show Effect", true, "Enables explosion visual FX.");
-            _playExplosionSFX = configFile.Bind(section, "Play Sound", true, "Enables explosion sound FX.");
-            _explosionSFXCooldown = configFile.Bind(section, "SFX Cooldown", 0.08f, "Minimum time between explosion sound effects, to prevent obnoxiously loud sounds.");
-            _explosionSFXShotOverride = configFile.Bind(section, "Shots to Override SFX Cooldown", 8, "Amount of shots fired before another explosion sound effect is forced, regardless of cooldown.\nSmaller numbers let fast-firing weapons and shotguns make more sounds in a short span of time.");
-            _playExplosionShake = configFile.Bind(section, "Play Screen Shake", true, "Enables explosion screen shake. Doesn't bypass the global screen shake settings modifier.");
+            _showExplosionEffect = _configFile.Bind(section, "Show Effect", true, "Enables explosion visual FX.");
+            _playExplosionSFX = _configFile.Bind(section, "Play Sound", true, "Enables explosion sound FX.");
+            _explosionSFXCooldown = _configFile.Bind(section, "SFX Cooldown", 0.08f, "Minimum time between explosion sound effects, to prevent obnoxiously loud sounds.");
+            _explosionSFXShotOverride = _configFile.Bind(section, "Shots to Override SFX Cooldown", 8, "Amount of shots fired before another explosion sound effect is forced, regardless of cooldown.\nSmaller numbers let fast-firing weapons and shotguns make more sounds in a short span of time.");
+            _playExplosionShake = _configFile.Bind(section, "Play Screen Shake", true, "Enables explosion screen shake. Doesn't bypass the global screen shake settings modifier.");
 
             section = "Keybind Settings";
-            _keybind1 = configFile.Bind(section, "Keybind 1", KeyCode.V, "A mappable keybind used to trigger properties.\nIf changed while in a level, requires re-drop/reloading weapon properties to update.");
-            _keybind2 = configFile.Bind(section, "Keybind 2", KeyCode.B, "A mappable keybind used to trigger properties.\nIf changed while in a level, requires re-drop/reloading weapon properties to update.");
-            _keybind3 = configFile.Bind(section, "Keybind 3", KeyCode.X, "A mappable keybind used to trigger properties.\nIf changed while in a level, requires re-drop/reloading weapon properties to update.");
-            _keybind4 = configFile.Bind(section, "Keybind 4", KeyCode.Z, "A mappable keybind used to trigger properties.\nIf changed while in a level, requires re-drop/reloading weapon properties to update.");
+            _keybind1 = _configFile.Bind(section, "Keybind 1", KeyCode.V, "A mappable keybind used to trigger properties.\nIf changed while in a level, requires re-drop/reloading weapon properties to update.");
+            _keybind2 = _configFile.Bind(section, "Keybind 2", KeyCode.B, "A mappable keybind used to trigger properties.\nIf changed while in a level, requires re-drop/reloading weapon properties to update.");
+            _keybind3 = _configFile.Bind(section, "Keybind 3", KeyCode.X, "A mappable keybind used to trigger properties.\nIf changed while in a level, requires re-drop/reloading weapon properties to update.");
+            _keybind4 = _configFile.Bind(section, "Keybind 4", KeyCode.Z, "A mappable keybind used to trigger properties.\nIf changed while in a level, requires re-drop/reloading weapon properties to update.");
 
             section = "Projectile Settings";
-            _homingTickDelay = configFile.Bind(section, "Homing Search Cooldown", 0.1f, "Minimum time between attempted searches to acquire a new target.");
+            _homingTickDelay = _configFile.Bind(section, "Homing Search Cooldown", 0.1f, "Minimum time between attempted searches to acquire a new target.");
 
             section = "Tools";
-            ForceCreateTemplate = configFile.Bind(section, "Force Create Template", false, "Creates the template file again.");
+            ForceCreateTemplate = _configFile.Bind(section, "Force Create Template", false, "Creates the template file again.");
 
             CheckAndRefreshTemplate();
         }
@@ -71,13 +72,12 @@ namespace EWC
         [InvokeOnLoad]
         private static void Init()
         {
-            LiveEditListener listener = LiveEdit.CreateListener(Paths.ConfigPath, EntryPoint.MODNAME + ".cfg", false);
-            listener.FileChanged += OnFileChanged;
+            SafeFileSystemWatcher.Create(_configFile);
+            _configFile.ConfigReloaded += OnFileChanged;
         }
 
-        private static void OnFileChanged(LiveEditEventArgs _)
+        private static void OnFileChanged(object? sender, EventArgs args)
         {
-            configFile.Reload();
             CheckAndRefreshTemplate();
         }
 
@@ -87,7 +87,7 @@ namespace EWC
             {
                 ForceCreateTemplate.Value = false;
                 CustomDataManager.Current.CreateTemplate();
-                configFile.Save();
+                _configFile.Save();
             }
         }
     }
