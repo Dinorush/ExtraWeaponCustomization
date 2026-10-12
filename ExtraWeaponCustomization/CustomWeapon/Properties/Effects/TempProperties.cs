@@ -3,6 +3,7 @@ using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.JSON;
 using EWC.Utils;
 using EWC.Utils.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -12,7 +13,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         Effect,
         ITriggerCallbackBasicSync,
         IPropertyHolder,
-        IWeaponProperty<WeaponCreatedContext>
+        IWeaponProperty<WeaponCreatedContext>,
+        IWeaponProperty<WeaponPropertiesCreatedContext>
     {
         public ushort SyncID { get; set; }
 
@@ -36,6 +38,13 @@ namespace EWC.CustomWeapon.Properties.Effects
 
         private DelayedCallback _applyCallback = null!;
 
+        public override bool ShouldRegister(Type contextType)
+        {
+            if (contextType == typeof(WeaponPropertiesCreatedContext))
+                return Invert;
+            return base.ShouldRegister(contextType);
+        }
+
         public void Invoke(WeaponCreatedContext context)
         {
             if (!Invert)
@@ -53,8 +62,13 @@ namespace EWC.CustomWeapon.Properties.Effects
                     RemoveProperties,
                     ApplyProperties
                 );
-                ApplyProperties();
             }
+        }
+
+        public void Invoke(WeaponPropertiesCreatedContext context)
+        {
+            // Registered if Invert
+            ApplyProperties();
         }
 
         public override void TriggerApply(List<TriggerContext> contexts)
