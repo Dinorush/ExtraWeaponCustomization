@@ -357,7 +357,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                         (uint)Projectile.Callback.TimeOut,
                         Position,
                         Dir,
-                        -Dir,
+                        Vector3.zero,
                         Hitbox.GetFalloff(),
                         Hitbox.HitData.shotInfo
                     )

@@ -120,17 +120,18 @@ namespace EWC.CustomWeapon
 
         private void FileRenamed(FileRenamedEventArgs e)
         {
+            EWCLogger.Warning($"File Renamed: {e.OldFileName} -> {e.FileName}");
             string oldPath = e.OldFullPath;
             string path = e.FullPath;
             if (_fileToGuns.TryGetValue(oldPath, out var idSet))
             {
-                _fileToGuns[path] = _fileToGuns[oldPath];
+                _fileToGuns[path] = idSet;
                 _fileToGuns.Remove(oldPath);
             }
 
             if (_fileToMelees.TryGetValue(oldPath, out idSet))
             {
-                _fileToMelees[path] = _fileToMelees[oldPath];
+                _fileToMelees[path] = idSet;
                 _fileToMelees.Remove(oldPath);
             }
         }
