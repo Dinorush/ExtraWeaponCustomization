@@ -32,10 +32,10 @@ namespace EWC.Patches.Native
                     false,
                     new[] {
                         nameof(AgentTarget),
-                        typeof(float).Name,
-                        typeof(float).Name,
-                        typeof(float).Name,
-                        typeof(float).MakeByRefType().Name
+                        typeof(float).FullName,
+                        typeof(float).FullName,
+                        typeof(float).FullName,
+                        typeof(float).MakeByRefType().FullName
                     }),
                 DetectOnNoisePatch,
                 out orig_DetectOnNoise
