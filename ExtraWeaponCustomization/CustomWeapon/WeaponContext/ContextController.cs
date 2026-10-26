@@ -178,16 +178,9 @@ namespace EWC.CustomWeapon.WeaponContext
             contextList.Invoke(context, exceptions);
 
             foreach (var exception in exceptions)
-                EWCLogger.Error(exception.Message);
-            return context;
-        }
+                EWCLogger.Error($"Error processing {type.Name}: " + exception.Message + "\n" + exception.StackTrace);
 
-        private ContextList<TContext> RegisterContext<TContext>(IContextList? baseList = null) where TContext : IWeaponContext
-        {
-            var newList = new ContextList<TContext>();
-            newList.ParentContextList = baseList;
-            _contextLists.TryAdd(typeof(TContext), newList);
-            return newList;
+            return context;
         }
 
         private void RegisterContexts(OwnerType ownerType, WeaponType weaponType)

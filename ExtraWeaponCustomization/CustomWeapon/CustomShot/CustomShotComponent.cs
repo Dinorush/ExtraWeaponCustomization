@@ -109,7 +109,7 @@ namespace EWC.CustomWeapon.CustomShot
 
         private void FireVisual(Ray fireRay, Vector3 fxPos, HitData hitData)
         {
-            FireShotAPI.FirePreShotFiredCallback(hitData, fireRay, _weapon.Type);
+            FireShotAPI.FirePreShotFiredCallback(hitData, fireRay, _cwc);
 
             float dist = Math.Min(hitData.maxRayDist, 20f);
             if (Physics.Raycast(fireRay, out s_rayHit, dist, LayerUtil.MaskEntityAndWorld))
@@ -121,7 +121,7 @@ namespace EWC.CustomWeapon.CustomShot
             else
                 FX_Manager.EffectTargetPosition = fireRay.origin + fireRay.direction * dist;
 
-            FireShotAPI.FireShotFiredCallback(hitData, fireRay.origin, FX_Manager.EffectTargetPosition, _weapon.Type);
+            FireShotAPI.FireShotFiredCallback(hitData, fireRay.origin, FX_Manager.EffectTargetPosition, _cwc);
             FX_Manager.PlayLocalVersion = false;
             _weapon.TracerPool.AquireEffect().Play(null, fxPos, Quaternion.LookRotation(fireRay.direction));
         }
@@ -242,10 +242,10 @@ namespace EWC.CustomWeapon.CustomShot
                 else
                     fxPos = _ray.origin + _ray.direction * _hitData.maxRayDist;
 
-                FireShotAPI.FirePreShotFiredCallback(_hitData, _ray, _weapon.Type);
+                FireShotAPI.FirePreShotFiredCallback(_hitData, _ray, _parent._cwc);
                 if (!Fire_Internal(fxPos, hitWall, wallRayHit, out var fxTarget))
                     fxPos = fxTarget;
-                FireShotAPI.FireShotFiredCallback(_hitData, _ray.origin, fxPos, _weapon.Type);
+                FireShotAPI.FireShotFiredCallback(_hitData, _ray.origin, fxPos, _parent._cwc);
                 if (!_parent.CancelAllFX)
                 {
                     FX_Manager.EffectTargetPosition = fxPos;

@@ -161,10 +161,10 @@ namespace EWC.CustomWeapon.Properties.Traits
             s_hitData.owner = CWC.Owner.Player;
             s_hitData.shotInfo.Reset(archData.Damage, archData.PrecisionDamageMulti, archData.StaggerDamageMulti, CWC);
             s_hitData.damage = s_hitData.shotInfo.OrigDamage;
+            s_hitData.staggerMulti = s_hitData.shotInfo.OrigStagger;
+            s_hitData.precisionMulti = s_hitData.shotInfo.OrigPrecision;
             s_hitData.VectorFalloff = archData.DamageFalloff;
             s_hitData.pierceLimit = archData.PierceLimit();
-            s_hitData.staggerMulti = s_hitData.shotInfo.OrigStagger;
-            s_hitData.precisionMulti = archData.PrecisionDamageMulti;
             s_hitData.maxRayDist = CGC.Gun.MaxRayDist;
             s_hitData.angOffsetX = x;
             s_hitData.angOffsetY = y;

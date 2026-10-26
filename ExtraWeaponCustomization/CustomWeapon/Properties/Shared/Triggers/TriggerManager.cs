@@ -1,12 +1,13 @@
 ﻿using Agents;
 using EWC.Attributes;
-using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Structs;
 using EWC.Networking.Structs;
 using Player;
+using SNetwork;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Shared.Triggers
@@ -18,7 +19,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         private readonly static TriggerImpactSync _triggerImpactSync = new();
         private readonly static TriggerAgentSync _triggerAgentSync = new();
         private readonly static TriggerResetSync _resetSync = new();
-        private readonly static Dictionary<(OwnerType ownerType, InventorySlot slot), Queue<Action>> _queuedReceives = new();
+        private readonly static Dictionary<(ushort repKey, InventorySlot slot), Queue<Action>> _queuedReceives = new();
         public const float MaxMod = 256f;
 
         [InvokeOnAssetLoad]
@@ -50,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         internal static void RunQueuedReceives(CustomWeaponComponent cwc)
         {
-            if (!_queuedReceives.TryGetValue((cwc.Owner.Type, cwc.Weapon.InventorySlot), out var queue)) return;
+            if (!_queuedReceives.TryGetValue((cwc.Owner.ReplicatorKey, cwc.Weapon.InventorySlot), out var queue)) return;
 
             while (queue.TryDequeue(out var onProcess))
                 onProcess();
@@ -189,7 +190,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         private static void QueueReceive(TriggerInstanceData instance, Action onProcess)
         {
-            (OwnerType, InventorySlot) target = (instance.cwc.ownerType, instance.cwc.slot);
+            (ushort, InventorySlot) target = ((ushort) (instance.cwc.RepKeyPlusOne - 1), instance.cwc.slot);
             if (!_queuedReceives.TryGetValue(target, out var queue))
                 _queuedReceives.Add(target, queue = new());
             queue.Enqueue(onProcess);
@@ -197,14 +198,47 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         private static void QueueReceive(TriggerResetData instance, Action onProcess)
         {
-            (OwnerType, InventorySlot) target = (instance.cwc.ownerType, instance.cwc.slot);
+            (ushort, InventorySlot) target = ((ushort)(instance.cwc.RepKeyPlusOne - 1), instance.cwc.slot);
             if (!_queuedReceives.TryGetValue(target, out var queue))
                 _queuedReceives.Add(target, queue = new());
             queue.Enqueue(onProcess);
         }
 
-        private static void LogFailMessage(TriggerInstanceData instance) => EWCLogger.Error($"Unable to get custom weapon for {(instance.cwc.TryGetPlayer(out var player) ? player.Owner.NickName : "No Player")} on slot {instance.cwc.slot} (Owner Type: {instance.cwc.ownerType})");
-        private static void LogFailMessage(TriggerResetData instance) => EWCLogger.Error($"Unable to get custom weapon for {(instance.cwc.TryGetPlayer(out var player) ? player.Owner.NickName : "No Player")} on slot {instance.cwc.slot} (Owner Type: {instance.cwc.ownerType})");
+        private static void LogFailMessage(TriggerInstanceData instance) => LogFailMessage(instance.cwc);
+        private static void LogFailMessage(TriggerResetData instance) => LogFailMessage(instance.cwc);
+        private static void LogFailMessage(pCWC cwc)
+        {
+            StringBuilder sb = new($"Unable to get custom weapon for {(cwc.TryGetPlayer(out var player) ? player.Owner.NickName : "No Player")} on slot {cwc.slot} (Owner Type: {cwc.ownerType}).");
+
+            if (player != null)
+            {
+                SNet_Player? owner = player.Owner;
+                if (PlayerBackpackManager.TryGetBackpack(owner, out var bp))
+                {
+                    sb.Append(" Inventory: ");
+                    if (bp.TryGetBackpackItem(InventorySlot.GearStandard, out var bpItem))
+                        sb.Append($"Primary: {bpItem.Instance.PublicName}, ");
+                    else
+                        sb.Append($"Primary: None, ");
+                    if (bp.TryGetBackpackItem(InventorySlot.GearSpecial, out bpItem))
+                        sb.Append($"Secondary: {bpItem.Instance.PublicName}, ");
+                    else
+                        sb.Append($"Secondary: None, ");
+                    if (bp.TryGetBackpackItem(InventorySlot.GearMelee, out bpItem))
+                        sb.Append($"Melee: {bpItem.Instance.PublicName}, ");
+                    else
+                        sb.Append($"Melee: None, ");
+                    if (bp.TryGetBackpackItem(InventorySlot.GearClass, out bpItem))
+                        sb.Append($"Tool: {bpItem.Instance.PublicName}");
+                    else
+                        sb.Append($"Tool: None");
+                }
+                else
+                    sb.Append($"Inventory: None");
+            }
+
+            EWCLogger.Error(sb.ToString());
+        }
     }
 
     public struct TriggerInstanceData

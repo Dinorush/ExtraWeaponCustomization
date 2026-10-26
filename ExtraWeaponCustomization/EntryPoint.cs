@@ -13,7 +13,7 @@ using System.Runtime.CompilerServices;
 
 namespace EWC;
 
-[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.13.6")]
+[BepInPlugin("Dinorush." + MODNAME, MODNAME, "4.13.7")]
 [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(MTFOAPIWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("Dinorush.ModifierAPI", BepInDependency.DependencyFlags.HardDependency)]
@@ -37,6 +37,15 @@ internal sealed class EntryPoint : BasePlugin
     private IEnumerable<MethodInfo> _checkpointReachedCallbacks = null!;
     private IEnumerable<MethodInfo> _enterCallbacks = null!;
     private IEnumerable<MethodInfo> _buildDoneCallbacks = null!;
+
+    /* TODO:
+     * - TriggerManager - QueuedReceives: Currently stores by OwnerType/InventorySlot, but
+     *   the OwnerType sent/received is ONLY accurate for Player/Sentry (since it sends the local
+     *   user's OwnerType). Must be changed to include owner lookup.
+     * - StatDisplay - EWC API: Currently uses Pre/Post shot fired for caching, but this
+     *   runs on visual-only bullets. The API provides no natural way to distinguish these.
+     *   Need to add boolean flag or OwnerType to callbacks and have randomuserhi update GTFOReplay.
+     */
 
     public override void Load()
     {

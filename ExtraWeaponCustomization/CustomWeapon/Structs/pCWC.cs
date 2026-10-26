@@ -15,16 +15,13 @@ namespace EWC.CustomWeapon.Structs
 
         public bool IsValid => pRep.IsValid();
 
-        public readonly ushort ReplicatorKey => pRep.keyPlusOne;
+        public readonly ushort RepKeyPlusOne => pRep.keyPlusOne;
 
         public void Set(CustomWeaponComponent cwc)
         {
             ownerType = cwc.Owner.Type;
             slot = cwc.Weapon.InventorySlot;
-            if (ownerType.HasFlag(OwnerType.Sentry))
-                pRep.SetID(((SentryOwnerComp)cwc.Owner).Value.Replicator);
-            else
-                pRep.keyPlusOne = (ushort) (cwc.Owner.Player!.m_replicator.Key + 1);
+            pRep.keyPlusOne = (ushort) (cwc.Owner.ReplicatorKey + 1);
         }
 
         private bool TryGetSupplier([MaybeNullWhen(false)] out IReplicatorSupplier supplier)

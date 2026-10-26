@@ -19,6 +19,7 @@ namespace EWC.CustomWeapon.ComponentWrapper.OwnerComps
 
         public override eDimensionIndex DimensionIndex => Value.DimensionIndex;
         public override PlayerAgent Player => Value;
+        public override ushort ReplicatorKey => Value.m_replicator.Key;
         public override OwnerType Type => _type;
         public override AIG_CourseNode CourseNode => Value.CourseNode;
         public override Vector3 FirePos => MuzzleAlign.position;
