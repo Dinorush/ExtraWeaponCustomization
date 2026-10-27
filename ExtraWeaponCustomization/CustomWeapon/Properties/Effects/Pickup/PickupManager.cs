@@ -1,6 +1,7 @@
 ﻿using EWC.Attributes;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Structs;
+using EWC.CustomWeapon.WeaponContext.Contexts;
 using Player;
 using SNetwork;
 
@@ -73,6 +74,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
                 GuiManager.PlayerLayer.Inventory.UpdateItemUI(bpItem, player.Inventory.WieldedSlot);
             }
             instance.SyncedPickup(player);
+            cwc.Invoke(new WeaponSentryStateContext(false));
         }
     }
 
