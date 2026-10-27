@@ -56,6 +56,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
             var player = instance.Owner;
             var snetPlayer = player.Owner;
             var bp = PlayerBackpackManager.GetBackpack(snetPlayer);
+            var heldCWC = cwc.Owner.IsType(Enums.OwnerType.Player) ? cwc : null;
             if (bp.TryGetBackpackItem(InventorySlot.GearClass, out var bpItem) && bpItem.Status != eInventoryItemStatus.InBackpack)
             {
                 bpItem.Status = eInventoryItemStatus.InBackpack;
@@ -72,9 +73,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
                     bp.ShowHideInstance(bpItem, visible: true);
                 }
                 GuiManager.PlayerLayer.Inventory.UpdateItemUI(bpItem, player.Inventory.WieldedSlot);
+
+                heldCWC = bpItem.Instance.GetComponent<CustomWeaponComponent>();
             }
             instance.SyncedPickup(player);
-            cwc.Invoke(new WeaponSentryStateContext(false));
+            heldCWC?.Invoke(new WeaponSentryStateContext(false));
         }
     }
 
