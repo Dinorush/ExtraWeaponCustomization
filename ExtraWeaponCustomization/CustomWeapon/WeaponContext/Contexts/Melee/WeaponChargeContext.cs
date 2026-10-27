@@ -2,7 +2,7 @@
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    [RequireType(requiredWeaponType: Enums.WeaponType.Melee)]
+    [RequireType(requiredOwnerType: Enums.OwnerType.Local, requiredWeaponType: Enums.WeaponType.Melee)]
     public sealed class WeaponChargeContext : IWeaponContext
     {
         public float Exponent { get; set; } = 3;

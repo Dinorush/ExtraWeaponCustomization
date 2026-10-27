@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
-    [RequireType(requiredWeaponType: Enums.WeaponType.Melee)]
+    [RequireType(requiredOwnerType: Enums.OwnerType.Managed, requiredWeaponType: Enums.WeaponType.Melee)]
     internal class WeaponPushHitContext : WeaponTriggerContext, IPositionContext
     {
         public Vector3 Position { get; }

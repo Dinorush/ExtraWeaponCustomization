@@ -5,7 +5,6 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
 {
     public abstract class WeaponStackModContext : IWeaponContext
     {
-
         protected readonly StackMod _stackMod;
         public float Value => _stackMod.Value;
 
