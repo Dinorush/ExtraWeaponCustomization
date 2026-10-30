@@ -208,7 +208,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         private static void LogFailMessage(TriggerResetData instance) => LogFailMessage(instance.cwc);
         private static void LogFailMessage(pCWC cwc)
         {
-            StringBuilder sb = new($"Unable to get custom weapon for {(cwc.TryGetPlayer(out var player) ? player.Owner.NickName : "No Player")} on slot {cwc.slot} (Owner Type: {cwc.ownerType}).");
+            StringBuilder sb = new($"Unable to get custom weapon for {(cwc.TryGetPlayer(out var player) ? player.Owner.NickName : "No Player")} on slot {cwc.slot} (Is sentry: {cwc.isSentry}).");
 
             if (player != null)
             {

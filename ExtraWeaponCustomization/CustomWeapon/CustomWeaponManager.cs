@@ -120,9 +120,9 @@ namespace EWC.CustomWeapon
                     cgc = sentry.gameObject.AddComponent<CustomGunComponent>();
                 cgc!.Register(data);
             }
-            
+
             if (sentry.Owner != null)
-                Current._trackedSentries.Add(sentry.Owner.Pointer, (sentry, cgc));
+                Current._trackedSentries[sentry.Owner.Pointer] = (sentry, cgc);
 
             GearAPI.FireGearSpawnedCallback(sentry, cgc);
         }

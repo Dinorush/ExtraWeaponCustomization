@@ -1,5 +1,4 @@
-﻿using EWC.CustomWeapon.ComponentWrapper.OwnerComps;
-using EWC.CustomWeapon.Enums;
+﻿using EWC.CustomWeapon.Enums;
 using Player;
 using SNetwork;
 using System.Diagnostics.CodeAnalysis;
@@ -10,21 +9,21 @@ namespace EWC.CustomWeapon.Structs
     {
         private SNetStructs.pReplicator pRep;
         
-        public OwnerType ownerType;
+        public bool isSentry;
         public InventorySlot slot;
 
-        public bool IsValid => pRep.IsValid();
+        public readonly bool IsValid => pRep.IsValid();
 
         public readonly ushort RepKeyPlusOne => pRep.keyPlusOne;
 
         public void Set(CustomWeaponComponent cwc)
         {
-            ownerType = cwc.Owner.Type;
+            isSentry = cwc.Owner.IsType(OwnerType.Sentry);
             slot = cwc.Weapon.InventorySlot;
             pRep.keyPlusOne = (ushort) (cwc.Owner.ReplicatorKey + 1);
         }
 
-        private bool TryGetSupplier([MaybeNullWhen(false)] out IReplicatorSupplier supplier)
+        private readonly bool TryGetSupplier([MaybeNullWhen(false)] out IReplicatorSupplier supplier)
         {
             if (!pRep.TryGetID(out var rep) || rep == null)
             {
@@ -36,7 +35,7 @@ namespace EWC.CustomWeapon.Structs
             return supplier != null;
         }
 
-        public bool TryGet([MaybeNullWhen(false)] out CustomWeaponComponent comp)
+        public readonly bool TryGet([MaybeNullWhen(false)] out CustomWeaponComponent comp)
         {
             if (!TryGetSupplier(out var supplier))
             {
@@ -44,7 +43,7 @@ namespace EWC.CustomWeapon.Structs
                 return false;
             }
 
-            if (ownerType.HasFlag(OwnerType.Sentry))
+            if (isSentry)
             {
                 comp = supplier.Cast<SentryGunInstance>().GetComponent<CustomWeaponComponent>();
                 return comp != null;
@@ -63,9 +62,9 @@ namespace EWC.CustomWeapon.Structs
             }
         }
 
-        public bool TryGetSentry([MaybeNullWhen(false)] out SentryGunInstance comp)
+        public readonly bool TryGetSentry([MaybeNullWhen(false)] out SentryGunInstance comp)
         {
-            if (!ownerType.HasFlag(OwnerType.Sentry) || !TryGetSupplier(out var supplier))
+            if (!isSentry || !TryGetSupplier(out var supplier))
             {
                 comp = null;
                 return false;
@@ -75,9 +74,9 @@ namespace EWC.CustomWeapon.Structs
             return true;
         }
 
-        public bool TryGetPlayer([MaybeNullWhen(false)] out PlayerAgent comp)
+        public readonly bool TryGetPlayer([MaybeNullWhen(false)] out PlayerAgent comp)
         {
-            if (!ownerType.HasFlag(OwnerType.Player) || !TryGetSupplier(out var supplier))
+            if (isSentry || !TryGetSupplier(out var supplier))
             {
                 comp = null;
                 return false;
@@ -87,7 +86,7 @@ namespace EWC.CustomWeapon.Structs
             return true;
         }
 
-        public bool TryGetSource([MaybeNullWhen(false)] out PlayerAgent comp)
+        public readonly bool TryGetSource([MaybeNullWhen(false)] out PlayerAgent comp)
         {
             if (!TryGetSupplier(out var supplier))
             {
@@ -95,7 +94,7 @@ namespace EWC.CustomWeapon.Structs
                 return false;
             }
 
-            if (ownerType.HasFlag(OwnerType.Player))
+            if (!isSentry)
             {
                 comp = supplier.Cast<PlayerSync>().m_agent;
                 return true;

@@ -1,5 +1,4 @@
-﻿using Agents;
-using EWC.Networking;
+﻿using EWC.Networking;
 
 namespace EWC.CustomWeapon.Properties.Effects.Pickup
 {

@@ -40,7 +40,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             ExplosionManager.Internal_ReceiveExplosionDamagePlayer(
                 target,
                 source,
-                packet.cwc.ownerType,
+                packet.cwc.isSentry,
                 packet.damage,
                 packet.direction.Value
                 );

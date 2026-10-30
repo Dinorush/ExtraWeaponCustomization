@@ -73,13 +73,15 @@ namespace EWC.CustomWeapon.Properties
                 if (!property.ValidProperty())
                 {
                     list.Values.RemoveAt(i);
+                    if (property is IPropertyHolder syncHolder && !syncHolder.Properties.Empty)
+                        CreateTreeSyncOnly(cwc, syncHolder.Properties);
                     continue;
                 }
 
                 if (property.ID != 0)
                 {
                     if (!_idToProperty.TryAdd(property.ID, property))
-                        EWCLogger.Warning("Duplicate property ID detected: " + property.ID);
+                        EWCLogger.Warning($"Duplicate property ID detected on {cwc.Weapon.Component.name}: {property.ID}");
                 }
 
                 if (property is not ReferenceProperty)
@@ -92,6 +94,22 @@ namespace EWC.CustomWeapon.Properties
                 }
             }
             return curNode;
+        }
+        private void CreateTreeSyncOnly(CustomWeaponComponent cwc, PropertyList list)
+        {
+            list.SetCWC(cwc);
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                var property = list[i];
+                if (property is ITriggerCallbackSync syncProperty)
+                {
+                    syncProperty.SyncID = (ushort)_syncList.Count;
+                    _syncList.Add(syncProperty);
+                }
+
+                if (property is IPropertyHolder propHolder && !propHolder.Properties.Empty)
+                    CreateTreeSyncOnly(cwc, propHolder.Properties);
+            }
         }
 
         private void ReplaceReferences(PropertyList list)
@@ -133,7 +151,7 @@ namespace EWC.CustomWeapon.Properties
         {
             if (_syncList.Count <= id)
             {
-                EWCLogger.Error("Synced property with ID " + id + " was requested but doesn't exist. Filling with blank properties.");
+                EWCLogger.Error($"Synced property with ID {id} was requested {(_properties.Count > 0 ? ("on " + _properties[0].CWC.Weapon.Component.name) : "")} but doesn't exist. Filling with blank properties.");
                 while (_syncList.Count <= id)
                     _syncList.Add(TriggerCallbackSyncDummy.Instance);
             }

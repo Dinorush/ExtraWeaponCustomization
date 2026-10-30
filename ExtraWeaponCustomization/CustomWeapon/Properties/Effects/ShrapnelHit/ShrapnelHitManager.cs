@@ -165,14 +165,14 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             return true;
         }
 
-        internal static void Internal_ReceiveShrapnelDamagePlayer(PlayerAgent target, PlayerAgent? source, OwnerType ownerType, float damage, Vector3 direction)
+        internal static void Internal_ReceiveShrapnelDamagePlayer(PlayerAgent target, PlayerAgent? source, bool isSentry, float damage, Vector3 direction)
         {
             ShotManager.ReceivePlayerDamage(target, damage, PlayerDamageType.Shrapnel, direction);
 
             if (target.IsLocallyOwned)
             {
                 target.Sound.Post(EVENTS.BULLETHITPLAYERSYNC);
-                if (ownerType.HasFlag(OwnerType.Sentry) || source == null || source.Pointer != target.Pointer)
+                if (isSentry || source == null || source.Pointer != target.Pointer)
                 {
                     PlayerDialogManager.WantToStartDialog(152u, target.CharacterID);
                     GameEventManager.PostEvent(eGameEvent.player_take_friendly_fire, target, damage);

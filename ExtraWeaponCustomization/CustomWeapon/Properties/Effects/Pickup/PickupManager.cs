@@ -1,5 +1,4 @@
 ﻿using EWC.Attributes;
-using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using Player;
@@ -19,7 +18,17 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
 
         public static void DoPickup(CustomWeaponComponent cwc)
         {
-            if (!cwc.Weapon.IsAnyType(Enums.WeaponType.SentryHolder | Enums.WeaponType.Sentry)) return;
+            if (cwc.Weapon.IsType(Enums.WeaponType.Sentry))
+            {
+                var player = cwc.Owner.Player;
+                if (player == null)
+                    return;
+                if (!PlayerBackpackManager.TryGetItem(player.Owner, InventorySlot.GearClass, out var bpItem))
+                    return;
+                cwc = bpItem.Instance.GetComponent<CustomWeaponComponent>();
+            }
+            else if (!cwc.Weapon.IsType(Enums.WeaponType.SentryHolder))
+                return;
 
             PickupData data = new();
             data.cwc.Set(cwc);
@@ -28,14 +37,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
 
         internal static void Internal_ReceivePickup(CustomWeaponComponent cwc)
         {
-            if (cwc.Weapon.IsType(Enums.WeaponType.Sentry))
-            {
-                PickupSentry(((SentryGunComp)cwc.Weapon).Value, cwc);
-            }
-            else if (CustomWeaponManager.TryGetSentry(cwc.Owner.Player!, out var sentryInfo))
-            {
+            if (CustomWeaponManager.TryGetSentry(cwc.Owner.Player!, out var sentryInfo) && sentryInfo.sentry.Alive)
                 PickupSentry(sentryInfo.sentry, cwc);
-            }
+            else
+                EWCLogger.Warning($"Received pickup effect for sentry, but it isn't placed!");
         }
 
         // Want to use SyncedPickup, but don't want to equip sentry, so need to run a custom SetDeployed first
@@ -56,7 +61,6 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
             var player = instance.Owner;
             var snetPlayer = player.Owner;
             var bp = PlayerBackpackManager.GetBackpack(snetPlayer);
-            var heldCWC = cwc.Owner.IsType(Enums.OwnerType.Player) ? cwc : null;
             if (bp.TryGetBackpackItem(InventorySlot.GearClass, out var bpItem) && bpItem.Status != eInventoryItemStatus.InBackpack)
             {
                 bpItem.Status = eInventoryItemStatus.InBackpack;
@@ -73,11 +77,10 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
                     bp.ShowHideInstance(bpItem, visible: true);
                 }
                 GuiManager.PlayerLayer.Inventory.UpdateItemUI(bpItem, player.Inventory.WieldedSlot);
-
-                heldCWC = bpItem.Instance.GetComponent<CustomWeaponComponent>();
             }
+
+            cwc.Invoke(new WeaponSentryStateContext(false));
             instance.SyncedPickup(player);
-            heldCWC?.Invoke(new WeaponSentryStateContext(false));
         }
     }
 

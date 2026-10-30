@@ -28,7 +28,7 @@ namespace EWC.Patches.Sentry
             CustomWeaponManager.ActivateSentry(__instance);
         }
 
-        [HarmonyPatch(typeof(SentryGunInstance), nameof(SentryGunInstance.SyncedPickup))]
+        [HarmonyPatch(typeof(SentryGunInstance), nameof(SentryGunInstance.OnDespawn))]
         [HarmonyWrapSafe]
         [HarmonyPrefix]
         private static void PrePickupCallback(SentryGunInstance __instance)

@@ -40,7 +40,7 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             ShrapnelHitManager.Internal_ReceiveShrapnelDamagePlayer(
                 target,
                 player,
-                packet.cwc.ownerType,
+                packet.cwc.isSentry,
                 packet.damage,
                 packet.dir.Value
                 );
