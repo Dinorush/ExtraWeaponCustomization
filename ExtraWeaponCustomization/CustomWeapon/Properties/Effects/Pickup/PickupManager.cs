@@ -32,6 +32,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
                     EWCLogger.Error($"PickupManager: Attempted DoPickup on sentry for {player.Owner.NickName}, but backpack item {bpItem.Instance.PublicName} does not have a CWC?");
                     return;
                 }
+                cwc = bpCWC;
             }
             else if (!cwc.Weapon.IsType(Enums.WeaponType.SentryHolder))
                 return;
@@ -43,18 +44,18 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
 
         internal static void Internal_ReceivePickup(CustomWeaponComponent cwc)
         {
+            SentryGunInstance? sentry = null;
             if (CustomWeaponManager.TryGetSentry(cwc.Owner.Player!, out var sentryInfo) && sentryInfo.sentry.Alive)
-                PickupSentry(sentryInfo.sentry, cwc);
-            else
-                EWCLogger.Warning($"Received pickup effect for sentry, but it isn't placed!");
+                sentry = sentryInfo.sentry;
+            PickupSentry(sentry, cwc);
         }
 
         // Want to use SyncedPickup, but don't want to equip sentry, so need to run a custom SetDeployed first
-        private static void PickupSentry(SentryGunInstance instance, CustomWeaponComponent cwc)
+        private static void PickupSentry(SentryGunInstance? instance, CustomWeaponComponent cwc)
         {
             if (SNet.IsMaster)
             {
-                if (instance.Alive)
+                if (instance?.Alive == true)
                 {
                     PickupData data = new();
                     data.cwc.Set(cwc);
@@ -64,7 +65,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
                     return;
             }
 
-            var player = instance.Owner;
+            var player = cwc.Owner.Player!;
             var snetPlayer = player.Owner;
             var bp = PlayerBackpackManager.GetBackpack(snetPlayer);
             if (bp.TryGetBackpackItem(InventorySlot.GearClass, out var bpItem) && bpItem.Status != eInventoryItemStatus.InBackpack)
@@ -86,7 +87,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
             }
 
             cwc.Invoke(new WeaponSentryStateContext(false));
-            instance.SyncedPickup(player);
+            instance?.SyncedPickup(player);
         }
     }
 

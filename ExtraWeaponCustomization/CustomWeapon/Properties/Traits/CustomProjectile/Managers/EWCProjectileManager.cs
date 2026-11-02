@@ -39,8 +39,17 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
 
         internal static ushort GetNextID(ushort playerIndex)
         {
-            if (!_nextIDs.TryGetValue(playerIndex, out var nextID) || nextID == ushort.MaxValue)
+            if (!_nextIDs.TryGetValue(playerIndex, out var nextID))
+            {
+                if (PlayerProjectiles.ContainsKey(playerIndex))
+                {
+                    EWCLogger.Error($"Trying to get next projectile ID for index {playerIndex}, but they are an unmanaged index! This may cause issues.");
+                }
                 nextID = 0;
+            }
+            else if (nextID == ushort.MaxValue)
+                nextID = 0;
+
 
             _nextIDs[playerIndex] = ++nextID;
             return nextID;

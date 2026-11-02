@@ -67,7 +67,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         internal static void Internal_ReceiveInstance(TriggerInstanceData data, bool storeOnFail = true)
         {
             if (TryGetTriggerSync(data, out var callback))
-                ((ITriggerCallbackBasicSync)callback).TriggerApplySync(data.mod.Get(MaxMod));
+            {
+                if (!DebugCastCallback<ITriggerCallbackBasicSync>(data, callback, out var cast)) return;
+                cast.TriggerApplySync(data.mod.Get(MaxMod));
+            }
             else if (storeOnFail)
                 QueueReceive(data, () => Internal_ReceiveInstance(data, storeOnFail: false));
             else
@@ -97,7 +100,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         internal static void Internal_ReceiveInstance(TriggerDirInstanceData data, bool storeOnFail = true)
         {
             if (TryGetTriggerSync(data.instance, out var callback))
-                ((ITriggerCallbackDirSync)callback).TriggerApplySync(data.position, data.dir.Value, data.instance.mod.Get(MaxMod));
+            {
+                if (!DebugCastCallback<ITriggerCallbackDirSync>(data.instance, callback, out var cast)) return;
+                cast.TriggerApplySync(data.position, data.dir.Value, data.instance.mod.Get(MaxMod));
+            }
             else if (storeOnFail)
                 QueueReceive(data.instance, () => Internal_ReceiveInstance(data, storeOnFail: false));
             else
@@ -119,7 +125,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         internal static void Internal_ReceiveInstance(TriggerImpactInstanceData data, bool storeOnFail = true)
         {
             if (TryGetTriggerSync(data.instance, out var callback))
-                ((ITriggerCallbackImpactSync)callback).TriggerApplySync(data.position, data.dir.Value, data.normal.Value, data.instance.mod.Get(MaxMod));
+            {
+                if (!DebugCastCallback<ITriggerCallbackImpactSync>(data.instance, callback, out var cast)) return;
+                cast.TriggerApplySync(data.position, data.dir.Value, data.normal.Value, data.instance.mod.Get(MaxMod));
+            }
             else if (storeOnFail)
                 QueueReceive(data.instance, () => Internal_ReceiveInstance(data, storeOnFail: false));
             else
@@ -139,7 +148,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         internal static void Internal_ReceiveInstance(TriggerAgentInstanceData data, bool storeOnFail = true)
         {
             if (TryGetTriggerSync(data.instance, out var callback) && data.target.TryGet(out var target))
-                ((ITriggerCallbackAgentSync)callback).TriggerApplySync(target, data.instance.mod.Get(MaxMod));
+            {
+                if (!DebugCastCallback<ITriggerCallbackAgentSync>(data.instance, callback, out var cast)) return;
+                cast.TriggerApplySync(target, data.instance.mod.Get(MaxMod));
+            }
             else if (storeOnFail)
                 QueueReceive(data.instance, () => Internal_ReceiveInstance(data, storeOnFail: false));
             else
@@ -185,6 +197,19 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             }
 
             callback = cwc.GetTriggerSync(id);
+            return true;
+        }
+
+        private static bool DebugCastCallback<T>(TriggerInstanceData instance, ITriggerCallback callback, [MaybeNullWhen(false)] out T cast) where T : class, ITriggerCallback
+        {
+            if (callback is not T t)
+            {
+                instance.cwc.TryGet(out var cwc);
+                EWCLogger.Error($"Received trigger sync ID {instance.id} for {cwc!.Weapon.Component.name}, but {callback.GetType().Name} is not {typeof(ITriggerCallbackDirSync).Name}");
+                cast = null;
+                return false;
+            }
+            cast = t;
             return true;
         }
 

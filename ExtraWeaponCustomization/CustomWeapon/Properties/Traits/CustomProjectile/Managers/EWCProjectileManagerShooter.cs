@@ -22,8 +22,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         public void Reset()
         {
             foreach (var queue in _pools.Values)
+            {
                 foreach (var comp in queue)
-                    GameObject.Destroy(comp.gameObject);
+                {
+                    if (comp != null)
+                        GameObject.Destroy(comp.gameObject);
+                }
+            }
 
             _pools.Clear();
         }
