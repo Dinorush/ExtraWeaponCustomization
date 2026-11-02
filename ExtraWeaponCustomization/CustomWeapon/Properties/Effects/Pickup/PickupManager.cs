@@ -25,7 +25,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
                     return;
                 if (!PlayerBackpackManager.TryGetItem(player.Owner, InventorySlot.GearClass, out var bpItem))
                     return;
-                cwc = bpItem.Instance.GetComponent<CustomWeaponComponent>();
+                
+                var bpCWC = bpItem.Instance.GetComponent<CustomWeaponComponent>();
+                if (bpCWC == null)
+                {
+                    EWCLogger.Error($"PickupManager: Attempted DoPickup on sentry for {player.Owner.NickName}, but backpack item {bpItem.Instance.PublicName} does not have a CWC?");
+                    return;
+                }
             }
             else if (!cwc.Weapon.IsType(Enums.WeaponType.SentryHolder))
                 return;

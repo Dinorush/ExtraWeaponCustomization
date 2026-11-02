@@ -5,17 +5,17 @@ using System;
 
 namespace EWC.CustomWeapon.ComponentWrapper.WeaponComps
 {
-    public class SentryHolderComp : WeaponComp<SentryGunFirstPerson>, IAmmoComp
+    public class SentryHolderComp : WeaponComp<ItemEquippable>, IAmmoComp
     {
         private ArchetypeDataBlock _archetypeData;
-        public SentryHolderComp(SentryGunFirstPerson value) : base(value)
+        public SentryHolderComp(ItemEquippable value) : base(value)
         {
             _archetypeData = value.ArchetypeData;
             CostOfBullet = _archetypeData.CostOfBullet * Math.Max(1, _archetypeData.ShotgunBulletCount) * Value.ItemDataBlock.ClassAmmoCostFactor;
         }
 
         public override WeaponType Type => WeaponType.SentryHolder;
-        public override AmmoType AmmoType => Value.AmmoType;
+        public override AmmoType AmmoType => AmmoType.Class;
         public override CellSoundPlayer Sound => Value.Sound;
 
         public override ArchetypeDataBlock ArchetypeData

@@ -86,8 +86,9 @@ namespace EWC.CustomWeapon.Properties.Effects
             // No regen active while sentry is alive
             if (CWC.Weapon.IsType(WeaponType.SentryHolder) && CustomWeaponManager.TryGetSentry(CWC.Owner.Player!, out _)) return false;
 
-            // Level-spawned sentry has no storage
-            if (CWC.Weapon.IsType(WeaponType.Sentry) && CWC.Owner.Player == null) return true;
+            // Level-spawned sentry has no storage and will be handled separately
+            if (CWC.Weapon.IsType(WeaponType.Sentry) && CWC.Owner.Player == null)
+                return true;
 
             if (_ammoStorage == null || _slotAmmo == null)
             {
@@ -136,7 +137,6 @@ namespace EWC.CustomWeapon.Properties.Effects
                 float currPack = _slotAmmo!.AmmoInPack;
                 float maxPack = _slotAmmo.AmmoMaxCap;
                 float costOfBullet = _slotAmmo!.CostOfBullet;
-
                 bool addClip = ClipRegen != 0;
                 bool addReserve = ReserveRegen != 0;
                 if (ResetWhileFull)

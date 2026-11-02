@@ -30,6 +30,25 @@ namespace EWC.Patches.Item
 
         private static CustomWeaponComponent? _localCWC;
 
+        [HarmonyPatch(typeof(ItemEquippable), nameof(ItemEquippable.OnGearSpawnComplete))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void OnGearSpawnComplete(ItemEquippable __instance)
+        {
+            // Ignore gear handled by other patches
+            if (__instance.TryCast<BulletWeapon>() != null
+                || __instance.TryCast<SentryGunFirstPerson>() != null
+                || __instance.TryCast<SentryGunInstance>() != null)
+            {
+                return;
+            }
+
+            if (__instance.ArchetypeData == null && __instance.MeleeArchetypeData == null)
+                TrySetSentryArchetype(__instance);
+
+            CustomWeaponManager.AddSpawnedItem(__instance);
+        }
+
         [HarmonyPatch(typeof(ItemEquippable), nameof(ItemEquippable.OnDestroy))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]
@@ -105,6 +124,40 @@ namespace EWC.Patches.Item
             if (_inRunCheck || _localCWC == null) return;
 
             __result = _localCWC.Invoke(new WeaponPreSwapContext(__result)).Allow;
+        }
+
+        private static void TrySetSentryArchetype(ItemEquippable item)
+        {
+            var categoryBlock = item.GearCategoryData;
+            if (categoryBlock == null) return;
+
+            var fireMode = (eWeaponFireMode)item.GearIDRange.GetCompID(eGearComponent.FireMode);
+            switch (fireMode)
+            {
+                case eWeaponFireMode.SentryGunSemi:
+                case eWeaponFireMode.SentryGunAuto:
+                case eWeaponFireMode.SentryGunBurst:
+                case eWeaponFireMode.SentryGunShotgunSemi:
+                    break;
+                default:
+                    return;
+            }
+
+            // ETC support - can use GearCategory-specified archetypes
+            uint archetypeID = fireMode switch
+            {
+                eWeaponFireMode.SentryGunSemi => categoryBlock.SemiArchetype,
+                eWeaponFireMode.SentryGunAuto => categoryBlock.AutoArchetype,
+                eWeaponFireMode.SentryGunBurst => categoryBlock.BurstArchetype,
+                eWeaponFireMode.SentryGunShotgunSemi => categoryBlock.SemiArchetype,
+                _ => 0
+            };
+
+            // If no archetype ID exists, ETC/Vanilla defaults to hardcoded IDs
+            if (archetypeID == 0)
+                item.ArchetypeData = SentryGunInstance_Firing_Bullets.GetArchetypeDataForFireMode(fireMode);
+            else
+                item.ArchetypeData = GameData.ArchetypeDataBlock.GetBlock(archetypeID);
         }
     }
 }

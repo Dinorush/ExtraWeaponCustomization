@@ -2,7 +2,6 @@
 using Enemies;
 using EWC.Attributes;
 using EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components;
-using SNetwork;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
@@ -12,6 +11,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
     public static class EWCProjectileManager
     {
         internal static readonly Dictionary<ushort, LinkedList<(ushort id, EWCProjectileComponentBase comp)>> PlayerProjectiles = new();
+        private static readonly Dictionary<ushort, ushort> _nextIDs = new();
         private static readonly Dictionary<ushort, LinkedList<(ushort id, EnemyAgent? enemy, byte limbID)>> _cachedTargets = new();
 
         public static readonly EWCProjectileManagerShooter Shooter = new();
@@ -32,16 +32,18 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Managers
         private static void Reset()
         {
             Shooter.Reset();
+            _nextIDs.Clear();
             _cachedTargets.Clear();
             PlayerProjectiles.Clear();
         }
 
         internal static ushort GetNextID(ushort playerIndex)
         {
-            if (!PlayerProjectiles.TryGetValue(playerIndex, out var list) || list.Count == 0)
-                return 0;
+            if (!_nextIDs.TryGetValue(playerIndex, out var nextID) || nextID == ushort.MaxValue)
+                nextID = 0;
 
-            return (ushort)(list.Last!.Value.id + 1);
+            _nextIDs[playerIndex] = ++nextID;
+            return nextID;
         }
 
         internal static bool TryGetNode(ushort playerIndex, ushort id, [MaybeNullWhen(false)] out LinkedListNode<(ushort id, EWCProjectileComponentBase comp)> node)

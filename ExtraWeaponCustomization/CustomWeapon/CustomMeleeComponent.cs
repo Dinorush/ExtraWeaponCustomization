@@ -9,8 +9,6 @@ namespace EWC.CustomWeapon
 {
     public sealed class CustomMeleeComponent : CustomWeaponComponent
     {
-        public readonly MeleeComp Melee;
-
         public float CurrentAttackSpeed => _speedModifier.Mod;
 
         private readonly IStatModifier _speedModifier;
@@ -18,9 +16,16 @@ namespace EWC.CustomWeapon
 
         public CustomMeleeComponent(IntPtr value) : base(value)
         {
-            Melee = (MeleeComp)Weapon;
-            _speedModifier = MeleeAttackSpeedAPI.AddModifier(1f, group: "EWC");
-            _chargeSpeedModifier = MeleeAttackSpeedAPI.AddChargeSpeedModifier(1f, group: "EWC");
+            if (Owner.IsType(Enums.OwnerType.Local))
+            {
+                _speedModifier = MeleeAttackSpeedAPI.AddModifier(1f, group: "EWC");
+                _chargeSpeedModifier = MeleeAttackSpeedAPI.AddChargeSpeedModifier(1f, group: "EWC");
+            }
+            else
+            {
+                _speedModifier = null!;
+                _chargeSpeedModifier = null!;
+            }
         }
 
         [InvokeOnLoad]
@@ -32,16 +37,22 @@ namespace EWC.CustomWeapon
         public override void Clear()
         {
             base.Clear();
-            _speedModifier.Disable();
-            _speedModifier.Mod = 1f;
-            _chargeSpeedModifier.Disable();
-            _chargeSpeedModifier.Mod = 1f;
+            if (Owner.IsType(Enums.OwnerType.Local))
+            {
+                _speedModifier.Disable();
+                _speedModifier.Mod = 1f;
+                _chargeSpeedModifier.Disable();
+                _chargeSpeedModifier.Mod = 1f;
+            }
         }
 
         public void UpdateAttackSpeed()
         {
-            _speedModifier.Enable(Invoke(new WeaponFireRateContext(1f)).Value);
-            _chargeSpeedModifier.Enable(Invoke(new WeaponChargeSpeedContext()).Value);
+            if (Owner.IsType(Enums.OwnerType.Local))
+            {
+                _speedModifier.Enable(Invoke(new WeaponFireRateContext(1f)).Value);
+                _chargeSpeedModifier.Enable(Invoke(new WeaponChargeSpeedContext()).Value);
+            }
         }
     }
 }

@@ -81,6 +81,11 @@ namespace EWC.CustomWeapon
                     Weapon = new MeleeComp(melee);
                     Owner = new LocalOwnerComp(owner, item.MuzzleAlign);
                 }
+                else if (item.TryCastOut<MeleeWeaponThirdPerson>(out var meleeSynced))
+                {
+                    Weapon = new SyncedMeleeComp(meleeSynced);
+                    Owner = new SyncedOwnerComp(owner, item.MuzzleAlign);
+                }
                 else if (item.TryCastOut<BulletWeaponSynced>(out var gunSynced))
                 {
                     Weapon = new SyncedGunComp(gunSynced);
@@ -91,15 +96,20 @@ namespace EWC.CustomWeapon
                     Weapon = new LocalGunComp(gun);
                     Owner = new LocalOwnerComp(owner, item.MuzzleAlign);
                 }
+                else if (item.TryCastOut<SentryGunInstance>(out var sentry))
+                {
+                    Weapon = new SentryGunComp(sentry);
+                    Owner = new SentryOwnerComp(sentry);
+                }
                 else if (item.TryCastOut<SentryGunFirstPerson>(out var holder))
                 {
                     Weapon = new SentryHolderComp(holder);
                     Owner = new LocalOwnerComp(owner, item.MuzzleAlign);
                 }
-                else if (item.TryCastOut<SentryGunInstance>(out var sentry))
+                else if (item.TryCastOut<ItemEquippable>(out var holderSynced))
                 {
-                    Weapon = new SentryGunComp(sentry);
-                    Owner = new SentryOwnerComp(sentry);
+                    Weapon = new SentryHolderComp(holderSynced);
+                    Owner = new SyncedOwnerComp(owner, item.MuzzleAlign);
                 }
                 else
                     throw new ArgumentException("Custom Weapon Component was added to a non-melee/gun/sentry.");
@@ -138,7 +148,7 @@ namespace EWC.CustomWeapon
         {
             Invoke(StaticContext<WeaponUpdateContext>.Instance);
 
-            if (_keyWatchers.Count > 0)
+            if (Owner.IsType(Enums.OwnerType.Local) && _keyWatchers.Count > 0)
             {
                 if (FocusStateManager.CurrentState == eFocusState.FPS)
                 {

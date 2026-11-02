@@ -18,6 +18,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private Coroutine? _updateRoutine = null;
         private float _nextTickTime = float.MaxValue;
 
+        private readonly CustomWeaponComponent _cwc;
+
+        public DOTController(CustomWeaponComponent cwc)
+        {
+            _cwc = cwc;
+        }
+
         public void AddDOT(DOTInstance newDot, IDamageable damageable)
         {
             IntPtr ptr = damageable.Pointer;
@@ -53,7 +60,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
 
         private IEnumerator Update()
         {
-            while (true)
+            while (_cwc != null)
             {
                 _nextTickTime = float.MaxValue;
                 Cleanup();

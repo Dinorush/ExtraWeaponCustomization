@@ -40,17 +40,18 @@ namespace EWC.CustomWeapon
 
         public static bool TryGetCustomData(ItemEquippable item, [MaybeNullWhen(false)] out CustomWeaponData data)
         {
-            if (item.ArchetypeData == null && item.MeleeArchetypeData == null)
+            if (item.MeleeArchetypeData != null && (item.TryCast<MeleeWeaponFirstPerson>() != null || item.TryCast<MeleeWeaponThirdPerson>() != null))
+                    return TryGetCustomMeleeData(item.MeleeArchetypeData.persistentID, out data);
+
+            if (item.ArchetypeData == null)
             {
                 data = null;
                 return false;
             }
 
-            if (item.TryCast<MeleeWeaponFirstPerson>() != null)
-                return TryGetCustomMeleeData(item.MeleeArchetypeData.persistentID, out data);
-            else if (item.TryCast<SentryGunFirstPerson>() != null)
-                return TryGetCustomGunData(item.ArchetypeID, out data) && data.HeldSentryProperties.Count > 0;
-            return TryGetCustomGunData(item.ArchetypeID, out data);
+            if (item.TryCast<BulletWeapon>() != null)
+                return TryGetCustomGunData(item.ArchetypeID, out data);
+            return TryGetCustomGunData(item.ArchetypeID, out data) && data.HeldSentryProperties.Count > 0;
         }
 
         public static bool TryGetCustomGunData(uint id, [MaybeNullWhen(false)] out CustomWeaponData data)

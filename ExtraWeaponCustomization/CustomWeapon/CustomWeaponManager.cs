@@ -24,14 +24,14 @@ namespace EWC.CustomWeapon
 
             public ListenerInfo(ItemEquippable item)
             {
-                if (item.TryCast<MeleeWeaponFirstPerson>() != null)
+                if (item.TryCast<MeleeWeaponFirstPerson>() != null || item.TryCast<MeleeWeaponThirdPerson>() != null)
                 {
                     addCWC = (go) => go.AddComponent<CustomMeleeComponent>();
                     hasSpawned = true;
                 }
                 else if (item.TryCast<BulletWeapon>() != null)
                     addCWC = (go) => go.AddComponent<CustomGunComponent>();
-                else if (item.TryCast<SentryGunFirstPerson>() != null)
+                else if (item.TryCast<ItemEquippable>() != null)
                     addCWC = (go) => go.AddComponent<CustomWeaponComponent>();
             }
         }

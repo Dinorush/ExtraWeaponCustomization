@@ -19,6 +19,7 @@ namespace EWC.CustomWeapon.Properties.Effects
 {
     public sealed class DamageOverTime :
         Effect,
+        IWeaponProperty<WeaponCreatedContext>,
         ITriggerCallbackAgentSync
     {
         public ushort SyncID { get; set; }
@@ -52,7 +53,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         public float GlowRange { get; private set; } = 0f;
         public bool BatchStacks { get; private set; } = true;
 
-        private readonly DOTController _controller = new();
+        private DOTController _controller = null!;
         private readonly Dictionary<BaseDamageableWrapper, Queue<DOTInstance>> _lastDOTs = new();
         private readonly Dictionary<BaseDamageableWrapper, float> _hitmarkerCooldowns = new();
         private static BaseDamageableWrapper TempWrapper => BaseDamageableWrapper.SharedInstance;
@@ -61,6 +62,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         {
             Trigger ??= new(ITrigger.GetTrigger(TriggerName.Hit));
             SetValidTriggers(DamageType.DOT, ITrigger.HitTriggers);
+        }
+
+        public void Invoke(WeaponCreatedContext context)
+        {
+            _controller = new(CWC);
         }
 
         public bool ShouldDoHitmarker(IDamageable damageable)

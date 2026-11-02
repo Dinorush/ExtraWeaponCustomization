@@ -10,6 +10,7 @@ namespace EWC.CustomWeapon.Properties.Traits
     {
         public float Exponent { get; private set; } = 3f;
 
+        protected override OwnerType RequiredOwnerType => OwnerType.Local;
         protected override WeaponType RequiredWeaponType => WeaponType.Melee;
 
         public void Invoke(WeaponChargeContext context)
