@@ -151,7 +151,7 @@ namespace EWC.CustomWeapon.Properties
         {
             if (_syncList.Count <= id)
             {
-                EWCLogger.Error($"Synced property with ID {id} was requested {(_properties.Count > 0 ? ("on " + _properties[0].CWC.Weapon.Component.name) : "")} but doesn't exist. Filling with blank properties.");
+                EWCLogger.Error($"Synced property with ID {id} was requested on {(_properties.Count > 0 ? _properties[0].CWC.Weapon.Component.name : "Unknown Name")} but doesn't exist. Filling with blank properties.");
                 while (_syncList.Count <= id)
                     _syncList.Add(TriggerCallbackSyncDummy.Instance);
             }

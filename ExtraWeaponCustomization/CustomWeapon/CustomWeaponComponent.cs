@@ -279,7 +279,7 @@ namespace EWC.CustomWeapon
         public bool TryGetProperty(uint id, [MaybeNullWhen(false)] out WeaponPropertyBase property) => _propertyController.TryGetProperty(id, out property);
 
         [HideFromIl2Cpp]
-        internal ITriggerCallbackSync GetTriggerSync(ushort id) => _propertyController.GetTriggerSync(id);
+        internal ITriggerCallbackSync GetTriggerSync(ushort id) => enabled ? _propertyController.GetTriggerSync(id) : TriggerCallbackSyncDummy.Instance;
 
         [HideFromIl2Cpp]
         public ContextController GetContextController() => _propertyController.GetContextController();

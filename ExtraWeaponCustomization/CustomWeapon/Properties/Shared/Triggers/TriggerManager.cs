@@ -205,7 +205,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             if (callback is not T t)
             {
                 instance.cwc.TryGet(out var cwc);
-                EWCLogger.Error($"Received trigger sync ID {instance.id} for {cwc!.Weapon.Component.name}, but {callback.GetType().Name} is not {typeof(ITriggerCallbackDirSync).Name}");
+                EWCLogger.Error($"Received trigger sync ID {instance.id} for {cwc!.Weapon.Component.name} (CWC holder: {cwc.Owner.Player!.Owner.NickName}), but {callback.GetType().Name} is not {typeof(ITriggerCallbackDirSync).Name}");
                 cast = null;
                 return false;
             }

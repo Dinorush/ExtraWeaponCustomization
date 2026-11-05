@@ -12,7 +12,8 @@ namespace EWC.CustomWeapon.Properties.Effects
         IWeaponProperty<WeaponPreSwapContext>,
         IWeaponProperty<WeaponPreSprintContext>,
         IWeaponProperty<WeaponFireCancelContext>,
-        IWeaponProperty<WeaponPreReloadContext>
+        IWeaponProperty<WeaponPreReloadContext>,
+        IWeaponProperty<WeaponAimAllowContext>
     {
         public PlayerAction Actions { get; private set; } = PlayerAction.None;
         public float Duration { get; private set; } = 0f;
@@ -30,6 +31,8 @@ namespace EWC.CustomWeapon.Properties.Effects
             if (!Actions.HasFlag(PlayerAction.Fire) && contextType == typeof(WeaponFireCancelContext))
                 return false;
             if (!Actions.HasFlag(PlayerAction.Reload) && contextType == typeof(WeaponPreReloadContext))
+                return false;
+            if (!Actions.HasFlag(PlayerAction.Aim) && contextType == typeof(WeaponAimAllowContext))
                 return false;
             return base.ShouldRegister(contextType);
         }
@@ -63,6 +66,11 @@ namespace EWC.CustomWeapon.Properties.Effects
         }
 
         public void Invoke(WeaponPreReloadContext context)
+        {
+            context.Allow = context.Allow && _endTime < Clock.Time;
+        }
+
+        public void Invoke(WeaponAimAllowContext context)
         {
             context.Allow = context.Allow && _endTime < Clock.Time;
         }
@@ -107,6 +115,8 @@ namespace EWC.CustomWeapon.Properties.Effects
                 result |= PlayerAction.Fire;
             if (value.Contains("reload"))
                 result |= PlayerAction.Reload;
+            if (value.Contains("aim"))
+                result |= PlayerAction.Aim;
             return result;
         }
     }
@@ -119,6 +129,7 @@ namespace EWC.CustomWeapon.Properties.Effects
         Sprint = 1 << 1,
         Fire = 1 << 2,
         Reload = 1 << 3,
+        Aim = 1 << 4,
         All = -1
     }
 }

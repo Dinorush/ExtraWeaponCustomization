@@ -8,9 +8,9 @@ namespace EWC.CustomWeapon.Properties.Effects.Pickup
 
         protected override void Receive(PickupData data)
         {
-            if (!data.cwc.TryGet(out var cwc)) return;
+            if (!data.bpItem.TryGet(out var item)) return;
 
-            PickupManager.Internal_ReceivePickup(cwc);
+            PickupManager.Internal_ReceivePickup(item, data.ammo);
         }
     }
 }

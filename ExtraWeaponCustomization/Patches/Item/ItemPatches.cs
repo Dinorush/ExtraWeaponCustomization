@@ -115,6 +115,17 @@ namespace EWC.Patches.Item
             gun.ArchetypeData.FireMode = gun.FireMode;
         }
 
+        [HarmonyPatch(typeof(FirstPersonItemHolder), nameof(FirstPersonItemHolder.UpdateAimInput))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void PreGetAimAllowed(FirstPersonItemHolder __instance)
+        {
+            if (_localCWC == null) return;
+
+            if (__instance.ItemAimTrigger)
+                __instance.ItemAimTrigger = _localCWC.Invoke(new WeaponAimAllowContext()).Allow;
+        }
+
         [HarmonyPatch(typeof(MeleeWeaponFirstPerson), nameof(MeleeWeaponFirstPerson.RunAllowed), MethodType.Getter)]
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.WeaponSwitchAllowed), MethodType.Getter)]
         [HarmonyWrapSafe]
