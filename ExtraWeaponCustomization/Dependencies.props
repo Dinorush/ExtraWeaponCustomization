@@ -35,6 +35,7 @@
 		<Reference Include="$(PluginsFolder)\**\DamageSync.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\KillIndicatorFix.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\GTFuckingXP.dll" Private="false" />
+		<Reference Include="$(PluginsFolder)\**\Expansions.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\EndskApi.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\AccurateCrosshair.dll" Private="false" />
 		<Reference Include="$(PluginsFolder)\**\ExtraRecoilData.dll" Private="false" />

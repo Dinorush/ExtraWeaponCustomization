@@ -8,6 +8,10 @@ using System.Runtime.CompilerServices;
 using EWC.CustomWeapon.Enums;
 using System.Collections.Generic;
 using EWC.CustomWeapon.ComponentWrapper;
+using XpExpansions.Manager;
+using EWC.CustomWeapon;
+using EWC.CustomWeapon.WeaponContext.Contexts;
+using EWC.Attributes;
 
 namespace EWC.Dependencies
 {
@@ -22,6 +26,13 @@ namespace EWC.Dependencies
             HasEXP = IL2CPPChainloader.Instance.Plugins.ContainsKey(PLUGIN_GUID);
         }
 
+        [InvokeOnLoad]
+        private static void Init()
+        {
+            if (HasEXP)
+                EXPAddCallbacks();
+        }
+
         public static float GetCapacityMod(IOwnerComp owner) => HasEXP ? EXPGetCapacityMod(owner) : 1f;
 
         public static float GetExplosionResistanceMod(PlayerAgent player) => HasEXP ? EXPGetExplosionResistanceMod(player) : 1f;
@@ -34,6 +45,16 @@ namespace EWC.Dependencies
         {
             if (HasEXP)
                 EXPDidDamage(enemy, source, damage, willKill);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void EXPAddCallbacks()
+        {
+            ToolAbilityManager.OnSentryPickup += (item) =>
+            {
+                var cwc = item.GetComponent<CustomWeaponComponent>();
+                cwc?.Invoke(new WeaponSentryStateContext(false));
+            };
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
