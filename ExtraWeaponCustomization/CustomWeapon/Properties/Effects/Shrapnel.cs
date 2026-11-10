@@ -338,7 +338,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 CWC.RunHitTriggers = enable;
         }
 
-        private bool DoHit(IWeaponComp _, HitData hitData) {
+        private bool DoHit(CustomWeaponComponent _, HitData hitData) {
             hitData.ResetDamage();
 
             GameObject gameObject = hitData.RayHit.collider.gameObject;

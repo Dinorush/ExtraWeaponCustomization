@@ -82,7 +82,7 @@ namespace EWC.Patches.Sentry
             {
                 if (__instance.m_fireBulletTimer < time && __instance.m_burstTimer < time)
                 {
-                    ShotManager.CacheFiringSentry(__instance.m_core.Cast<SentryGunInstance>(), isTagged: targetIsTagged);
+                    ShotManager.CacheVanillaSentry(__instance.m_core.Cast<SentryGunInstance>(), isTagged: targetIsTagged);
                     __state = (null, true);
                 }
                 else
@@ -96,7 +96,7 @@ namespace EWC.Patches.Sentry
             bool burstIsDone = burst && __instance.m_burstClipCurr == 0;
             if (!burstIsDone && inBurst && __instance.m_fireBulletTimer < time)
             {
-                ShotManager.CacheFiringSentry(gun.Value, isTagged: targetIsTagged);
+                ShotManager.CacheFiringCWC(cgc, isTagged: targetIsTagged);
                 if (gun.IsFirstShot)
                     cgc.Invoke(StaticContext<WeaponPreStartFireContext>.Instance);
                 cgc.UpdateStoredFireRate(targetIsTagged);
@@ -156,7 +156,7 @@ namespace EWC.Patches.Sentry
             {
                 if (__instance.m_fireBulletTimer < time && __instance.m_burstTimer < time)
                 {
-                    ShotManager.CacheFiringSentry(__instance.m_core.Cast<SentryGunInstance>(), isTagged: false);
+                    ShotManager.CacheVanillaSentry(__instance.m_core.Cast<SentryGunInstance>(), isTagged: false);
                     __state = (null, true);
                 }
                 else
@@ -169,7 +169,7 @@ namespace EWC.Patches.Sentry
             bool burstIsDone = burst && __instance.m_burstClipCurr == 0;
             if (!burstIsDone && inBurst && __instance.m_fireBulletTimer < time)
             {
-                ShotManager.CacheFiringSentry(((SentryGunComp)cgc.Gun).Value, isTagged: false);
+                ShotManager.CacheFiringCWC(cgc, isTagged: false);
                 cgc.Invoke(StaticContext<WeaponPreFireContextSync>.Instance);
                 cgc.UpdateStoredFireRate();
                 __state = (cgc, true);

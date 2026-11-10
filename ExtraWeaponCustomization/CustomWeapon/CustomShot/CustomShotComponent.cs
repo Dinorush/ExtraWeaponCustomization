@@ -1,4 +1,5 @@
 ﻿using Agents;
+using Enemies;
 using EWC.API;
 using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.Enums;
@@ -159,7 +160,7 @@ namespace EWC.CustomWeapon.CustomShot
             private readonly float _hitSizeFriendly;
             private readonly SearchSetting _friendlySetting;
             private readonly int _friendlyMask;
-            private readonly Func<IWeaponComp, HitData, bool> _hitFunc;
+            private readonly Func<CustomWeaponComponent, HitData, bool> _hitFunc;
 
             private int _pierceCount;
 
@@ -349,7 +350,7 @@ namespace EWC.CustomWeapon.CustomShot
                         fxTarget = hit.point;
                     }
 
-                    if (_hitFunc(_weapon, _hitData))
+                    if (_hitFunc(_parent._cwc, _hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return false;
@@ -360,7 +361,7 @@ namespace EWC.CustomWeapon.CustomShot
                     if (_wallPierce == null)
                     {
                         _hitData.RayHit = wallRayHit;
-                        _hitFunc(_weapon, _hitData);
+                        _hitFunc(_parent._cwc, _hitData);
                     }
                 }
                 return true;
@@ -426,7 +427,7 @@ namespace EWC.CustomWeapon.CustomShot
                         fxTarget = hit.point;
                     }
 
-                    if (_hitFunc(_weapon, _hitData))
+                    if (_hitFunc(_parent._cwc, _hitData))
                         _pierceCount--;
 
                     if (_pierceCount <= 0) return false;
@@ -467,13 +468,16 @@ namespace EWC.CustomWeapon.CustomShot
 
             private bool CheckDirectHit(Agent? agent, ref RaycastHit hit)
             {
+                // Direct hits don't matter for non-enemies since they don't have armor/crits to aim for
                 if (agent == null || agent.Type != AgentType.Enemy) return false;
 
                 RaycastHit bestHit = new() { distance = float.MaxValue };
 
-                foreach (Collider collider in agent.GetComponentsInChildren<Collider>())
+                var enemy = agent.Cast<EnemyAgent>();
+                foreach (var limb in enemy.Damage.DamageLimbs)
                 {
-                    if (collider.GetComponent<IDamageable>() != null && collider.Raycast(_ray, out var tempHit, (collider.transform.position - _ray.origin).magnitude + 1f) && tempHit.distance < bestHit.distance)
+                    var collider = limb.GetComponent<Collider>();
+                    if (collider.enabled && collider.Raycast(_ray, out var tempHit, (collider.transform.position - _ray.origin).magnitude + 1f) && tempHit.distance < bestHit.distance)
                         bestHit = tempHit;
                 }
 

@@ -10,9 +10,9 @@ namespace EWC.CustomWeapon.CustomShot
         public ThickBullet? thickBullet;
         public Properties.Traits.Projectile? projectile;
         public WallPierce? wallPierce;
-        public Func<IWeaponComp, HitData, bool> hitFunc;
+        public Func<CustomWeaponComponent, HitData, bool> hitFunc;
 
-        public CustomShotSettings(ThickBullet? thickBullet = null, WallPierce? wallPierce = null, Properties.Traits.Projectile? projectile = null, Func<IWeaponComp, HitData, bool>? hitFunc = null)
+        public CustomShotSettings(ThickBullet? thickBullet = null, WallPierce? wallPierce = null, Properties.Traits.Projectile? projectile = null, Func<CustomWeaponComponent, HitData, bool>? hitFunc = null)
         {
             this.thickBullet = thickBullet;
             this.projectile = projectile;
@@ -20,7 +20,7 @@ namespace EWC.CustomWeapon.CustomShot
             this.hitFunc = hitFunc ?? ShotManager.BulletHit;
         }
 
-        public readonly CustomShotSettings Clone(Func<IWeaponComp, HitData, bool>? hitFunc = null)
+        public readonly CustomShotSettings Clone(Func<CustomWeaponComponent, HitData, bool>? hitFunc = null)
         {
             return new(
                 (ThickBullet?)thickBullet?.Clone(),

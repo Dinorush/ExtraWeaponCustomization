@@ -1,4 +1,6 @@
-﻿using EWC.CustomWeapon.CustomShot;
+﻿using EWC.CustomWeapon;
+using EWC.CustomWeapon.CustomShot;
+using EWC.Utils.Extensions;
 using Gear;
 using HarmonyLib;
 
@@ -16,7 +18,10 @@ namespace EWC.Patches.Gun
         [HarmonyPrefix]
         private static void Pre_Fire(BulletWeapon __instance)
         {
-            ShotManager.CacheFiringGun(__instance);
+            if (__instance.TryGetComp<CustomGunComponent>(out var cgc))
+                ShotManager.CacheFiringCWC(cgc);
+            else
+                ShotManager.CacheVanillaGun(__instance);
         }
 
         [HarmonyPatch(typeof(Shotgun), nameof(Shotgun.Fire))]

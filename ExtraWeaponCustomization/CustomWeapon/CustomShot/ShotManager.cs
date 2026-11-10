@@ -98,32 +98,31 @@ namespace EWC.CustomWeapon.CustomShot
             return s_vanillaShotInfo.info;
         }
 
-        public static void CacheFiringGun(BulletWeapon weapon)
+        public static void CacheFiringCWC(CustomWeaponComponent cwc, bool isTagged = false)
+        {
+            ActiveFiringInfo = new()
+            {
+                owner = cwc.Owner.Player,
+                slot = cwc.Weapon.InventorySlot,
+                archBlock = cwc.Weapon.ArchetypeData,
+                isTagged = isTagged,
+                cwc = cwc,
+                valid = true
+            };
+        }
+
+        public static void CacheVanillaGun(BulletWeapon weapon)
         {
             ActiveFiringInfo = new()
             {
                 owner = weapon.Owner,
                 slot = weapon.AmmoType.ToInventorySlot(),
                 archBlock = weapon.ArchetypeData,
-                isTagged = false,
-                cwc = weapon.GetComponent<CustomWeaponComponent>(),
                 valid = weapon.ArchetypeData != null
             };
         }
 
-        public static void CacheFiringMelee(MeleeWeaponFirstPerson weapon)
-        {
-            ActiveFiringInfo = new()
-            {
-                owner = weapon.Owner,
-                slot = InventorySlot.GearMelee,
-                isTagged = false,
-                cwc = weapon.GetComponent<CustomWeaponComponent>(),
-                valid = true
-            };
-        }
-
-        public static void CacheFiringSentry(SentryGunInstance sentry, bool isTagged)
+        public static void CacheVanillaSentry(SentryGunInstance sentry, bool isTagged)
         {
             ActiveFiringInfo = new()
             {
@@ -131,7 +130,6 @@ namespace EWC.CustomWeapon.CustomShot
                 slot = InventorySlot.GearClass,
                 archBlock = sentry.ArchetypeData,
                 isTagged = isTagged,
-                cwc = sentry.GetComponent<CustomWeaponComponent>(),
                 valid = sentry.ArchetypeData != null
             };
         }
@@ -141,20 +139,15 @@ namespace EWC.CustomWeapon.CustomShot
             ActiveFiringInfo = default;
         }
 
-        public static bool BulletHit(IWeaponComp weapon, HitData data)
+        public static bool BulletHit(CustomWeaponComponent cwc, HitData data)
         {
-            var hitData = data.Apply(weapon.VanillaHitData);
+            var hitData = data.Apply(cwc.Weapon.VanillaHitData);
+            if (ActiveFiringInfo.valid && cwc.Pointer == ActiveFiringInfo.cwc?.Pointer)
+                return BulletWeapon.BulletHit(hitData, true);
+
             s_vanillaShotInfo = (hitData.Pointer, data.shotInfo);
-
             var oldInfo = ActiveFiringInfo;
-
-            if (weapon.IsType(WeaponType.BulletWeapon))
-                CacheFiringGun(((IBulletWeaponComp)weapon).BulletWeapon);
-            else if (weapon.IsType(WeaponType.Melee))
-                CacheFiringMelee(((MeleeComp)weapon).Value);
-            else // Tagged set to false because the damage is already calculated
-                CacheFiringSentry(((SentryGunComp)weapon).Value, isTagged: false);
-
+            CacheFiringCWC(cwc);
             var result = BulletWeapon.BulletHit(hitData, true);
             ActiveFiringInfo = oldInfo;
             return result;

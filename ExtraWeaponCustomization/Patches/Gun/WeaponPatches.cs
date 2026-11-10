@@ -1,5 +1,4 @@
-﻿using Agents;
-using EWC.CustomWeapon;
+﻿using EWC.CustomWeapon;
 using EWC.CustomWeapon.CustomShot;
 using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.HitTracker;
