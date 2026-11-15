@@ -216,11 +216,11 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (dir != _fixedInfo.Dir)
                 _fixedInfo.BaseDir = dir;
 
-            Vector3 deltaMove = GetDeltaMove(_fixedInfo, delta);
+            Vector3 deltaMove = GetDeltaMove(_fixedInfo, delta, out var hitMaxRange);
             Vector3 collisionVel = deltaMove.sqrMagnitude > EWCProjectileHitbox.MinCollisionSqrDist ? deltaMove : _fixedInfo.Dir * EWCProjectileHitbox.MinCollisionDist;
 
             bool needSync = false;
-            for (int i = 0; i < _maxRicochetCheck && Hitbox.Update(_fixedInfo.Position, collisionVel, out var bounce); i++)
+            for (int i = 0; i < _maxRicochetCheck && Hitbox.Update(_fixedInfo.Position, collisionVel, _fixedInfo.DistanceMoved, out var bounce); i++)
             {
                 // Compute speed loss based on ricochet angle
                 float angleFactor = Math.Abs(Vector3.Dot(_fixedInfo.Dir, bounce.normal));
@@ -236,11 +236,18 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 needSync = true;
             }
 
-            if (!enabled) return true; // Died by hitbox
+            if (!enabled)
+                return true; // Died by hitbox
 
             _fixedInfo.Position += deltaMove;
             _deltaInfo.Copy(_fixedInfo);
             _lastUpdatePhysicsTime = time;
+
+            if (hitMaxRange)
+            {
+                TimeOut();
+                return true;
+            }
 
             if (needSync)
                 EWCProjectileManager.DoProjectileBounce(PlayerIndex, SyncID, Position, _deltaInfo.BaseVelocity);
@@ -259,7 +266,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (!enabled) return;
 
             var time = Time.time;
-            if (time > _endLifetime || (IsManaged && Settings.MaxRange > 0 && Hitbox.GetMoveDist() >= Settings.MaxRange))
+            if (time > _endLifetime)
             {
                 TimeOut();
                 return;
@@ -275,7 +282,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 if (dir != _deltaInfo.Dir)
                     _deltaInfo.BaseDir = dir;
 
-                var deltaMove = GetDeltaMove(_deltaInfo, delta);
+                var deltaMove = GetDeltaMove(_deltaInfo, delta, out var _);
                 _deltaInfo.Position += deltaMove;
             }
 
@@ -301,7 +308,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 
         [HideFromIl2Cpp]
-        private Vector3 GetDeltaMove(PhysicsInfo info, float delta)
+        private Vector3 GetDeltaMove(PhysicsInfo info, float delta, out bool hitMaxRange)
         {
             Vector3 deltaMove;
             // Need to calculate how much distance was covered including the acceleration
@@ -333,6 +340,15 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             info.Velocity = info.BaseVelocity;
             info.Velocity.y -= info.GravityVel;
             info.Dir = info.Velocity.normalized;
+            info.DistanceMoved += deltaMove.magnitude;
+
+            hitMaxRange = Settings.MaxRange > 0 && info.DistanceMoved > Settings.MaxRange;
+            if (hitMaxRange)
+            {
+                info.DistanceMoved = Settings.MaxRange;
+                deltaMove -= deltaMove.normalized * (info.DistanceMoved - Settings.MaxRange);
+            }
+
             return deltaMove;
         }
 
@@ -349,6 +365,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
         private void TimeOut()
         {
+            if (!enabled) return;
+
             if (IsManaged)
                 Settings.EventHelper.Invoke(
                     ContextController,
@@ -451,6 +469,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             public Vector3 Velocity;
             public float AccelProgress;
             public float GravityVel;
+            public float DistanceMoved;
             public readonly List<ProjectileDirChange.State> DirChanges = new();
 
             public void Set(Projectile settings, Vector3 position, Vector3 dir, ushort shotIndex)
@@ -465,6 +484,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 Position = position;
                 BaseSpeed = settings.MaxSpeed > settings.MinSpeed ? Random.NextSingle().Lerp(settings.MinSpeed, settings.MaxSpeed) : settings.MinSpeed;
                 BaseDir = dir;
+                DistanceMoved = 0;
             }
 
             public void Copy(PhysicsInfo info)
@@ -481,6 +501,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 BaseSpeed = info.BaseSpeed;
                 BaseVelocity = info.BaseVelocity;
                 _baseDir = info._baseDir;
+                DistanceMoved = info.DistanceMoved;
             }
         }
     }

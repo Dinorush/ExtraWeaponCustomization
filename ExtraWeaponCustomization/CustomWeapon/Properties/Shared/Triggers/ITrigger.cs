@@ -40,6 +40,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         DamageTaken,
         Health,
         Infection,
+        Stamina,
         Clip,
         Crouch,
         CrouchEnd,
@@ -50,6 +51,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         PerTarget,
         Key,
         SentryState,
+        Combat,
         Reference,
         Init
     }
@@ -97,6 +99,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 "wield" => new BasicTrigger<WeaponWieldContext>(TriggerName.Wield),
                 "health" => new HealthTrigger(),
                 "infection" => new InfectionTrigger(),
+                "stamina" => new StaminaTrigger(),
                 "clip" or "mag" => new ClipTrigger(),
                 "crouch" => new BasicTrigger<WeaponCrouchContext>(TriggerName.Crouch),
                 "crouchend" or "uncrouch" or "stand" => new BasicTrigger<WeaponCrouchEndContext>(TriggerName.CrouchEnd),
@@ -110,6 +113,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 string sync when sync.Contains("sync") => DetermineModSyncTrigger(origName, sync),
                 string perTarget when perTarget.StartsWith("per") => DeterminePerTargetTrigger(name),
                 string sentry when sentry.StartsWith("sentry") => DetermineSentryStateTrigger(name),
+                string combat when combat.EndsWith("combat") => DetermineCombatTrigger(name),
                 string hitTaken when hitTaken.Contains("hittaken") => new PlayerDamageTypeTrigger(TriggerName.HitTaken, name.ToPlayerDamageTypes()),
                 string damageTaken when damageTaken.Contains("damagetaken") => new DamageTakenTrigger(name.ToPlayerDamageTypes()),
                 string landed when landed.Contains("landed") => DetermineLandedTrigger(landed),
@@ -243,6 +247,15 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 return new SentryStateTrigger(false);
             else
                 return new SentryStateTrigger(true);
+        }
+
+        private static ITrigger? DetermineCombatTrigger(string name)
+        {
+            name = name[.."combat".Length];
+            if (name == "in")
+                return new SentryStateTrigger(true);
+            else
+                return new SentryStateTrigger(false);
         }
     }
 

@@ -32,6 +32,8 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public bool OnPropertiesSetup(CustomWeaponComponent cwc)
         {
+            if (!cwc.Owner.IsType(Enums.OwnerType.Local))
+                return false;
             cwc.RegisterKeyWatcher(Key);
             return true;
         }

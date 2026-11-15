@@ -139,7 +139,6 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         }
 
         public float GetFalloff() => HitData.CalcRawFalloff(_distanceMoved);
-        public float GetMoveDist() => _distanceMoved;
 
         public void Die()
         {
@@ -156,7 +155,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             _enabled = false;
         }
 
-        public bool Update(Vector3 position, Vector3 velocityDelta, out RaycastHit bounceHit)
+        public bool Update(Vector3 position, Vector3 velocityDelta, float finalDistMoved, out RaycastHit bounceHit)
         {
             bounceHit = default;
             RaycastHit? ricochet = null;
@@ -222,12 +221,13 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 _hitEntCooldowns.Dequeue();
             }
 
-            _distanceMoved += velocityDelta.magnitude;
             if (ricochet != null)
             {
+                _distanceMoved += velocityDelta.magnitude;
                 bounceHit = ricochet.Value;
                 return true;
             }
+            _distanceMoved = finalDistMoved;
             return false;
         }
 

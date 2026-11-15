@@ -3,6 +3,7 @@ using EWC.CustomWeapon.ComponentWrapper;
 using EWC.CustomWeapon.ComponentWrapper.OwnerComps;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.CustomShot;
+using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties;
 using EWC.CustomWeapon.Properties.Effects.Debuff;
 using EWC.CustomWeapon.Properties.Shared.Triggers;
@@ -66,6 +67,7 @@ namespace EWC.CustomWeapon
         // Used to update delayed callbacks before invocations happen.
         private readonly LinkedList<DelayedCallback> _timeSensitiveCallbacks;
         private float _lastInvokeTime = 0f;
+        private float _lastStamina = 0f;
         private readonly Dictionary<KeyCode, bool> _keyWatchers;
 
         public bool Destroyed { get; private set; } = false;
@@ -147,8 +149,13 @@ namespace EWC.CustomWeapon
         protected virtual void Update()
         {
             Invoke(StaticContext<WeaponUpdateContext>.Instance);
+            UpdateStaminaCallbacks();
+            UpdateKeyCodeCallbacks();
+        }
 
-            if (Owner.IsType(Enums.OwnerType.Local) && _keyWatchers.Count > 0)
+        private void UpdateKeyCodeCallbacks()
+        {
+            if (_keyWatchers.Count > 0)
             {
                 if (FocusStateManager.CurrentState == eFocusState.FPS)
                 {
@@ -163,6 +170,19 @@ namespace EWC.CustomWeapon
                 }
                 else
                     ResetKeyWatchers();
+            }
+        }
+
+        private void UpdateStaminaCallbacks()
+        {
+            if (Owner.IsType(OwnerType.Local))
+            {
+                var stam = Owner.Player!.Stamina;
+                if (stam.Stamina != _lastStamina)
+                {
+                    _lastStamina = stam.Stamina;
+                    Invoke(new WeaponStaminaContext(_lastStamina));
+                }
             }
         }
 
@@ -226,9 +246,10 @@ namespace EWC.CustomWeapon
 
             DebuffIDs = data.DebuffIDs.IDs;
             DebuffIDs.Add(DebuffManager.DefaultGroup);
-            var properties = Weapon.IsType(Enums.WeaponType.SentryHolder) ? data.HeldSentryProperties : data.Properties;
+            var properties = Weapon.IsType(WeaponType.SentryHolder) ? data.HeldSentryProperties : data.Properties;
             _propertyController.Init(this, properties.Clone());
             Invoke(new WeaponInitContext(this));
+            Invoke(new WeaponCombatContext(DramaManager.InActionState));
             TriggerManager.RunQueuedReceives(this);
         }
 
@@ -246,6 +267,7 @@ namespace EWC.CustomWeapon
             SpreadController.Reset();
             DebuffIDs = DebuffGroup.DefaultGroupList;
             _keyWatchers.Clear();
+            _lastStamina = 0;
             enabled = false;
         }
 
@@ -255,9 +277,9 @@ namespace EWC.CustomWeapon
             var owner = item.Owner;
             if (owner == null || owner.Owner == null) return;
 
-            if (Owner.IsType(Enums.OwnerType.Local))
+            if (Owner.IsType(OwnerType.Local))
                 Owner = new LocalOwnerComp(owner, item.MuzzleAlign);
-            else if (Owner.IsType(Enums.OwnerType.Sentry))
+            else if (Owner.IsType(OwnerType.Sentry))
                 Owner = new SentryOwnerComp(((SentryGunComp)Weapon).Value);
             else
                 Owner = new SyncedOwnerComp(owner, item.MuzzleAlign);
