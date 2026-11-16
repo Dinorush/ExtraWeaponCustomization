@@ -184,8 +184,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "endshotdelay":
@@ -260,8 +263,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     Trigger = TriggerCoordinator.Deserialize(ref reader);
                     break;
                 default:
-                    break;
+                    return false;
             }
+            return true;
         }
     }
 }

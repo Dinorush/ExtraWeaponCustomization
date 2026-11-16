@@ -18,7 +18,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             return Amount * (context.OrigBackstab - 1).Map(MinBackstabRequired, MaxBackstabRequired, Min, Max, Exponent);
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -32,12 +32,11 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "minreq":
                 case "maxrequired":
                 case "maxreq":
-                    base.DeserializeProperty(property[..3] + "backstab" + property[3..], ref reader);
-                    break;
+                    return base.DeserializeProperty(property[..3] + "backstab" + property[3..], ref reader);
                 default:
-                    base.DeserializeProperty(property, ref reader);
-                    break;
+                    return base.DeserializeProperty(property, ref reader);
             }
+            return true;
         }
     }
 }

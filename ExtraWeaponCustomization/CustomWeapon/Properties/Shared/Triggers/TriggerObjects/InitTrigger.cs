@@ -41,7 +41,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public bool OnPropertiesSetup(CustomWeaponComponent cwc) => false;
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -49,7 +49,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "amount":
                     Amount = reader.GetSingle();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
 
         enum PlayerType

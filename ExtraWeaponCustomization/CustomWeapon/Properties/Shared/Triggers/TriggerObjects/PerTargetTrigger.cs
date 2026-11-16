@@ -126,7 +126,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             return copy;
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -165,12 +165,15 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "applyoverrideamount":
                 case "applyamount":
                     OverrideAmount = reader.GetBoolean();
-                    return;
+                    break;
                 case "triggeramount":
                 case "amount":
                     Amount = reader.GetSingle();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
 
         private static bool IsValidList(List<ITrigger>? list, TriggerName[] validList)

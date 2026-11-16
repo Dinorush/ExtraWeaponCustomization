@@ -44,9 +44,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property.ToLowerInvariant())
             {
                 case "backstabdamagemulti":
@@ -56,7 +58,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "multi":
                     BackstabDamageMulti = reader.GetSingle();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

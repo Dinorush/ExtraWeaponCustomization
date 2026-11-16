@@ -68,7 +68,7 @@ namespace EWC.CustomWeapon.Properties
 
         public abstract void Serialize(Utf8JsonWriter writer);
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public virtual bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -78,7 +78,10 @@ namespace EWC.CustomWeapon.Properties
                     else
                         ID = reader.GetUInt32();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
 
         public static uint StringIDToInt(string id)

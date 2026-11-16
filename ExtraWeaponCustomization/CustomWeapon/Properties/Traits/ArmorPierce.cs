@@ -32,9 +32,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "pierce":
@@ -43,7 +45,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "type":
                     Type = reader.GetString().ToEnum(PierceType.OverPierce);
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     
         public enum PierceType

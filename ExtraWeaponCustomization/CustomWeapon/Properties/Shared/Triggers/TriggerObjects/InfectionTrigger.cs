@@ -57,7 +57,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public ITrigger Clone() => this;
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -91,7 +91,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "allowbeyondbounds":
                     AllowBeyondBounds = reader.GetBoolean();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

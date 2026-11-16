@@ -34,9 +34,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property.ToLowerInvariant())
             {
                 case "tumordamagemulti":
@@ -54,8 +56,9 @@ namespace EWC.CustomWeapon.Properties.Traits
                     OverrideWeakspotMulti = reader.GetBoolean();
                     break;
                 default:
-                    break;
+                    return false;
             }
+            return true;
         }
     }
 }

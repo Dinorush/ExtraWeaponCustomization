@@ -202,9 +202,11 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             base.OnCancel();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "applydelays":
@@ -226,21 +228,24 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                     break;
                 case "cooldownonapply":
                     CooldownOnApply = reader.GetSingle();
-                    return;
+                    break;
                 case "cooldownonapplythreshold":
                     CooldownOnApplyThreshold = Math.Max(reader.GetUInt32(), 1);
-                    return;
+                    break;
                 case "applyabovethreshold":
                     ApplyAboveThreshold = reader.GetBoolean();
-                    return;
+                    break;
                 case "applyoverrideamount":
                 case "applyamount":
                     ApplyOverrideAmount = reader.GetSingle();
-                    return;
+                    break;
                 case "allowonce":
                     AllowOnce = reader.GetBoolean();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

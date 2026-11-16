@@ -198,9 +198,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "clipchange":
@@ -235,8 +237,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     ReceiverSlot = SlotNameToSlot(reader.GetString()!);
                     break;
                 default:
-                    break;
+                    return false;
             }
+            return true;
         }
 
         private static InventorySlot SlotNameToSlot(string name)

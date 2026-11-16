@@ -23,9 +23,11 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             return Cap > 0 ? Math.Min(Cap, damage * Amount) : damage * Amount;
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "cap":
@@ -41,7 +43,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "ignorexpmod":
                     IgnoreInnateMod = reader.GetBoolean();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

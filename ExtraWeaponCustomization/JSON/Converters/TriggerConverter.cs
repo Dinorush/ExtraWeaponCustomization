@@ -33,10 +33,11 @@ namespace EWC.JSON.Converters
                         return trigger;
 
                     if (reader.TokenType != JsonTokenType.PropertyName) throw new JsonException("Expected PropertyName token");
+                    
                     string property = reader.GetString()!;
-
                     reader.Read();
-                    trigger.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                    if (!trigger.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader) && property.ToLowerInvariant() != "name")
+                        EWCLogger.Warning($"Property name \"{property}\" does not exist on trigger {trigger.Name}");
                 }
 
                 throw new JsonException("Expected EndObject token");

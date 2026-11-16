@@ -78,7 +78,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                 SpeedManager.ApplySpeedMod(wrapper.Object!, this, amt);
         }
 
-        private bool TryGetPlayer(TriggerContext tContext, [MaybeNullWhen(false)] out PlayerAgent player)
+        private static bool TryGetPlayer(TriggerContext tContext, [MaybeNullWhen(false)] out PlayerAgent player)
         {
             if (tContext.context is WeaponHitDamageableContextBase damContext && damContext.DamageType.HasFlag(DamageType.Player))
             {
@@ -127,15 +127,20 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "applytotarget":
                     ApplyToTarget = reader.GetBoolean();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

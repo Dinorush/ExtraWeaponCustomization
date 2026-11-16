@@ -400,9 +400,11 @@ namespace EWC.CustomWeapon.Properties.Traits
             return copy;
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "weaponaudioid":
@@ -439,7 +441,10 @@ namespace EWC.CustomWeapon.Properties.Traits
                 case "trigger":
                     Trigger = TriggerCoordinator.Deserialize(ref reader);
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

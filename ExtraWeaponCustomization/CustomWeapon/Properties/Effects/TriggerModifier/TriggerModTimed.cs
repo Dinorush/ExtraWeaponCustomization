@@ -3,8 +3,10 @@ using EWC.CustomWeapon.ObjectWrappers;
 using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Utils;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.Json;
 using UnityEngine;
 
 namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
@@ -18,10 +20,32 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
         private Coroutine? _updateRoutine;
         private readonly Queue<float> _updateTimes;
 
+        public bool IsPersistent { get; private set; } = true;
+        private bool _isActive = false;
+
         public TriggerModTimed()
         {
             _updateTimes = new();
             _triggerStack = new(this);
+        }
+
+        public override bool ShouldRegister(Type contextType)
+        {
+            if (IsPersistent)
+            {
+                if (contextType == typeof(WeaponSetupContext))
+                    return false;
+                if (contextType == typeof(WeaponClearContext))
+                    return false;
+            }
+
+            return base.ShouldRegister(contextType);
+        }
+
+        public override void OnPropertiesSetup()
+        {
+            base.OnPropertiesSetup();
+            _isActive = IsPersistent;
         }
 
         public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);
@@ -44,6 +68,12 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
         public void TriggerApplySync(float amount)
         {
             _triggerStack.Add(amount);
+            if (!_isActive)
+            {
+                EnqueueUpdate(startRoutine: false);
+                return;
+            }
+
             if (_triggerStack.TryGetMod(out var mod))
             {
                 OnUpdate(mod);
@@ -55,6 +85,7 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
 
         public void Invoke(WeaponSetupContext context)
         {
+            _isActive = true;
             if (!_triggerStack.TryGetMod(out var mod))
             {
                 _updateTimes.Clear();
@@ -67,16 +98,19 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
 
         public void Invoke(WeaponClearContext context)
         {
+            _isActive = false;
             CoroutineUtil.Stop(ref _updateRoutine);
             OnDisable();
         }
 
-        private void EnqueueUpdate()
+        private void EnqueueUpdate(bool startRoutine = true)
         {
             if (CombineModifiers)
                 _updateTimes.TryDequeue(out _);
             _updateTimes.Enqueue(Clock.Time + Duration);
-            _updateRoutine ??= CoroutineManager.StartCoroutine(DelayedUpdate().WrapToIl2Cpp());
+
+            if (startRoutine)
+                _updateRoutine ??= CoroutineManager.StartCoroutine(DelayedUpdate().WrapToIl2Cpp());
         }
 
         private IEnumerator DelayedUpdate()
@@ -96,6 +130,23 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
             OnDisable();
             _updateTimes.Clear();
             _updateRoutine = null;
+        }
+
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
+        {
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
+            switch (property)
+            {
+                case "ispersistent":
+                case "persistent":
+                    IsPersistent = reader.GetBoolean();
+                    break;
+                default:
+                    return false;
+            }
+            return true;
         }
     }
 }

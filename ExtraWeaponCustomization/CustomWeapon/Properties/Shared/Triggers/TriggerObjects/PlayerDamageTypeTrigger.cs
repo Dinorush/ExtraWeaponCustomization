@@ -31,7 +31,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public ITrigger Clone() => this;
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public virtual bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -39,7 +39,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "amount":
                     Amount = reader.GetSingle();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

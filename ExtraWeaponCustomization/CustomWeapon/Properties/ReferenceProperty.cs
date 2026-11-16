@@ -26,7 +26,7 @@ namespace EWC.CustomWeapon.Properties
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -37,7 +37,10 @@ namespace EWC.CustomWeapon.Properties
                     else
                         ReferenceID = reader.GetUInt32();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

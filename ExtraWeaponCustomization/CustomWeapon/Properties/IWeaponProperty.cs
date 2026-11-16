@@ -11,7 +11,7 @@ namespace EWC.CustomWeapon.Properties
         public bool ShouldRegister(Type contextType) => true;
         WeaponPropertyBase Clone(); // Should return a new instance with the same initial data.
         void Serialize(Utf8JsonWriter writer);
-        void DeserializeProperty(string property, ref Utf8JsonReader reader);
+        bool DeserializeProperty(string property, ref Utf8JsonReader reader);
     }
 
     public interface IWeaponProperty<TContext> : IWeaponProperty where TContext : IWeaponContext

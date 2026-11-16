@@ -33,7 +33,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
             writer.WriteEndArray();
         }
 
-        private void DeserializeProperty(string propertyName, ref Utf8JsonReader reader)
+        private bool DeserializeProperty(string propertyName, ref Utf8JsonReader reader)
         {
             switch (propertyName)
             {
@@ -57,7 +57,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
                 case "duration":
                     ChangeTime = reader.GetSingle();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
 
         public void Deserialize(ref Utf8JsonReader reader)
@@ -72,7 +75,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile
 
                 string property = reader.GetString()!;
                 reader.Read();
-                DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                if (!DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader))
+                    EWCLogger.Warning($"Property name \"{property}\" does not exist on Projectile.StatChange");
             }
 
             throw new JsonException("Expected EndObject token");

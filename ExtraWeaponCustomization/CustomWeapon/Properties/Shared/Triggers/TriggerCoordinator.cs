@@ -74,7 +74,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             Reset?.Reset();
         }
 
-        public void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -94,16 +94,16 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                     if (property == "reset")
                         Reset.DeserializeTriggerList(ref reader);
                     else
-                        Reset.DeserializeProperty(property["reset".Length..], ref reader);
+                        return Reset.DeserializeProperty(property["reset".Length..], ref reader);
                     break;
 
                 default:
                     // Activate is the default and doesn't require a prefix for its fields
                     if (property.StartsWith("activate"))
                         property = property["activate".Length..];
-                    Activate.DeserializeProperty(property, ref reader);
-                    break;
+                    return Activate.DeserializeProperty(property, ref reader);
             }
+            return true;
         }
 
         public static TriggerCoordinator? Deserialize(ref Utf8JsonReader reader, bool allowEmptyActivate = false)

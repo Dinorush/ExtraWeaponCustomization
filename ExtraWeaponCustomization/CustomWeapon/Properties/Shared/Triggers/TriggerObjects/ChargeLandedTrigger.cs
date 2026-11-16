@@ -32,9 +32,11 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             return false;
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "min":
@@ -54,7 +56,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "maxreq":
                     MaxRequired = reader.GetSingle();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

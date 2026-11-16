@@ -80,7 +80,7 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
             writer.WriteEndObject();
         }
 
-        private void DeserializeProperty(string propertyName, ref Utf8JsonReader reader)
+        private bool DeserializeProperty(string propertyName, ref Utf8JsonReader reader)
         {
             switch (propertyName)
             {
@@ -96,7 +96,10 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
                 case "includevelocity":
                     IncludeVelocity = reader.GetBoolean();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
 
         public void Deserialize(ref Utf8JsonReader reader)
@@ -117,7 +120,8 @@ namespace EWC.CustomWeapon.Properties.Effects.PlayerPush
 
                 string property = reader.GetString()!;
                 reader.Read();
-                DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                if (!DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader))
+                    EWCLogger.Warning($"Property name \"{property}\" does not exist on PushCap");
             }
 
             throw new JsonException("Expected EndObject token");

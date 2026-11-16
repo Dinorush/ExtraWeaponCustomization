@@ -22,16 +22,21 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             return false;
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "includelimbbreak":
                 case "limbbreak":
                     IncludeLimbBreak = reader.GetBoolean();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

@@ -282,9 +282,11 @@ namespace EWC.CustomWeapon.Properties.Effects
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "clipregen":
@@ -331,8 +333,9 @@ namespace EWC.CustomWeapon.Properties.Effects
                     DelayAfterTrigger = reader.GetSingle();
                     break;
                 default:
-                    break;
+                    return false;
             }
+            return true;
         }
     }
 }

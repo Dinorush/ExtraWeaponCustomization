@@ -31,7 +31,8 @@ namespace EWC.JSON.Converters
 
                     string property = reader.GetString()!;
                     reader.Read();
-                    instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader);
+                    if (!instance.DeserializeProperty(property.ToLowerInvariant().Replace(" ", ""), ref reader) && property.ToLowerInvariant() != "name")
+                        EWCLogger.Warning($"Property name \"{property}\" does not exist on {instance.GetType().Name}");
                 }
 
                 throw new JsonException("Expected EndObject token");

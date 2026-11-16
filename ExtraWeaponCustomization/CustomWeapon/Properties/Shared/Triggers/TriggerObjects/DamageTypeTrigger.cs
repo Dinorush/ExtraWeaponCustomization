@@ -51,7 +51,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             return copy;
         }
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public virtual bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -62,7 +62,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "maxpershot":
                     MaxPerShot = reader.GetUInt32();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

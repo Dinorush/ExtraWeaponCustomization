@@ -21,7 +21,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         public override WeaponPropertyBase Clone() { return this; }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader) { }
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader) => true;
 
         public void Invoke(WeaponTriggerContext context) { }
 

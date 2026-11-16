@@ -193,7 +193,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 callback.Start(checkEnd, refresh);
         }
 
-        public virtual void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public virtual bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
             switch (property)
             {
@@ -231,7 +231,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "canceldelay":
                     CancelDelay = reader.GetBoolean();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
 
         private static List<ITrigger>? DeserializeTriggers(ref Utf8JsonReader reader)

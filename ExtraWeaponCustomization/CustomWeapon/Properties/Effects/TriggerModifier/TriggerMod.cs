@@ -119,9 +119,11 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "mod":
@@ -161,8 +163,9 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
                     StackLayer = reader.GetString().ToEnum(StackType.Invalid);
                     break;
                 default:
-                    break;
+                    return false;
             }
+            return true;
         }
 
         protected struct TriggerInstance

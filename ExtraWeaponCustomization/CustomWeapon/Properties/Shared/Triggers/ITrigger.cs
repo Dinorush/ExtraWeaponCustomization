@@ -66,7 +66,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
         void Reset();
         bool OnPropertiesSetup(CustomWeaponComponent cwc) => true;
         ITrigger Clone();
-        void DeserializeProperty(string property, ref Utf8JsonReader reader);
+        bool DeserializeProperty(string property, ref Utf8JsonReader reader);
 
         public static ITrigger GetTrigger(TriggerName triggerName) => GetTrigger(triggerName.ToString())!;
 

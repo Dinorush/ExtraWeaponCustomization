@@ -225,9 +225,11 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
             writer.WriteEndObject();
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "debuffids":
@@ -242,7 +244,10 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
                     else
                         GlobalID = reader.GetUInt32();
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
     }
 }

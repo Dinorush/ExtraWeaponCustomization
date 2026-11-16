@@ -79,13 +79,15 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             if (!CloneObject) return this;
 
             var trigger = (DamageableTrigger<TContext>) base.Clone();
-            trigger._uniqueCounts = _uniqueCounts != null ? new() : null;
+            trigger._uniqueCounts = UniqueCap > 0 || UniqueThreshold > 0 ? new() : null;
             return trigger;
         }
 
-        public override void DeserializeProperty(string property, ref Utf8JsonReader reader)
+        public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
         {
-            base.DeserializeProperty(property, ref reader);
+            if (base.DeserializeProperty(property, ref reader))
+                return true;
+
             switch (property)
             {
                 case "minbackstabrequired":
@@ -106,10 +108,10 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
                 case "uniquedecreaseontrigger":
                     UniqueConsumeOnTrigger = reader.GetBoolean();
                     break;
+                default:
+                    return false;
             }
-
-            if (_uniqueCounts == null && (UniqueThreshold > 0 || UniqueCap > 0))
-                _uniqueCounts = new();
+            return true;
         }
     }
 }
