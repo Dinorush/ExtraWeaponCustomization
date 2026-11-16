@@ -137,6 +137,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             }
             
             Hitbox.Init(projBase, position, dir, hitData, ignoreEnt, out var bounceHit);
+            if (!enabled) return; // Killed by initial hitbox check
+
             if (bounceHit != null)
             {
                 _fixedInfo.BaseDir = Vector3.Reflect(_fixedInfo.BaseDir, bounceHit.Value.normal);
@@ -195,7 +197,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             s_tempRot.SetLookRotation(_dirVisual);
         }
 
-        private bool UpdatePhysics()
+        private bool UpdatePhysics(bool forced = false)
         {
             if (!IsManaged) return false;
 
@@ -206,7 +208,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             else
                 interval = (time - _startLifetime) / PhysicsIntervalDelayUntilMax * Settings.HitCheckCooldown;
 
-            if (_lastUpdatePhysicsTime + interval >= time) return false;
+            if (!forced && _lastUpdatePhysicsTime + interval >= time) return false;
 
             float delta = time - _lastUpdatePhysicsTime;
             Vector3 dir = _fixedInfo.Dir;
@@ -268,7 +270,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             var time = Time.time;
             if (time > _endLifetime)
             {
-                TimeOut();
+                UpdatePhysics(forced: true);
+                if (enabled)
+                    TimeOut();
                 return;
             }
 
@@ -345,19 +349,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             hitMaxRange = Settings.MaxRange > 0 && info.DistanceMoved > Settings.MaxRange;
             if (hitMaxRange)
             {
-                info.DistanceMoved = Settings.MaxRange;
                 deltaMove -= deltaMove.normalized * (info.DistanceMoved - Settings.MaxRange);
+                info.DistanceMoved = Settings.MaxRange;
             }
 
             return deltaMove;
         }
 
-        public void OnHit(DamageType damageType)
+        public void OnHit(float physicsDist, DamageType damageType)
         {
             if (damageType.HasFlagIn(Settings.HitDestroyDamageType))
             {
                 if (Settings.HitDestroyDelay <= 0)
-                    Die();
+                    PhysicsDie(physicsDist);
                 else
                     _endLifetime = Math.Min(Time.time + Settings.HitDestroyDelay, _endLifetime);
             }
@@ -381,6 +385,19 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     )
                 );
 
+            Die();
+        }
+
+        public void PhysicsDie(float distMoved)
+        {
+            if (!enabled) return;
+
+            if (distMoved > 0)
+            {
+                _fixedInfo.Position += _fixedInfo.Dir * distMoved;
+                _fixedInfo.DistanceMoved += distMoved;
+            }
+            _deltaInfo.Copy(_fixedInfo);
             Die();
         }
 

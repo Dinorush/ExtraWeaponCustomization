@@ -35,6 +35,19 @@ namespace EWC.Utils
             s_limbCache.Clear();
         }
 
+        public static void SortWithWeakspotBuffer<T>(IList<(T, RaycastHit hit)> list)
+        {
+            List<(T, RaycastHit hit, float distance)> temp = new(list.Count);
+            foreach ((T val, RaycastHit hit) in list)
+            {
+                bool weakspot = DamageableUtil.GetDamageableFromRayHit(hit)?.TryCast<Dam_EnemyDamageLimb>()?.m_type == eLimbDamageType.Weakspot;
+                temp.Add((val, hit, weakspot ? Math.Max(hit.distance - SearchUtil.WeakspotBufferDist, 0) : hit.distance));
+            }
+            temp.Sort(FloatTuple);
+            CopySortedList(temp, list);
+            temp.Clear();
+        }
+
         public static void SortWithWeakspotBuffer(IList<(IDamageable, RaycastHit)> list)
         {
             s_damageableLimbCache.EnsureCapacity(list.Count);
@@ -51,13 +64,19 @@ namespace EWC.Utils
         public static void CopySortedList<T>(IList<(T, float)> sortedList, IList<T> list)
         {
             for (int i = 0; i < list.Count; i++)
-                list[i] = sortedList[i].Item1!;
+                list[i] = sortedList[i].Item1;
         }
 
         public static void CopySortedList<T>(IList<(T, float, float)> sortedList, IList<T> list)
         {
             for (int i = 0; i < list.Count; i++)
-                list[i] = sortedList[i].Item1!;
+                list[i] = sortedList[i].Item1;
+        }
+
+        public static void CopySortedList<T, V>(IList<(T, V, float)> sortedList, IList<(T, V)> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+                list[i] = (sortedList[i].Item1, sortedList[i].Item2);
         }
 
         public static int FloatTuple<T>((T, float val) x, (T, float val) y)
@@ -74,6 +93,12 @@ namespace EWC.Utils
                 return x.val2 < y.val2 ? -1 : 1;
             }
             return x.val1 < y.val1 ? -1 : 1;
+        }
+
+        public static int FloatTuple<T, V>((T, V, float val) x, (T, V, float val) y)
+        {
+            if (x.val == y.val) return 0;
+            return x.val < y.val ? -1 : 1;
         }
     }
 }

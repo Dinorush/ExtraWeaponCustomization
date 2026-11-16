@@ -47,6 +47,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         public readonly HashSet<IntPtr> HitEnts = new();
         private readonly Queue<(IntPtr, float)> _hitEntCooldowns = new();
         private float _ignoreWallsTime = 0f;
+        public float PhysicsHitDist { get; set; } = 0;
 
         // Static
         public const float MinCollisionDist = 0.05f;
@@ -56,7 +57,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         private static Ray s_ray;
         private static RaycastHit s_rayHit;
         private static float s_velMagnitude;
-        private readonly static List<RaycastHit> s_hits = new(50);
+        private readonly static List<(float size, RaycastHit hit)> s_hits = new(50);
         private readonly static HashSet<IntPtr> s_playerCheck = new();
         private const float SightCheckMinSize = 0.5f;
 
@@ -131,11 +132,12 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 HitEnts.Add(ignoreEnt);
 
             _distanceMoved = 0;
+            PhysicsHitDist = 0;
             _lastFixedTime = Time.fixedTime;
 
             DoCollisionInitialWorld(out bounceHit);
             if (bounceHit != null && _ricochetCount-- <= 0)
-                _base.Die();
+                _base.PhysicsDie(0);
         }
 
         public float GetFalloff() => HitData.CalcRawFalloff(_distanceMoved);
@@ -162,14 +164,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (!_enabled) return false;
 
             s_ray.origin = position;
-            if (_settings.MaxRange > 0 && _distanceMoved + velocityDelta.magnitude >= _settings.MaxRange)
-            {
-                float finalDist = _settings.MaxRange - _distanceMoved;
-                if (finalDist <= 0) return false;
-                velocityDelta = velocityDelta.normalized * finalDist;
-            }
             s_ray.direction = velocityDelta;
             s_velMagnitude = Math.Max(velocityDelta.magnitude, MinCollisionDist);
+            PhysicsHitDist = 0;
 
             s_playerCheck.Clear();
             bool hitWall = false;
@@ -190,7 +187,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (ricochet != null)
             {
                 if (_ricochetCount-- <= 0)
-                    _base.Die();
+                {
+                    _base.PhysicsDie(velocityDelta.magnitude);
+                }
                 else
                 {
                     if (_settings.RicochetIgnorePlayers)
@@ -235,14 +234,25 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
         {
             SearchUtil.DupeCheckSet = HitEnts;
             if (_settings.HitSize == 0)
-                s_hits.AddRange(SearchUtil.RaycastAll(s_ray, s_velMagnitude, LayerUtil.MaskEnemyDynamic, _searchSettings));
+            {
+                var directs = SearchUtil.RaycastAll(s_ray, s_velMagnitude, LayerUtil.MaskEnemyDynamic, _searchSettings);
+                s_hits.EnsureCapacity(directs.Count);
+                foreach (var hit in directs)
+                    s_hits.Add((0, hit));
+            }
             else
             {
                 // Get all enemies/players/locks inside the sphere as well as any we collide with on the cast.
                 // Necessary to do every time since enemies inside the sphere on spawn might have LOS blocked.
-                foreach ((_, RaycastHit hit) in SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, CourseNodeUtil.GetCourseNode(s_ray.origin, _dimensionIndex), _searchSettings))
-                    s_hits.Add(hit);
-                s_hits.AddRange(SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f, _searchSettings));
+                var enemyHits = SearchUtil.GetEnemyHitsInRange(s_ray, _settings.HitSize, 180f, CourseNodeUtil.GetCourseNode(s_ray.origin, _dimensionIndex), _searchSettings);
+                s_hits.EnsureCapacity(enemyHits.Count);
+                foreach ((_, var hit) in enemyHits)
+                    s_hits.Add((_settings.HitSize, hit));
+
+                var lockHits = SearchUtil.GetLockHitsInRange(s_ray, _settings.HitSize, 180f, _searchSettings);
+                s_hits.EnsureCapacity(s_hits.Count + lockHits.Count);
+                foreach (var hit in lockHits)
+                    s_hits.Add((_settings.HitSize, hit));
 
                 // Get all enemies/locks ahead of the projectile
                 RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSize, s_velMagnitude, LayerUtil.MaskEnemyDynamic);
@@ -251,7 +261,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     if (castHits[i].distance > 0) // Ignore anything overlapping the sphere (internal search hits these)
                     {
                         castHits[i].distance += _settings.HitSize; // Need the full distance to sort hits correctly
-                        s_hits.Add(castHits[i]);
+                        s_hits.Add((_settings.HitSize, castHits[i]));
                     }
                 }
             }
@@ -259,11 +269,18 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_friendlyLayer != 0)
             {
                 if (_settings.HitSizeFriendly == 0)
-                    s_hits.AddRange(SearchUtil.RaycastAll(s_ray, s_velMagnitude, _friendlyLayer, _searchSettings));
+                {
+                    var directs = SearchUtil.RaycastAll(s_ray, s_velMagnitude, _friendlyLayer, _searchSettings);
+                    s_hits.EnsureCapacity(s_hits.Count + directs.Count);
+                    foreach (var hit in directs)
+                        s_hits.Add((0, hit));
+                }
                 else
                 {
-                    foreach ((_, RaycastHit hit) in SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSizeFriendly, 180f, _ownerPlayer, _searchSettings))
-                        s_hits.Add(hit);
+                    var playerHits = SearchUtil.GetPlayerHitsInRange(s_ray, _settings.HitSizeFriendly, 180f, _ownerPlayer, _searchSettings);
+                    s_hits.EnsureCapacity(s_hits.Count + playerHits.Count);
+                    foreach ((_, RaycastHit hit) in playerHits)
+                        s_hits.Add((_settings.HitSizeFriendly, hit));
 
                     // Get all enemies/locks ahead of the projectile
                     RaycastHit[] castHits = Physics.SphereCastAll(s_ray, _settings.HitSizeFriendly, s_velMagnitude, _friendlyLayer);
@@ -272,7 +289,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                         if (castHits[i].distance > 0) // Ignore anything overlapping the sphere (internal search hits these)
                         {
                             castHits[i].distance += _settings.HitSize; // Need the full distance to sort hits correctly
-                            s_hits.Add(castHits[i]);
+                            s_hits.Add((_settings.HitSizeFriendly, castHits[i]));
                         }
                     }
                 }                    
@@ -283,9 +300,10 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_settings.HitSize > 0)
                 SortUtil.SortWithWeakspotBuffer(s_hits);
             else
-                s_hits.Sort(SortUtil.Rayhit);
+                s_hits.Sort(SortUtil.RayhitTuple);
 
-            foreach (RaycastHit hit in s_hits)
+            float lastSize = 0;
+            foreach ((var size, RaycastHit hit) in s_hits)
             {
                 IDamageable? damageable = DamageableUtil.GetDamageableFromRayHit(hit);
                 if (damageable == null) continue;
@@ -296,6 +314,8 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     continue;
 
                 s_rayHit = hit;
+                PhysicsHitDist = hit.distance - size;
+                lastSize = size;
 
                 if (damageable != null)
                     DoDamage(damageable);
@@ -307,7 +327,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 if (_settings.RicochetOnHit)
                 {
-                    s_rayHit.point += (s_ray.origin - s_rayHit.point) * _settings.HitSize;
+                    s_rayHit.point += (s_ray.origin - s_rayHit.point).normalized * lastSize;
                     bounceHit = s_rayHit;
                 }
                 _base.Homing.UpdateOnPierce();
@@ -334,7 +354,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (hit)
             {
-                s_rayHit.point += (s_ray.origin - s_rayHit.point) * _settings.HitSizeWorld;
+                s_rayHit.point += (s_ray.origin - s_rayHit.point).normalized * _settings.HitSizeWorld;
                 bounceHit = s_rayHit;
             }
             return hit;
@@ -345,6 +365,9 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (bounceHit == null) return;
 
             s_rayHit = bounceHit.Value;
+            PhysicsHitDist = s_rayHit.distance;
+            if (s_rayHit.distance > 0)
+                PhysicsHitDist -= _settings.HitSizeWorld;
             BulletHit(DamageableUtil.GetDamageableFromRayHit(s_rayHit), true);
         }
 
@@ -369,6 +392,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
 
             if (s_rayHit.distance == float.MaxValue) return;
 
+            s_rayHit.distance = 0;
             if (BulletHit(DamageableUtil.GetDamageableFromRayHit(s_rayHit), true))
                 bounceHit = s_rayHit;
         }
@@ -387,7 +411,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (!BulletHit(damageable, false)) return;
 
             if (--_pierceCount <= 0)
-                _base.Die();
+                _base.PhysicsDie(PhysicsHitDist);
         }
 
         private bool ShouldDamage(IDamageable damageable)
@@ -472,7 +496,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             if (_hitFuncOverride != null)
             {
                 var result = _hitFuncOverride(HitData, _base.ContextController);
-                _base.OnHit(HitData.damageType);
+                _base.OnHit(PhysicsHitDist, HitData.damageType);
                 API.ProjectileAPI.FireProjectilePostHitCallback(_base, damageable);
                 return result;
             }
@@ -491,7 +515,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                 damageable?.BulletDamage(damage, HitData.owner, HitData.hitPos, HitData.fireDir, HitData.RayHit.normal, backstab, HitData.staggerMulti, HitData.precisionMulti);
             }
             API.ProjectileAPI.FireProjectilePostHitCallback(_base, damageable);
-            _base.OnHit(HitData.damageType);
+            _base.OnHit(PhysicsHitDist, HitData.damageType);
             return true;
         }
 
