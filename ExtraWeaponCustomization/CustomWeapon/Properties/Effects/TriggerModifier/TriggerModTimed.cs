@@ -20,7 +20,7 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
         private Coroutine? _updateRoutine;
         private readonly Queue<float> _updateTimes;
 
-        public bool IsPersistent { get; private set; } = true;
+        public bool IsPersistent { get; private set; } = false;
         private bool _isActive = false;
 
         public TriggerModTimed()
