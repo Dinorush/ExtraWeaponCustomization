@@ -13,6 +13,7 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Bio Ping: Damaging an enemy applies a Bio Tracker ping.
 - Charge Speed Mod: Applies a charge speed modifier.
 - Damage Over Time: Applies a damage over time effect. [Hit Triggers]
+- Data Swap: Toggles archetype and audio on a trigger. [Gun]
 - Explosive: Causes explosions where bullets land.
 - Fire Rate Mod: Applies a fire rate modifier.
 - Fire Shot: Fires shots at offsets.
@@ -42,7 +43,6 @@ Adds additional weapon mechanics for rundown developers to use. These can be app
 - Auto Trigger: Hold the trigger to fire. [Player]
 - Backstab Multi: Applies a multiplier to backstab damage.
 - Charge Exponent: Modifies the exponent applied to melee charge attacks. [Melee]
-- Data Swap: Toggles archetype and audio on a trigger. [Gun]
 - EMP Immunity: Makes the gear immune to ExtraEnemyCustomization EMP effects.
 - Enforce Fire Rate: Fires more bullets per frame to match the exact fire rate. [Player]
 - Hitmarker Cooldown: Sets a cooldown on how frequently the weapon can generate hitmarkers. [Player]
