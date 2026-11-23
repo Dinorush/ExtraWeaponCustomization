@@ -44,8 +44,8 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
 
         public override void OnPropertiesSetup()
         {
-            base.OnPropertiesSetup();
             _isActive = IsPersistent;
+            base.OnPropertiesSetup();
         }
 
         public override bool TryGetStacks(out float stacks, BaseDamageableWrapper? _ = null) => _triggerStack.TryGetStacks(out stacks);

@@ -25,7 +25,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             return copy;
         }
 
-        public void OnPropertiesSetup()
+        public void OnPropertiesSetupFinal()
         {
             Activate.OnPropertiesSetup();
             Reset?.OnPropertiesSetup();

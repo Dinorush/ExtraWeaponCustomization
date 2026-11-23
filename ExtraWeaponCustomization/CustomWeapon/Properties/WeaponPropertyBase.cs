@@ -1,5 +1,4 @@
-﻿using EWC.CustomWeapon.ComponentWrapper;
-using EWC.CustomWeapon.Enums;
+﻿using EWC.CustomWeapon.Enums;
 using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.Utils;
 using System;
@@ -60,10 +59,11 @@ namespace EWC.CustomWeapon.Properties
 
         public virtual WeaponPropertyBase Clone() => CopyUtil.Clone(this);
 
-        public virtual void OnPropertiesSetup()
+        public virtual void OnPropertiesSetup() { }
+        public virtual void OnPropertiesSetupFinal()
         {
             if (this is ITriggerCallback callback)
-                callback.Trigger?.OnPropertiesSetup();
+                callback.Trigger?.OnPropertiesSetupFinal();
         }
 
         public abstract void Serialize(Utf8JsonWriter writer);

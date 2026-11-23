@@ -54,7 +54,8 @@ namespace EWC.CustomWeapon.Properties
             foreach (var property in _properties)
                 property.OnPropertiesSetup();
             SetActive(_root, true);
-            InvokeAll(StaticContext<WeaponPropertiesCreatedContext>.Instance);
+            foreach (var property in _properties)
+                property.OnPropertiesSetupFinal();
         }
 
         private PropertyNode CreateTree(CustomWeaponComponent cwc, PropertyList list, PropertyNode? parent = null, IPropertyHolder? holder = null)
