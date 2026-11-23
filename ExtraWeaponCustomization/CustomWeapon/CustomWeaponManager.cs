@@ -177,7 +177,8 @@ namespace EWC.CustomWeapon
 
             if (!info.IsReady()) return;
 
-            item.SetOwner(info.owner);
+            if (info.owner != null)
+                item.SetOwner(info.owner);
             CustomWeaponComponent? cwc = null;
             if (CustomDataManager.TryGetCustomData(item, out var data))
             {
