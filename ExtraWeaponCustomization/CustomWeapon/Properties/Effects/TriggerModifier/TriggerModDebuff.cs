@@ -233,6 +233,7 @@ namespace EWC.CustomWeapon.Properties.Effects.TriggerModifier
             switch (property)
             {
                 case "debuffids":
+                case "debuffid":
                     if (reader.TokenType == JsonTokenType.String)
                         DebuffID = DebuffManager.StringIDToInt(reader.GetString()!);
                     else

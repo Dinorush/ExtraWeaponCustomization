@@ -490,6 +490,14 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
                     case Enums.StatType.Stagger:
                         HitData.staggerMulti *= mod;
                         break;
+                    case Enums.StatType.Backstab:
+                        if (HitData.damageType.HasFlag(Enums.DamageType.Enemy))
+                        {
+                            var limb = damageable!.Cast<Dam_EnemyDamageLimb>();
+                            float origBackstab = limb.ApplyDamageFromBehindBonus(1f, HitData.hitPos, HitData.fireDir);
+                            HitData.damage *= DamageableUtil.MergeBackstabMulti(origBackstab, mod);
+                        }
+                        break;
                 }
             }
 
@@ -510,7 +518,7 @@ namespace EWC.CustomWeapon.Properties.Traits.CustomProjectile.Components
             {
                 // EXP sentry checks won't work on projectiles
                 if (_owner.IsType(Enums.OwnerType.Sentry) && _owner.Player?.IsLocallyOwned == true)
-                    damage /= EXPAPIWrapper.GetDamageMod(true, Enums.WeaponType.BulletWeapon);
+                    damage /= EXPAPIWrapper.GetLocalDamageMod();
 
                 damageable?.BulletDamage(damage, HitData.owner, HitData.hitPos, HitData.fireDir, HitData.RayHit.normal, backstab, HitData.staggerMulti, HitData.precisionMulti);
             }

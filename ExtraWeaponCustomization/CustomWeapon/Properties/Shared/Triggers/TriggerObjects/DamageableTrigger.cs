@@ -29,7 +29,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
             if (!base.Invoke(context, out amount)) return false;
 
             TContext tContext = (TContext) context;
-            float backstabFrac = tContext.OrigBackstab - 1;
+            float backstabFrac = tContext.Backstab - 1;
             if (backstabFrac < MinBackstabRequired || backstabFrac > MaxBackstabRequired)
             {
                 amount = 0;

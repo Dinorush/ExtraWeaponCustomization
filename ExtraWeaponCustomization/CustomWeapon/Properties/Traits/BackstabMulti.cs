@@ -10,7 +10,7 @@ namespace EWC.CustomWeapon.Properties.Traits
         Trait,
         IWeaponProperty<WeaponSetupContext>,
         IWeaponProperty<WeaponClearContext>,
-        IWeaponProperty<WeaponBackstabContext>
+        IWeaponProperty<WeaponStatContext>
     {
         public float BackstabDamageMulti { get; private set; } = 1f;
 
@@ -31,9 +31,9 @@ namespace EWC.CustomWeapon.Properties.Traits
             ((SentryGunComp)CWC.Weapon).AllowBackstabOverride = false;
         }
 
-        public void Invoke(WeaponBackstabContext context)
+        public void Invoke(WeaponStatContext context)
         {
-            context.AddMod(BackstabDamageMulti, StackType.Multiply);
+            context.AddMod(StatType.Backstab, BackstabDamageMulti, StackType.Multiply);
         }
 
         public override void Serialize(Utf8JsonWriter writer)

@@ -9,6 +9,22 @@ namespace EWC.Patches.Player
     [HarmonyPatch]
     internal static class PlayerLocomotionPatches
     {
+        [HarmonyPatch(typeof(PLOC_Stand), nameof(PLOC_Stand.Enter))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void EnterCrouch(PLOC_Stand __instance)
+        {
+            CustomWeaponManager.InvokeOnGear(__instance.m_owner.Owner, StaticContext<WeaponStandContext>.Instance);
+        }
+
+        [HarmonyPatch(typeof(PLOC_Stand), nameof(PLOC_Stand.Exit))]
+        [HarmonyWrapSafe]
+        [HarmonyPostfix]
+        private static void ExitCrouch(PLOC_Stand __instance)
+        {
+            CustomWeaponManager.InvokeOnGear(__instance.m_owner.Owner, StaticContext<WeaponStandEndContext>.Instance);
+        }
+
         [HarmonyPatch(typeof(PLOC_Crouch), nameof(PLOC_Crouch.Enter))]
         [HarmonyWrapSafe]
         [HarmonyPostfix]

@@ -1,5 +1,6 @@
 ﻿using AK;
 using EWC.Attributes;
+using EWC.CustomWeapon.ComponentWrapper.DataSwapper;
 using EWC.CustomWeapon.ComponentWrapper.WeaponComps;
 using EWC.CustomWeapon.WeaponContext;
 using EWC.CustomWeapon.WeaponContext.Contexts;
@@ -14,6 +15,7 @@ namespace EWC.CustomWeapon
     public sealed class CustomGunComponent : CustomWeaponComponent
     {
         public readonly IGunComp Gun;
+        public readonly DataSwapper DataSwapper;
 
         // To avoid patching an update function, we have to reset things back.
         // We need this to keep track of cancels across multiple functions.
@@ -44,6 +46,7 @@ namespace EWC.CustomWeapon
         public CustomGunComponent(IntPtr value) : base(value) 
         {
             Gun = (IGunComp)Weapon;
+            DataSwapper = DataSwapper.Create(this);
             var archData = Gun.ArchetypeData;
             CurrentFireRate = _lastFireRate = BaseFireRate = 1f / Math.Max(archData.ShotDelay, CustomWeaponData.MinShotDelay);
             CurrentBurstDelay = _burstDelay = archData.BurstDelay;
@@ -56,6 +59,11 @@ namespace EWC.CustomWeapon
         private static void Init()
         {
             ClassInjector.RegisterTypeInIl2Cpp<CustomGunComponent>();
+        }
+
+        protected override void OnRefreshOwner()
+        {
+            DataSwapper.RefreshOwner();
         }
 
         public override void OnWield()

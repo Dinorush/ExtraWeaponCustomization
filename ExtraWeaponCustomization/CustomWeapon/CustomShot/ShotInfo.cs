@@ -22,6 +22,8 @@ namespace EWC.CustomWeapon.CustomShot
         public float OrigPrecision { get; private set; }
         public float OrigStagger { get; private set; }
         public float ExternalDamageMod { get; private set; }
+        public float ExternalStaggerMod { get; private set; }
+        public float ExternalBackstabMod { get; private set; }
         public float InnateDamageMod { get; private set; }
         public float InnateStaggerMod { get; private set; }
 
@@ -52,6 +54,8 @@ namespace EWC.CustomWeapon.CustomShot
             InnateDamageMod = ShotManager.CurrentDamageMod;
             InnateStaggerMod = ShotManager.CurrentStaggerMod;
             ExternalDamageMod = ShotManager.CurrentExternalDamageMod;
+            ExternalStaggerMod = ShotManager.CurrentExternalStaggerMod;
+            ExternalBackstabMod = ShotManager.CurrentExternalBackstabMod;
             GroupMod = ShotManager.CurrentGroupMod;
             OrigDamage = origDamage * InnateDamageMod;
             OrigPrecision = origPrecision;
@@ -117,8 +121,8 @@ namespace EWC.CustomWeapon.CustomShot
 
             GetIDs(parent);
             OrigDamage = origDamage * InnateDamageMod;
-            OrigPrecision = origPrecision * InnateStaggerMod;
-            OrigStagger = origStagger;
+            OrigPrecision = origPrecision;
+            OrigStagger = origStagger * InnateStaggerMod;
             _hits.Clear();
             _isDirty = true;
         }
@@ -129,6 +133,8 @@ namespace EWC.CustomWeapon.CustomShot
             InnateDamageMod = 1f;
             InnateStaggerMod = 1f;
             ExternalDamageMod = 1f;
+            ExternalStaggerMod = 1f;
+            ExternalBackstabMod = 1f;
             OrigDamage = 1f;
             OrigPrecision = 1f;
             OrigStagger = 1f;
@@ -157,6 +163,8 @@ namespace EWC.CustomWeapon.CustomShot
             Mod = useOriginal ? info.Mod : new(info.Mod);
             GroupMod = useOriginal ? info.GroupMod : new(info.GroupMod);
             ExternalDamageMod = info.ExternalDamageMod;
+            ExternalStaggerMod = info.ExternalStaggerMod;
+            ExternalBackstabMod = info.ExternalBackstabMod;
             InnateDamageMod = info.InnateDamageMod;
             InnateStaggerMod = info.InnateStaggerMod;
         }
@@ -171,6 +179,8 @@ namespace EWC.CustomWeapon.CustomShot
             InnateDamageMod = ShotManager.CurrentDamageMod;
             InnateStaggerMod = ShotManager.CurrentStaggerMod;
             ExternalDamageMod = ShotManager.CurrentExternalDamageMod;
+            ExternalStaggerMod = ShotManager.CurrentExternalStaggerMod;
+            ExternalBackstabMod = ShotManager.CurrentExternalBackstabMod;
             CWC!.Invoke(new WeaponShotInitContext(Mod));
         }
 
@@ -188,6 +198,8 @@ namespace EWC.CustomWeapon.CustomShot
         {
             public readonly ShotInfo Orig;
             public readonly float ExternalDamageMod;
+            public readonly float ExternalStaggerMod;
+            public readonly float ExternalBackstabMod;
             public readonly float InnateDamageMod;
             public readonly float InnateStaggerMod;
             public readonly uint ID;
@@ -203,6 +215,8 @@ namespace EWC.CustomWeapon.CustomShot
             {
                 Orig = info;
                 ExternalDamageMod = info.ExternalDamageMod;
+                ExternalStaggerMod = info.ExternalStaggerMod;
+                ExternalBackstabMod = info.ExternalBackstabMod;
                 InnateDamageMod = info.InnateDamageMod;
                 InnateStaggerMod = info.InnateStaggerMod;
                 ID = info.ID;

@@ -46,31 +46,30 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             }
 
             float damage = hitData.damage; // Account for rounding errors
-            float precisionMult = hitData.precisionMulti;
-            float staggerMult = hitData.staggerMulti;
+            float precisionMulti = hitData.precisionMulti;
+            float staggerMulti = hitData.staggerMulti;
+            float backstabMulti = DamageableUtil.DefaultBackstabMulti;
+            float origBackstabMulti = 1f;
+            bool allowBackstab = !shrapnel.IgnoreBackstab && shrapnel.CWC.Weapon.AllowBackstab;
             float falloff = hitData.falloff;
             if (calcFalloff)
                 falloff *= hitData.CalcFalloff();
 
             var damageable = hitData.damageable;
-            float backstabMulti = 1f;
-            float origBackstabMulti = 1f;
             bool enemy = hitData.damageType.HasFlag(DamageType.Enemy);
             Dam_EnemyDamageLimb? limb = null;
             if (enemy)
             {
                 limb = damageable.Cast<Dam_EnemyDamageLimb>();
-                if (!shrapnel.IgnoreBackstab && shrapnel.CWC.Weapon.AllowBackstab)
+                if (allowBackstab)
                 {
-                    float mod = cc.Invoke(new WeaponBackstabContext()).Value;
                     origBackstabMulti = limb.ApplyDamageFromBehindBonus(1f, hitData.hitPos, hitData.RayHit.point - shrapnel.CWC.Owner.FirePos);
-                    backstabMulti = origBackstabMulti.Map(1f, 2f, 1f, mod);
                 }
             }
 
             var oldFalloff = hitData.falloff;
             hitData.falloff = falloff;
-            var preContext = new WeaponPreHitDamageableContext(hitData, backstabMulti, origBackstabMulti);
+            var preContext = new WeaponPreHitDamageableContext(hitData, origBackstabMulti);
             hitData.falloff = oldFalloff;
             cc.Invoke(preContext);
 
@@ -79,18 +78,24 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             if (!shrapnel.IgnoreShotMods)
             {
                 damage = statContext.Damage;
-                precisionMult = statContext.Precision;
-                staggerMult = statContext.Stagger;
+                precisionMulti = statContext.Precision;
+                staggerMulti = statContext.Stagger;
+                backstabMulti = statContext.Backstab;
             }
 
             if (damage <= 0) return true;
 
-            hitData.shotInfo.AddHit(preContext.DamageType);
+            var info = hitData.shotInfo;
+            info.AddHit(preContext.DamageType);
 
             // 0.001f to account for rounding error
             damage = damage * falloff + 0.001f;
-            damage *= hitData.shotInfo.ExternalDamageMod * hitData.shotInfo.InnateDamageMod;
-            staggerMult *= hitData.shotInfo.InnateStaggerMod;
+            damage *= info.ExternalDamageMod * info.InnateDamageMod;
+            staggerMulti *= info.ExternalStaggerMod * info.InnateStaggerMod;
+            if (allowBackstab)
+                backstabMulti *= info.ExternalBackstabMod;
+            else
+                backstabMulti = 1f;
 
             PlayerAgent? source = shrapnel.CWC.Owner.Player;
             Agent? agent = damageable.GetBaseAgent();
@@ -138,29 +143,30 @@ namespace EWC.CustomWeapon.Properties.Effects.ShrapnelHit
             data.damageLimb = shrapnel.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
             data.dir.Value = hitData.fireDir;
-            data.staggerMult = staggerMult;
+            data.staggerMult = staggerMulti;
             data.setCooldowns = shrapnel.ApplyAttackCooldown;
 
             bool precHit = limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = shrapnel.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damageable, shrapnel.CWC.DebuffIDs);
-            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMult, 1f) : 1f;
-
-            float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
+            precisionMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMulti, 1f) : 1f;
+            backstabMulti = DamageableUtil.MergeBackstabMulti(origBackstabMulti, backstabMulti);
+            float finalDamage = damage * precisionMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
             if (!statContext.BypassTumorCap && limb.DestructionType == eLimbDestructionType.Custom)
-                precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
+                finalDamage = Math.Min(finalDamage, limb.m_healthMax + 1);
 
-            data.damage = precDamage;
+            EXPAPIWrapper.DoLifesteal(shrapnel.CWC, finalDamage);
+            data.damage = finalDamage;
 
-            var hitContext = cc.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
+            var hitContext = cc.Invoke(new WeaponHitDamageableContext(finalDamage, preContext));
 
-            bool willKill = damBase.WillDamageKill(precDamage);
+            bool willKill = damBase.WillDamageKill(finalDamage);
             HitTrackerManager.RegisterHit(shrapnel.CWC.Owner, shrapnel.CWC, hitContext);
-            ShotManager.DoHitmarker(shrapnel.CWC, cc, limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
+            ShotManager.DoHitmarker(shrapnel.CWC, cc, limb, finalDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
-            DamageAPI.FirePreLocalShrapnelCallbacks(precDamage, damBase.Owner, limb, source, data.cwc);
+            DamageAPI.FirePreLocalShrapnelCallbacks(finalDamage, damBase.Owner, limb, source, data.cwc);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
             return true;
         }

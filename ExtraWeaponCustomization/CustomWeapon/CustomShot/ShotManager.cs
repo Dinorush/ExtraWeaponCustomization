@@ -59,8 +59,10 @@ namespace EWC.CustomWeapon.CustomShot
         }
 
         public static ShotInfoMod CurrentGroupMod { get; private set; } = new();
-        // Modifiers applied after EWC systems run. Should not modify direct damage, but should modify EWC damage.
+        // Modifiers applied after EWC systems run. Should not modify direct damage, but should modify EWC stats.
         public static float CurrentExternalDamageMod { get; private set; } = 1f;
+        public static float CurrentExternalStaggerMod { get; private set; } = 1f;
+        public static float CurrentExternalBackstabMod { get; private set; } = 1f;
         // Modifiers applied to base damage (e.g. boosters). Should modify direct and EWC damage.
         public static float CurrentDamageMod { get; private set; } = 1f;
         public static float CurrentStaggerMod { get; private set; } = 1f;
@@ -202,6 +204,8 @@ namespace EWC.CustomWeapon.CustomShot
             if (weaponType.HasFlag(WeaponType.Sentry))
             {
                 CurrentExternalDamageMod = 1f;
+                CurrentExternalStaggerMod = 1f;
+                CurrentExternalBackstabMod = 1f;
                 CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, AgentModifier.SentryGunDamage, 1f);
                 if (isTagged)
                 {
@@ -212,26 +216,26 @@ namespace EWC.CustomWeapon.CustomShot
             }
             else
             {
+                EXPAPIWrapper.GetStatMods(cwc, out var expDam, out var expStag, out var expBack);
+                CurrentExternalDamageMod = expDam;
+                CurrentExternalStaggerMod = expStag;
+                CurrentExternalBackstabMod = expBack;
+
                 if (weaponType.HasFlag(WeaponType.BulletWeapon))
                 {
                     var modifier = cwc.Weapon.InventorySlot == InventorySlot.GearStandard ? AgentModifier.StandardWeaponDamage : AgentModifier.SpecialWeaponDamage;
-                    CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(cwc.Owner.IsType(OwnerType.Local), weaponType);
                     CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, modifier, 1f) + AgentModifierManager.ApplyModifier(owner, cwc.Weapon.ArchetypeData.DamageBoosterEffect, 1f) - 1f;
                 }
                 else if (weaponType.HasFlag(WeaponType.Melee))
                 {
-                    var syringeBuff = owner?.MeleeBuffTimer > Clock.Time ? 3f : 1f;
-                    CurrentExternalDamageMod = EXPAPIWrapper.GetDamageMod(true, weaponType) * syringeBuff;
+                    if (owner?.MeleeBuffTimer > Clock.Time)
+                        CurrentExternalDamageMod *= 3f;
                     CurrentDamageMod = AgentModifierManager.ApplyModifier(owner, AgentModifier.MeleeDamage, 1f);
                 }
                 else
-                {
-                    CurrentExternalDamageMod = 1f;
                     CurrentDamageMod = 1f;
-                }
                 CurrentStaggerMod = 1f;
             }
-
             cwc.Invoke(new WeaponShotGroupInitContext(CurrentGroupMod));
         }
 

@@ -15,6 +15,8 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
         public float Precision => CalcMod(StatType.Precision);
         private readonly StackMod _staggerMod;
         public float Stagger => CalcMod(StatType.Stagger);
+        private readonly StackMod _backstabMod;
+        public float Backstab => CalcMod(StatType.Backstab);
 
         public DamageType DamageType { get; }
         public bool BypassTumorCap { get; set; }
@@ -23,12 +25,13 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
 
         private readonly HashSet<uint> _debuffIDs;
 
-        public WeaponStatContext(HitData data, HashSet<uint> debuffIDs) : this(data.damage, data.precisionMulti, data.staggerMulti, data.damageType, data.damageable!, data.shotInfo, debuffIDs) { }
-        public WeaponStatContext(float damage, float precision, float stagger, DamageType damageType, IDamageable damageable, ShotInfo shotInfo, HashSet<uint> debuffIDs)
+        public WeaponStatContext(HitData data, HashSet<uint> debuffIDs) : this(data.damage, data.precisionMulti, data.staggerMulti, DamageableUtil.DefaultBackstabMulti, data.damageType, data.damageable!, data.shotInfo, debuffIDs) { }
+        public WeaponStatContext(float damage, float precision, float stagger, float backstab, DamageType damageType, IDamageable damageable, ShotInfo shotInfo, HashSet<uint> debuffIDs)
         {
             _damageMod = new(damage);
             _precisionMod = new(precision);
             _staggerMod = new(stagger);
+            _backstabMod = new(backstab);
             _debuffIDs = debuffIDs;
             DamageType = damageType;
             Damageable = damageable;
@@ -48,6 +51,9 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                     break;
                 case StatType.Stagger:
                     _staggerMod.AddMod(mod, layer);
+                    break;
+                case StatType.Backstab:
+                    _backstabMod.AddMod(mod, layer);
                     break;
             }
         }
@@ -73,6 +79,11 @@ namespace EWC.CustomWeapon.WeaponContext.Contexts
                     baseMod = _staggerMod;
                     shotMod = ShotInfo.Mod.Stagger;
                     groupMod = ShotInfo.GroupMod.Stagger;
+                    break;
+                case StatType.Backstab:
+                    baseMod = _backstabMod;
+                    shotMod = ShotInfo.Mod.Backstab;
+                    groupMod = ShotInfo.GroupMod.Backstab;
                     break;
                 default:
                     EWCLogger.Error($"Invalid stat type in StatContext! {type}");

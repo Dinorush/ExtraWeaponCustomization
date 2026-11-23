@@ -21,8 +21,8 @@ namespace EWC.Utils
         }
         public float falloff = 1f;
         public int pierceLimit = 0;
-        public float precisionMulti;
-        public float staggerMulti;
+        public float precisionMulti = 1f;
+        public float staggerMulti = 1f;
         public float maxRayDist;
         public float randomSpread;
         public float angOffsetX;

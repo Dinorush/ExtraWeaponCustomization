@@ -1,4 +1,5 @@
 ﻿using Agents;
+using EWC.Utils.Extensions;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
@@ -44,6 +45,14 @@ namespace EWC.Utils
 
             Agent? agent = damageable.GetBaseAgent();
             return agent != null && agent.Alive ? agent.Type : AgentType.Decoy;
+        }
+
+        public const float DefaultBackstabMulti = 2;
+        public static float MergeBackstabMulti(float origBackstab, float backstabMulti)
+        {
+            if (backstabMulti <= 1)
+                return 1;
+            return origBackstab.Map(1, DefaultBackstabMulti, 1, backstabMulti);
         }
 
         private static IntPtr _cachedExpedition = default;

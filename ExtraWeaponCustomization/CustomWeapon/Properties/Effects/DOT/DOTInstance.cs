@@ -27,7 +27,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
         private readonly double _expoModifier;
         private readonly double _expoDivisor;
 
-        public DOTInstance(float totalDamage, float falloff, float precision, float stagger, bool bypassTumor, float backstab, float origBackstab, ShotInfo info, DamageOverTime dotBase)
+        public DOTInstance(float totalDamage, float falloff, float precision, float stagger, float backstab, float origBackstab, bool bypassTumor, ShotInfo info, DamageOverTime dotBase)
         {
             DotBase = dotBase;
             _totalDamage = totalDamage;

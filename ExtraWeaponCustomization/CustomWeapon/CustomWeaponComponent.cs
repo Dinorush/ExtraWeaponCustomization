@@ -284,7 +284,10 @@ namespace EWC.CustomWeapon
             else
                 Owner = new SyncedOwnerComp(owner, item.MuzzleAlign);
             ShotComponent.RefreshOwner();
+            OnRefreshOwner();
         }
+
+        protected virtual void OnRefreshOwner() { }
 
         [HideFromIl2Cpp]
         internal void ActivateNode(PropertyNode node) => _propertyController.SetActive(node, true);

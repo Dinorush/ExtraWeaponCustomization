@@ -87,6 +87,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             else
                 shotInfo = new(explosiveBase.CWC, modOnly: true, computeAccuracy: false);
 
+            bool allowBackstab = !explosiveBase.IgnoreBackstab && explosiveBase.CWC.Weapon.AllowBackstab;
             var oldInfo = shotInfo.State;
             foreach (RaycastHit hit in hits)
             {
@@ -100,6 +101,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
                     hit.normal,
                     hit.distance,
                     falloffMod,
+                    allowBackstab,
                     shotInfo,
                     explosiveBase,
                     triggerAmt);
@@ -107,7 +109,7 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             explosiveBase.CWC.Invoke(new WeaponShotEndContext(DamageType.Explosive, shotInfo.State, oldInfo));
         }
 
-        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 blastDir, Vector3 normal, float distance, float falloffMod, ShotInfo info, Explosive eBase, float triggerAmt)
+        internal static void SendExplosionDamage(IDamageable damageable, Vector3 position, Vector3 direction, Vector3 blastDir, Vector3 normal, float distance, float falloffMod, bool allowBackstab, ShotInfo info, Explosive eBase, float triggerAmt)
         {
             AgentType agentType = damageable.GetAgentType();
             float radius = agentType == AgentType.Player || eBase.FriendlyRadius <= 0 ? eBase.Radius : eBase.FriendlyRadius;
@@ -116,49 +118,45 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             float damage = distance.MapInverted(innerRadius, radius, eBase.MaxDamage, eBase.MinDamage, eBase.Exponent);
             float distFalloff = damage / eBase.MaxDamage;
             damage *= triggerAmt;
-            float precisionMult = eBase.PrecisionDamageMulti;
-            float staggerMult = eBase.StaggerDamageMulti;
-
-            float backstabMulti = 1f;
+            float precisionMulti = eBase.PrecisionDamageMulti;
+            float staggerMulti = eBase.StaggerDamageMulti;
+            float backstabMulti = DamageableUtil.DefaultBackstabMulti;
             float origBackstabMulti = 1f;
+
+            if (damage <= 0) return;
+
             Dam_EnemyDamageLimb? limb = null;
             if (agentType == AgentType.Enemy)
             {
                 limb = damageable.Cast<Dam_EnemyDamageLimb>();
-                if (!eBase.IgnoreBackstab && eBase.CWC.Weapon.AllowBackstab)
+                if (allowBackstab)
                 {
-                    if (eBase.CacheBackstab > 0f)
-                        backstabMulti = eBase.CacheBackstab;
+                    if (eBase.CacheBackstab > 0f && !eBase.HitFromExplosionPos)
+                        origBackstabMulti = eBase.CacheBackstab;
                     else
-                    {
-                        float mod = eBase.CWC.Invoke(new WeaponBackstabContext()).Value;
                         origBackstabMulti = limb.ApplyDamageFromBehindBonus(1f, position, direction);
-                        backstabMulti = origBackstabMulti.Map(1f, 2f, 1f, mod);
-                    }
                 }
             }
-
-            if (damage <= 0) return;
 
             var preContext = eBase.CWC.Invoke(new WeaponPreHitDamageableContext(
                 damageable,
                 position,
                 direction,
                 normal,
-                backstabMulti,
                 origBackstabMulti,
                 falloffMod * distFalloff,
                 info,
                 DamageType.Explosive
                 ));
 
-            WeaponStatContext statContext = new(damage, precisionMult, staggerMult, preContext.DamageType, damageable, info, eBase.CWC.DebuffIDs);
+            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, backstabMulti, preContext.DamageType, damageable, info, eBase.CWC.DebuffIDs);
             eBase.CWC.Invoke(statContext);
             if (!eBase.IgnoreShotMods)
             {
                 damage = statContext.Damage;
-                precisionMult = statContext.Precision;
-                staggerMult = statContext.Stagger;
+                precisionMulti = statContext.Precision;
+                staggerMulti = statContext.Stagger;
+                backstabMulti = statContext.Backstab;
             }
 
             if (damage <= 0) return;
@@ -168,7 +166,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             // 0.001f to account for rounding error
             damage = falloffMod * damage + 0.001f;
             damage *= info.ExternalDamageMod * info.InnateDamageMod;
-            staggerMult *= info.InnateStaggerMod;
+            staggerMulti *= info.ExternalStaggerMod * info.InnateStaggerMod;
+            if (allowBackstab)
+                backstabMulti *= info.ExternalBackstabMod;
+            else
+                backstabMulti = 1f;
 
             PlayerAgent? source = eBase.CWC.Owner.Player;
             if (agentType == AgentType.Player)
@@ -216,29 +218,30 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.Explosion
             data.damageLimb = eBase.DamageLimb;
             data.localPosition.Set(localPosition, 10f);
             data.direction.Value = blastDir;
-            data.staggerMult = staggerMult;
+            data.staggerMult = staggerMulti;
             data.setCooldowns = eBase.ApplyAttackCooldown;
 
             bool precHit = limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = eBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damageable, eBase.CWC.DebuffIDs);
-            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMult, 1f) : 1f;
-            
-            float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
+            precisionMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMulti, 1f) : 1f;
+            backstabMulti = DamageableUtil.MergeBackstabMulti(origBackstabMulti, backstabMulti);
+            float finalDamage = damage * precisionMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
             if (!statContext.BypassTumorCap && limb.DestructionType == eLimbDestructionType.Custom)
-                precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
+                finalDamage = Math.Min(finalDamage, limb.m_healthMax + 1);
 
-            data.damage = precDamage;
+            EXPAPIWrapper.DoLifesteal(eBase.CWC, finalDamage);
+            data.damage = finalDamage;
 
-            var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
+            var hitContext = eBase.CWC.Invoke(new WeaponHitDamageableContext(finalDamage, preContext));
 
-            bool willKill = damBase.WillDamageKill(precDamage);
+            bool willKill = damBase.WillDamageKill(finalDamage);
             HitTrackerManager.RegisterHit(eBase.CWC.Owner, eBase.CWC, hitContext);
-            ShotManager.DoHitmarker(eBase.CWC, eBase.CWC.GetContextController(), limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
+            ShotManager.DoHitmarker(eBase.CWC, eBase.CWC.GetContextController(), limb, finalDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
-            DamageAPI.FirePreLocalExplosiveCallbacks(precDamage, damBase.Owner, limb, source, data.cwc);
+            DamageAPI.FirePreLocalExplosiveCallbacks(finalDamage, damBase.Owner, limb, source, data.cwc);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 

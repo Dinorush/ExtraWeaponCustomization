@@ -5,6 +5,7 @@ using EWC.CustomWeapon.Properties.Effects.Hit.CustomFoam;
 using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
+using EWC.Utils;
 using EWC.Utils.Extensions;
 using LevelGeneration;
 using Player;
@@ -68,13 +69,15 @@ namespace EWC.CustomWeapon.Properties.Effects
                 {
                     var damContext = (WeaponHitDamageableContextBase) baseContext;
                     float precisionMulti = PrecisionAmountMulti;
+                    float backstabMulti = DamageableUtil.DefaultBackstabMulti;
 
                     if (!IgnoreShotMods)
                     {
-                        WeaponStatContext damageContext = new(damageMod, precisionMulti, 1f, DamageType.Foam.WithSubTypes(damContext.Damageable), damContext.Damageable, baseContext.ShotInfo.Orig, CWC.DebuffIDs);
+                        WeaponStatContext damageContext = new(damageMod, precisionMulti, 1f, backstabMulti, DamageType.Foam.WithSubTypes(damContext.Damageable), damContext.Damageable, baseContext.ShotInfo.Orig, CWC.DebuffIDs);
                         CWC.Invoke(damageContext);
                         damageMod = damageContext.Damage;
                         precisionMulti = damageContext.Precision;
+                        backstabMulti = damageContext.Backstab;
                     }
 
                     Dam_EnemyDamageLimb limb = damContext.Damageable.Cast<Dam_EnemyDamageLimb>();
@@ -87,7 +90,7 @@ namespace EWC.CustomWeapon.Properties.Effects
                         damageMod = Math.Max(damageMod, damageMod * precisionMulti * limb.m_weakspotDamageMulti);
 
                     if (!IgnoreBackstab)
-                        damageMod *= damContext.Backstab;
+                        damageMod *= DamageableUtil.MergeBackstabMulti(damContext.Backstab, backstabMulti);
 
                     if (!IgnoreArmor)
                     {

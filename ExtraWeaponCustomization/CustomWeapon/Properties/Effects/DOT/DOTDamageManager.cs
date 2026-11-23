@@ -11,6 +11,7 @@ using EWC.CustomWeapon.Structs;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.Dependencies;
 using EWC.Networking.Structs;
+using EWC.Utils;
 using EWC.Utils.Extensions;
 using Player;
 using SNetwork;
@@ -47,13 +48,12 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     agent.Position - damageable.DamageTargetPos,
                     damageable.DamageTargetPos - agent.Position,
                     1f,
-                    1f,
                     falloff,
                     shotInfo,
                     DamageType.DOT
                     ));
 
-                if (!ApplyShotMod(ref damage, ref precisionMulti, ref staggerMulti, prePlayerContext, dotBase)) return;
+                if (!ApplyShotMod(ref damage, ref precisionMulti, ref staggerMulti, ref backstabMulti, prePlayerContext, dotBase)) return;
                 damage *= dotBase.CWC.Weapon.FriendlyFireMulti;
                 dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, prePlayerContext));
                 shotInfo.AddHits(prePlayerContext.DamageType, ticks);
@@ -71,12 +71,11 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                     Vector3.up,
                     Vector3.up,
                     1f,
-                    1f,
                     falloff,
                     shotInfo,
                     DamageType.DOT
                     ));
-                if (!ApplyShotMod(ref damage, ref precisionMulti, ref staggerMulti, preLockContext, dotBase)) return;
+                if (!ApplyShotMod(ref damage, ref precisionMulti, ref staggerMulti, ref backstabMulti, preLockContext, dotBase)) return;
                 dotBase.CWC.Invoke(new WeaponHitDamageableContext(damage, preLockContext));
                 damageable.BulletDamage(damage, dotBase.Owner, Vector3.zero, Vector3.zero, Vector3.zero);
                 shotInfo.AddHits(preLockContext.DamageType, ticks);
@@ -91,14 +90,13 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
                 limb.DamageTargetPos,
                 agent.Position - limb.DamageTargetPos,
                 limb.DamageTargetPos - agent.Position,
-                backstabMulti,
                 origBackstabMulti,
                 falloff,
                 shotInfo,
                 DamageType.DOT
                 ));
 
-            if (!ApplyShotMod(ref damage, ref precisionMulti, ref staggerMulti, preContext, dotBase)) return;
+            if (!ApplyShotMod(ref damage, ref precisionMulti, ref staggerMulti, ref backstabMulti, preContext, dotBase)) return;
 
             Dam_EnemyDamageBase damBase = limb.m_base;
             DOTData data = default;
@@ -113,36 +111,39 @@ namespace EWC.CustomWeapon.Properties.Effects.Hit.DOT
             bool precHit = limb.m_type == eLimbDamageType.Weakspot;
             float armorMulti = dotBase.IgnoreArmor ? 1f : limb.m_armorDamageMulti;
             DebuffManager.GetAndApplyArmorShredDebuff(ref armorMulti, damageable, dotBase.CWC.DebuffIDs);
-            float weakspotMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMulti, 1f) : 1f;
-            float precDamage = damage * weakspotMulti * armorMulti * backstabMulti;
+            precisionMulti = precHit ? Math.Max(limb.m_weakspotDamageMulti * precisionMulti, 1f) : 1f;
+            backstabMulti = DamageableUtil.MergeBackstabMulti(origBackstabMulti, backstabMulti);
+            float finalDamage = damage * precisionMulti * armorMulti * backstabMulti;
 
             // Clamp damage for bubbles
             if (!bypassTumor && limb.DestructionType == eLimbDestructionType.Custom)
-                precDamage = Math.Min(precDamage, limb.m_healthMax + 1);
+                finalDamage = Math.Min(finalDamage, limb.m_healthMax + 1);
 
-            data.damage = precDamage;
+            EXPAPIWrapper.DoLifesteal(dotBase.CWC, finalDamage);
+            data.damage = finalDamage;
 
-            var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(precDamage, preContext));
+            var hitContext = dotBase.CWC.Invoke(new WeaponHitDamageableContext(finalDamage, preContext));
 
-            bool willKill = damBase.WillDamageKill(precDamage);
+            bool willKill = damBase.WillDamageKill(finalDamage);
             HitTrackerManager.RegisterHit(dotBase.CWC.Owner, dotBase.CWC, hitContext);
             if (willKill || dotBase.ShouldDoHitmarker(damageable))
-                ShotManager.DoHitmarker(dotBase.CWC, dotBase.CWC.GetContextController(), limb, precDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
+                ShotManager.DoHitmarker(dotBase.CWC, dotBase.CWC.GetContextController(), limb, finalDamage > damage, willKill, hitContext.Position, armorMulti < 1f || damBase.IsImortal);
 
             shotInfo.AddHits(hitContext.DamageType, ticks);
-            DamageAPI.FirePreLocalDOTCallbacks(precDamage, damBase.Owner, limb, dotBase.CWC.Owner.Player, data.cwc);
+            DamageAPI.FirePreLocalDOTCallbacks(finalDamage, damBase.Owner, limb, dotBase.CWC.Owner.Player, data.cwc);
             _sync.Send(data, SNet_ChannelType.GameNonCritical);
         }
 
-        private static bool ApplyShotMod(ref float damage, ref float precisionMulti, ref float staggerMulti, WeaponPreHitDamageableContext context, DamageOverTime dotBase)
+        private static bool ApplyShotMod(ref float damage, ref float precisionMulti, ref float staggerMulti, ref float backstabMulti, WeaponPreHitDamageableContext context, DamageOverTime dotBase)
         {
             if (!dotBase.CalcShotModsPerTick || dotBase.IgnoreShotMods) return true;
 
-            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, context.DamageType, context.Damageable, context.ShotInfo.Orig, dotBase.CWC.DebuffIDs);
+            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, backstabMulti, context.DamageType, context.Damageable, context.ShotInfo.Orig, dotBase.CWC.DebuffIDs);
             dotBase.CWC.Invoke(statContext);
             damage = statContext.Damage;
             precisionMulti = statContext.Precision;
             staggerMulti = statContext.Stagger;
+            backstabMulti = statContext.Backstab;
             return damage > 0;
         }
 

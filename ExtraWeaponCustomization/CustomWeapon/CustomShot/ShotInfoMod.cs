@@ -9,12 +9,14 @@ namespace EWC.CustomWeapon.CustomShot
         public readonly ShotStackMod Damage;
         public readonly ShotStackMod Precision;
         public readonly ShotStackMod Stagger;
+        public readonly ShotStackMod Backstab;
 
         public ShotInfoMod()
         {
             Damage = new();
             Precision = new();
             Stagger = new();
+            Backstab = new();
         }
 
         public ShotInfoMod(ShotInfoMod mod)
@@ -22,6 +24,7 @@ namespace EWC.CustomWeapon.CustomShot
             Damage = new(mod.Damage);
             Precision = new(mod.Precision);
             Stagger = new(mod.Stagger);
+            Backstab = new(mod.Backstab);
         }
 
         public void Add(TriggerMod triggerMod, StatType type, float mod, IDamageable? damageable = null, params DamageType[] types) => Add(triggerMod, type, mod, triggerMod.Cap, triggerMod.StackType, triggerMod.StackLayer, damageable, types);
@@ -39,6 +42,9 @@ namespace EWC.CustomWeapon.CustomShot
                 case StatType.Stagger:
                     Stagger.AddMod(property, mod, cap, stack, layer, damageable, types);
                     break;
+                case StatType.Backstab:
+                    Backstab.AddMod(property, mod, cap, stack, layer, damageable, types);
+                    break;
             }
         }
 
@@ -47,6 +53,7 @@ namespace EWC.CustomWeapon.CustomShot
             Damage.Reset();
             Precision.Reset();
             Stagger.Reset();
+            Backstab.Reset();
         }
     }
 }

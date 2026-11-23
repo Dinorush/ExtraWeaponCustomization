@@ -8,6 +8,7 @@ using EWC.CustomWeapon.Properties.Shared.Triggers;
 using EWC.CustomWeapon.WeaponContext.Contexts;
 using EWC.CustomWeapon.WeaponContext.Contexts.Base;
 using EWC.JSON;
+using EWC.Utils;
 using Player;
 using System;
 using System.Collections.Generic;
@@ -149,31 +150,34 @@ namespace EWC.CustomWeapon.Properties.Effects
 
             float falloff = IgnoreFalloff ? 1f : context.Falloff;
             float damage = TotalDamage * triggerAmt;
-            float backstabMulti = 1f;
-            float origBackstabMulti = 1f;
-            if (!IgnoreBackstab)
-            {
-                backstabMulti = context.Backstab;
-                origBackstabMulti = context.OrigBackstab;
-            }
+            float backstabMulti = DamageableUtil.DefaultBackstabMulti;
+            float origBackstabMulti = context.Backstab;
 
             float precisionMulti = PrecisionDamageMulti;
             float staggerMulti = StaggerDamageMulti;
 
             ShotInfo info = new(context.ShotInfo.Orig, true, UseParentShotMod);
             damage *= info.ExternalDamageMod * info.InnateDamageMod;
-            staggerMulti *= info.InnateStaggerMod;
+            staggerMulti *= info.ExternalStaggerMod * info.InnateStaggerMod;
+            backstabMulti *= info.ExternalBackstabMod;
 
-            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, DamageType.DOT.WithSubTypes(context.Damageable), context.Damageable, context.ShotInfo.Orig, CWC.DebuffIDs);
+            WeaponStatContext statContext = new(damage, precisionMulti, staggerMulti, backstabMulti, DamageType.DOT.WithSubTypes(context.Damageable), context.Damageable, context.ShotInfo.Orig, CWC.DebuffIDs);
             CWC.Invoke(statContext);
             if (!CalcShotModsPerTick && !IgnoreShotMods)
             {
                 damage = statContext.Damage;
                 precisionMulti = statContext.Precision;
                 staggerMulti = statContext.Stagger;
+                backstabMulti = statContext.Backstab;
             }
 
-            DOTInstance newDot = new(damage, falloff, precisionMulti, staggerMulti, statContext.BypassTumorCap, backstabMulti, origBackstabMulti, info, this);
+            if (IgnoreBackstab || !CWC.Weapon.AllowBackstab)
+            {
+                backstabMulti = 1f;
+                origBackstabMulti = 1f;
+            }
+
+            DOTInstance newDot = new(damage, falloff, precisionMulti, staggerMulti, backstabMulti, origBackstabMulti, statContext.BypassTumorCap, info, this);
             if (StackLimit == 0)
                 _controller.AddDOT(newDot, context.Damageable);
             else

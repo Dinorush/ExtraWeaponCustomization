@@ -7,7 +7,8 @@ namespace EWC.CustomWeapon.Enums
     {
         Damage,
         Precision, Prec = Precision,
-        Stagger
+        Stagger,
+        Backstab
     }
 
     public static class StatTypeConst

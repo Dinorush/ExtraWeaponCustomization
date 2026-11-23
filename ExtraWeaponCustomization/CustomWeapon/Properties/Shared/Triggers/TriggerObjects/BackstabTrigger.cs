@@ -15,7 +15,7 @@ namespace EWC.CustomWeapon.Properties.Shared.Triggers
 
         protected override float InvokeInternal(WeaponHitDamageableContext context)
         {
-            return Amount * (context.OrigBackstab - 1).Map(MinBackstabRequired, MaxBackstabRequired, Min, Max, Exponent);
+            return Amount * (context.Backstab - 1).Map(MinBackstabRequired, MaxBackstabRequired, Min, Max, Exponent);
         }
 
         public override bool DeserializeProperty(string property, ref Utf8JsonReader reader)
