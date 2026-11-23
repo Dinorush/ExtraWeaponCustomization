@@ -53,8 +53,8 @@ internal sealed class EntryPoint : BasePlugin
         CacheFrequentCallbacks();
         InvokeCallbacks<InvokeOnLoadAttribute>();
 
-        Patches.Checkpoint.SyncManagerPatches.OnCheckpointReloaded += RunFrequentCallback(_checkpointReloadedCallbacks);
-        Patches.Checkpoint.SyncManagerPatches.OnCheckpointReached += RunFrequentCallback(_checkpointReachedCallbacks);
+        EventAPI.OnCheckpointReached += RunFrequentCallback(_checkpointReachedCallbacks);
+        EventAPI.OnCheckpointReloaded += RunFrequentCallback(_checkpointReloadedCallbacks);
         LevelAPI.OnLevelCleanup += RunFrequentCallback(_cleanupCallbacks);
         LevelAPI.OnEnterLevel += RunFrequentCallback(_enterCallbacks);
         LevelAPI.OnBuildDone += RunFrequentCallback(_buildDoneCallbacks);
