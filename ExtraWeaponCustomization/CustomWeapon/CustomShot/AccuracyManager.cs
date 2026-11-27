@@ -2,6 +2,7 @@
 using EWC.API.Accuracy;
 using EWC.Attributes;
 using EWC.CustomWeapon.Enums;
+using Player;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -40,14 +41,10 @@ namespace EWC.CustomWeapon.CustomShot
             AccuracyAPI.InvokeAccuracyReset();
         }
 
-        [InvokeOnCheckpointReloaded]
-        private static void OnCheckpointReloaded()
+        internal static void UpdatePlayerAgent(PlayerAgent player)
         {
-            foreach (var player in Player.PlayerManager.PlayerAgentsInLevel)
-            {
-                if (_stats.TryGetValue(player.Owner.Lookup, out var stats))
-                    stats.Owner = player;
-            }
+            if (_stats.TryGetValue(player.Owner.Lookup, out var stats))
+                stats.Owner = player;
         }
 
         public static bool TryGetStats(ulong playerLookup, [MaybeNullWhen(false)] out AccuracyStats stats) => _stats.TryGetValue(playerLookup, out stats);

@@ -2,6 +2,7 @@
 using EWC.CustomWeapon.CustomShot;
 using EWC.Utils.Extensions;
 using Player;
+using SNetwork;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -14,6 +15,7 @@ namespace EWC.API
         public readonly WeaponAccuracy Tool;
         // Always has a player.
         public PlayerAgent Owner { get; internal set; }
+        public SNet_Player SNetOwner { get; internal set; }
 
         public WeaponAccuracy this[AmmoType ammoType] => this[ammoType.ToInventorySlot()];
         public WeaponAccuracy this[InventorySlot slot] => slot switch
@@ -27,6 +29,7 @@ namespace EWC.API
         public AccuracyStats(PlayerAgent owner)
         {
             Owner = owner;
+            SNetOwner = owner.Owner;
             Main = new(InventorySlot.GearStandard, this);
             Special = new(InventorySlot.GearSpecial, this);
             Tool = new(InventorySlot.GearClass, this);
